@@ -1,0 +1,48 @@
+# .NET / C#
+[Bb]in/
+[Oo]bj/
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+*.suo.user
+*.suo.userprefs
+*.userosscache
+*.sln.docstates.user
+*.suo.user.userprefs
+*.lscache
+
+# IDEs and Editors
+.vs/
+.idea/
+.vscode/
+*.swp
+*.lnk
+.rider/
+_ReSharper.Caches/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Local Databases & Cache
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build / Publish Outputs
+publish/
+dist/
+out/
+node_modules/
