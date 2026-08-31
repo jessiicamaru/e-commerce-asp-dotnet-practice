@@ -53,8 +53,8 @@ We will build the system iteratively using a feature-first approach within each 
 - [x] Configure Entity Framework Core with Fluent API configurations.
 - [x] Implement UserRepository and configure Dependency Injection.
 - [x] Create and apply initial EF Core database migration.
-- [ ] Implement Password Hashing and JWT Token services.
-- [ ] Implement User Registration and Login flow ([Auth Design Guide](./auth-db-design.md)).
+- [x] Implement Password Hashing and JWT Token services.
+- [x] Implement User Registration and Login flow ([Auth Design Guide](./auth-db-design.md)).
 
 ### Phase 2: Product & Catalog
 - [ ] Database schema for Products and Categories.
