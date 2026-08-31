@@ -124,7 +124,127 @@ public class AuthController : ApiControllerBase
 
 ---
 
-## 4. Architectural Questions for Decision Making
+## 4. The Token Refresh Flow (Rolling Refresh Token)
+
+To allow the frontend to automatically refresh the `AccessToken` when it expires, you must implement a `/refresh` endpoint.
+
+### 4.1 Define the Refresh Token Command
+Create `RefreshTokenCommand.cs` in `Application/Auth/Commands/Refresh/`:
+
+```csharp
+using MediatR;
+using Ecommerce.Application.Auth.Common;
+
+namespace Ecommerce.Application.Auth.Commands.Refresh;
+
+public record RefreshTokenCommand(string RefreshToken) : IRequest<AuthResponse>;
+```
+
+### 4.2 Create the Handler
+Create `RefreshTokenCommandHandler.cs` in `Application/Auth/Commands/Refresh/`. The handler should:
+1. Fetch the user associated with this Refresh Token from the database.
+2. Verify if the token is valid, not expired, and not revoked.
+3. Generate a new Access Token and a **new Refresh Token** (Rolling Refresh).
+4. Revoke/remove the old Refresh Token and append the new one.
+5. Save changes to the database and return the DTO.
+
+```csharp
+using MediatR;
+using Ecommerce.Application.Common.Interfaces;
+using Ecommerce.Application.Auth.Common;
+using Ecommerce.Domain.Entities;
+using Ecommerce.Application.Common.Constants;
+
+namespace Ecommerce.Application.Auth.Commands.Refresh;
+
+public class RefreshTokenCommandHandler(
+    IUserRepository userRepository,
+    IJwtTokenGenerator jwtTokenGenerator
+) : IRequestHandler<RefreshTokenCommand, AuthResponse>
+{
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
+
+    public async Task<AuthResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
+    {
+        // 1. Fetch user by refresh token
+        var user = await _userRepository.GetByUserRefreshTokenAsync(request.RefreshToken, cancellationToken);
+        if (user == null)
+        {
+            throw new Exception("Invalid session.");
+        }
+
+        // 2. Locate the active token
+        var activeToken = user.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
+        if (activeToken == null || activeToken.IsExpired || activeToken.RevokedAt != null)
+        {
+            throw new Exception("Session expired or invalid.");
+        }
+
+        // 3. Revoke/remove the old refresh token
+        user.RefreshTokens.Remove(activeToken);
+
+        // 4. Generate new tokens
+        var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        var newRefreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
+
+        // 5. Save the new refresh token
+        user.RefreshTokens.Add(new RefreshToken
+        {
+            Token = newRefreshTokenString,
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
+        });
+
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
+        return new AuthResponse(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            newAccessToken,
+            newRefreshTokenString
+        );
+    }
+}
+```
+*(Note: You will need to add the method `GetByUserRefreshTokenAsync(string token, CancellationToken cancellationToken)` to your `IUserRepository` interface and implement it in `UserRepository` using `_context.Users.Include(u => u.RefreshTokens).FirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.Token == token))`)*
+
+### 4.3 Add the Endpoint to AuthController
+Add the refresh endpoint to `AuthController.cs` in the WebApi project:
+
+```csharp
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh()
+    {
+        // 1. Read the Refresh Token from the secure cookie
+        if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized("No session cookie found.");
+        }
+
+        try
+        {
+            // 2. Send the command to exchange it for a new access token + refresh token
+            var result = await Mediator.Send(new RefreshTokenCommand(refreshToken));
+
+            // 3. Set the new Refresh Token in the secure cookie
+            SetRefreshTokenCookie(result.RefreshToken);
+
+            // 4. Return only the new access token
+            return Ok(new AuthResponse(result.Id, result.Email, result.FirstName, result.LastName, result.Token));
+        }
+        catch (Exception ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+    }
+```
+
+---
+
+## 5. Architectural Questions for Decision Making
 
 Before implementation, consider these trade-offs:
 
