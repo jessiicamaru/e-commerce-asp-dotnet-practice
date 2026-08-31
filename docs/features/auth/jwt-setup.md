@@ -22,31 +22,16 @@ We use specific NuGet packages in different projects to handle password hashing 
 ## 2. Configuration Settings
 
 ### Step 2.1: Add JWT Options in `appsettings.json`
-Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/appsettings.json). 
-
-> [!WARNING]
-> Keep the `Secret` key extremely secure. In production environments, load this value from environment variables (e.g., Docker `.env` file) rather than committing it to version control.
+Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/appsettings.json):
 
 ```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Database=e-commerce;Username=postgres;Password=123456;Port=5432"
-  },
   "JwtSettings": {
-    "Secret": "your_super_secret_key_minimum_256_bits_long_example_here",
+    "Secret": "", // Read from environment variable JWT_SECRET in production/local development
     "Issuer": "EcommerceApi",
     "Audience": "EcommerceClients",
     "ExpiryMinutes": 15,
     "RefreshTokenExpiryDays": 7
   }
-}
 ```
 
 ---

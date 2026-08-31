@@ -59,22 +59,10 @@ For a secure balance between convenience and high security, follow this hybrid a
 ## 3. How to Implement in ASP.NET Core
 
 ### 3.1 Step 1: Modifying AuthResponse
-We remove the `RefreshToken` from the response body:
-
-```csharp
-namespace Ecommerce.Application.Auth.Common;
-
-public record AuthResponse(
-    Guid Id,
-    string Email,
-    string FirstName,
-    string LastName,
-    string Token // Only contains Access Token
-);
-```
+We keep `AuthResponse` containing both tokens in the Application layer, but we filter out `RefreshToken` at the Controller layer.
 
 ### 3.2 Step 2: Setting the HttpOnly Cookie in the Controller
-In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Controllers/AuthController.cs), we intercept the Command result, extract the Refresh Token, set it as a cookie, and return only the `AuthResponse` details.
+In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Controllers/AuthController.cs), we intercept the Command result, extract the Refresh Token, set it as a cookie, and return only the `AuthResponse` details with `RefreshToken` cleared.
 
 ```csharp
 using Ecommerce.Application.Auth.Commands.Login;
@@ -88,23 +76,22 @@ public class AuthController : ApiControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
-        // 1. Send command (the command handler returns a tuple or a custom DTO with both tokens)
         var result = await Mediator.Send(command);
         
-        // 2. Set Refresh Token in Cookie
         SetRefreshTokenCookie(result.RefreshToken);
 
-        // 3. Return only User details and Access Token in body
-        return Ok(new AuthResponse(result.Id, result.Email, result.FirstName, result.LastName, result.Token));
+        // Hide refresh token from HTTP response body using C# "with" expression
+        return Ok(result with { RefreshToken = "" });
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
         var result = await Mediator.Send(command);
+        
         SetRefreshTokenCookie(result.RefreshToken);
         
-        return Ok(new AuthResponse(result.Id, result.Email, result.FirstName, result.LastName, result.Token));
+        return Ok(result with { RefreshToken = "" });
     }
 
     private void SetRefreshTokenCookie(string refreshToken)
@@ -232,8 +219,8 @@ Add the refresh endpoint to `AuthController.cs` in the WebApi project:
             // 3. Set the new Refresh Token in the secure cookie
             SetRefreshTokenCookie(result.RefreshToken);
 
-            // 4. Return only the new access token
-            return Ok(new AuthResponse(result.Id, result.Email, result.FirstName, result.LastName, result.Token));
+            // 4. Return only the new access token with refresh token hidden
+            return Ok(result with { RefreshToken = "" });
         }
         catch (Exception ex)
         {
@@ -241,24 +228,3 @@ Add the refresh endpoint to `AuthController.cs` in the WebApi project:
         }
     }
 ```
-
----
-
-## 5. Architectural Questions for Decision Making
-
-Before implementation, consider these trade-offs:
-
-### **[DECISION POINT] Cookies vs. Token Exposure**
-**Question:** Should we immediately refactor our Auth flow to use the HttpOnly cookie-based Refresh Token approach?
-
-**Why This Matters:**
-- Doing it now establishes a production-grade secure foundation.
-- Postponing it means frontends will be developed with local storage dependencies, requiring refactoring later.
-
-**Options:**
-| Option | Pros | Cons | Best For |
-| :--- | :--- | :--- | :--- |
-| **A. HttpOnly Cookie Hybrid (Recommended)** | High security, protects Refresh Token from XSS | Requires additional endpoint setup for token refresh, slightly more controller logic | Multi-platform web applications |
-| **B. Token in JSON Body** | Simple to implement, works out of the box for Mobile apps (which don't handle cookies easily) | Low security on Web, vulnerable to XSS token theft | Desktop apps, simple APIs, mobile-only apps |
-
-**If Not Specified:** We will implement **Option A** as it is the standard best practice for modern e-commerce web applications.

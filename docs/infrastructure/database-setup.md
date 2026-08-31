@@ -29,7 +29,7 @@ The file is located in the solution root directory: [docker-compose.yml](file://
 
 2. **pgAdmin**:
    - **Image**: `dpage/pgadmin4` (GUI manager).
-   - **Container Name**: `habit-tracker-pgadmin`
+   - **Container Name**: `e-commerce-pgadmin`
    - **Port**: `5050` mapped to host `80`.
    - **Default Credentials**: 
      - Email: `admin@admin.com`

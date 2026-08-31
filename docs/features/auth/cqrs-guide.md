@@ -27,7 +27,7 @@ This guide explains how to implement the User Authentication (Registration & Log
            ├─► 2. Hash password (IPasswordHasher)
            ├─► 3. Save to database (IUserRepository)
            ▼
-      AuthResponse DTO (Returned to client)
+       AuthResponse DTO (Returned to Controller)
 ```
 
 - **CQRS**: Separates operations that write data (Commands) from operations that read data (Queries).
@@ -49,7 +49,7 @@ Ecommerce.Application/
     └── Commands/
         ├── Register/
         │   ├── RegisterCommand.cs     # Command request properties
-        │   └── RegisterCommandHandler.cs # Core registration logic
+        │   └── RegisterCommandHandler.cs # Core registration logic using Primary Constructors
         └── Login/
             ├── LoginCommand.cs        # Login request properties
             └── LoginCommandHandler.cs    # Core verification and token logic
@@ -94,7 +94,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 ```
 
 ### 3.3 Step 3: Define AuthResponse DTO
-The shared response DTO returned to clients upon successful registration or login:
+The shared response DTO returned to the presentation layer:
 
 ```csharp
 namespace Ecommerce.Application.Auth.Common;
@@ -132,26 +132,22 @@ The command triggers the registration logic. The handler handles it:
   ```csharp
   using MediatR;
   using Ecommerce.Application.Common.Interfaces;
+  using Ecommerce.Application.Common.Constants;
   using Ecommerce.Application.Auth.Common;
   using Ecommerce.Domain.Entities;
 
   namespace Ecommerce.Application.Auth.Commands.Register;
 
-  public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthResponse>
+  // Uses modern C# Primary Constructor syntax
+  public class RegisterCommandHandler(
+      IUserRepository userRepository,
+      IPasswordHasher passwordHasher,
+      IJwtTokenGenerator jwtTokenGenerator
+  ) : IRequestHandler<RegisterCommand, AuthResponse>
   {
-      private readonly IUserRepository _userRepository;
-      private readonly IPasswordHasher _passwordHasher;
-      private readonly IJwtTokenGenerator _jwtTokenGenerator;
-
-      public RegisterCommandHandler(
-          IUserRepository userRepository,
-          IPasswordHasher passwordHasher,
-          IJwtTokenGenerator jwtTokenGenerator)
-      {
-          _userRepository = userRepository;
-          _passwordHasher = passwordHasher;
-          _jwtTokenGenerator = jwtTokenGenerator;
-      }
+      private readonly IUserRepository _userRepository = userRepository;
+      private readonly IPasswordHasher _passwordHasher = passwordHasher;
+      private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
 
       public async Task<AuthResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
       {
@@ -159,13 +155,13 @@ The command triggers the registration logic. The handler handles it:
           var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
           if (existingUser != null)
           {
-              throw new Exception("Email is already registered."); // Custom Exception in production
+              throw new Exception("Email is already registered.");
           }
 
           // 2. Hash Password
           var passwordHash = _passwordHasher.HashPassword(request.Password);
 
-          // 3. Create User Entity
+          // 3. Create User Entity (Id is auto-generated as Guid.Empty which EF Core fills)
           var user = new User
           {
               Email = request.Email,
@@ -187,7 +183,7 @@ The command triggers the registration logic. The handler handles it:
           {
               Token = refreshTokenString,
               UserId = user.Id,
-              ExpiresAt = DateTime.UtcNow.AddDays(7)
+              ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
           });
           await _userRepository.SaveChangesAsync(cancellationToken);
 
@@ -205,32 +201,26 @@ The command triggers the registration logic. The handler handles it:
 
 ---
 
-## 5. Web API Controller Setup
-In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `ISender`:
+## 4. Web API Controller Setup
+In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `Mediator` and hide the `RefreshToken` from the response body by using C#'s `with` expression:
 
 ```csharp
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using Ecommerce.Application.Auth.Commands.Login;
 using Ecommerce.Application.Auth.Commands.Register;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce.WebApi.Controllers;
 
-[ApiController]
-[Route("api/auth")]
-public class AuthController : ControllerBase
+public class AuthController : ApiControllerBase
 {
-    private readonly ISender _mediator;
-
-    public AuthController(ISender mediator)
-    {
-        _mediator = mediator;
-    }
-
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        var result = await Mediator.Send(command);
+        SetRefreshTokenCookie(result.RefreshToken);
+
+        // Hide refresh token from JSON body
+        return Ok(result with { RefreshToken = "" });
     }
 }
 ```

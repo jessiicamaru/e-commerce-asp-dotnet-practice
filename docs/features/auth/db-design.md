@@ -150,7 +150,7 @@ Exposes REST endpoints.
 
 ## 5. Security & Flow Checklist
 
-- [ ] **Password Hashing**: Never store plain passwords. Use **BCrypt.Net-Next** or ASP.NET Core's `IPasswordHasher<T>` (using PBKDF2/Argon2) in the Application/Infrastructure layer.
-- [ ] **JWT Tokens**: Issue short-lived Access Tokens (e.g., 15 minutes) containing Claims (User ID, Email, Roles).
-- [ ] **Refresh Tokens**: Issue long-lived Refresh Tokens (e.g., 7 days) stored securely in HttpOnly cookies, and rotate them on use to prevent replay attacks.
-- [ ] **Email Uniqueness**: Add constraint check at the application layer to return a friendly error message when registering an existing email.
+- [x] **Password Hashing**: Never store plain passwords. Use **BCrypt.Net-Next** in the Application/Infrastructure layer.
+- [x] **JWT Tokens**: Issue short-lived Access Tokens (e.g., 15 minutes) containing Claims (User ID, Email, Roles).
+- [x] **Refresh Tokens**: Issue long-lived Refresh Tokens (e.g., 7 days) stored securely in HttpOnly cookies, and rotate them on use to prevent replay attacks.
+- [x] **Email Uniqueness**: Add constraint check at the application layer to return a friendly error message when registering an existing email.

@@ -1,4 +1,4 @@
-# E-commerce System Architecture & Ideas
+# E-commerce System Architecture & Roadmap
 
 This document outlines the high-level functional ideas and system architecture for the E-commerce system, serving as a roadmap for development.
 
@@ -46,7 +46,7 @@ graph TD
 
 We will build the system iteratively using a feature-first approach within each Clean Architecture layer:
 
-### Phase 1: Core Foundation & Auth (Current)
+### Phase 1: Core Foundation & Auth (Completed)
 - [x] Bootstrapping Clean Architecture project structure.
 - [x] Spin up local PostgreSQL container using Docker.
 - [x] Create User, Role, and RefreshToken domain entities.
@@ -54,7 +54,7 @@ We will build the system iteratively using a feature-first approach within each 
 - [x] Implement UserRepository and configure Dependency Injection.
 - [x] Create and apply initial EF Core database migration.
 - [x] Implement Password Hashing and JWT Token services.
-- [x] Implement User Registration and Login flow ([Auth Design Guide](./auth-db-design.md)).
+- [x] Implement User Registration and Login flow ([Auth Design Guide](../features/auth/db-design.md)).
 
 ### Phase 2: Product & Catalog
 - [ ] Database schema for Products and Categories.
