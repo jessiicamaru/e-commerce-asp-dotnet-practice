@@ -1,4 +1,6 @@
+namespace Ecommerce.Application.Common.Constants;
+
 public static class JwtConstants
 {
-    public static int TokenDurationDay = 7;
+    public const int TokenDurationDay = 7;
 }

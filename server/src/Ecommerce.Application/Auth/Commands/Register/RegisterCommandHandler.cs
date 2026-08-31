@@ -1,5 +1,6 @@
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Application.Common.Interfaces;
+using Ecommerce.Application.Common.Constants;
 using Ecommerce.Domain.Entities;
 using MediatR;
 
