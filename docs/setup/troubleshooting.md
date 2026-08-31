@@ -67,7 +67,80 @@ dotnet add src/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj package 
 
 ---
 
-## 3. General Diagnosis Checklist
+## 3. `.env` File Path Mismatch during Startup
+
+### Symptoms
+Environment variables defined in `.env` are not loaded when running the Web API, causing runtime configuration errors:
+```text
+System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
+```
+
+### Diagnosis
+When running the Web API via `dotnet run --project src/Ecommerce.WebApi/`, the working directory (`Directory.GetCurrentDirectory()`) defaults to the project folder (`server/src/Ecommerce.WebApi`).
+However, the `.env` file is located at the root of the backend folder (`server/`).
+If you try to load it using `Path.Combine(Directory.GetCurrentDirectory(), ".env")`, the file path evaluates to `server/src/Ecommerce.WebApi/.env` which does not exist, causing the loading logic to fail silently.
+
+### Solution
+Implement a recursive upward directory search in `Program.cs` to locate the `.env` file starting from the current directory:
+
+```csharp
+var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+string? dotenv = null;
+while (directory != null)
+{
+    var path = Path.Combine(directory.FullName, ".env");
+    if (File.Exists(path))
+    {
+        dotenv = path;
+        break;
+    }
+    directory = directory.Parent; // Move up one level
+}
+
+if (!string.IsNullOrEmpty(dotenv))
+{
+    // Parse and set variables
+}
+```
+
+---
+
+## 4. EF Core `DbUpdateConcurrencyException` on Nested Inserts
+
+### Symptoms
+When adding a new entity to a collection navigation property of an existing tracked entity (e.g., `user.RefreshTokens.Add(newToken)`) and calling `SaveChangesAsync`, EF Core throws:
+```text
+Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException: The database operation was expected to affect 1 row(s), but actually affected 0 row(s).
+```
+
+### Diagnosis
+EF Core determines whether a tracked entity is new (`Added` state) or existing (`Modified` state) based on its primary key value.
+If you declare an inline initializer for Guid keys in your domain models (e.g., `public Guid Id { get; set; } = Guid.NewGuid();`), the key is immediately populated with a non-default value when instantiated in memory.
+When this new entity is added to a tracked parent's collection without explicitly calling `DbSet.Add()`, EF Core checks the key:
+1. Because `Id != Guid.Empty`, EF Core assumes this is an existing database record.
+2. It marks the entity state as `Modified` and generates an `UPDATE` statement.
+3. Since this Guid only exists in RAM and not in the database, the `UPDATE` affects 0 rows, triggering the concurrency exception.
+
+### Solution
+Remove inline default initializers (`= Guid.NewGuid()`) from primary key properties of your domain entities. Let them default to `Guid.Empty` so EF Core's Change Tracker can correctly infer that they are new and mark them as `Added` (generating an `INSERT` statement).
+
+```csharp
+// BAD - Confuses EF Core Change Tracker on navigation inserts
+public class RefreshToken
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+}
+
+// GOOD - Defaults to Guid.Empty, letting EF Core detect it as new
+public class RefreshToken
+{
+    public Guid Id { get; set; }
+}
+```
+
+---
+
+## 5. General Diagnosis Checklist
 
 If your IDE reports red errors but your code looks correct:
 
@@ -76,4 +149,4 @@ If your IDE reports red errors but your code looks correct:
    dotnet build Ecommerce.slnx
    ```
 2. **Inspect `.csproj` Files**: Treat `.csproj` files as the source-of-truth configuration for dependencies. Ensure both `<ProjectReference>` (other projects) and `<PackageReference>` (NuGet packages) are correct.
-3. **Check Namespaces**: Ensure the files have the correct `using` statements at the top. Extension methods often require importing the core namespace (e.g. `using Microsoft.EntityFrameworkCore;`).
+3. **Check Namespaces**: Ensure the files have the correct `using` statements at the top. Extension methods often require importing the core namespace (e.g., `using Microsoft.EntityFrameworkCore;`).
