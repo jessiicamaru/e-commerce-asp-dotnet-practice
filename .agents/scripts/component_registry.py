@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build deterministic AG Kit component metadata from Markdown frontmatter."""
+"""Build deterministic AG Kit component and runtime metadata."""
 from __future__ import annotations
 
 import hashlib
@@ -32,10 +32,9 @@ def _fallback_frontmatter(raw: str) -> dict[str, Any]:
         if not line or line[0].isspace() or line.lstrip().startswith("#"):
             continue
         match = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", line)
-        if not match:
-            continue
-        key, value = match.groups()
-        data[key] = value.strip().strip('"\'')
+        if match:
+            key, value = match.groups()
+            data[key] = value.strip().strip('"\'')
     return data
 
 
@@ -62,23 +61,19 @@ def is_semver(value: object) -> bool:
 
 
 def compatible_range(version: str) -> str:
-    """Return a conservative compatible range for the supported SemVer subset."""
     match = SEMVER_RE.fullmatch(version)
     if not match:
         raise ValueError(f"Invalid SemVer: {version}")
-    major = int(match.group(1))
-    return version if major == 0 else f"^{version}"
+    return version if int(match.group(1)) == 0 else f"^{version}"
 
 
 def version_satisfies(version: str, constraint: str) -> bool:
-    """Resolve exact and caret ranges without third-party dependencies."""
     match = SEMVER_RE.fullmatch(version)
     if not match:
         return False
     current = tuple(int(match.group(i)) for i in range(1, 4))
     if constraint.startswith("^"):
-        base_text = constraint[1:]
-        base_match = SEMVER_RE.fullmatch(base_text)
+        base_match = SEMVER_RE.fullmatch(constraint[1:])
         if not base_match:
             return False
         base = tuple(int(base_match.group(i)) for i in range(1, 4))
@@ -87,11 +82,26 @@ def version_satisfies(version: str, constraint: str) -> bool:
         if base[1] > 0:
             return current >= base and current[:2] == base[:2]
         return current == base
-    return current == tuple(int(match.group(i)) for i in range(1, 4)) if constraint == version else False
+    return constraint == version
 
 
 def _relative(root: Path, path: Path) -> str:
     return path.relative_to(root).as_posix()
+
+
+def _runtime_manifest(root: Path) -> dict[str, Any]:
+    path = root / "antigravity.json"
+    if not path.is_file():
+        raise ValueError("Missing Antigravity runtime contract: antigravity.json")
+    data = json.loads(path.read_text("utf-8"))
+    if data.get("runtime") != "antigravity":
+        raise ValueError("antigravity.json runtime must be 'antigravity'")
+    return {
+        "path": "antigravity.json",
+        "schemaVersion": data.get("schemaVersion"),
+        "requiredCliCommands": data.get("requiredCliCommands", []),
+        "phases": data.get("phases", {}),
+    }
 
 
 def build_manifest(root: Path) -> dict[str, Any]:
@@ -103,23 +113,21 @@ def build_manifest(root: Path) -> dict[str, Any]:
         data = load_frontmatter(path)
         name = path.parent.name
         version = str(data.get("version", ""))
-        scripts = sorted(_relative(root, item) for item in path.parent.glob("scripts/*.py"))
         skills[name] = {
             "path": _relative(root, path),
             "version": version,
             "allowedTools": normalize_list(data.get("allowed-tools")),
-            "scripts": scripts,
+            "scripts": sorted(_relative(root, item) for item in path.parent.glob("scripts/*.py")),
         }
 
     agents: dict[str, dict[str, Any]] = {}
     for path in sorted((root / "agent").glob("*.md")):
         data = load_frontmatter(path)
-        name = path.stem
         dependencies: dict[str, str] = {}
         for skill_name in normalize_list(data.get("skills")):
             skill_version = str(skills.get(skill_name, {}).get("version", "0.0.0"))
             dependencies[skill_name] = compatible_range(skill_version) if is_semver(skill_version) else skill_version
-        agents[name] = {
+        agents[path.stem] = {
             "path": _relative(root, path),
             "version": str(data.get("version", "")),
             "model": str(data.get("model", "inherit")),
@@ -130,8 +138,7 @@ def build_manifest(root: Path) -> dict[str, Any]:
     workflows: dict[str, dict[str, Any]] = {}
     for path in sorted((root / "workflows").glob("*.md")):
         data = load_frontmatter(path)
-        name = path.stem
-        workflows[name] = {
+        workflows[path.stem] = {
             "path": _relative(root, path),
             "version": str(data.get("version", "")),
             "requires": {
@@ -144,8 +151,7 @@ def build_manifest(root: Path) -> dict[str, Any]:
     rules: dict[str, dict[str, Any]] = {}
     for path in sorted((root / "rules").glob("*.md")):
         data = load_frontmatter(path)
-        name = path.stem
-        rules[name] = {
+        rules[path.stem] = {
             "path": _relative(root, path),
             "version": str(data.get("version", "")),
             "priority": str(data.get("priority", "")),
@@ -157,15 +163,19 @@ def build_manifest(root: Path) -> dict[str, Any]:
         "schemaVersion": "1.0.0",
         "kitVersion": kit_version,
         "contracts": {
+            "antigravityRuntime": "1.0.0",
             "componentApi": "1.0.0",
             "memorySchema": "1.0.0",
             "rulesApi": "1.0.0",
             "workflowApi": "1.0.0",
         },
         "support": {
-            "official": ["Gemini CLI", "Google Antigravity"],
+            "primary": "Google Antigravity",
+            "official": ["Google Antigravity"],
+            "bestEffort": ["Gemini CLI", "other Markdown-compatible agent tools"],
             "portableFormat": True,
         },
+        "runtimes": {"antigravity": _runtime_manifest(root)},
         "agents": agents,
         "skills": skills,
         "workflows": workflows,
@@ -178,14 +188,22 @@ def canonical_json(data: object) -> str:
 
 
 def component_files(root: Path) -> list[Path]:
-    """Return all managed source files covered by the integrity lock."""
+    """Return every managed source file covered by the integrity lock."""
     root = root.resolve()
     files: list[Path] = []
-    for name in ("VERSION", "README.md", "ARCHITECTURE.md", "CHANGELOG.md", "mcp_config.json"):
+    for name in (
+        "VERSION",
+        "README.md",
+        "ARCHITECTURE.md",
+        "CHANGELOG.md",
+        "antigravity.json",
+        "hooks.json",
+        "mcp_config.json",
+    ):
         path = root / name
         if path.is_file():
             files.append(path)
-    for directory in ("agent", "skills", "workflows", "rules", "memory", "schemas", "scripts"):
+    for directory in ("agent", "skills", "workflows", "rules", "memory", "hooks", "schemas", "scripts"):
         base = root / directory
         if not base.is_dir():
             continue
@@ -209,7 +227,7 @@ def build_lock(root: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     hashes = {
         path.relative_to(root).as_posix(): sha256_file(path)
         for path in component_files(root)
-        if path.name not in {"manifest.lock.json"}
+        if path.name != "manifest.lock.json"
     }
     return {
         "$schema": "schemas/manifest-lock.schema.json",

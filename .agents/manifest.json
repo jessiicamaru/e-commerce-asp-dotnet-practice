@@ -323,7 +323,7 @@
       "path": "agent/project-planner.md",
       "requires": {
         "skills": {
-          "app-builder": "^1.0.0",
+          "app-builder": "^1.1.0",
           "brainstorming": "^1.0.0",
           "clean-code": "^2.0.0",
           "plan-writing": "^1.0.0"
@@ -424,12 +424,13 @@
     }
   },
   "contracts": {
+    "antigravityRuntime": "1.0.0",
     "componentApi": "1.0.0",
     "memorySchema": "1.0.0",
     "rulesApi": "1.0.0",
     "workflowApi": "1.0.0"
   },
-  "kitVersion": "2026.7.18",
+  "kitVersion": "2026.8.31",
   "rules": {
     "code-rules": {
       "path": "rules/code-rules.md",
@@ -468,6 +469,59 @@
       "version": "1.0.0"
     }
   },
+  "runtimes": {
+    "antigravity": {
+      "path": "antigravity.json",
+      "phases": {
+        "discovery": {
+          "rules": ".agents/rules",
+          "skills": ".agents/skills",
+          "workflows": ".agents/workflows"
+        },
+        "hooks": {
+          "config": ".agents/hooks.json",
+          "policy": ".agents/hooks/validate-tool-call.mjs"
+        },
+        "mcp": {
+          "cliGlobalConfig": "~/.gemini/antigravity-cli/mcp_config.json",
+          "suiteGlobalConfig": "~/.gemini/config/mcp_config.json",
+          "workspaceConfig": ".agents/mcp_config.json"
+        },
+        "orchestration": {
+          "agents": [
+            "orchestrator",
+            "project-planner",
+            "security-auditor",
+            "test-engineer"
+          ],
+          "skills": [
+            "coordinator-mode",
+            "parallel-agents",
+            "intelligent-routing",
+            "verify-changes"
+          ],
+          "workflows": [
+            "coordinate",
+            "orchestrate"
+          ]
+        },
+        "plugin": {
+          "builder": ".agents/hooks/build-plugin.mjs",
+          "defaultOutput": "dist/antigravity-plugin"
+        },
+        "validation": {
+          "doctor": ".agents/hooks/antigravity-doctor.mjs",
+          "tests": ".agents/hooks/tests"
+        }
+      },
+      "requiredCliCommands": [
+        "changelog",
+        "plugin",
+        "update"
+      ],
+      "schemaVersion": "1.0.0"
+    }
+  },
   "schemaVersion": "1.0.0",
   "skills": {
     "api-patterns": {
@@ -496,7 +550,7 @@
       ],
       "path": "skills/app-builder/SKILL.md",
       "scripts": [],
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "architecture": {
       "allowedTools": [
@@ -1042,11 +1096,15 @@
     }
   },
   "support": {
-    "official": [
+    "bestEffort": [
       "Gemini CLI",
+      "other Markdown-compatible agent tools"
+    ],
+    "official": [
       "Google Antigravity"
     ],
-    "portableFormat": true
+    "portableFormat": true,
+    "primary": "Google Antigravity"
   },
   "workflows": {
     "brainstorm": {

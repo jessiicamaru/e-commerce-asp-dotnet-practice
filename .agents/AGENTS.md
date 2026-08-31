@@ -1,1 +1,0 @@
-All project-specific rules have been moved to [project-rules.md](file:///d:/Code/Flutter/habit-tracker/.agents/rules/project-rules.md) to ensure they are loaded and enforced automatically by the agent engine.
