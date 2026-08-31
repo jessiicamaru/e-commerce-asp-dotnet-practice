@@ -10,6 +10,7 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
     {
         return await _context.Users
             .Include(u => u.Roles)
+            .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
     }
 
