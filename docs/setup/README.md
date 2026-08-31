@@ -105,3 +105,4 @@ dotnet run --project src/Ecommerce.WebApi/Ecommerce.WebApi.csproj
 6. **Implement your Domain Entities**: Define core models inside the `Domain` project.
 7. **Register Services (DI)**: Wire up interfaces and concrete implementations in `WebApi`'s `Program.cs`.
 8. **Troubleshooting Guide**: Consult the [Troubleshooting Guide](./troubleshooting.md) if you encounter any compilation or namespace errors during development.
+9. **CQRS & MediatR Authentication Guide**: Read the [CQRS Auth Guide](./cqrs-auth-guide.md) to understand how to structure commands, queries, and handlers for registration and login.
