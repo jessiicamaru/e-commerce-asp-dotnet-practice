@@ -1,6 +1,6 @@
-# Database Setup with PostgreSQL & Docker
+# Database Setup & Migrations (PostgreSQL & Docker)
 
-This guide explains how to set up and run a local PostgreSQL database using Docker Compose for the application.
+This guide explains how to set up, run, and manage a local PostgreSQL database using Docker Compose and Entity Framework Core (EF Core) Migrations.
 
 ---
 
@@ -8,7 +8,7 @@ This guide explains how to set up and run a local PostgreSQL database using Dock
 
 Before starting, ensure you have:
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
-- Basic understanding of Docker commands.
+- [.NET SDK](https://dotnet.microsoft.com/download) installed.
 
 ---
 
@@ -22,8 +22,8 @@ The file is located in the solution root directory: [docker-compose.yml](file://
 
 1. **PostgreSQL**:
    - **Image**: `postgres:16-alpine` (lightweight and secure version).
-   - **Container Name**: `habit-tracker-db`
-   - **Default Database**: `habit-tracker` (as mandated by project conventions).
+   - **Container Name**: `e-commerce-db`
+   - **Default Database**: `e-commerce` (set via `.env` file).
    - **Port**: `5432` mapped to host `5432`.
    - **Data Volume**: Persistent volume named `postgres_data` mapped to `/var/lib/postgresql/data`.
 
@@ -37,7 +37,7 @@ The file is located in the solution root directory: [docker-compose.yml](file://
 
 ---
 
-## 3. Running the Database
+## 3. Running the Database (Docker)
 
 Open a terminal at the solution root (`server/`) and run:
 
@@ -61,23 +61,16 @@ docker compose down
 ## 4. Connecting to the Database
 
 ### Connection String
-To connect your ASP.NET Core application to this database, use the following connection string in your configuration:
+To connect your ASP.NET Core application to this database, use the following connection string in your configuration ([appsettings.json](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/appsettings.json)):
 
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Database=habit-tracker;Username=postgres;Password=your_secure_password;Port=5432"
+  "DefaultConnection": "Host=localhost;Database=e-commerce;Username=postgres;Password=123456;Port=5432"
 }
 ```
 
 ### Registering PostgreSQL in ASP.NET Core
-
-To use PostgreSQL in your .NET projects, you need to install the Entity Framework Core provider for PostgreSQL in your **Infrastructure** project:
-
-```bash
-dotnet add src/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj package Npgsql.EntityFrameworkCore.PostgreSQL
-```
-
-Then register the DbContext in your dependency injection container:
+In the **Infrastructure** project, we configure the DbContext connection:
 
 ```csharp
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -86,7 +79,58 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 ---
 
-## 5. Accessing pgAdmin (Optional)
+## 5. Entity Framework Core Migrations Guide
+
+Entity Framework Core (EF Core) Migrations allow us to keep our PostgreSQL database schema in sync with our C# model entities (Domain).
+
+### 5.1 Package Overview
+
+| Package Name | Target Project | Purpose |
+| :--- | :--- | :--- |
+| **`Microsoft.EntityFrameworkCore`** | Application / Infrastructure | Core ORM logic, base DbContext class, and DbSet definitions. |
+| **`Npgsql.EntityFrameworkCore.PostgreSQL`** | Infrastructure | PostgreSQL database provider for EF Core (translates C# LINQ queries to Postgres SQL). |
+| **`Microsoft.EntityFrameworkCore.Design`** | WebApi | Required for EF Core CLI tools to execute migrations at compile-time (installed in the Startup project). |
+
+### 5.2 EF Core CLI Tool Installation
+
+To run migration commands, you need to install the `dotnet ef` tool globally on your machine:
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+*To update the tool to the latest version:*
+```bash
+dotnet tool update --global dotnet-ef
+```
+
+### 5.3 Command Reference
+
+Always run these commands from the **`server/`** directory where the solution file resides.
+
+#### 1. Add a New Migration
+Compares your current C# models with the previous migration snapshot and generates C# script files for the changes:
+```bash
+dotnet ef migrations add <MigrationName> --project src/Ecommerce.Infrastructure/ --startup-project src/Ecommerce.WebApi/
+```
+* **`--project`**: Path to the project containing the `DbContext` and configurations (`Infrastructure` layer).
+* **`--startup-project`**: Path to the entry-point project containing the configurations/connection string (`WebApi` layer).
+
+#### 2. Apply Migrations to Database (Update DB)
+Runs all pending migrations on your active PostgreSQL database:
+```bash
+dotnet ef database update --project src/Ecommerce.Infrastructure/ --startup-project src/Ecommerce.WebApi/
+```
+
+#### 3. Remove Latest Migration
+Deletes the latest migration files (only if it has **not** been applied to the database yet, or after rolling back):
+```bash
+dotnet ef migrations remove --project src/Ecommerce.Infrastructure/ --startup-project src/Ecommerce.WebApi/
+```
+
+---
+
+## 6. Accessing pgAdmin (Optional)
 
 1. Open your browser and navigate to `http://localhost:5050`.
 2. Log in with the credentials:
@@ -94,11 +138,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
    - **Password**: `admin`
 3. Click "Add New Server" to connect to PostgreSQL:
    - **General Tab**: 
-     - Name: `Habit Tracker DB`
+     - Name: `E-commerce DB`
    - **Connection Tab**:
      - Host name/address: `postgres` (the service name in docker-compose)
      - Port: `5432`
-     - Maintenance database: `habit-tracker`
+     - Maintenance database: `e-commerce`
      - Username: `postgres`
-     - Password: `your_secure_password`
+     - Password: `your_secure_password_from_env`
 4. Click Save. You can now inspect tables and run SQL queries.
