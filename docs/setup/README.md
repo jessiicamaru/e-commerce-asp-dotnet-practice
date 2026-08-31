@@ -100,6 +100,7 @@ dotnet run --project src/Ecommerce.WebApi/Ecommerce.WebApi.csproj
 1. **Review Architecture Roadmap**: Read the [E-commerce Architecture Guide](./ecommerce-architecture.md) to understand the high-level roadmap and core modules.
 2. **Database Setup (PostgreSQL & Docker)**: Setup and run your local PostgreSQL instance via Docker Compose. Refer to the [Database Setup Guide](./database-setup.md) for instructions.
 3. **Review Auth & Database Schema**: Review the [Authentication Database Design](./auth-db-design.md) for detailed database tables, fields, and implementation map.
-4. **Configure Entity Framework Core**: Add EF Core packages to the `Infrastructure` project and configure your Database Context.
-5. **Implement your Domain Entities**: Define core models inside the `Domain` project.
-6. **Register Services (DI)**: Wire up interfaces and concrete implementations in `WebApi`'s `Program.cs`.
+4. **JWT Authentication Guide**: Read the [JWT Authentication Guide](./jwt-authentication.md) to understand the security packages, appsettings configurations, and middleware setup.
+5. **Configure Entity Framework Core**: Add EF Core packages to the `Infrastructure` project and configure your Database Context.
+6. **Implement your Domain Entities**: Define core models inside the `Domain` project.
+7. **Register Services (DI)**: Wire up interfaces and concrete implementations in `WebApi`'s `Program.cs`.
