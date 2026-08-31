@@ -107,3 +107,4 @@ dotnet run --project src/Ecommerce.WebApi/Ecommerce.WebApi.csproj
 8. **Troubleshooting Guide**: Consult the [Troubleshooting Guide](./troubleshooting.md) if you encounter any compilation or namespace errors during development.
 9. **CQRS & MediatR Authentication Guide**: Read the [CQRS Auth Guide](./cqrs-auth-guide.md) to understand how to structure commands, queries, and handlers for registration and login.
 10. **JWT Security & Token Storage Best Practices**: Read the [JWT Security Guide](./jwt-security-best-practices.md) to understand how to secure token transport using HttpOnly cookies.
+11. **RabbitMQ Setup & Monitoring Guide**: Read the [RabbitMQ Setup Guide](./rabbitmq-setup.md) to understand how to spin up and monitor RabbitMQ using Docker and the Web Management Console.
