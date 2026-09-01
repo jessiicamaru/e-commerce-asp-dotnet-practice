@@ -3,6 +3,9 @@
 
 echo "🚀 Starting E-Commerce Microservices Infrastructure..."
 
+# Prevent MSYS path conversion on Windows for cmd flags
+export MSYS_NO_PATHCONV=1
+
 # 1. Start Docker Containers
 echo "📦 Starting Docker containers (PostgreSQL Identity, PostgreSQL Catalog, RabbitMQ, pgAdmin)..."
 docker compose up -d
@@ -18,16 +21,16 @@ dotnet ef database update --project src/Services/Catalog/Ecommerce.Catalog.Infra
 echo "🌐 Launching Microservices and API Gateway..."
 
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-    start "Identity Service (5056)" cmd /k "dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/"
-    start "Catalog Service (5057)" cmd /k "dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/"
-    start "API Gateway (5000)" cmd /k "dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Identity Service (Port 5056)\" -ForegroundColor Green; dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Catalog Service (Port 5057)\" -ForegroundColor Green; dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"API Gateway (Port 5000)\" -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/'"
 else
     dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/ &
     dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/ &
     dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/ &
 fi
 
-echo "✨ All services launched successfully!"
+echo "✨ All 3 services launched successfully in separate windows!"
 echo "  - API Gateway:  http://localhost:5000"
 echo "  - Identity API: http://localhost:5056"
 echo "  - Catalog API:  http://localhost:5057"

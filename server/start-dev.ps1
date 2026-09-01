@@ -1,4 +1,6 @@
 # E-Commerce Microservices Development Startup Script (PowerShell)
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+
 Write-Host "🚀 Starting E-Commerce Microservices Infrastructure..." -ForegroundColor Cyan
 
 # 1. Start Docker Containers
@@ -15,9 +17,9 @@ dotnet ef database update --project src/Services/Catalog/Ecommerce.Catalog.Infra
 # 3. Launch Microservices in Separate Terminal Windows
 Write-Host "🌐 Launching Microservices and API Gateway..." -ForegroundColor Green
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Identity Service (Port 5056)' -ForegroundColor Green; dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'Catalog Service (Port 5057)' -ForegroundColor Green; dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Write-Host 'API Gateway (Port 5000)' -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Identity Service (Port 5056)...' -ForegroundColor Green; dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Catalog Service (Port 5057)...' -ForegroundColor Green; dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting API Gateway (Port 5000)...' -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/"
 
 Write-Host "✨ All services launched successfully!" -ForegroundColor Green
 Write-Host "  - API Gateway:  http://localhost:5000" -ForegroundColor Cyan
