@@ -1,41 +1,60 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Load .env file at startup if it exists (searching upward recursively)
+var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+string? dotenv = null;
+while (directory != null)
+{
+    var path = Path.Combine(directory.FullName, ".env");
+    if (File.Exists(path))
+    {
+        dotenv = path;
+        break;
+    }
+    directory = directory.Parent;
+}
+
+if (!string.IsNullOrEmpty(dotenv))
+{
+    foreach (var line in File.ReadAllLines(dotenv))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+        {
+            continue;
+        }
+
+        var parts = trimmed.Split('=', 2);
+        if (parts.Length == 2)
+        {
+            var key = parts[0].Trim();
+            var value = parts[1].Trim();
+            Environment.SetEnvironmentVariable(key, value);
+        }
+    }
+}
+
+// Override Configurations from Environment Variables for Catalog Database (Port 5433)
+var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
+var dbName = Environment.GetEnvironmentVariable("CATALOG_DB_NAME") ?? "ecommerce_catalog_db";
+var dbPort = Environment.GetEnvironmentVariable("CATALOG_DB_PORT") ?? "5433";
+
+builder.Configuration["ConnectionStrings:DefaultConnection"] =
+    $"Host=localhost;Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
+
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+app.MapControllers();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+app.Run("http://localhost:5057");

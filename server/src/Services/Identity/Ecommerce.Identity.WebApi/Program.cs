@@ -21,7 +21,13 @@ if (!string.IsNullOrEmpty(dotenv))
 {
     foreach (var line in File.ReadAllLines(dotenv))
     {
-        var parts = line.Split('=', 2);
+        var trimmed = line.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+        {
+            continue;
+        }
+
+        var parts = trimmed.Split('=', 2);
         if (parts.Length == 2)
         {
             var key = parts[0].Trim();
@@ -38,14 +44,13 @@ if (!string.IsNullOrEmpty(envJwtSecret))
     builder.Configuration["JwtSettings:Secret"] = envJwtSecret;
 }
 
-var dbUser = Environment.GetEnvironmentVariable("DB_USER");
-var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
-var dbName = Environment.GetEnvironmentVariable("DB_NAME");
-if (!string.IsNullOrEmpty(dbUser) && !string.IsNullOrEmpty(dbPassword) && !string.IsNullOrEmpty(dbName))
-{
-    builder.Configuration["ConnectionStrings:DefaultConnection"] =
-        $"Host=localhost;Database={dbName};Username={dbUser};Password={dbPassword};Port=5432";
-}
+var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
+var dbName = Environment.GetEnvironmentVariable("IDENTITY_DB_NAME") ?? "ecommerce_identity_db";
+var dbPort = Environment.GetEnvironmentVariable("IDENTITY_DB_PORT") ?? "5432";
+
+builder.Configuration["ConnectionStrings:DefaultConnection"] =
+    $"Host=localhost;Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
 
 // Add services to the container.
 builder.Services.AddOpenApi();
