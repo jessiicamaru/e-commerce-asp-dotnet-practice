@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Load .env file at startup if it exists (searching upward recursively)
@@ -46,6 +48,7 @@ builder.Configuration["ConnectionStrings:DefaultConnection"] =
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
