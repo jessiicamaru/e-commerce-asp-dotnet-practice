@@ -30,6 +30,44 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(
+        int pageNumber,
+        int pageSize,
+        Guid? categoryId,
+        string? searchTerm,
+        string? sortBy,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Products.Include(p => p.Category).AsQueryable();
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim().ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(term) || p.Sku.ToLower().Contains(term));
+        }
+
+        query = sortBy?.ToLower() switch
+        {
+            "price_asc" => query.OrderBy(p => p.Price),
+            "price_desc" => query.OrderByDescending(p => p.Price),
+            "name_desc" => query.OrderByDescending(p => p.Name),
+            _ => query.OrderBy(p => p.Name)
+        };
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         await _context.Products.AddAsync(product, cancellationToken);
