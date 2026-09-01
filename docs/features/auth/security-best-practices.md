@@ -62,7 +62,7 @@ For a secure balance between convenience and high security, follow this hybrid a
 We keep `AuthResponse` containing both tokens in the Application layer, but we filter out `RefreshToken` at the Controller layer.
 
 ### 3.2 Step 2: Setting the HttpOnly Cookie in the Controller
-In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Controllers/AuthController.cs), we intercept the Command result, extract the Refresh Token, set it as a cookie, and return only the `AuthResponse` details with `RefreshToken` cleared.
+In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we intercept the Command result, extract the Refresh Token, set it as a cookie, and return only the `AuthResponse` details with `RefreshToken` cleared.
 
 ```csharp
 using Ecommerce.Application.Auth.Commands.Login;

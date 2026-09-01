@@ -96,9 +96,44 @@ Used for fast, low-latency, strongly-typed internal service-to-service queries w
 
 ---
 
-## 4. Key Challenges & Patterns to Implement
+## 4. API Gateway Configuration (YARP)
+
+We use Microsoft's official **YARP (Yet Another Reverse Proxy)** library running in [`Ecommerce.ApiGateway`](file:///d:/Code/CSharp/e-commerce/server/src/ApiGateway/Ecommerce.ApiGateway/) on **Port `5000`**.
+
+### Route Mappings in `appsettings.json`
+
+```json
+  "ReverseProxy": {
+    "Routes": {
+      "identity-route": {
+        "ClusterId": "identity-cluster",
+        "Match": { "Path": "/api/auth/{**catch-all}" }
+      },
+      "catalog-categories-route": {
+        "ClusterId": "catalog-cluster",
+        "Match": { "Path": "/api/categories/{**catch-all}" }
+      },
+      "catalog-products-route": {
+        "ClusterId": "catalog-cluster",
+        "Match": { "Path": "/api/products/{**catch-all}" }
+      }
+    },
+    "Clusters": {
+      "identity-cluster": {
+        "Destinations": { "destination1": { "Address": "http://localhost:5056/" } }
+      },
+      "catalog-cluster": {
+        "Destinations": { "destination1": { "Address": "http://localhost:5057/" } }
+      }
+    }
+  }
+```
+
+---
+
+## 5. Key Challenges & Patterns to Implement
 
 When transitioning to Microservices, you will need to implement:
 1. **Saga Pattern (Orchestration/Choreography)**: To manage distributed transactions across multiple databases (e.g. if payment fails, roll back inventory reservation).
-2. **API Gateway (YARP - Yet Another Reverse Proxy)**: A single .NET gateway proxying requests from the browser to the individual microservices, handling routing and CORS.
-3. **Outbox Pattern**: To guarantee that database updates and RabbitMQ event publishing happen atomically in a single transaction (preventing situations where a database write succeeds but event publishing fails).
+2. **API Gateway (YARP - Yet Another Reverse Proxy)**: A single .NET gateway proxying requests from the browser to the individual microservices on port `5000`.
+3. **Outbox Pattern**: To guarantee that database updates and RabbitMQ event publishing happen atomically in a single transaction.

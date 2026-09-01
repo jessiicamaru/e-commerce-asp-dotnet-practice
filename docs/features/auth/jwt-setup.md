@@ -22,7 +22,7 @@ We use specific NuGet packages in different projects to handle password hashing 
 ## 2. Configuration Settings
 
 ### Step 2.1: Add JWT Options in `appsettings.json`
-Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/appsettings.json):
+Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/appsettings.json):
 
 ```json
   "JwtSettings": {
@@ -41,7 +41,7 @@ Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/
 ### Step 3.1: Register JWT Authentication in `Program.cs`
 To enforce token validation on protected endpoints, add the Authentication and JwtBearer services to your Web API container:
 
-Open [`Program.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Program.cs):
+Open [`Program.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Program.cs):
 
 ```csharp
 using System.Text;

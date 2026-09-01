@@ -122,29 +122,29 @@ CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
 
 For the ASP.NET Core backend, the files will be structured as follows:
 
-### 1. Domain Layer (`Ecommerce.Domain`)
+### 1. Domain Layer (`Ecommerce.Identity.Domain`)
 Define the core model entities. They should be clean C# classes without EF Core annotations.
-- `src/Ecommerce.Domain/Entities/User.cs`
-- `src/Ecommerce.Domain/Entities/Role.cs`
-- `src/Ecommerce.Domain/Entities/RefreshToken.cs`
+- `src/Services/Identity/Ecommerce.Identity.Domain/Entities/User.cs`
+- `src/Services/Identity/Ecommerce.Identity.Domain/Entities/Role.cs`
+- `src/Services/Identity/Ecommerce.Identity.Domain/Entities/RefreshToken.cs`
 
-### 2. Application Layer (`Ecommerce.Application`)
+### 2. Application Layer (`Ecommerce.Identity.Application`)
 Contains CQRS Handlers, DTOs, and Interfaces.
-- `src/Ecommerce.Application/Common/Interfaces/IUserRepository.cs` - Repository interface.
-- `src/Ecommerce.Application/Common/Interfaces/IJwtTokenGenerator.cs` - Interface to generate JWTs.
-- `src/Ecommerce.Application/Auth/Commands/Register/RegisterUserCommand.cs` - Command to register a user.
-- `src/Ecommerce.Application/Auth/Commands/Login/LoginUserCommand.cs` - Command to login and generate tokens.
+- `src/Services/Identity/Ecommerce.Identity.Application/Common/Interfaces/IUserRepository.cs` - Repository interface.
+- `src/Services/Identity/Ecommerce.Identity.Application/Common/Interfaces/IJwtTokenGenerator.cs` - Interface to generate JWTs.
+- `src/Services/Identity/Ecommerce.Identity.Application/Auth/Commands/Register/RegisterCommand.cs` - Command to register a user.
+- `src/Services/Identity/Ecommerce.Identity.Application/Auth/Commands/Login/LoginCommand.cs` - Command to login and generate tokens.
 
-### 3. Infrastructure Layer (`Ecommerce.Infrastructure`)
+### 3. Infrastructure Layer (`Ecommerce.Identity.Infrastructure`)
 Contains EF Core configurations and external services.
-- `src/Ecommerce.Infrastructure/Persistence/ApplicationDbContext.cs`
-- `src/Ecommerce.Infrastructure/Persistence/Configurations/UserConfiguration.cs` - EF Core fluent API mapping.
-- `src/Ecommerce.Infrastructure/Persistence/Repositories/UserRepository.cs`
-- `src/Ecommerce.Infrastructure/Services/JwtTokenGenerator.cs` - Implementation of JWT.
+- `src/Services/Identity/Ecommerce.Identity.Infrastructure/Persistence/ApplicationDbContext.cs`
+- `src/Services/Identity/Ecommerce.Identity.Infrastructure/Configurations/UserConfigurations.cs` - EF Core fluent API mapping.
+- `src/Services/Identity/Ecommerce.Identity.Infrastructure/Persistence/Repositories/UserRepository.cs`
+- `src/Services/Identity/Ecommerce.Identity.Infrastructure/Security/JwtTokenGenerator.cs` - Implementation of JWT.
 
-### 4. WebApi Layer (`Ecommerce.WebApi`)
+### 4. WebApi Layer (`Ecommerce.Identity.WebApi`)
 Exposes REST endpoints.
-- `src/Ecommerce.WebApi/Controllers/AuthController.cs` - Registration & Login controllers.
+- `src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs` - Registration & Login controllers.
 
 ---
 

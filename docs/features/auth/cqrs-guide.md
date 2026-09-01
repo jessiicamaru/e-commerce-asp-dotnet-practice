@@ -39,10 +39,10 @@ This guide explains how to implement the User Authentication (Registration & Log
 
 ## 2. Directory Structure
 
-Inside the `Ecommerce.Application` project, we structure our authentication use cases as follows:
+Inside the `Ecommerce.Identity.Application` project, we structure our authentication use cases as follows:
 
 ```text
-Ecommerce.Application/
+src/Services/Identity/Ecommerce.Identity.Application/
 └── Auth/
     ├── Common/
     │   └── AuthResponse.cs            # Shared DTO returned on login/register success
@@ -61,11 +61,11 @@ Ecommerce.Application/
 
 ### 3.1 Step 1: Install NuGet Packages
 To configure MediatR, we install these packages:
-- **`MediatR`** (installed in `Ecommerce.Application` project).
-- **`Microsoft.Extensions.DependencyInjection.Abstractions`** (installed in `Ecommerce.Application` project to create the DI extension method).
+- **`MediatR`** (installed in `Ecommerce.Identity.Application` project).
+- **`Microsoft.Extensions.DependencyInjection.Abstractions`** (installed in `Ecommerce.Identity.Application` project to create the DI extension method).
 
 ### 3.2 Step 2: Register MediatR in Application Layer
-We define an extension method inside [`DependencyInjection.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.Application/DependencyInjection.cs) in the Application project:
+We define an extension method inside [`DependencyInjection.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.Application/DependencyInjection.cs) in the Application project:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -85,7 +85,7 @@ public static class DependencyInjection
 }
 ```
 
-Then register it in WebApi's [`Program.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Program.cs):
+Then register it in WebApi's [`Program.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Program.cs):
 ```csharp
 using Ecommerce.Application; // Import namespace
 
