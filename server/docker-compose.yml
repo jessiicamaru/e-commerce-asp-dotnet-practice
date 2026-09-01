@@ -1,15 +1,28 @@
 services:
-  postgres:
+  postgres-identity:
     image: postgres:16-alpine
-    container_name: e-commerce-db
+    container_name: ecommerce-identity-db
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_DB=ecommerce_identity_db
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_identity_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  postgres-catalog:
+    image: postgres:16-alpine
+    container_name: ecommerce-catalog-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_catalog_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_catalog_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   pgadmin:
@@ -21,7 +34,8 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - postgres
+      - postgres-identity
+      - postgres-catalog
     restart: unless-stopped
 
   rabbitmq:
@@ -38,5 +52,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  postgres_identity_data:
+  postgres_catalog_data:
   rabbitmq_data:

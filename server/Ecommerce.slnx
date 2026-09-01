@@ -1,8 +1,17 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Ecommerce.Application/Ecommerce.Application.csproj" />
-    <Project Path="src/Ecommerce.Domain/Ecommerce.Domain.csproj" />
-    <Project Path="src/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj" />
-    <Project Path="src/Ecommerce.WebApi/Ecommerce.WebApi.csproj" />
+  <Folder Name="/src/ApiGateway/">
+    <Project Path="src/ApiGateway/Ecommerce.ApiGateway/Ecommerce.ApiGateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Catalog/">
+    <Project Path="src/Services/Catalog/Ecommerce.Catalog.Application/Ecommerce.Catalog.Application.csproj" />
+    <Project Path="src/Services/Catalog/Ecommerce.Catalog.Domain/Ecommerce.Catalog.Domain.csproj" />
+    <Project Path="src/Services/Catalog/Ecommerce.Catalog.Infrastructure/Ecommerce.Catalog.Infrastructure.csproj" />
+    <Project Path="src/Services/Catalog/Ecommerce.Catalog.WebApi/Ecommerce.Catalog.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Identity/">
+    <Project Path="src/Services/Identity/Ecommerce.Identity.Application/Ecommerce.Identity.Application.csproj" />
+    <Project Path="src/Services/Identity/Ecommerce.Identity.Domain/Ecommerce.Identity.Domain.csproj" />
+    <Project Path="src/Services/Identity/Ecommerce.Identity.Infrastructure/Ecommerce.Identity.Infrastructure.csproj" />
+    <Project Path="src/Services/Identity/Ecommerce.Identity.WebApi/Ecommerce.Identity.WebApi.csproj" />
   </Folder>
 </Solution>
