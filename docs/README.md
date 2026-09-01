@@ -22,3 +22,32 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 
 ### 🛠️ Developer Guides
 * [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, directory mapping, and EF Core concurrency exceptions.
+
+---
+
+## 🚀 Quick Start (Automated One-Click Startup)
+
+Navigate to the `server/` directory:
+
+### Option A: PowerShell (Windows)
+```powershell
+./start-dev.ps1
+```
+
+### Option B: Git Bash / Linux
+```bash
+./start-dev.sh
+```
+
+---
+
+## 🌐 Active Service Ports & Endpoints
+
+| Service Name | Port | Base URL / Dashboard |
+| :--- | :--- | :--- |
+| **API Gateway (YARP)** | `5000` | `http://localhost:5000` |
+| **Identity Service** | `5056` | `http://localhost:5056` |
+| **Catalog Service** | `5057` | `http://localhost:5057` |
+| **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`admin@admin.com` / `admin`) |
+| **RabbitMQ Management** | `15672` | `http://localhost:15672` (`guest` / `guest`) |
+
