@@ -9,6 +9,7 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 ### 🏛️ Architecture & Roadmap
 * [**Roadmap & Overview**](./architecture/architecture-overview.md): High-level system modules, technology stack, and iterative development phases.
 * [**Microservices Design**](./architecture/microservices-design.md): Brainstorming architecture, boundaries, and communication patterns for other modules.
+* [**ADR-001: Primary Key Strategy (UUID v7 vs Auto-Increment)**](./architecture/adr-001-uuidv7-primary-keys.md): Architecture Decision Record comparing UUID v4, Auto-Increment IDs, and sequential UUID v7.
 
 ### 🔌 Infrastructure & Docker
 * [**Database Setup**](./infrastructure/database-setup.md): Guide on running local PostgreSQL and pgAdmin containers, and working with EF Core migrations.
