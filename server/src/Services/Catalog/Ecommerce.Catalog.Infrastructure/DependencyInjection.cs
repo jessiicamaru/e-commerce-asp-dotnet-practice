@@ -1,4 +1,6 @@
+using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Infrastructure.Persistence;
+using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +13,8 @@ public static class DependencyInjection
     {
         services.AddDbContext<CatalogDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
 
         return services;
     }

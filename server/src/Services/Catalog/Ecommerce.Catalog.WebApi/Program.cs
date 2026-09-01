@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,6 +49,7 @@ builder.Configuration["ConnectionStrings:DefaultConnection"] =
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
