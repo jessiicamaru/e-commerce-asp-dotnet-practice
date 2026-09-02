@@ -7,7 +7,7 @@ echo "🚀 Starting E-Commerce Microservices Infrastructure..."
 export MSYS_NO_PATHCONV=1
 
 # 1. Start Docker Containers
-echo "📦 Starting Docker containers (PostgreSQL Identity, PostgreSQL Catalog, RabbitMQ, pgAdmin)..."
+echo "📦 Starting Docker containers (Identity DB, Catalog DB, Orchestrator DB, RabbitMQ, pgAdmin)..."
 docker compose up -d
 
 # 2. Apply EF Core Migrations
