@@ -1,6 +1,7 @@
 using Ecommerce.Application;
 using Ecommerce.Infrastructure;
 using Ecommerce.Infrastructure.Persistence;
+using Ecommerce.Shared.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,10 +62,15 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ApplicationDbContext>(name: "identity_postgres_db");
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

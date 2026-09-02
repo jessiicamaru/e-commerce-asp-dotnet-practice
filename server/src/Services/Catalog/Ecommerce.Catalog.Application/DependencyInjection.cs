@@ -1,4 +1,4 @@
-using Ecommerce.Catalog.Application.Common.Behaviors;
+using Ecommerce.Shared.Behaviors;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;

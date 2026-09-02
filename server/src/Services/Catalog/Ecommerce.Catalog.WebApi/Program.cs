@@ -1,7 +1,7 @@
 using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Infrastructure;
 using Ecommerce.Catalog.Infrastructure.Persistence;
-using Ecommerce.Catalog.WebApi.Middlewares;
+using Ecommerce.Shared.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
