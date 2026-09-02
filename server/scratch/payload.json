@@ -1,0 +1,8 @@
+{
+  "name": "Test Outbox Product 99",
+  "description": "Testing MassTransit Outbox event",
+  "price": 999.99,
+  "stockQuantity": 20,
+  "sku": "TEST-SKU-999",
+  "categoryId": "01a06300-90d1-7952-9945-47f3aaa6078b"
+}
