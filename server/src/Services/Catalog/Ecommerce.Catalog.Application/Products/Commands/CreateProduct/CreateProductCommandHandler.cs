@@ -45,9 +45,8 @@ public class CreateProductCommandHandler(
         };
 
         await _productRepository.AddAsync(product, cancellationToken);
-        await _productRepository.SaveChangesAsync(cancellationToken);
 
-        // Publish Domain Event via MassTransit Outbox
+        // Publish Domain Event via MassTransit Outbox (staged in DbContext ChangeTracker)
         await _publishEndpoint.Publish(new ProductCreatedEvent(
             product.Id,
             product.Name,
@@ -56,6 +55,9 @@ public class CreateProductCommandHandler(
             product.CategoryId,
             DateTime.UtcNow
         ), cancellationToken);
+
+        // Save BOTH Product entity and OutboxMessage in 1 single atomic DB transaction
+        await _productRepository.SaveChangesAsync(cancellationToken);
 
         return new ProductResponse(
             product.Id,
