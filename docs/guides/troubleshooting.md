@@ -140,7 +140,40 @@ public class RefreshToken
 
 ---
 
-## 5. General Diagnosis Checklist
+## 5. MediatR / MassTransit Version Mismatch & Commercial License Prompt
+
+### Symptoms
+During runtime API invocation (such as `POST /api/categories`) or service startup:
+1. `System.MissingMethodException: Method not found: 'System.Threading.Tasks.Task`1<System.__Canon> MediatR.RequestHandlerDelegate`1.Invoke()'` inside `ValidationBehavior`.
+2. Warning from `LuckyPennySoftware.MediatR.License`: *"You do not have a valid license key for the Lucky Penny software MediatR."*
+3. `MassTransit.ConfigurationException`: *"License must be specified with SetLicense/SetLicenseLocation"*.
+
+### Diagnosis
+1. **Commercial License Forks**: Recent releases of MediatR (`14.x`) and MassTransit (`9.x`) introduced commercial/community license checks or forks (`LuckyPennySoftware`), breaking open-source expectations.
+2. **Runtime Delegate Mismatch**: If a shared building block (`Ecommerce.Shared`) was compiled against official open-source MediatR `12.4.1`, while an application project (`Ecommerce.Catalog.Application`) transitively imported MediatR `14.x`, the signature of `RequestHandlerDelegate<TResponse>` differs between assemblies. When `ValidationBehavior` attempts to call `next()`, the runtime throws `MissingMethodException`.
+
+### Solution
+Standardize all projects across the monorepo on the official, 100% free open-source LTS versions:
+
+1. **MediatR**: Standardize on **`12.4.1`** (Official MIT open-source release by Jimmy Bogard).
+2. **MassTransit**: Standardize on **`8.3.6`** (Official Apache 2.0 open-source LTS release).
+
+Run the following commands across affected projects:
+```bash
+# Standardize MediatR to 12.4.1
+dotnet add src/BuildingBlocks/Ecommerce.Shared/ package MediatR --version 12.4.1
+dotnet add src/Services/Catalog/Ecommerce.Catalog.Application/ package MediatR --version 12.4.1
+dotnet add src/Services/Identity/Ecommerce.Identity.Application/ package MediatR --version 12.4.1
+
+# Standardize MassTransit to 8.3.6
+dotnet add src/Services/Catalog/Ecommerce.Catalog.Application/ package MassTransit.Abstractions --version 8.3.6
+dotnet add src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ package MassTransit.EntityFrameworkCore --version 8.3.6
+dotnet add src/Services/Catalog/Ecommerce.Catalog.WebApi/ package MassTransit.RabbitMQ --version 8.3.6
+```
+
+---
+
+## 6. General Diagnosis Checklist
 
 If your IDE reports red errors but your code looks correct:
 
