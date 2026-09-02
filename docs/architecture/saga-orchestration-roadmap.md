@@ -65,16 +65,16 @@ We adopt **Saga Orchestration** by building a dedicated, standalone microservice
 
 ```mermaid
 graph TD
-    Client[Web/Mobile Client] --> Gateway[API Gateway - Port 5000]
-    Gateway --> OrderService[Ordering Service - Port 5060]
+    Client["Web/Mobile Client"] --> Gateway["API Gateway - Port 5000"]
+    Gateway --> OrderService["Ordering Service - Port 5060"]
     
-    OrderService -->|1. Submit Order Event| RabbitMQ[RabbitMQ Broker - Port 5672]
-    RabbitMQ -->|2. Event Received| Orchestrator[Standalone Saga Orchestrator - Port 5058]
+    OrderService -->|1. Submit Order Event| RabbitMQ["RabbitMQ Broker - Port 5672"]
+    RabbitMQ -->|2. Event Received| Orchestrator["Standalone Saga Orchestrator - Port 5058"]
     
-    Orchestrator -->|State Persistence| SagaDB[(Saga DB - Port 5436)]
+    Orchestrator -->|State Persistence| SagaDB[("Saga DB - Port 5436")]
     
-    Orchestrator -->|3. Send Command: ReserveStock| InventoryService[Inventory Service - Port 5059]
-    Orchestrator -->|4. Send Command: ProcessPayment| PaymentService[Payment Service]
+    Orchestrator -->|3. Send Command: ReserveStock| InventoryService["Inventory Service - Port 5059"]
+    Orchestrator -->|4. Send Command: ProcessPayment| PaymentService["Payment Service"]
     
     InventoryService -->|Reply: StockReserved| RabbitMQ
     PaymentService -->|Reply: PaymentFailed| RabbitMQ

@@ -25,17 +25,17 @@ The **Transactional Outbox Pattern** eliminates the Dual-Write Problem by execut
 
 ```mermaid
 graph TD
-    subgraph Microservice DB [PostgreSQL Database]
-        EntityTable[(Business Entity Table)]
-        OutboxTable[(outbox_messages Table)]
+    subgraph MicroserviceDB ["PostgreSQL Database"]
+        EntityTable[("Business Entity Table")]
+        OutboxTable[("outbox_messages Table")]
     end
 
-    Handler[Application Handler] -->|1. Single Local Transaction| EntityTable
+    Handler["Application Handler"] -->|1. Single Local Transaction| EntityTable
     Handler -->|1. Single Local Transaction| OutboxTable
 
-    OutboxWorker[MassTransit Outbox Worker] -->|2. Poll Unprocessed Messages| OutboxTable
-    OutboxWorker -->|3. Guaranteed At-Least-Once Publish| RabbitMQ[RabbitMQ Broker]
-    RabbitMQ -->> OutboxWorker: 4. Publisher ACK
+    OutboxWorker["MassTransit Outbox Worker"] -->|2. Poll Unprocessed Messages| OutboxTable
+    OutboxWorker -->|3. Guaranteed At-Least-Once Publish| RabbitMQ["RabbitMQ Broker"]
+    RabbitMQ -->|4. Publisher ACK| OutboxWorker
     OutboxWorker -->|5. Mark Processed| OutboxTable
 ```
 
@@ -90,19 +90,19 @@ When processing distributed transactions across multiple microservices, errors a
 
 ```mermaid
 graph TD
-    Error[Network Flake / Service Outage] --> Level1{1. MassTransit Retry Policy}
+    Error["Network Flake / Service Outage"] --> Level1{"1. MassTransit Retry Policy"}
     
-    Level1 -->|Exponential Backoff: Retry 3x| Recovered[Transient Error Resolved]
-    Level1 -->|Exhausted Retries| Level2{2. Circuit Breaker}
+    Level1 -->|Exponential Backoff: Retry 3x| Recovered["Transient Error Resolved"]
+    Level1 -->|Exhausted Retries| Level2{"2. Circuit Breaker"}
     
-    Level2 -->|Isolate Failing Service for 30s| Level3{3. Dead Letter Queue - DLQ}
+    Level2 -->|Isolate Failing Service for 30s| Level3{"3. Dead Letter Queue - DLQ"}
     
-    Level3 -->|Poison Message| DLQStorage[Stored in error-queue for Dev Audit]
-    Level3 -->|Unrecoverable Business Failure| Level4[4. Trigger Saga Compensation]
+    Level3 -->|Poison Message| DLQStorage["Stored in error-queue for Dev Audit"]
+    Level3 -->|Unrecoverable Business Failure| Level4["4. Trigger Saga Compensation"]
     
-    Level4 --> Comp1[Send CompensateInventoryCommand -> Release Stock]
-    Level4 --> Comp2[Send CancelOrderCommand -> Mark Order Cancelled]
-    Level4 --> Comp3[Send RefundPaymentCommand -> Initiate Customer Refund]
+    Level4 --> Comp1["Send CompensateInventoryCommand -> Release Stock"]
+    Level4 --> Comp2["Send CancelOrderCommand -> Mark Order Cancelled"]
+    Level4 --> Comp3["Send RefundPaymentCommand -> Initiate Customer Refund"]
 ```
 
 ### 5.1 Retry Policy (Transient Errors)
