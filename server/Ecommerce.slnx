@@ -20,4 +20,7 @@
     <Project Path="src/Services/Identity/Ecommerce.Identity.Infrastructure/Ecommerce.Identity.Infrastructure.csproj" />
     <Project Path="src/Services/Identity/Ecommerce.Identity.WebApi/Ecommerce.Identity.WebApi.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Orchestrator/">
+    <Project Path="src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/Ecommerce.Orchestrator.WebApi.csproj" />
+  </Folder>
 </Solution>

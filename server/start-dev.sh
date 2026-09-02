@@ -17,22 +17,28 @@ dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Inf
 echo "🔄 Applying EF Core Migrations for Catalog DB (Port 5433)..."
 dotnet ef database update --project src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ --startup-project src/Services/Catalog/Ecommerce.Catalog.WebApi/
 
+echo "🔄 Applying EF Core Migrations for Orchestrator DB (Port 5436)..."
+dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
+
 # 3. Launch Microservices in Separate Windows
 echo "🌐 Launching Microservices and API Gateway..."
 
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Identity Service (Port 5056)\" -ForegroundColor Green; dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Catalog Service (Port 5057)\" -ForegroundColor Green; dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Orchestrator Service (Port 5058)\" -ForegroundColor Green; dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"API Gateway (Port 5000)\" -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/'"
 else
     dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/ &
     dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/ &
+    dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ &
     dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/ &
 fi
 
-echo "✨ All 3 services launched successfully in separate windows!"
-echo "  - API Gateway:  http://localhost:5000"
-echo "  - Identity API: http://localhost:5056"
-echo "  - Catalog API:  http://localhost:5057"
-echo "  - pgAdmin:      http://localhost:5050"
-echo "  - RabbitMQ UI:  http://localhost:15672"
+echo "✨ All 4 services launched successfully in separate windows!"
+echo "  - API Gateway:      http://localhost:5000"
+echo "  - Identity API:     http://localhost:5056"
+echo "  - Catalog API:      http://localhost:5057"
+echo "  - Orchestrator API: http://localhost:5058"
+echo "  - pgAdmin:          http://localhost:5050"
+echo "  - RabbitMQ UI:      http://localhost:15672"
