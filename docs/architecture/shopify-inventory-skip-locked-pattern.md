@@ -96,7 +96,55 @@ public async Task<Guid> ReserveInventoryUnitAsync(Guid productId, Guid orderId, 
 
 ---
 
-## 4. Architectural Strategy Comparison
+## 4. Dynamic Replenishment & TTL Hold Expiration Mechanics
+
+### 4.1 Dynamic Pool Replenishment (`ReplenishmentWorker`)
+To prevent buyers from being falsely blocked when unallocated physical stock exists in the master ledger (e.g., Physical Stock = 2,000, but Pool Capacity = 1,000):
+
+1. **Threshold Monitoring**: A background worker (`ReplenishmentWorker`) monitors the count of `AVAILABLE` rows per product in `inventory_units`.
+2. **Auto-Replenishment**: When `AVAILABLE` units drop below a low threshold (e.g., `< 200`), the worker inspects the master ledger (`product_inventory_ledger`). If unallocated stock remains, it inserts new `AVAILABLE` unit rows into `inventory_units`.
+3. **Zero Wait Time for Request #1,001**: Buyer #1,001 claims the newly replenished unit row instantly via `FOR UPDATE SKIP LOCKED` without waiting for earlier reservations to expire!
+
+```mermaid
+sequenceDiagram
+    participant Ledger as Master Inventory Ledger (Stock: 2000)
+    participant Pool as Bounded Unit Pool (inventory_units)
+    participant Worker as Replenishment Worker
+    participant Buyer as Buyer #1,001
+
+    Worker->>Pool: 1. Detect AVAILABLE count < 200 (Pool exhausted by 1,000 buyers)
+    Worker->>Ledger: 2. Query unallocated stock (1,000 remaining)
+    Worker->>Pool: 3. INSERT 1,000 new AVAILABLE unit rows into Pool
+    Buyer->>Pool: 4. FOR UPDATE SKIP LOCKED claims Unit #1,001 (SUCCEEDS INSTANTLY)
+```
+
+---
+
+### 4.2 TTL Hold Expiration & Active Compensation
+
+Every reservation on hold requires a **Time-To-Live (TTL)** (e.g., 10 minutes). Unclaimed units are returned to `AVAILABLE` status via two complementary mechanisms:
+
+#### Mechanism A: Active Compensation (Saga Command)
+When a buyer clicks "Cancel Order" or credit card payment fails, `Ecommerce.Orchestrator` issues a `ReleaseInventoryCommand(UnitId)`. The handler immediately executes:
+
+```sql
+UPDATE inventory_units 
+SET status = 'AVAILABLE', reserved_at = NULL, reserved_by_order_id = NULL 
+WHERE id = @UnitId;
+```
+
+#### Mechanism B: Passive Expiration (Sweeper Worker)
+If a buyer abandons their checkout (closes browser tab without clicking Cancel), an `ExpiredReservationSweeperWorker` runs periodically (e.g., every 1 minute) executing a single optimized query:
+
+```sql
+UPDATE inventory_units 
+SET status = 'AVAILABLE', reserved_at = NULL, reserved_by_order_id = NULL 
+WHERE status = 'RESERVED' AND reserved_at < NOW() - INTERVAL '10 minutes';
+```
+
+---
+
+## 5. Architectural Strategy Comparison
 
 | Metric / Strategy | Aggregated Counter Lock (`SELECT FOR UPDATE`) | Distributed Redis Lock | **PostgreSQL `SKIP LOCKED` Unit Pool (Chosen)** |
 | :--- | :--- | :--- | :--- |
