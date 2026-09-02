@@ -2,6 +2,7 @@ using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Infrastructure;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Shared.Middlewares;
+using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,6 +55,30 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
+    {
+        o.UsePostgres();
+        o.UseBusOutbox();
+    });
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+        var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
+
+        cfg.Host(rabbitHost, "/", h =>
+        {
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

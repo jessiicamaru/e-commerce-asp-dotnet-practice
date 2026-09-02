@@ -20,6 +20,7 @@
     <ProjectReference Include="..\Ecommerce.Identity.Application\Ecommerce.Identity.Application.csproj" />
     <ProjectReference Include="..\Ecommerce.Identity.Infrastructure\Ecommerce.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Shared\Ecommerce.Shared.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Contracts\Ecommerce.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

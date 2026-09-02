@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Domain.Entities;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Catalog.Infrastructure.Persistence;
@@ -17,5 +18,7 @@ public class CatalogDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogDbContext).Assembly);
+
+        modelBuilder.AddTransactionalOutboxEntities();
     }
 }

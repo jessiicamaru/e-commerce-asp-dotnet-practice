@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit.EntityFrameworkCore" Version="9.2.1" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="9.2.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -19,6 +21,7 @@
     <ProjectReference Include="..\Ecommerce.Catalog.Application\Ecommerce.Catalog.Application.csproj" />
     <ProjectReference Include="..\Ecommerce.Catalog.Infrastructure\Ecommerce.Catalog.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Shared\Ecommerce.Shared.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Contracts\Ecommerce.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

@@ -25,6 +25,19 @@ services:
       - postgres_catalog_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  postgres-orchestrator:
+    image: postgres:16-alpine
+    container_name: ecommerce-orchestrator-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_saga_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_orchestrator_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: e-commerce-pgadmin
@@ -36,6 +49,7 @@ services:
     depends_on:
       - postgres-identity
       - postgres-catalog
+      - postgres-orchestrator
     restart: unless-stopped
 
   rabbitmq:
@@ -54,4 +68,5 @@ services:
 volumes:
   postgres_identity_data:
   postgres_catalog_data:
+  postgres_orchestrator_data:
   rabbitmq_data:
