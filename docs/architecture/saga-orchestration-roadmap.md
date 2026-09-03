@@ -111,7 +111,7 @@ graph TD
 
 ---
 
-### 🟢 Phase 1: Global Cross-Cutting Error Handling & Validation (Current)
+### 🟢 Phase 1: Global Cross-Cutting Error Handling & Validation (Completed)
 * **Goal**: Standardize exception handling and DTO validation across all microservices.
 * **Deliverables**:
   1. **FluentValidation + MediatR Pipeline Behavior (`ValidationBehavior`)**: Intercepts requests and validates rules prior to handler execution.
@@ -121,37 +121,37 @@ graph TD
 
 ---
 
-### 🟡 Phase 2: Event Bus Infrastructure (RabbitMQ + MassTransit)
-* **Goal**: Integrate asynchronous message bus into existing microservices.
+### 🟢 Phase 2: Event Bus Infrastructure & Transactional Outbox (Completed)
+* **Goal**: Integrate asynchronous message bus and Outbox pattern into microservices.
 * **Deliverables**:
-  1. Install `MassTransit.RabbitMQ` in `Identity` and `Catalog` projects.
-  2. Configure MassTransit bus registration in `DependencyInjection.cs`.
-  3. Implement domain event publishing (e.g., `ProductCreatedEvent`).
+  1. Standardized `MassTransit.RabbitMQ` and `MassTransit.EntityFrameworkCore` across projects.
+  2. Configured MassTransit transactional outbox (`AddTransactionalOutboxEntities()`, `o.UsePostgres()`, `o.UseBusOutbox()`) in `CatalogDbContext` and `IdentityDbContext`.
+  3. Implemented domain event contracts in `Ecommerce.Contracts` (e.g., `ProductCreatedEvent`, `UserRegisteredEvent`).
 
 ---
 
-### 🔵 Phase 3: Ordering & Inventory Microservices Scaffold
-* **Goal**: Build operational services involved in distributed checkout transactions.
-* **Deliverables**:
-  1. **Inventory Microservice (`Ecommerce.Inventory`)**: Port `5059`, DB `ecommerce_inventory_db` (Port `5435`).
-  2. **Ordering Microservice (`Ecommerce.Order`)**: Port `5060`, DB `ecommerce_order_db` (Port `5434`).
-  3. Add YARP API Gateway routes for `/api/orders/*` and `/api/inventory/*`.
-
----
-
-### 🟣 Phase 4: Standalone Saga Orchestrator Microservice (`Ecommerce.Orchestrator`)
+### 🟢 Phase 3: Standalone Saga Orchestrator Microservice (`Ecommerce.Orchestrator`) (Completed)
 * **Goal**: Implement the central Saga Orchestrator Service.
 * **Deliverables**:
-  1. Create `server/src/Services/Orchestrator/Ecommerce.Orchestrator` (Port `5058`, DB `ecommerce_saga_db` on Port `5436`).
-  2. Implement **MassTransit State Machine Saga (`OrderStateMachine`)**:
-     * State transition: `Submitted` $\rightarrow$ `StockReserved` $\rightarrow$ `PaymentProcessed` $\rightarrow$ `Completed`.
-     * Compensation flows for payment or stock failures.
+  1. Created `server/src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi` (Port `5058`, DB `ecommerce_saga_db` on Port `5436`).
+  2. Implemented **MassTransit State Machine Saga (`OrderStateMachine`)**:
+     * Happy Path: `Submitted` $\rightarrow$ `ReserveInventoryCommand` $\rightarrow$ `InventoryReserved` $\rightarrow$ `ProcessPaymentCommand` $\rightarrow$ `PaymentProcessed` $\rightarrow$ `OrderCompleted`.
+     * Compensation flows: Executing `ReleaseInventoryCommand` on payment failure.
 
 ---
 
-### 🔴 Phase 5: Observability, Centralized Audit Logging (Seq) & E2E Verification
+### 🟢 Phase 4: Ordering Microservice (`Ecommerce.Order`) & Submit Order Flow (Completed)
+* **Goal**: Build operational Order service and API endpoint to initiate checkout.
+* **Deliverables**:
+  1. **Ordering Microservice (`Ecommerce.Order`)**: Port `5059`, DB `ecommerce_order_db` (Port `5434`).
+  2. Implemented `SubmitOrderCommand` API via Transactional Outbox pattern.
+  3. Added YARP API Gateway route `/api/orders/{**catch-all}` mapping to Port `5059`.
+
+---
+
+### 🟡 Phase 5: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
   1. Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
-  2. Stream structured Serilog JSON logs & Correlation IDs from all services to Seq.
-  3. Validate full checkout flow from YARP Gateway to Saga Orchestrator.
+  2. Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
+  3. Implement Inventory & Payment Consumers to run full end-to-end Saga simulation.

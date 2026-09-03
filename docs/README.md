@@ -54,6 +54,8 @@ Navigate to the `server/` directory:
 | **API Gateway (YARP)** | `5000` | `http://localhost:5000` |
 | **Identity Service** | `5056` | `http://localhost:5056` |
 | **Catalog Service** | `5057` | `http://localhost:5057` |
-| **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`admin@admin.com` / `admin`) |
+| **Orchestrator Service (Saga)** | `5058` | `http://localhost:5058` |
+| **Order Service** | `5059` | `http://localhost:5059` |
+| **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`admin@admin.com` / `123456`) |
 | **RabbitMQ Management** | `15672` | `http://localhost:15672` (`guest` / `guest`) |
 

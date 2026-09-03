@@ -11,13 +11,15 @@ Each microservice in our architecture owns a dedicated, isolated PostgreSQL data
 | Microservice | Container Name | Port | Database Name | Primary Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | **Identity Service** | `ecommerce-identity-db` | `5432` | `ecommerce_identity_db` | Users, Roles, Refresh Tokens |
-| **Catalog Service** | `ecommerce-catalog-db` | `5433` | `ecommerce_catalog_db` | Categories, Products |
+| **Catalog Service** | `ecommerce-catalog-db` | `5433` | `ecommerce_catalog_db` | Categories, Products, Outbox Messages |
+| **Order Service** | `ecommerce-order-db` | `5434` | `ecommerce_order_db` | Orders, Order Items, Outbox Messages |
+| **Orchestrator Service** | `ecommerce-orchestrator-db` | `5436` | `ecommerce_saga_db` | Order Saga State Machine Persistence |
 
 ---
 
 ## 2. Docker Compose Configuration
 
-We use [`docker-compose.yml`](file:///d:/Code/CSharp/e-commerce/server/docker-compose.yml) to orchestrate both database containers and pgAdmin:
+We use [`docker-compose.yml`](file:///d:/Code/CSharp/e-commerce/server/docker-compose.yml) to orchestrate all four database containers, RabbitMQ, and pgAdmin:
 
 ```yaml
 services:
@@ -30,8 +32,6 @@ services:
       - POSTGRES_DB=ecommerce_identity_db
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_identity_data:/var/lib/postgresql/data
 
   postgres-catalog:
     image: postgres:16-alpine
@@ -42,8 +42,26 @@ services:
       - POSTGRES_DB=ecommerce_catalog_db
     ports:
       - "5433:5432"
-    volumes:
-      - postgres_catalog_data:/var/lib/postgresql/data
+
+  postgres-order:
+    image: postgres:16-alpine
+    container_name: ecommerce-order-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_order_db
+    ports:
+      - "5434:5432"
+
+  postgres-orchestrator:
+    image: postgres:16-alpine
+    container_name: ecommerce-orchestrator-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_saga_db
+    ports:
+      - "5436:5432"
 ```
 
 ---
@@ -68,20 +86,26 @@ Always execute `dotnet ef` commands from the **`server/`** directory.
 
 ### 4.1 Identity Microservice Migrations
 ```bash
-# Add a new migration for Identity
 dotnet ef migrations add <MigrationName> --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
-
-# Update Identity Database (Port 5432)
 dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
 ```
 
 ### 4.2 Catalog Microservice Migrations
 ```bash
-# Add a new migration for Catalog
 dotnet ef migrations add <MigrationName> --project src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ --startup-project src/Services/Catalog/Ecommerce.Catalog.WebApi/
-
-# Update Catalog Database (Port 5433)
 dotnet ef database update --project src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ --startup-project src/Services/Catalog/Ecommerce.Catalog.WebApi/
+```
+
+### 4.3 Order Microservice Migrations
+```bash
+dotnet ef migrations add <MigrationName> --project src/Services/Order/Ecommerce.Order.Infrastructure/ --startup-project src/Services/Order/Ecommerce.Order.WebApi/
+dotnet ef database update --project src/Services/Order/Ecommerce.Order.Infrastructure/ --startup-project src/Services/Order/Ecommerce.Order.WebApi/
+```
+
+### 4.4 Saga Orchestrator Microservice Migrations
+```bash
+dotnet ef migrations add <MigrationName> --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
+dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
 ---
@@ -89,11 +113,9 @@ dotnet ef database update --project src/Services/Catalog/Ecommerce.Catalog.Infra
 ## 5. Accessing pgAdmin (GUI Manager)
 
 1. Open your browser and navigate to `http://localhost:5050`.
-2. Log in with credentials: `admin@admin.com` / `admin`.
-3. Add servers:
-   - **Identity DB Connection**:
-     - Host: `postgres-identity` (Port `5432`)
-     - Database: `ecommerce_identity_db`
-   - **Catalog DB Connection**:
-     - Host: `postgres-catalog` (Port `5432` internal)
-     - Database: `ecommerce_catalog_db`
+2. Log in with credentials: `admin@admin.com` / `123456`.
+3. Add servers (Connect using Container Name and internal port `5432`):
+   - **Identity DB Connection**: Host `ecommerce-identity-db`, Port `5432`, DB `ecommerce_identity_db`
+   - **Catalog DB Connection**: Host `ecommerce-catalog-db`, Port `5432`, DB `ecommerce_catalog_db`
+   - **Order DB Connection**: Host `ecommerce-order-db`, Port `5432`, DB `ecommerce_order_db`
+   - **Orchestrator Saga DB Connection**: Host `ecommerce-orchestrator-db`, Port `5432`, DB `ecommerce_saga_db`
