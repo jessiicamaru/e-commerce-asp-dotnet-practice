@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageReference Include="MassTransit.Abstractions" Version="8.3.6" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Contracts\Ecommerce.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Shared\Ecommerce.Shared.csproj" />
+    <ProjectReference Include="..\Ecommerce.Order.Domain\Ecommerce.Order.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

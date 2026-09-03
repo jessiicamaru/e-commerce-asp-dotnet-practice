@@ -17,12 +17,16 @@ dotnet ef database update --project src/Services/Catalog/Ecommerce.Catalog.Infra
 Write-Host "🔄 Applying EF Core Migrations for Orchestrator DB (Port 5436)..." -ForegroundColor Yellow
 dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 
+Write-Host "🔄 Applying EF Core Migrations for Order DB (Port 5434)..." -ForegroundColor Yellow
+dotnet ef database update --project src/Services/Order/Ecommerce.Order.Infrastructure/ --startup-project src/Services/Order/Ecommerce.Order.WebApi/
+
 # 3. Launch Microservices in Separate Terminal Windows
 Write-Host "🌐 Launching Microservices and API Gateway..." -ForegroundColor Green
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Identity Service (Port 5056)...' -ForegroundColor Green; dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Catalog Service (Port 5057)...' -ForegroundColor Green; dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Orchestrator Service (Port 5058)...' -ForegroundColor Green; dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Order Service (Port 5059)...' -ForegroundColor Green; dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting API Gateway (Port 5000)...' -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/"
 
 Write-Host "✨ All services launched successfully!" -ForegroundColor Green
@@ -30,5 +34,6 @@ Write-Host "  - API Gateway:      http://localhost:5000" -ForegroundColor Cyan
 Write-Host "  - Identity API:     http://localhost:5056" -ForegroundColor Cyan
 Write-Host "  - Catalog API:      http://localhost:5057" -ForegroundColor Cyan
 Write-Host "  - Orchestrator API: http://localhost:5058" -ForegroundColor Cyan
+Write-Host "  - Order API:        http://localhost:5059" -ForegroundColor Cyan
 Write-Host "  - pgAdmin:          http://localhost:5050" -ForegroundColor Cyan
 Write-Host "  - RabbitMQ UI:      http://localhost:15672" -ForegroundColor Cyan
