@@ -71,7 +71,8 @@ If this is empty, there is nothing to open a PR for — say so and stop.
 
 ### 4. The issue it closes
 
-Skip entirely on `--no-issue`.
+Skip entirely on `--no-issue`. If the work has no issue and deserves one, `gh-issue-create` files
+it; do not invent an issue number here.
 
 ```bash
 gh issue list --state open --limit 30 --json number,title,labels,assignees

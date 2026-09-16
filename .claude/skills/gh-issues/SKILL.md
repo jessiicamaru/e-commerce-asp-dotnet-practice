@@ -101,3 +101,9 @@ Do not change the issue's labels or state as a side effect of starting work.
 `gh-pr-create` searches issues itself. This skill is for browsing, reading and picking
 up work — hand off to `gh-pr-create` when the branch is ready rather than duplicating
 its linking logic here.
+
+## Filing a new one
+
+This skill reads issues; it does not create them. Use `gh-issue-create`, which derives the
+Conventional Commits title, applies the type/area/risk labels, and insists on evidence for the
+claim rather than a description of it.
