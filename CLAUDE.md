@@ -121,6 +121,17 @@ Catalog still carries **dead duplicates** of both — `Catalog.Application/Commo
   broker on that port wins — stop it and let the container have it. Documented in
   [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) §6.
 
+## Project constitution
+
+[.specify/memory/constitution.md](.specify/memory/constitution.md) holds the ratified principles
+this project is held to — service autonomy, Clean Architecture layering, atomic writes with
+idempotent messaging (non-negotiable), identity from the token, and evidence over assumption. It
+supersedes convention and habit: where this file and the constitution disagree, the constitution
+wins and this file is what gets corrected.
+
+Feature designs are checked against it in `/speckit-plan`. A violation belongs in that plan's
+Complexity Tracking with a justification and the rejected simpler alternative — not waived.
+
 ## Documentation
 
 [docs/](docs/) is substantial and kept current — [docs/README.md](docs/README.md) is the index. Consult the architecture docs before design changes, and update the relevant one alongside the code (recent commits do this consistently).

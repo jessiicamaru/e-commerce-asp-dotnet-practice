@@ -60,26 +60,30 @@ change the storage design
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-⚠️ **`.specify/memory/constitution.md` is the unedited template** — every principle is still a
-`[PRINCIPLE_N_NAME]` placeholder. There are no ratified principles to check against, so this gate
-passes vacuously rather than genuinely. Run `/speckit-constitution` to establish real principles;
-until then this section carries no weight and should not be read as approval.
+Evaluated against [constitution.md](../../.specify/memory/constitution.md) v1.0.0.
 
-In their absence, the design was checked against the conventions the codebase actually demonstrates:
+> Historical note: when this plan was first written the constitution was still an unfilled
+> template, and this section recorded a vacuous pass. It has been re-evaluated against the ratified
+> principles. The design did not change as a result — the principles were derived from the same
+> conventions the design was already following.
 
-| Convention observed in the codebase | How this feature complies |
+| Principle | Assessment |
 | :--- | :--- |
-| Clean Architecture, Domain with no dependencies | Four projects matching Catalog and Order exactly |
-| Database per service | Own database on 5437; no cross-service database access |
-| CQRS through MediatR, feature-foldered by use case | Commands and queries under `Application/Stock/...` |
-| Transactional outbox: stage, publish, then `SaveChangesAsync` once | Every consumer follows it; see data-model transaction rules |
-| Cross-service coupling only through `Ecommerce.Contracts` | No new shared contracts added at all |
-| Fluent API mapping, snake_case plural tables, `Guid.CreateVersion7()` keys | `stock_items`, `stock_reservations` |
-| Errors as RFC 7807 through `Ecommerce.Shared` | Reuses `GlobalExceptionHandler`, `AddJwtAuthentication` |
+| **I. Service Autonomy** | **Pass.** Own database on 5437, no cross-service database access, no new shared contracts. The principle's "one owner per fact" rule is what research D5 settles: inventory owns sellable quantity, and `Product.StockQuantity` in Catalog becomes a display value that MUST NOT inform an availability decision |
+| **II. Clean Architecture Layering** | **Pass.** Four projects mirroring Catalog and Order. Application depends on `MassTransit.Abstractions` only; consumers and bus configuration stay in WebApi |
+| **III. Atomic Writes and Idempotent Messaging** | **Pass, and central to the design.** Every consumer stages, publishes, then calls `SaveChangesAsync` once. Idempotency rests on a unique `(OrderId, ProductId)` constraint and guarded status transitions — database-enforced, per the principle's requirement that configuration alone is insufficient |
+| **IV. Identity Comes From the Token** | **Pass.** `AddJwtAuthentication` from `Ecommerce.Shared`; stock writes and reservation lookups are `Admin` only; read endpoints are explicitly `[AllowAnonymous]`. No endpoint accepts a caller-supplied identity |
+| **V. Evidence Over Assumption** | **Pass.** Research D7 requires the concurrency and idempotency cases to run against a real PostgreSQL, because the guarantee under test is the database's row locking — an in-memory provider would pass against broken code. Quickstart scenario 7 states the assertion in full |
 
-**Post-Phase 1 re-check**: no violations introduced. The Complexity Tracking table below is empty
-because nothing in the design needed justifying against a simpler alternative — where a simpler
-option existed, it was taken (research D1, D2, D4).
+**Post-Phase 1 re-check**: no violations. The Complexity Tracking table below is empty because
+nothing needed justifying — where a simpler option existed it was taken (research D1, D2, D4).
+
+One deviation from a repository document, recorded here because it is a decision rather than a
+violation: research D1 declines the unit-row pool design in
+[shopify-inventory-skip-locked-pattern.md](../../docs/architecture/shopify-inventory-skip-locked-pattern.md)
+in favour of an aggregated counter with a row lock. The constitution requires such a decision to
+carry its rejected alternative and rationale, which D1 does, along with the condition that would
+reverse it.
 
 ## Project Structure
 
