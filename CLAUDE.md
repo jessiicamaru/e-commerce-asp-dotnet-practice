@@ -33,7 +33,17 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-No unit-test framework is configured. What does exist is an end-to-end auth check,
+Tests live in `server/tests/Ecommerce.Inventory.Tests` (xUnit, 19 tests). They run against a **real
+PostgreSQL on 5437** — the guarantees under test are the database's row locking and unique
+constraints, so an in-memory provider would pass against code that oversells. Run them with
+`DB_PASSWORD` set:
+
+```bash
+cd server
+DB_PASSWORD=<your password> dotnet test tests/Ecommerce.Inventory.Tests
+```
+
+There is also an end-to-end auth check,
 [.github/scripts/verify-auth.sh](.github/scripts/verify-auth.sh), which CI runs and which also runs
 locally against started services:
 
@@ -55,6 +65,7 @@ script. If adding unit tests there is no existing convention to follow — pick 
 | Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | SubmitOrder + outbox |
+| Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`.
 
@@ -80,7 +91,9 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 ### Saga
 [OrderStateMachine.cs](server/src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/StateMachines/OrderStateMachine.cs) drives `OrderSubmitted → ReserveInventory → ProcessPayment → OrderCompleted`, with `ReleaseInventoryCommand` compensation on payment failure. All events correlate on `OrderId`; the instance is `OrderStateData` persisted through `SagaDbContext` with `ConcurrencyMode.Optimistic`.
 
-**Inventory and Payment services do not exist yet** — their contracts are defined and the saga publishes to them, so the flow stalls after `OrderSubmitted` until those consumers are built. The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–4 done, Phase 5 = observability/Seq/E2E is next).
+**Payment does not exist yet** — Inventory now answers `ReserveInventoryCommand`, so the saga reaches `InventoryReservedState`, but stalls there until a payment service exists. Every such reservation is eventually reclaimed by Inventory's expiry sweeper, which is correct rather than a bug.
+
+Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf. The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–4 done, Phase 5 = observability/Seq/E2E is next).
 
 ### Authentication
 `Ecommerce.Shared/Authentication/` holds the whole story. Identity **signs** tokens; every other

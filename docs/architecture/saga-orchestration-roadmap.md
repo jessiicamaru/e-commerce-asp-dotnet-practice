@@ -149,9 +149,26 @@ graph TD
 
 ---
 
-### 🟡 Phase 5: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
+### 🟢 Phase 5: Inventory Microservice (`Ecommerce.Inventory`) & Reservation Flow (Completed)
+* **Goal**: Answer the saga's stock request so an order can leave `Submitted`.
+* **Deliverables**:
+  1. **Inventory Microservice**: Port `5060`, DB `ecommerce_inventory_db` (Port `5437`).
+  2. `ReserveInventoryCommand` and `ReleaseInventoryCommand` consumers, replying with
+     `InventoryReservedEvent` / `InventoryReservationFailedEvent`.
+  3. `OrderCompletedEvent` consumed as the confirmation signal — the contracts carry no
+     `ConfirmInventoryCommand`, and the saga finalizes without telling inventory anything.
+  4. Idempotent consumers: MassTransit EF inbox plus a unique `(OrderId, ProductId)` constraint.
+  5. Expiry sweeper returning stock held by orders that never settled.
+  6. First test project in the repository, running against a real PostgreSQL.
+
+> The saga now reaches `InventoryReservedState` and stops there: no payment service exists yet, so
+> every reservation is eventually reclaimed by the sweeper. That is correct behaviour, not a defect.
+
+---
+
+### 🟡 Phase 6: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
   1. Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
   2. Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
-  3. Implement Inventory & Payment Consumers to run full end-to-end Saga simulation.
+  3. Implement the Payment service so the saga can run all the way to `OrderCompleted`.

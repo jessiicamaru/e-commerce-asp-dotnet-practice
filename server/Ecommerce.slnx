@@ -20,6 +20,12 @@
     <Project Path="src/Services/Identity/Ecommerce.Identity.Infrastructure/Ecommerce.Identity.Infrastructure.csproj" />
     <Project Path="src/Services/Identity/Ecommerce.Identity.WebApi/Ecommerce.Identity.WebApi.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Inventory/">
+    <Project Path="src/Services/Inventory/Ecommerce.Inventory.Application/Ecommerce.Inventory.Application.csproj" />
+    <Project Path="src/Services/Inventory/Ecommerce.Inventory.Domain/Ecommerce.Inventory.Domain.csproj" />
+    <Project Path="src/Services/Inventory/Ecommerce.Inventory.Infrastructure/Ecommerce.Inventory.Infrastructure.csproj" />
+    <Project Path="src/Services/Inventory/Ecommerce.Inventory.WebApi/Ecommerce.Inventory.WebApi.csproj" />
+  </Folder>
   <Folder Name="/src/Services/Orchestrator/">
     <Project Path="src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/Ecommerce.Orchestrator.WebApi.csproj" />
   </Folder>
@@ -28,5 +34,8 @@
     <Project Path="src/Services/Order/Ecommerce.Order.Domain/Ecommerce.Order.Domain.csproj" />
     <Project Path="src/Services/Order/Ecommerce.Order.Infrastructure/Ecommerce.Order.Infrastructure.csproj" />
     <Project Path="src/Services/Order/Ecommerce.Order.WebApi/Ecommerce.Order.WebApi.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ecommerce.Inventory.Tests/Ecommerce.Inventory.Tests.csproj" />
   </Folder>
 </Solution>

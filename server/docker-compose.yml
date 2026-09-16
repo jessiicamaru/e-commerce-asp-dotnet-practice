@@ -40,6 +40,19 @@ services:
       - postgres_orchestrator_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  postgres-inventory:
+    image: postgres:16-alpine
+    container_name: ecommerce-inventory-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_inventory_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_inventory_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
   postgres-order:
     image: postgres:16-alpine
     container_name: ecommerce-order-db
@@ -66,6 +79,7 @@ services:
       - postgres-catalog
       - postgres-orchestrator
       - postgres-order
+      - postgres-inventory
     restart: unless-stopped
 
   rabbitmq:
@@ -86,4 +100,5 @@ volumes:
   postgres_catalog_data:
   postgres_orchestrator_data:
   postgres_order_data:
+  postgres_inventory_data:
   rabbitmq_data:

@@ -23,6 +23,9 @@ dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestr
 echo "🔄 Applying EF Core Migrations for Order DB (Port 5434)..."
 dotnet ef database update --project src/Services/Order/Ecommerce.Order.Infrastructure/ --startup-project src/Services/Order/Ecommerce.Order.WebApi/
 
+echo "Applying EF Core Migrations for Inventory DB (Port 5437)..."
+dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
+
 # 3. Launch Microservices in Separate Windows
 echo "🌐 Launching Microservices and API Gateway..."
 
@@ -31,20 +34,23 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Catalog Service (Port 5057)\" -ForegroundColor Green; dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Orchestrator Service (Port 5058)\" -ForegroundColor Green; dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Order Service (Port 5059)\" -ForegroundColor Green; dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Inventory Service (Port 5060)\" -ForegroundColor Green; dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"API Gateway (Port 5000)\" -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/'"
 else
     dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/ &
     dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/ &
     dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ &
     dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/ &
+    dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/ &
     dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/ &
 fi
 
-echo "✨ All 5 services launched successfully in separate windows!"
+echo "✨ All 6 services launched successfully in separate windows!"
 echo "  - API Gateway:      http://localhost:5000"
 echo "  - Identity API:     http://localhost:5056"
 echo "  - Catalog API:      http://localhost:5057"
 echo "  - Orchestrator API: http://localhost:5058"
 echo "  - Order API:        http://localhost:5059"
+echo "  - Inventory API:    http://localhost:5060"
 echo "  - pgAdmin:          http://localhost:5050"
 echo "  - RabbitMQ UI:      http://localhost:15672"

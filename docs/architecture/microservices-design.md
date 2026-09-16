@@ -155,3 +155,16 @@ When transitioning to Microservices, you will need to implement:
 1. **Saga Pattern (Orchestration/Choreography)**: To manage distributed transactions across multiple databases (e.g. if payment fails, roll back inventory reservation).
 2. **API Gateway (YARP - Yet Another Reverse Proxy)**: A single .NET gateway proxying requests from the browser to the individual microservices on port `5000`.
 3. **Outbox Pattern**: To guarantee that database updates and RabbitMQ event publishing happen atomically in a single transaction.
+
+---
+
+## Stock ownership
+
+> **`Product.StockQuantity` in the Catalog service is descriptive only.** Since the Inventory
+> service was introduced it is the sole authority on sellable quantity: it learns a product exists
+> from `ProductCreatedEvent`, registers it at zero, and staff set quantities through Inventory.
+>
+> The Catalog field is not removed — that would be a breaking API change — but **nothing may read
+> it for an availability decision**. One fact, one owner; a duplicated copy that informs a decision
+> is how two sources of truth start disagreeing. See
+> [constitution.md](../../.specify/memory/constitution.md) principle I.

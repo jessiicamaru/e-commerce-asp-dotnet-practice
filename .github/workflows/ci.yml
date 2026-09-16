@@ -14,11 +14,26 @@ env:
 
 jobs:
   build:
-    name: Build
+    name: Build and test
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: server
+
+    services:
+      postgres-inventory:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_inventory_db
+        ports: ['5437:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,6 +54,14 @@ jobs:
 
       - name: Build
         run: dotnet build Ecommerce.slnx --configuration Release --no-restore
+
+      # The inventory suite needs a real PostgreSQL: the guarantees it asserts — no overselling
+      # under concurrency, a unique constraint stopping a duplicate reservation — are the
+      # database's behaviour, and an in-memory provider would pass against broken code.
+      - name: Test
+        env:
+          DB_PASSWORD: postgres
+        run: dotnet test Ecommerce.slnx --configuration Release --no-build --verbosity normal
 
       # Informational only: Microsoft.OpenApi 2.0.0 currently trips this.
       # Drop continue-on-error once the advisories are cleared to make it a gate.
@@ -84,6 +107,19 @@ jobs:
       # Catalog publishes through MassTransit, so it needs a broker to reach a
       # healthy state. The built-in 'guest' account only accepts connections from
       # inside the container, so CI gets its own user.
+      postgres-inventory:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_inventory_db
+        ports: ['5437:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       rabbitmq:
         image: rabbitmq:3-management-alpine
         env:
@@ -103,6 +139,8 @@ jobs:
       IDENTITY_DB_PORT: '5432'
       CATALOG_DB_NAME: ecommerce_catalog_db
       CATALOG_DB_PORT: '5433'
+      INVENTORY_DB_NAME: ecommerce_inventory_db
+      INVENTORY_DB_PORT: '5437'
       # CI-only values. Real secrets belong in repository secrets, never here.
       JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
       ADMIN_EMAIL: admin@ci.local
