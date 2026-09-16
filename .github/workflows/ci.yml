@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('server/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore Ecommerce.slnx
+
+      - name: Build
+        run: dotnet build Ecommerce.slnx --configuration Release --no-restore
+
+      # Informational only: Microsoft.OpenApi 2.0.0 currently trips this.
+      # Drop continue-on-error once the advisories are cleared to make it a gate.
+      - name: Report vulnerable packages
+        continue-on-error: true
+        run: dotnet list Ecommerce.slnx package --vulnerable --include-transitive
+
+  auth-smoke:
+    name: Auth smoke test
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres-identity:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_identity_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      postgres-catalog:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_catalog_db
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      IDENTITY_DB_NAME: ecommerce_identity_db
+      IDENTITY_DB_PORT: '5432'
+      CATALOG_DB_NAME: ecommerce_catalog_db
+      CATALOG_DB_PORT: '5433'
+      # CI-only values. Real secrets belong in repository secrets, never here.
+      JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
+      ADMIN_EMAIL: admin@ci.local
+      ADMIN_PASSWORD: ci-admin-password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('server/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Install EF Core tools
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.11
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Build
+        run: dotnet build Ecommerce.slnx --configuration Release
+
+      - name: Apply migrations
+        run: |
+          dotnet ef database update \
+            --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ \
+            --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
+          dotnet ef database update \
+            --project src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ \
+            --startup-project src/Services/Catalog/Ecommerce.Catalog.WebApi/
+
+      - name: Start services
+        run: |
+          # Identity ends with app.Run() and honours ASPNETCORE_URLS.
+          # Catalog pins its own URL via app.Run("http://localhost:5057").
+          ASPNETCORE_URLS=http://localhost:5056 \
+            dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/ \
+            --configuration Release --no-build --no-launch-profile > /tmp/identity.log 2>&1 &
+          dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/ \
+            --configuration Release --no-build --no-launch-profile > /tmp/catalog.log 2>&1 &
+
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:5056/health > /dev/null 2>&1 \
+               && curl -fsS http://localhost:5057/health > /dev/null 2>&1; then
+              echo "Both services are up after ${i}s."
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "::error::Services did not become healthy in time."
+          exit 1
+
+      # Guards the security boundary: an unauthenticated caller must be rejected,
+      # a Customer must not reach Admin-only endpoints, and the roles the startup
+      # initializer seeds must actually arrive in the token. The same script runs
+      # locally against ./start-dev.ps1.
+      - name: Verify authentication and authorization
+        run: ../.github/scripts/verify-auth.sh
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: |
+          echo "--- identity ---"; tail -100 /tmp/identity.log || true
+          echo "--- catalog ---"; tail -100 /tmp/catalog.log || true

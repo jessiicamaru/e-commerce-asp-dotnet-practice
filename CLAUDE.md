@@ -33,14 +33,25 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-No test framework is configured. If adding tests, there is no existing convention to follow — pick one and say so.
+No unit-test framework is configured. What does exist is an end-to-end auth check,
+[.github/scripts/verify-auth.sh](.github/scripts/verify-auth.sh), which CI runs and which also runs
+locally against started services:
+
+```bash
+cd server
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
+```
+
+CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then an `auth-smoke` job
+that spins up PostgreSQL service containers, migrates, starts Identity and Catalog, and runs that
+script. If adding unit tests there is no existing convention to follow — pick one and say so.
 
 ## Service map
 
 | Service | HTTP port | DB port / name | Notes |
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
-| Identity | 5056 | 5432 / `ecommerce_identity_db` | JWT + refresh tokens, BCrypt; no MassTransit yet |
+| Identity | 5056 | 5432 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
 | Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | SubmitOrder + outbox |
@@ -71,6 +82,21 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 
 **Inventory and Payment services do not exist yet** — their contracts are defined and the saga publishes to them, so the flow stalls after `OrderSubmitted` until those consumers are built. The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–4 done, Phase 5 = observability/Seq/E2E is next).
 
+### Authentication
+`Ecommerce.Shared/Authentication/` holds the whole story. Identity **signs** tokens; every other
+service **validates** them by calling `AddJwtAuthentication(builder.Configuration)`, which also
+registers `ICurrentUser` — how the Application layer learns who the caller is without touching
+`HttpContext`. Three settings in there are load-bearing and easy to break:
+`MapInboundClaims = false` (otherwise `sub` is renamed), `RoleClaimType = "role"` (the signing side
+writes the short name, not the `ClaimTypes.Role` URI), and `ClockSkew = Zero`.
+
+**The user id never comes from the request body.** `SubmitOrderCommand` deliberately has no
+`UserId`; the handler reads it from `ICurrentUser`. Keep it that way for new commands.
+
+Roles (`Admin`, `Customer`) and the first administrator are seeded at Identity startup by
+`DataInitializer`, from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. The bootstrap path closes as soon as any
+admin exists. Self-registration always grants `Customer`.
+
 ### Shared building blocks
 - **`Ecommerce.Contracts`** — the only cross-service coupling allowed: message records grouped by owning domain (`Catalog/`, `Order/`, `Inventory/`, `Payment/`). Pure records, no dependencies. Any new integration event goes here.
 - **`Ecommerce.Shared`** — `GlobalExceptionHandler` (RFC 7807 ProblemDetails; maps `ValidationException` → 400 with an `errors` extension, `NotFoundException` → 404, `ConflictException` → 409, detail hidden outside Development) and `ValidationBehavior` (MediatR open behavior that throws on validator failures). Wired with `AddExceptionHandler<GlobalExceptionHandler>()` + `AddProblemDetails()` + `app.UseExceptionHandler()`.
@@ -89,6 +115,10 @@ Catalog still carries **dead duplicates** of both — `Catalog.Application/Commo
 - The services read **`RABBITMQ_PASS`**, but `.env.example` and compose use **`RABBITMQ_PASSWORD`** — a non-default RabbitMQ password requires both names set.
 - `DB_PORT` variables (`CATALOG_DB_PORT` etc.) aren't in `.env.example`; the per-service defaults in `Program.cs` are the real source of truth.
 - Hosts are hardcoded to `localhost` in connection strings, so the services are not container-ready as written.
+- A PostgreSQL install on the host machine occupies `5432` and shadows the Identity container, so
+  Identity silently reads and writes a different database than the other services. Symptom:
+  `dotnet ef database update` says "already up to date" while the container has no tables at all.
+  Documented in [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) §6.
 
 ## Documentation
 

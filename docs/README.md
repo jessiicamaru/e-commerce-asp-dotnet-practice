@@ -26,6 +26,14 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 * [**JWT Middleware Configuration**](./features/auth/jwt-setup.md): Package checklist and middleware registration details to validate access tokens.
 * [**Security & Token Storage Best Practices**](./features/auth/security-best-practices.md): Deep dive into XSS/CSRF token vulnerabilities and implementing the HttpOnly cookie hybrid flow.
 
+### ⚙️ Continuous Integration
+* **[`.github/workflows/ci.yml`](../.github/workflows/ci.yml)**: Builds the solution on every push and pull request to `main`, then runs an auth smoke test against real PostgreSQL service containers — it logs in as the seeded administrator and asserts that anonymous callers get `401`, a `Customer` gets `403` on Admin-only endpoints, and an `Admin` gets through.
+* **[`.github/scripts/verify-auth.sh`](../.github/scripts/verify-auth.sh)**: The assertions CI runs. Runnable locally too, against services started with `start-dev`:
+  ```bash
+  cd server
+  ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
+  ```
+
 ### 🛠️ Developer Guides
 * [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, directory mapping, and EF Core concurrency exceptions.
 
@@ -33,7 +41,18 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 
 ## 🚀 Quick Start (Automated One-Click Startup)
 
-Navigate to the `server/` directory:
+First, create `server/.env` from the template and fill in the values:
+
+```bash
+cd server
+cp .env.example .env
+```
+
+`ADMIN_EMAIL` and `ADMIN_PASSWORD` seed the first administrator on Identity startup — without them
+no account can reach the Admin-only endpoints. `JWT_SECRET` must be at least 32 characters, and is
+now required by Catalog and Order as well, not just Identity.
+
+Then, from the `server/` directory:
 
 ### Option A: PowerShell (Windows)
 ```powershell
@@ -58,4 +77,9 @@ Navigate to the `server/` directory:
 | **Order Service** | `5059` | `http://localhost:5059` |
 | **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`admin@admin.com` / `123456`) |
 | **RabbitMQ Management** | `15672` | `http://localhost:15672` (`guest` / `guest`) |
+
+> If a PostgreSQL instance is already installed on your machine it will occupy port `5432` and
+> shadow the Identity container, silently sending Identity's data somewhere else. See
+> [Troubleshooting §6](./guides/troubleshooting.md) if migrations report "already up to date" against
+> an empty database.
 

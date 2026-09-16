@@ -118,7 +118,52 @@ CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
 
 ---
 
-## 4. Code Implementation Map
+## 4. Seeded Data & Administrator Bootstrap
+
+An empty database is brought to a usable state on Identity startup by
+[`DataInitializer`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.Infrastructure/Persistence/DataInitializer.cs).
+Every step is skipped once its data exists, so it is safe to run on each boot.
+
+### Roles
+
+| Role | Granted by | Purpose |
+| :--- | :--- | :--- |
+| `Admin` | The bootstrap step below, or an existing administrator | Full administrative access |
+| `Customer` | Automatically, on self-registration | Default shopper role |
+
+Ids are generated at runtime with `Guid.CreateVersion7()` per
+[ADR-001](../../architecture/adr-001-uuidv7-primary-keys.md), so they differ per environment. That
+rules out EF Core's `HasData` seeding, which requires fixed primary keys baked into the migration.
+
+### Bootstrapping the first administrator
+
+Roles are part of the schema, so they are seeded in code. The first administrator is *operational
+data* with a credential, so it comes from the environment and never from source control:
+
+```bash
+# server/.env
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=at_least_8_characters
+```
+
+The logic, in order:
+
+1. **If any user already holds `Admin`, stop.** The bootstrap path closes permanently after the
+   first administrator, so it can never be used to escalate privileges later.
+2. If `ADMIN_EMAIL` / `ADMIN_PASSWORD` are unset, log a warning and skip — startup does not fail.
+3. If the password is shorter than 8 characters, refuse rather than create a weak administrator.
+4. If an account with that email already exists, **promote** it and leave its password untouched.
+   Otherwise create a new one.
+
+Self-registration always yields `Customer`. `Admin` is only ever granted out of band — by this
+initializer, or later by an existing administrator.
+
+> Because roles are carried inside the access token, a newly granted role does not take effect until
+> the holder's current token expires (15 minutes) or is refreshed.
+
+---
+
+## 5. Code Implementation Map
 
 For the ASP.NET Core backend, the files will be structured as follows:
 
@@ -127,6 +172,7 @@ Define the core model entities. They should be clean C# classes without EF Core 
 - `src/Services/Identity/Ecommerce.Identity.Domain/Entities/User.cs`
 - `src/Services/Identity/Ecommerce.Identity.Domain/Entities/Role.cs`
 - `src/Services/Identity/Ecommerce.Identity.Domain/Entities/RefreshToken.cs`
+- `src/Services/Identity/Ecommerce.Identity.Domain/Constants/RoleNames.cs` — the role names the system ships with
 
 ### 2. Application Layer (`Ecommerce.Identity.Application`)
 Contains CQRS Handlers, DTOs, and Interfaces.
@@ -148,7 +194,7 @@ Exposes REST endpoints.
 
 ---
 
-## 5. Security & Flow Checklist
+## 6. Security & Flow Checklist
 
 - [x] **Password Hashing**: Never store plain passwords. Use **BCrypt.Net-Next** in the Application/Infrastructure layer.
 - [x] **JWT Tokens**: Issue short-lived Access Tokens (e.g., 15 minutes) containing Claims (User ID, Email, Roles).

@@ -202,7 +202,7 @@ The command triggers the registration logic. The handler handles it:
 ---
 
 ## 4. Web API Controller Setup
-In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Ecommerce.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `Mediator` and hide the `RefreshToken` from the response body by using C#'s `with` expression:
+In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `Mediator` and hide the `RefreshToken` from the response body by using C#'s `with` expression:
 
 ```csharp
 using Ecommerce.Application.Auth.Commands.Login;

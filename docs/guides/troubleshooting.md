@@ -26,7 +26,7 @@ dotnet add <project_reporting_error> reference <project_containing_types>
 #### Example:
 To allow `Infrastructure` to access `Application`:
 ```bash
-dotnet add src/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj reference src/Ecommerce.Application/Ecommerce.Application.csproj
+dotnet add src/Services/Identity/Ecommerce.Identity.Infrastructure/Ecommerce.Identity.Infrastructure.csproj reference src/Services/Identity/Ecommerce.Identity.Application/Ecommerce.Identity.Application.csproj
 ```
 
 ---
@@ -62,7 +62,7 @@ dotnet add <project_path> package <package_name>
 #### Example:
 To fix the options binding error in `Infrastructure`:
 ```bash
-dotnet add src/Ecommerce.Infrastructure/Ecommerce.Infrastructure.csproj package Microsoft.Extensions.Options.ConfigurationExtensions
+dotnet add src/Services/Identity/Ecommerce.Identity.Infrastructure/Ecommerce.Identity.Infrastructure.csproj package Microsoft.Extensions.Options.ConfigurationExtensions
 ```
 
 ---
@@ -76,9 +76,9 @@ System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tok
 ```
 
 ### Diagnosis
-When running the Web API via `dotnet run --project src/Ecommerce.WebApi/`, the working directory (`Directory.GetCurrentDirectory()`) defaults to the project folder (`server/src/Ecommerce.WebApi`).
+When running the Web API via `dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/`, the working directory (`Directory.GetCurrentDirectory()`) defaults to the project folder (`server/src/Services/Identity/Ecommerce.Identity.WebApi`).
 However, the `.env` file is located at the root of the backend folder (`server/`).
-If you try to load it using `Path.Combine(Directory.GetCurrentDirectory(), ".env")`, the file path evaluates to `server/src/Ecommerce.WebApi/.env` which does not exist, causing the loading logic to fail silently.
+If you try to load it using `Path.Combine(Directory.GetCurrentDirectory(), ".env")`, the file path evaluates to `server/src/Services/Identity/Ecommerce.Identity.WebApi/.env` which does not exist, causing the loading logic to fail silently.
 
 ### Solution
 Implement a recursive upward directory search in `Program.cs` to locate the `.env` file starting from the current directory:
@@ -173,7 +173,70 @@ dotnet add src/Services/Catalog/Ecommerce.Catalog.WebApi/ package MassTransit.Ra
 
 ---
 
-## 6. General Diagnosis Checklist
+## 6. A Local PostgreSQL Install Shadowing the Docker Container
+
+### Symptoms
+
+* `dotnet ef database update` reports **"No migrations were applied. The database is already up to date"**, yet querying the container shows nothing:
+  ```
+  ERROR:  relation "roles" does not exist
+  ```
+* Data written through the API is invisible in pgAdmin when connected to the container.
+* Only the **Identity** service is affected. Catalog, Order and Orchestrator behave normally.
+
+### Diagnosis
+
+A PostgreSQL instance installed directly on the machine (Windows service `postgresql-x64-16`, or
+Homebrew/apt elsewhere) already listens on port `5432` — the same port `ecommerce-identity-db` is
+published on. Docker may still bind successfully on a different interface (IPv6 `::` versus IPv4
+`0.0.0.0`), so `docker compose up` reports no conflict, but `Host=localhost` resolves to the
+**native** instance first.
+
+The result is a split brain: Identity reads and writes the local PostgreSQL install, while every
+other service uses its container. Only Identity is hit because the others publish `5433`, `5434` and
+`5436`, which nothing else claims.
+
+Confirm what actually holds the port:
+
+```powershell
+Get-NetTCPConnection -LocalPort 5432 -State Listen |
+  Select-Object LocalAddress, OwningProcess,
+    @{n='Process';e={(Get-Process -Id $_.OwningProcess).ProcessName}}
+```
+
+Two rows — one `com.docker.backend`, one `postgres` — confirms the clash.
+
+```bash
+# Linux / macOS
+sudo lsof -iTCP:5432 -sTCP:LISTEN
+```
+
+### Solution
+
+**Option A — free the port** (simplest if the local install is unused):
+
+```powershell
+Stop-Service postgresql-x64-16
+Set-Service postgresql-x64-16 -StartupType Manual   # keep it from coming back on reboot
+```
+
+**Option B — move Identity to a free port** (keep both):
+
+1. Change the published port in `docker-compose.yml` to `5435:5432`.
+2. Add `IDENTITY_DB_PORT=5435` to `server/.env`.
+3. Recreate the container and re-run the migration:
+   ```bash
+   docker compose up -d --force-recreate postgres-identity
+   dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
+   ```
+
+Either way the container database starts empty, so the migration runs from scratch and the startup
+initializer re-seeds the roles and bootstrap administrator. Any data that was sitting in the native
+instance stays there — export it first if you need it.
+
+---
+
+## 7. General Diagnosis Checklist
 
 If your IDE reports red errors but your code looks correct:
 
@@ -183,3 +246,4 @@ If your IDE reports red errors but your code looks correct:
    ```
 2. **Inspect `.csproj` Files**: Treat `.csproj` files as the source-of-truth configuration for dependencies. Ensure both `<ProjectReference>` (other projects) and `<PackageReference>` (NuGet packages) are correct.
 3. **Check Namespaces**: Ensure the files have the correct `using` statements at the top. Extension methods often require importing the core namespace (e.g., `using Microsoft.EntityFrameworkCore;`).
+4. **Confirm which database you are actually talking to**: when data "disappears", check the port for a second PostgreSQL instance before suspecting the code (see section 6).
