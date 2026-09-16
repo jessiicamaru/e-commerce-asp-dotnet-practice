@@ -1,12 +1,14 @@
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
 using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce.Catalog.WebApi.Controllers;
 
 public class ProductsController : ApiControllerBase
 {
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] GetProductsQuery query)
     {
@@ -14,6 +16,7 @@ public class ProductsController : ApiControllerBase
         return Ok(result);
     }
 
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -25,6 +28,7 @@ public class ProductsController : ApiControllerBase
         return Ok(result);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
     {

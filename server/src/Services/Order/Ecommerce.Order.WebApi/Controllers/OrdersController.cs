@@ -1,8 +1,10 @@
 using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce.Order.WebApi.Controllers;
 
+[Authorize]
 public class OrdersController : ApiControllerBase
 {
     [HttpPost]

@@ -6,9 +6,6 @@ public class SubmitOrderCommandValidator : AbstractValidator<SubmitOrderCommand>
 {
     public SubmitOrderCommandValidator()
     {
-        RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("UserId is required.");
-
         RuleFor(x => x.Items)
             .NotEmpty().WithMessage("Order must contain at least one item.");
 

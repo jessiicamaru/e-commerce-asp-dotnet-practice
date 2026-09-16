@@ -26,7 +26,7 @@ public record OrderResponse(
     List<OrderItemResponse> Items
 );
 
+// UserId is intentionally absent: it is read from the access token, never from the request body.
 public record SubmitOrderCommand(
-    Guid UserId,
     List<OrderItemRequest> Items
 ) : IRequest<OrderResponse>;

@@ -2,6 +2,7 @@ using Ecommerce.Contracts.Order;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
+using Ecommerce.Shared.Authentication;
 using MassTransit;
 using MediatR;
 
@@ -9,14 +10,21 @@ namespace Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 
 public class SubmitOrderCommandHandler(
     IOrderRepository orderRepository,
-    IPublishEndpoint publishEndpoint
+    IPublishEndpoint publishEndpoint,
+    ICurrentUser currentUser
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
     {
+        // [Authorize] already rejected anonymous callers; this guards against the endpoint
+        // being wired up without it.
+        var userId = _currentUser.Id
+            ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
+
         var orderId = Guid.NewGuid();
 
         var orderItems = request.Items.Select(item => new OrderItem
@@ -34,7 +42,7 @@ public class SubmitOrderCommandHandler(
         var order = new Domain.Entities.Order
         {
             Id = orderId,
-            UserId = request.UserId,
+            UserId = userId,
             TotalAmount = totalAmount,
             Status = OrderStatus.Submitted,
             CreatedAt = DateTime.UtcNow,

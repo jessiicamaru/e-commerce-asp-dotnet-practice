@@ -42,6 +42,11 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
                 "Resource Conflict",
                 null
             ),
+            UnauthorizedAccessException => (
+                StatusCodes.Status401Unauthorized,
+                "Unauthorized",
+                null
+            ),
             _ => (
                 StatusCodes.Status500InternalServerError,
                 "Internal Server Error",

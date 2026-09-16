@@ -1,6 +1,7 @@
 using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Infrastructure;
 using Ecommerce.Catalog.Infrastructure.Persistence;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Middlewares;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -41,6 +42,13 @@ if (!string.IsNullOrEmpty(dotenv))
     }
 }
 
+// Override Configurations from Environment Variables
+var envJwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+if (!string.IsNullOrEmpty(envJwtSecret))
+{
+    builder.Configuration["JwtSettings:Secret"] = envJwtSecret;
+}
+
 // Override Configurations from Environment Variables for Catalog Database (Port 5433)
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
@@ -55,6 +63,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
@@ -96,6 +105,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.MapHealthChecks("/health", new HealthCheckOptions

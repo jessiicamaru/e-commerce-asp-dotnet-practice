@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ecommerce.Identity.Application\Ecommerce.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Shared\Ecommerce.Shared.csproj" />
   </ItemGroup>
 
 </Project>

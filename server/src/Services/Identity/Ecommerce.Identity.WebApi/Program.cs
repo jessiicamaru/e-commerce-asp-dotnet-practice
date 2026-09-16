@@ -1,6 +1,7 @@
 using Ecommerce.Application;
 using Ecommerce.Infrastructure;
 using Ecommerce.Infrastructure.Persistence;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
@@ -61,6 +62,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Ecommerce.Infrastructure.Security;
+using Ecommerce.Shared.Authentication;
 
 namespace Ecommerce.Infrastructure;
 
