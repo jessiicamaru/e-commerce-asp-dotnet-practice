@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -55,7 +54,11 @@ public static class DependencyInjection
                     ClockSkew = TimeSpan.Zero,
 
                     NameClaimType = JwtRegisteredClaimNames.Sub,
-                    RoleClaimType = ClaimTypes.Role
+
+                    // The signing side adds roles as ClaimTypes.Role, but JwtSecurityTokenHandler
+                    // shortens that to "role" on the way out. With MapInboundClaims disabled the
+                    // name is not expanded again, so "role" is what actually arrives.
+                    RoleClaimType = "role"
                 };
             });
 

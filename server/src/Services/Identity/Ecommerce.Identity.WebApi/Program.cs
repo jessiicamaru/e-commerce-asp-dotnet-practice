@@ -48,6 +48,18 @@ if (!string.IsNullOrEmpty(envJwtSecret))
     builder.Configuration["JwtSettings:Secret"] = envJwtSecret;
 }
 
+var envAdminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL");
+if (!string.IsNullOrEmpty(envAdminEmail))
+{
+    builder.Configuration["AdminUser:Email"] = envAdminEmail;
+}
+
+var envAdminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+if (!string.IsNullOrEmpty(envAdminPassword))
+{
+    builder.Configuration["AdminUser:Password"] = envAdminPassword;
+}
+
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
 var dbName = Environment.GetEnvironmentVariable("IDENTITY_DB_NAME") ?? "ecommerce_identity_db";
@@ -71,6 +83,24 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<ApplicationDbContext>(name: "identity_postgres_db");
 
 var app = builder.Build();
+
+// Seed roles and the bootstrap administrator before serving traffic.
+using (var scope = app.Services.CreateScope())
+{
+    var initializer = scope.ServiceProvider.GetRequiredService<DataInitializer>();
+
+    try
+    {
+        await initializer.SeedAsync();
+    }
+    catch (Exception exception)
+    {
+        app.Logger.LogError(
+            exception,
+            "Database seeding failed. Have the EF Core migrations been applied?");
+        throw;
+    }
+}
 
 app.UseExceptionHandler();
 
