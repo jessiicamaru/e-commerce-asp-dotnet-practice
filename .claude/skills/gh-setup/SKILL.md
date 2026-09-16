@@ -155,6 +155,8 @@ gh label create "area: identity"     --color 5319E7 --description "Identity serv
 gh label create "area: catalog"      --color 1D76DB --description "Catalog service"                  --force
 gh label create "area: order"        --color 0E8A16 --description "Order service"                    --force
 gh label create "area: orchestrator" --color 006B75 --description "Saga orchestrator"                --force
+gh label create "area: inventory"    --color D4C5F9 --description "Inventory service"                --force
+gh label create "area: payment"      --color F9D0C4 --description "Payment service"                  --force
 gh label create "area: gateway"      --color C2E0C6 --description "YARP API gateway"                 --force
 gh label create "area: shared"       --color FEF2C0 --description "BuildingBlocks (Shared/Contracts)" --force
 gh label create "area: db"           --color 5319E7 --description "EF Core model or migrations"      --force
