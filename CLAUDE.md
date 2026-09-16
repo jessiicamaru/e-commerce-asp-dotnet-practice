@@ -51,7 +51,7 @@ script. If adding unit tests there is no existing convention to follow — pick 
 | Service | HTTP port | DB port / name | Notes |
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
-| Identity | 5056 | 5432 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
+| Identity | 5056 | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
 | Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | SubmitOrder + outbox |
@@ -115,10 +115,11 @@ Catalog still carries **dead duplicates** of both — `Catalog.Application/Commo
 - The services read **`RABBITMQ_PASS`**, but `.env.example` and compose use **`RABBITMQ_PASSWORD`** — a non-default RabbitMQ password requires both names set.
 - `DB_PORT` variables (`CATALOG_DB_PORT` etc.) aren't in `.env.example`; the per-service defaults in `Program.cs` are the real source of truth.
 - Hosts are hardcoded to `localhost` in connection strings, so the services are not container-ready as written.
-- A PostgreSQL install on the host machine occupies `5432` and shadows the Identity container, so
-  Identity silently reads and writes a different database than the other services. Symptom:
-  `dotnet ef database update` says "already up to date" while the container has no tables at all.
-  Documented in [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) §6.
+- Services installed natively on the host silently shadow the compose containers when they share a
+  port. Identity's database is published on `5435` rather than `5432` for exactly this reason. The
+  services connect to RabbitMQ over the default `5672` and the code passes no port, so a native
+  broker on that port wins — stop it and let the container have it. Documented in
+  [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) §6.
 
 ## Documentation
 

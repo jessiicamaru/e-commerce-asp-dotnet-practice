@@ -7,7 +7,9 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=ecommerce_identity_db
     ports:
-      - "5432:5432"
+      # 5432 on the host is commonly taken by a locally installed PostgreSQL,
+      # which would silently shadow this container. See docs/guides/troubleshooting.md
+      - "5435:5432"
     volumes:
       - postgres_identity_data:/var/lib/postgresql/data
     restart: unless-stopped

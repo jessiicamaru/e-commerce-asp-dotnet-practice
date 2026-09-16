@@ -10,7 +10,7 @@ Each microservice in our architecture owns a dedicated, isolated PostgreSQL data
 
 | Microservice | Container Name | Port | Database Name | Primary Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| **Identity Service** | `ecommerce-identity-db` | `5432` | `ecommerce_identity_db` | Users, Roles, Refresh Tokens |
+| **Identity Service** | `ecommerce-identity-db` | `5435` | `ecommerce_identity_db` | Users, Roles, Refresh Tokens |
 | **Catalog Service** | `ecommerce-catalog-db` | `5433` | `ecommerce_catalog_db` | Categories, Products, Outbox Messages |
 | **Order Service** | `ecommerce-order-db` | `5434` | `ecommerce_order_db` | Orders, Order Items, Outbox Messages |
 | **Orchestrator Service** | `ecommerce-orchestrator-db` | `5436` | `ecommerce_saga_db` | Order Saga State Machine Persistence |
@@ -31,7 +31,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=ecommerce_identity_db
     ports:
-      - "5432:5432"
+      - "5435:5432"   # not 5432: a locally installed PostgreSQL usually holds that
 
   postgres-catalog:
     image: postgres:16-alpine
@@ -116,6 +116,11 @@ dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestr
 2. Log in with credentials: `admin@admin.com` / `123456`.
 3. Add servers (Connect using Container Name and internal port `5432`):
    - **Identity DB Connection**: Host `ecommerce-identity-db`, Port `5432`, DB `ecommerce_identity_db`
+
+   > Those are the ports *inside* the Docker network, which is why they are all `5432` regardless of
+   > what each container publishes on the host. pgAdmin runs as a container and reaches the databases
+   > by service name. To point it at a PostgreSQL installed on your own machine instead, use host
+   > `host.docker.internal`.
    - **Catalog DB Connection**: Host `ecommerce-catalog-db`, Port `5432`, DB `ecommerce_catalog_db`
    - **Order DB Connection**: Host `ecommerce-order-db`, Port `5432`, DB `ecommerce_order_db`
    - **Orchestrator Saga DB Connection**: Host `ecommerce-orchestrator-db`, Port `5432`, DB `ecommerce_saga_db`

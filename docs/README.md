@@ -78,8 +78,9 @@ Then, from the `server/` directory:
 | **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`admin@admin.com` / `123456`) |
 | **RabbitMQ Management** | `15672` | `http://localhost:15672` (`guest` / `guest`) |
 
-> If a PostgreSQL instance is already installed on your machine it will occupy port `5432` and
-> shadow the Identity container, silently sending Identity's data somewhere else. See
-> [Troubleshooting §6](./guides/troubleshooting.md) if migrations report "already up to date" against
-> an empty database.
+> Anything installed natively on your machine that shares a port with a container will shadow it
+> silently. The Identity database is published on `5435` instead of `5432` for that reason, and a
+> locally installed RabbitMQ on `5672` will take precedence over the container. See
+> [Troubleshooting §6](./guides/troubleshooting.md) if migrations report "already up to date"
+> against an empty database, or if CI fails where your machine passes.
 

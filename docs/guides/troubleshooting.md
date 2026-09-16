@@ -173,66 +173,75 @@ dotnet add src/Services/Catalog/Ecommerce.Catalog.WebApi/ package MassTransit.Ra
 
 ---
 
-## 6. A Local PostgreSQL Install Shadowing the Docker Container
+## 6. A Locally Installed Service Shadowing a Docker Container
 
 ### Symptoms
 
-* `dotnet ef database update` reports **"No migrations were applied. The database is already up to date"**, yet querying the container shows nothing:
+* `dotnet ef database update` reports **"No migrations were applied. The database is already up to
+  date"**, yet querying the container shows nothing:
   ```
   ERROR:  relation "roles" does not exist
   ```
 * Data written through the API is invisible in pgAdmin when connected to the container.
-* Only the **Identity** service is affected. Catalog, Order and Orchestrator behave normally.
+* CI fails where your machine passes — for example a service never reaching a healthy state because
+  no broker is reachable, while locally it starts fine.
 
 ### Diagnosis
 
-A PostgreSQL instance installed directly on the machine (Windows service `postgresql-x64-16`, or
-Homebrew/apt elsewhere) already listens on port `5432` — the same port `ecommerce-identity-db` is
-published on. Docker may still bind successfully on a different interface (IPv6 `::` versus IPv4
-`0.0.0.0`), so `docker compose up` reports no conflict, but `Host=localhost` resolves to the
-**native** instance first.
+A service installed directly on the machine — PostgreSQL on `5432`, RabbitMQ on `5672` — already
+holds the port a container publishes on. Docker may still bind successfully on a different
+interface (IPv6 `::` versus IPv4 `0.0.0.0`), so `docker compose up` reports no conflict, but
+`Host=localhost` resolves to the **native** instance first.
 
-The result is a split brain: Identity reads and writes the local PostgreSQL install, while every
-other service uses its container. Only Identity is hit because the others publish `5433`, `5434` and
-`5436`, which nothing else claims.
-
-Confirm what actually holds the port:
+The result is a split brain: the application talks to the local install while the container sits
+unused, and the difference only surfaces somewhere without that local install, such as CI.
 
 ```powershell
-Get-NetTCPConnection -LocalPort 5432 -State Listen |
-  Select-Object LocalAddress, OwningProcess,
+# Windows — anything listed besides com.docker.backend is shadowing the container
+Get-NetTCPConnection -LocalPort 5432, 5672 -State Listen |
+  Select-Object LocalPort, LocalAddress,
     @{n='Process';e={(Get-Process -Id $_.OwningProcess).ProcessName}}
 ```
-
-Two rows — one `com.docker.backend`, one `postgres` — confirms the clash.
 
 ```bash
 # Linux / macOS
 sudo lsof -iTCP:5432 -sTCP:LISTEN
+sudo lsof -iTCP:5672 -sTCP:LISTEN
 ```
+
+An `erl` process on `5672` is a native RabbitMQ; a `postgres` process on `5432` is a native
+PostgreSQL.
 
 ### Solution
 
-**Option A — free the port** (simplest if the local install is unused):
+**PostgreSQL — already handled.** The Identity database publishes on **`5435`**, not `5432`, so it
+no longer collides with a local PostgreSQL install. `server/.env` sets `IDENTITY_DB_PORT=5435` to
+match. Keep those two in sync if you change either. Catalog (`5433`), Order (`5434`) and
+Orchestrator (`5436`) never collided.
+
+**RabbitMQ — stop the local install.** The services call `cfg.Host(rabbitHost, "/", ...)` and pass
+no port, so the broker must be on the default `5672`; you cannot move the container out of the way
+without a code change. Free the port instead:
 
 ```powershell
-Stop-Service postgresql-x64-16
-Set-Service postgresql-x64-16 -StartupType Manual   # keep it from coming back on reboot
+Stop-Service RabbitMQ
+Set-Service RabbitMQ -StartupType Manual   # keep it from returning on reboot
 ```
 
-**Option B — move Identity to a free port** (keep both):
+Uninstalling the local RabbitMQ works too. Either way `docker compose up -d rabbitmq` then owns
+`5672`. Queues and messages held by the local broker are lost, which is harmless here — MassTransit
+recreates its exchanges and queues on startup.
 
-1. Change the published port in `docker-compose.yml` to `5435:5432`.
-2. Add `IDENTITY_DB_PORT=5435` to `server/.env`.
-3. Recreate the container and re-run the migration:
-   ```bash
-   docker compose up -d --force-recreate postgres-identity
-   dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
-   ```
+### After freeing a port
 
-Either way the container database starts empty, so the migration runs from scratch and the startup
-initializer re-seeds the roles and bootstrap administrator. Any data that was sitting in the native
-instance stays there — export it first if you need it.
+The container starts empty, so re-run the migration and let the service seed itself:
+
+```bash
+docker compose up -d
+dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
+```
+
+Data left behind in the native instance stays there — dump it first if you need it.
 
 ---
 
@@ -246,4 +255,4 @@ If your IDE reports red errors but your code looks correct:
    ```
 2. **Inspect `.csproj` Files**: Treat `.csproj` files as the source-of-truth configuration for dependencies. Ensure both `<ProjectReference>` (other projects) and `<PackageReference>` (NuGet packages) are correct.
 3. **Check Namespaces**: Ensure the files have the correct `using` statements at the top. Extension methods often require importing the core namespace (e.g., `using Microsoft.EntityFrameworkCore;`).
-4. **Confirm which database you are actually talking to**: when data "disappears", check the port for a second PostgreSQL instance before suspecting the code (see section 6).
+4. **Confirm which service you are actually talking to**: when data "disappears", or when CI fails on something that works locally, check whether a natively installed PostgreSQL or RabbitMQ is holding the port instead of the container (see section 6).
