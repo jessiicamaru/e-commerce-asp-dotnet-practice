@@ -22,7 +22,7 @@ Mirrors the labels. Colours match the label taxonomy in `gh-setup`.
 | Field | Values → colour |
 | --- | --- |
 | `type` | feat→0E8A16, fix→D73A4A, refactor→FBCA04, docs→0075CA, chore→CFD3D7, test→BFD4F2 |
-| `area` | backend→5319E7, frontend→1D76DB, widget→006B75, sync→B60205, db→5319E7. Join several with `%20%7C%20`. |
+| `area` | identity→5319E7, catalog→1D76DB, order→0E8A16, orchestrator→006B75, gateway→C2E0C6, shared→FEF2C0, db→5319E7, infra→CFD3D7. Join several with `%20%7C%20`. |
 | `size` | XS/S→C2E0C6, M→FEF2C0, L→F9D0C4, XL→E99695 |
 | `risk_badges` | Only when true. e.g. `![risk](https://img.shields.io/badge/risk-migration-E99695)` |
 
@@ -54,9 +54,8 @@ issue. Lead with the user-visible effect, not the implementation.}}
 | Check | Result |
 | --- | --- |
 | `dotnet build` | {{0 errors / n warnings}} |
-| `dotnet test` | {{n passed / n failed}} |
-| `flutter analyze` | {{n issues}} |
-| `flutter test` | {{n passed}} |
+| `dotnet test` | {{n passed / n failed, or "no test project touched"}} |
+| `verify-auth.sh` | {{n checks passed, or "not run"}} |
 | Manual / E2E | {{what you actually exercised, or "not run"}} |
 
 {{Paste the real output for anything surprising. If a suite was not run, say so here —
@@ -69,12 +68,15 @@ alternative you rejected and why. Delete if you genuinely have nothing.}}
 
 ## Checklist
 
-- [ ] Tests cover the new or changed behaviour (project rule 11)
-- [ ] `dotnet test` and `flutter test` pass (project rule 14)
-- [ ] `dotnet build` and `flutter analyze` are clean (project rule 16)
-- [ ] No hardcoded strings or magic numbers (project rule 4)
+- [ ] Behaviour that cannot be checked by hand has an automated check
+- [ ] `dotnet build` is clean; any test project touched passes
+- [ ] Entity writes and the events they cause commit together — publish **before**
+      the single `SaveChangesAsync` (constitution III)
+- [ ] Any new or changed consumer is safe to process the same message twice,
+      enforced by a constraint or a guarded update rather than configuration
+- [ ] Caller identity comes from `ICurrentUser`, never from the request (constitution IV)
 - [ ] No secret, token or credential added to a tracked file
-- [ ] UI uses `shadcn_ui` + `lucide_icons` only (project rule 7)
+- [ ] Docs under `docs/` that this change contradicts were updated in the same change
 ```
 
 Only tick a box you have actually verified. An unticked box with a one-line reason is
@@ -99,7 +101,8 @@ checkout. Name the seed data or account needed.}}
 | {{img}} | {{img}} |
 ```
 
-Screenshots are expected for anything under `apps/lib/features/**/presentation/`.
+This repository is backend-only, so this section is usually deleted. Keep it when a
+capture genuinely helps — a RabbitMQ queue view, a pgAdmin row, terminal output.
 
 ---
 
@@ -193,7 +196,7 @@ Put this directly under the badge row so it cannot be missed:
 
 ```markdown
 > [!CAUTION]
-> **Breaking:** {{what breaks, and for whom — the Flutter client, an existing DB row,
-> a stored token.}}
+> **Breaking:** {{what breaks, and for whom — a service consuming this contract, an
+> existing DB row, a stored token.}}
 > **Migration path:** {{what a consumer has to do.}}
 ```

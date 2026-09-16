@@ -5,7 +5,7 @@ description: Browse and pull work items from the GitHub Issues tab of this repo 
 
 # Issues
 
-Repo: `jessiicamaru/habit-tracker`. Needs `gh` or the GitHub MCP server — if neither
+Repo: `jessiicamaru/e-commerce-asp-dotnet-practice`. Needs `gh` or the GitHub MCP server — if neither
 answers, run `gh-setup`.
 
 ## Invocation
@@ -79,9 +79,12 @@ Then, useful additions the user cannot see at a glance:
    | `documentation` | `docs/` |
    | otherwise | `chore/` |
 
-   Existing examples: `feat/google-calendar-bidirectional-sync`, `bugfix/squad`,
-   `feature/habit-tasks-and-event-checklist`. Including the issue number
-   (`feat/42-squad-categories`) lets `gh-pr-create` link it automatically later.
+   Existing examples: `feature/jwt-authentication`, `001-inventory-reservations`,
+   `fix/outbox-publish-ordering`. Including the issue number
+   (`feat/42-payment-service`) lets `gh-pr-create` link it automatically later.
+
+   A branch opened through `dev-new-session` is already named `NNN-short-name` to
+   match its spec directory — keep that name rather than renaming it here.
 
 3. **Show the branch name and ask before creating it.** This project's rules forbid
    unprompted checkouts.

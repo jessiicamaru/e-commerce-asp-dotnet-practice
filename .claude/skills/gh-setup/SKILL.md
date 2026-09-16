@@ -6,7 +6,7 @@ description: One-time setup for GitHub access in this repo - install and authent
 # GitHub access setup
 
 The `gh-pr-create` and `gh-pr-review` skills need a way to talk to
-`github.com/jessiicamaru/habit-tracker`. There are two, and **either one is enough**.
+`github.com/jessiicamaru/e-commerce-asp-dotnet-practice`. There are two, and **either one is enough**.
 
 ## Invocation
 
@@ -20,7 +20,7 @@ then walk only the steps that are actually missing.
 | `--mcp` | Set up Option B (GitHub MCP server) only. |
 | `--labels` | Skip access setup; only create the label taxonomy. |
 | `--labels --dry-run` | Print the `gh label create` commands without running them. |
-| `--repo <owner/name>` | Target a different repo than `jessiicamaru/habit-tracker`. |
+| `--repo <owner/name>` | Target a different repo than `jessiicamaru/e-commerce-asp-dotnet-practice`. |
 
 Never run the label block without confirming first — it writes to the real repo.
 
@@ -64,7 +64,7 @@ Ask for these scopes when prompted: `repo`, `read:org`. Adding a reviewer needs
 ### Verify against this repo
 
 ```bash
-gh repo view jessiicamaru/habit-tracker --json name,defaultBranchRef
+gh repo view jessiicamaru/e-commerce-asp-dotnet-practice --json name,defaultBranchRef
 gh pr list --limit 3
 gh issue list --limit 3
 ```
@@ -82,7 +82,7 @@ native tool calls.
 
 Create a fine-grained personal access token at
 <https://github.com/settings/personal-access-tokens/new>, scoped to the
-`habit-tracker` repository, with these **repository permissions**:
+`e-commerce-asp-dotnet-practice` repository, with these **repository permissions**:
 
 | Permission | Access | Needed for |
 | --- | --- | --- |
@@ -121,8 +121,8 @@ export GITHUB_TOKEN=github_pat_...
 
 **Never write the token into `.mcp.json` itself.** `${GITHUB_TOKEN}` is expanded at
 load time, which keeps the secret out of git. If you must inline it for a quick test,
-add `.mcp.json` to `.gitignore` first — this repo has already leaked credentials once
-(see `docs/review-code-reports/`), so treat this as a hard rule.
+add `.mcp.json` to `.gitignore` first. A token committed once stays in the history even
+after it is deleted, so treat this as a hard rule.
 
 Restart Claude Code, then confirm `mcp__github__*` tools appear.
 
@@ -151,11 +151,14 @@ gh label create "type: chore"    --color CFD3D7 --description "Tooling, CI, depe
 gh label create "type: test"     --color BFD4F2 --description "Tests only"                       --force
 
 # area - one or more, matches the commit scopes already used in this repo
-gh label create "area: backend"  --color 5319E7 --description "server/ (.NET)"                   --force
-gh label create "area: frontend" --color 1D76DB --description "apps/ (Flutter)"                  --force
-gh label create "area: widget"   --color 006B75 --description "Android home screen widgets"      --force
-gh label create "area: sync"     --color B60205 --description "Google Calendar sync path"        --force
-gh label create "area: db"       --color 5319E7 --description "EF Core model or migrations"      --force
+gh label create "area: identity"     --color 5319E7 --description "Identity service"                 --force
+gh label create "area: catalog"      --color 1D76DB --description "Catalog service"                  --force
+gh label create "area: order"        --color 0E8A16 --description "Order service"                    --force
+gh label create "area: orchestrator" --color 006B75 --description "Saga orchestrator"                --force
+gh label create "area: gateway"      --color C2E0C6 --description "YARP API gateway"                 --force
+gh label create "area: shared"       --color FEF2C0 --description "BuildingBlocks (Shared/Contracts)" --force
+gh label create "area: db"           --color 5319E7 --description "EF Core model or migrations"      --force
+gh label create "area: infra"        --color CFD3D7 --description "Compose, env, scripts, CI"        --force
 
 # risk - only when true; these are what a reviewer should look at first
 gh label create "risk: migration" --color E99695 --description "Contains an EF migration"        --force

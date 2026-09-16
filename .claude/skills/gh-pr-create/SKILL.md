@@ -5,7 +5,7 @@ description: Open a GitHub pull request for the current branch in this repo - wo
 
 # Create a pull request
 
-Repo: `jessiicamaru/habit-tracker`. Needs `gh` or the GitHub MCP server — if neither
+Repo: `jessiicamaru/e-commerce-asp-dotnet-practice`. Needs `gh` or the GitHub MCP server — if neither
 answers, run `gh-setup` instead of guessing.
 
 ## Invocation
@@ -85,12 +85,14 @@ Use `Closes #N` when the PR fully resolves it, `Refs #N` when it only relates.
 
 ### 5. Title
 
-Conventional Commits, matching this repo's history
-(`feat(backend):`, `fix(calendar):`, `refactor:`, `docs:`, `chore(agents):`):
+Conventional Commits, matching this repo's history — the scope is the service or
+building block touched (`feat(catalog):`, `feat(identity):`, `fix(outbox):`,
+`refactor(shared):`, `docs(architecture):`, `ci:`, `chore:`):
 
 - One commit → reuse its subject.
-- Several → synthesise one line covering the whole change. Scope from the area touched
-  (`backend`, `frontend`, `widget`, `calendar`, `sync`, `db`).
+- Several → synthesise one line covering the whole change. Scope from the service or
+  building block touched (`identity`, `catalog`, `order`, `orchestrator`, `gateway`,
+  `shared`, `contracts`, `outbox`, `infra`).
 - Imperative mood, no trailing period, ≤ 72 chars.
 
 ### 6. Description
@@ -115,12 +117,16 @@ tick a checklist box you have not verified; leave it unticked and say so in the 
 Infer, then show the user the set before applying:
 
 - **type** — exactly one, from the Conventional Commit prefix of the title.
-- **area** — one or more: `server/` → `area: backend`; `apps/lib` → `area: frontend`;
-  `apps/android/**/widget/` → `area: widget`; any Google-Calendar path → `area: sync`;
-  `Migrations/` or `ApplicationDbContext` → `area: db`.
-- **risk** — `risk: migration` if the diff adds a file under `server/src/Infrastructure/Migrations/`;
-  `risk: security` if it touches auth, authorization, secrets or config;
-  `risk: breaking` if a public endpoint, DTO or interface changed shape.
+- **area** — one or more, from the path: `src/Services/Identity/` → `area: identity`;
+  likewise `catalog`, `order`, `orchestrator`; `src/ApiGateway/` → `area: gateway`;
+  `src/BuildingBlocks/` → `area: shared`; any `*/Migrations/` or a `DbContext` →
+  `area: db`; `docker-compose.yml`, `.env.example`, `start-dev.*` or `.github/` →
+  `area: infra`.
+- **risk** — `risk: migration` if the diff adds a file under any `*/Migrations/`;
+  `risk: security` if it touches authentication, authorization, secrets or config;
+  `risk: breaking` if a public endpoint, DTO **or a record in `Ecommerce.Contracts`**
+  changed shape. A contract change is breaking even when it compiles, because the other
+  services deserialize it.
 - **size** — from `git diff --shortstat origin/<base>...HEAD` (added+deleted):
   `XS` <50, `S` <200, `M` <600, `L` <1500, `XL` ≥1500.
 
@@ -137,7 +143,7 @@ based on who last touched the changed files, and confirm before requesting:
 
 ```bash
 git log --format="%an" -20 -- <changed paths> | sort | uniq -c | sort -rn
-gh api repos/jessiicamaru/habit-tracker/collaborators --jq '.[].login'
+gh api repos/jessiicamaru/e-commerce-asp-dotnet-practice/collaborators --jq '.[].login'
 ```
 
 Never request review from the PR author — GitHub rejects it and the whole command
@@ -153,7 +159,7 @@ gh pr create \
   --title "<title>" \
   --body-file <tmp>.md \
   [--draft] \
-  [--label "type: feat" --label "area: backend" ...] \
+  [--label "type: feat" --label "area: catalog" ...] \
   [--reviewer <user> ...]
 ```
 

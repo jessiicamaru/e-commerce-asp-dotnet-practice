@@ -5,7 +5,7 @@ description: Fetch and review a GitHub pull request in this repo - pull the diff
 
 # Review a pull request
 
-Repo: `jessiicamaru/habit-tracker`. Needs `gh` or the GitHub MCP server — if neither
+Repo: `jessiicamaru/e-commerce-asp-dotnet-practice`. Needs `gh` or the GitHub MCP server — if neither
 answers, run `gh-setup`.
 
 ## Invocation
@@ -74,23 +74,37 @@ Run all unless `--lens` narrows it.
 
 | Lens | Looks for |
 | --- | --- |
-| `security` | Missing `RequireAuthorization()`; a client-supplied id (userId, squadId) trusted without a membership/ownership check; a query not filtered by the caller; secrets or tokens in tracked files; anything weakening auth. |
+| `security` | A protected endpoint without `[Authorize]`; a caller-supplied id (a `userId` field on a command, a query-string owner id) trusted instead of `ICurrentUser`; a service registering endpoints without `AddJwtAuthentication`; secrets in tracked files or `appsettings.json`; anything weakening auth. |
 | `bugs` | Logic that is wrong on a real input. Off-by-one, null paths, timezone/day-boundary handling, async gaps, silently swallowed exceptions. |
-| `contracts` | Endpoint, DTO, entity or interface shape changes; whether the Flutter client still matches; EF migrations and what they do to existing rows. |
+| `contracts` | Endpoint, DTO, entity or message-record shape changes; whether every service that publishes or consumes the changed `Ecommerce.Contracts` record still agrees; EF migrations and what they do to existing rows. |
 | `tests` | Whether new behaviour is actually covered, and whether a new test would fail without the fix. A test that passes before and after proves nothing. |
-| `quality` | Duplication, magic numbers/strings, oversized widgets or handlers, project-rule violations (see `.agents/rules/project-rules.md`). |
+| `quality` | Duplication, magic numbers/strings, oversized handlers, and violations of the ratified principles in `.specify/memory/constitution.md`. |
 | `docs` | Code/doc drift: does this change make a doc in `docs/`, the README or `CLAUDE.md` wrong? |
 
-**Repo-specific things worth checking every time**, because they have all bitten before
-(see `docs/review-code-reports/`):
+**Repo-specific things worth checking every time.** Every one of these has already been
+shipped and fixed here, so they are patterns rather than hypotheticals — see
+`.specify/memory/constitution.md` for why each one matters:
 
-- A handler writing several entities without `IUnitOfWork.ExecuteInTransactionAsync` —
-  every repository method calls `SaveChangesAsync` itself, so N calls = N transactions.
-- A read that loads a whole table or a user's entire all-time history to compute one value.
-- Derived state (XP, streaks) recomputed at read time instead of recorded when earned.
-- `BuildContext` used after an `await` without a guard, or guarded by an unrelated
-  `mounted` check.
-- A new hardcoded day-boundary offset instead of `StreakCalculator`.
+- **`_publishEndpoint.Publish(...)` after `SaveChangesAsync`** instead of before it. The
+  entity and its outbox row must commit together; this exact ordering has been fixed twice
+  (`140fb39`, `ca5bc20`) and the failure is invisible until the data cannot be reconciled.
+- **A consumer that is not safe to run twice.** The broker redelivers as normal operation.
+  Idempotency has to rest on a unique constraint or a guarded status update, not on inbox
+  configuration alone.
+- **A `UserId` on a command, or an owner id read from the request.** Identity comes from
+  `ICurrentUser`. `SubmitOrderCommand` once took `UserId` from the body, which let anyone
+  order as anyone.
+- **A new service whose `Program.cs` omits the `JWT_SECRET` mapping** into
+  `JwtSettings:Secret`, or calls `UseAuthentication` without `AddJwtAuthentication`. Both
+  fail silently — every token rejected, or none validated.
+- **A claim name assumed rather than observed.** `JwtSecurityTokenHandler` rewrites `sub`
+  and shortens `ClaimTypes.Role` to `role`. A test token you signed yourself will agree
+  with whatever you assumed; only a token the Identity service issued proves anything.
+- **A new host port on 5432 or 5672.** A locally installed PostgreSQL or RabbitMQ shadows
+  the container silently, and the divergence only surfaces in CI.
+- **`Guid.NewGuid()` on a new entity id** where ADR-001 calls for `Guid.CreateVersion7()`.
+- **A doc under `docs/` left contradicting the change.** Documentation is updated in the
+  same change as the code it describes.
 
 ### 4. Score before reporting
 
@@ -115,7 +129,7 @@ what was verified.
 
 ```bash
 # inline, on a specific line of the diff
-gh api repos/jessiicamaru/habit-tracker/pulls/<n>/comments \
+gh api repos/jessiicamaru/e-commerce-asp-dotnet-practice/pulls/<n>/comments \
   -f body='<text>' -f commit_id='<sha>' -f path='<file>' -F line=<n> -f side=RIGHT
 
 # one summary comment
