@@ -35,7 +35,14 @@
     <Project Path="src/Services/Order/Ecommerce.Order.Infrastructure/Ecommerce.Order.Infrastructure.csproj" />
     <Project Path="src/Services/Order/Ecommerce.Order.WebApi/Ecommerce.Order.WebApi.csproj" />
   </Folder>
+  <Folder Name="/src/Services/Payment/">
+    <Project Path="src/Services/Payment/Ecommerce.Payment.Application/Ecommerce.Payment.Application.csproj" />
+    <Project Path="src/Services/Payment/Ecommerce.Payment.Domain/Ecommerce.Payment.Domain.csproj" />
+    <Project Path="src/Services/Payment/Ecommerce.Payment.Infrastructure/Ecommerce.Payment.Infrastructure.csproj" />
+    <Project Path="src/Services/Payment/Ecommerce.Payment.WebApi/Ecommerce.Payment.WebApi.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Ecommerce.Inventory.Tests/Ecommerce.Inventory.Tests.csproj" />
+    <Project Path="tests/Ecommerce.Payment.Tests/Ecommerce.Payment.Tests.csproj" />
   </Folder>
 </Solution>

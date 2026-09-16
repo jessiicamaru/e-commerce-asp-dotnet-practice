@@ -1,7 +1,7 @@
 ---
 name: dev-new-session
 description: Start a new feature working session - capture the requirement, branch on the next spec number, then optionally run the Spec Kit pipeline (specify, plan, tasks) and offer to implement. Use when the user wants to start a new feature, start a new session, begin work on something new, or asks to "pick up the next thing".
-argument-hint: "Optional: the requirement, plus 'auto' to run the whole pipeline without asking"
+argument-hint: "Optional: the requirement, plus --auto to run the whole pipeline without asking"
 ---
 
 # Start a new development session
@@ -11,14 +11,19 @@ Opens a feature: requirement → branch → Spec Kit artifacts → optionally im
 ## Invocation
 
 ```text
-/dev-new-session                                    # asks for the requirement
-/dev-new-session Payment service for the saga       # requirement given
-/dev-new-session Payment service for the saga auto  # run the whole pipeline, no questions
+/dev-new-session                                      # asks for the requirement
+/dev-new-session Payment service for the saga         # requirement given
+/dev-new-session Payment service for the saga --auto  # run the whole pipeline, no questions
 ```
 
-**Auto mode** is on when the invocation contains `auto`, `tự động`, `chạy hết`, `full pipeline`, or
-`--auto`, **or** when the user has already said so earlier in the conversation. Once it is on, do
-not ask any of the confirmation questions below — run straight through and report at the end.
+**Auto mode** is on when, and only when, the invocation carries the literal flag `--auto`. Once it
+is on, do not ask any of the confirmation questions below — run straight through and report at the
+end.
+
+> Match the flag, never a bare word. An earlier version of this skill also triggered on `auto`
+> anywhere in the text, and `/dev-new-session Làm một cái PaymentService auto success đi` matched —
+> "auto" there described the payment behaviour, not the pipeline. Substring matching on a word that
+> can legitimately appear in a requirement silences the user's questions by accident.
 
 ---
 
@@ -152,6 +157,8 @@ Then:
   that silently carries unrelated work.
 - **Auto mode silences confirmations, not clarifications.** A question about *what to build* still
   gets asked; a question about *whether to proceed* does not.
+- **Only `--auto` turns it on.** Not the word "auto" in a sentence, not a guess from tone. When in
+  doubt, ask — a question costs one message, skipping one silently decides on the user's behalf.
 - **Report what surprised you.** If the plan contradicts an existing document, or a contract turned
   out to have a gap, that goes in the report at the end — not only in the file where it will be
   read later, if ever.

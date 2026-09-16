@@ -102,6 +102,7 @@ prefix unless `--template` says otherwise:
 
 | Branch prefix | Template variant |
 | --- | --- |
+| `NNN-<name>` (a Spec Kit feature branch from `dev-new-session`) | feature |
 | `feat/`, `feature/` | feature |
 | `fix/`, `bugfix/`, `hotfix/` | bugfix |
 | `refactor/`, `perf/` | refactor |
@@ -118,7 +119,8 @@ Infer, then show the user the set before applying:
 
 - **type** — exactly one, from the Conventional Commit prefix of the title.
 - **area** — one or more, from the path: `src/Services/Identity/` → `area: identity`;
-  likewise `catalog`, `order`, `orchestrator`; `src/ApiGateway/` → `area: gateway`;
+  likewise `catalog`, `order`, `orchestrator`, `inventory`, `payment`;
+  `src/ApiGateway/` → `area: gateway`;
   `src/BuildingBlocks/` → `area: shared`; any `*/Migrations/` or a `DbContext` →
   `area: db`; `docker-compose.yml`, `.env.example`, `start-dev.*` or `.github/` →
   `area: infra`.
