@@ -138,4 +138,4 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     }
 });
 
-app.Run();
+app.Run("http://localhost:5056");

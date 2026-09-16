@@ -145,10 +145,11 @@ jobs:
 
       - name: Start services
         run: |
-          # Identity ends with app.Run() and honours ASPNETCORE_URLS.
-          # Catalog pins its own URL via app.Run("http://localhost:5057").
-          ASPNETCORE_URLS=http://localhost:5056             dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/             --configuration Release --no-build --no-launch-profile > /tmp/identity.log 2>&1 &
-          dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/             --configuration Release --no-build --no-launch-profile > /tmp/catalog.log 2>&1 &
+          # Both services pin their own URL via app.Run("http://localhost:50XX").
+          dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/ \
+            --configuration Release --no-build --no-launch-profile > /tmp/identity.log 2>&1 &
+          dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/ \
+            --configuration Release --no-build --no-launch-profile > /tmp/catalog.log 2>&1 &
 
           # 000 means nothing is listening yet; anything else means the service
           # answered, so a non-2xx tells us it is up but reporting unhealthy.
