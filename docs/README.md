@@ -76,6 +76,7 @@ Then, from the `server/` directory:
 | **Orchestrator Service (Saga)** | `5058` | `http://localhost:5058` |
 | **Order Service** | `5059` | `http://localhost:5059` |
 | **Inventory Service** | `5060` | `http://localhost:5060` |
+| **Payment Service** | `5061` | `http://localhost:5061` (**stub — moves no money**) |
 | **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`admin@admin.com` / `123456`) |
 | **RabbitMQ Management** | `15672` | `http://localhost:15672` (`guest` / `guest`) |
 

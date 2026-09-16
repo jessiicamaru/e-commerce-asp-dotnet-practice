@@ -23,6 +23,9 @@ dotnet ef database update --project src/Services/Order/Ecommerce.Order.Infrastru
 Write-Host "🔄 Applying EF Core Migrations for Inventory DB (Port 5437)..." -ForegroundColor Yellow
 dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
 
+Write-Host "Applying EF Core Migrations for Payment DB (Port 5438)..." -ForegroundColor Yellow
+dotnet ef database update --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+
 # 3. Launch Microservices in Separate Terminal Windows
 Write-Host "🌐 Launching Microservices and API Gateway..." -ForegroundColor Green
 
@@ -31,6 +34,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Orchestrator Service (Port 5058)...' -ForegroundColor Green; dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Order Service (Port 5059)...' -ForegroundColor Green; dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Inventory Service (Port 5060)...' -ForegroundColor Green; dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Payment Service (Port 5061)...' -ForegroundColor Green; dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting API Gateway (Port 5000)...' -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/"
 
 Write-Host "✨ All services launched successfully!" -ForegroundColor Green
@@ -40,5 +44,6 @@ Write-Host "  - Catalog API:      http://localhost:5057" -ForegroundColor Cyan
 Write-Host "  - Orchestrator API: http://localhost:5058" -ForegroundColor Cyan
 Write-Host "  - Order API:        http://localhost:5059" -ForegroundColor Cyan
 Write-Host "  - Inventory API:    http://localhost:5060" -ForegroundColor Cyan
+Write-Host "  - Payment API:      http://localhost:5061" -ForegroundColor Cyan
 Write-Host "  - pgAdmin:          http://localhost:5050" -ForegroundColor Cyan
 Write-Host "  - RabbitMQ UI:      http://localhost:15672" -ForegroundColor Cyan

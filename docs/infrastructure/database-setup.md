@@ -15,6 +15,7 @@ Each microservice in our architecture owns a dedicated, isolated PostgreSQL data
 | **Order Service** | `ecommerce-order-db` | `5434` | `ecommerce_order_db` | Orders, Order Items, Outbox Messages |
 | **Orchestrator Service** | `ecommerce-orchestrator-db` | `5436` | `ecommerce_saga_db` | Order Saga State Machine Persistence |
 | **Inventory Service** | `ecommerce-inventory-db` | `5437` | `ecommerce_inventory_db` | Stock Items, Reservations, Outbox and Inbox |
+| **Payment Service** | `ecommerce-payment-db` | `5438` | `ecommerce_payment_db` | Payments, Outbox and Inbox |
 
 ---
 
@@ -109,7 +110,13 @@ dotnet ef migrations add <MigrationName> --project src/Services/Inventory/Ecomme
 dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
 ```
 
-### 4.5 Saga Orchestrator Microservice Migrations
+### 4.5 Payment Microservice Migrations
+```bash
+dotnet ef migrations add <MigrationName> --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+dotnet ef database update --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+```
+
+### 4.6 Saga Orchestrator Microservice Migrations
 ```bash
 dotnet ef migrations add <MigrationName> --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/

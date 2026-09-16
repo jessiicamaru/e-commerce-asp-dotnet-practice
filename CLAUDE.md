@@ -33,14 +33,15 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/Ecommerce.Inventory.Tests` (xUnit, 19 tests). They run against a **real
-PostgreSQL on 5437** — the guarantees under test are the database's row locking and unique
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (19 tests, PostgreSQL on 5437) and
+`Ecommerce.Payment.Tests` (11 tests, PostgreSQL on 5438). They run against a **real
+PostgreSQL** — the guarantees under test are the database's row locking and unique
 constraints, so an in-memory provider would pass against code that oversells. Run them with
 `DB_PASSWORD` set:
 
 ```bash
 cd server
-DB_PASSWORD=<your password> dotnet test tests/Ecommerce.Inventory.Tests
+DB_PASSWORD=<your password> dotnet test
 ```
 
 There is also an end-to-end auth check,
@@ -66,6 +67,7 @@ script. If adding unit tests there is no existing convention to follow — pick 
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | SubmitOrder + outbox |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
+| Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`.
 
@@ -91,7 +93,9 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 ### Saga
 [OrderStateMachine.cs](server/src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/StateMachines/OrderStateMachine.cs) drives `OrderSubmitted → ReserveInventory → ProcessPayment → OrderCompleted`, with `ReleaseInventoryCommand` compensation on payment failure. All events correlate on `OrderId`; the instance is `OrderStateData` persisted through `SagaDbContext` with `ConcurrencyMode.Optimistic`.
 
-**Payment does not exist yet** — Inventory now answers `ReserveInventoryCommand`, so the saga reaches `InventoryReservedState`, but stalls there until a payment service exists. Every such reservation is eventually reclaimed by Inventory's expiry sweeper, which is correct rather than a bug.
+**The saga now runs end to end.** Submit → reserve → pay → complete, with stock permanently deducted, and no message published by hand. Both branches are reachable: setting `PAYMENT_OUTCOME=Reject` exercises the compensation path, which releases the held stock.
+
+⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
 
 Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf. The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–4 done, Phase 5 = observability/Seq/E2E is next).
 

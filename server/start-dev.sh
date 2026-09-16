@@ -23,6 +23,9 @@ dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestr
 echo "🔄 Applying EF Core Migrations for Order DB (Port 5434)..."
 dotnet ef database update --project src/Services/Order/Ecommerce.Order.Infrastructure/ --startup-project src/Services/Order/Ecommerce.Order.WebApi/
 
+echo "Applying EF Core Migrations for Payment DB (Port 5438)..."
+dotnet ef database update --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+
 echo "Applying EF Core Migrations for Inventory DB (Port 5437)..."
 dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
 
@@ -42,15 +45,17 @@ else
     dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ &
     dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/ &
     dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/ &
+    dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/ &
     dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/ &
 fi
 
-echo "✨ All 6 services launched successfully in separate windows!"
+echo "✨ All 7 services launched successfully in separate windows!"
 echo "  - API Gateway:      http://localhost:5000"
 echo "  - Identity API:     http://localhost:5056"
 echo "  - Catalog API:      http://localhost:5057"
 echo "  - Orchestrator API: http://localhost:5058"
 echo "  - Order API:        http://localhost:5059"
 echo "  - Inventory API:    http://localhost:5060"
+echo "  - Payment API:      http://localhost:5061"
 echo "  - pgAdmin:          http://localhost:5050"
 echo "  - RabbitMQ UI:      http://localhost:15672"

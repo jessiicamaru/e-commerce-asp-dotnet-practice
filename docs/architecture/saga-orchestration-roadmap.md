@@ -166,9 +166,24 @@ graph TD
 
 ---
 
-### 🟡 Phase 6: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
+### 🟢 Phase 6: Payment Microservice (`Ecommerce.Payment`) & Full Saga Completion (Completed)
+* **Goal**: Close checkout — the saga runs all the way to `OrderCompleted`.
+* **Deliverables**:
+  1. **Payment Microservice**: Port `5061`, DB `ecommerce_payment_db` (Port `5438`).
+  2. `ProcessPaymentCommand` consumed, replying `PaymentProcessedEvent` / `PaymentFailedEvent`.
+  3. One payment per order, enforced by a unique constraint; the losing side of a race reports the
+     outcome that won rather than dropping the message or contradicting it.
+  4. `PAYMENT_OUTCOME` makes the **compensation branch reachable** — releasing held stock on a
+     failed payment had never actually run before this.
+
+> ⚠️ **The gateway is a stand-in and moves no money.** Marked on every payment row, in the startup
+> log, and in `/health`. `Infrastructure/Gateway/` is the seam a real provider replaces.
+
+---
+
+### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
   1. Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
   2. Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
-  3. Implement the Payment service so the saga can run all the way to `OrderCompleted`.
+  3. Replace the stub payment gateway with a real provider integration.
