@@ -13,4 +13,18 @@ app.MapHealthChecks("/health");
 // Enable YARP Reverse Proxy middleware routing
 app.MapReverseProxy();
 
-app.Run("http://localhost:5000");
+// Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not
+// localhost, or nothing outside it can connect however the ports are published. Falling back to
+// the pinned address rather than dropping the argument keeps start-dev.sh working: with no
+// argument every service would default to the same port and collide.
+var listenUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+
+if (string.IsNullOrWhiteSpace(listenUrls))
+{
+    app.Run("http://localhost:5000");
+}
+else
+{
+    app.Run();
+}
+

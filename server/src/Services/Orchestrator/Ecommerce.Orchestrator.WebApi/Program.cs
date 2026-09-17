@@ -34,7 +34,16 @@ if (!string.IsNullOrEmpty(dotenv))
         {
             var key = parts[0].Trim();
             var value = parts[1].Trim();
-            Environment.SetEnvironmentVariable(key, value);
+
+            // Fall back, never override. A variable already set in the real environment wins.
+            // That precedence is what makes an image configurable at all: a settings file that
+            // reached a layer must not be able to ignore what the container is told at run time.
+            // Before feature 005 this call was unconditional, which is why
+            // `PAYMENT_OUTCOME=Reject dotnet run ...` was silently ignored.
+            if (Environment.GetEnvironmentVariable(key) is null)
+            {
+                Environment.SetEnvironmentVariable(key, value);
+            }
         }
     }
 }
@@ -44,8 +53,9 @@ var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
 var dbName = Environment.GetEnvironmentVariable("SAGA_DB_NAME") ?? "ecommerce_saga_db";
 var dbPort = Environment.GetEnvironmentVariable("ORCHESTRATOR_DB_PORT") ?? "5436";
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 
-var connectionString = $"Host=localhost;Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
+var connectionString = $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
 builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
 
 // Add services to the container.
@@ -54,7 +64,14 @@ builder.Services.AddOpenApi();
 
 // Register Saga DbContext
 builder.Services.AddDbContext<OrchestratorDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(
+        connectionString,
+        // See the note in every other service's AddInfrastructure: a container stack starts in
+        // parallel, so reaching the database a moment early has to recover rather than fail.
+        npgsql => npgsql.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null)));
 
 // Register MassTransit with OrderStateMachine Saga
 builder.Services.AddMassTransit(x =>
@@ -99,4 +116,31 @@ app.MapControllers();
 
 app.MapGet("/", () => Results.Ok(new { Service = "Ecommerce.Orchestrator", Status = "Running", Environment = app.Environment.EnvironmentName }));
 
-app.Run("http://localhost:5058");
+
+// Applying migrations from inside the service exists for one reason: a runtime image has neither
+// the SDK nor the source, so `dotnet ef database update` - which is how start-dev.sh and CI create
+// these schemas - cannot run there. Off unless asked, because "started successfully" and "was
+// allowed to alter the schema" should not be the same event in a real deployment.
+if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
+{
+    await using var migrationScope = app.Services.CreateAsyncScope();
+    await migrationScope.ServiceProvider
+        .GetRequiredService<OrchestratorDbContext>()
+        .Database.MigrateAsync();
+}
+
+// Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not
+// localhost, or nothing outside it can connect however the ports are published. Falling back to
+// the pinned address rather than dropping the argument keeps start-dev.sh working: with no
+// argument every service would default to the same port and collide.
+var listenUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+
+if (string.IsNullOrWhiteSpace(listenUrls))
+{
+    app.Run("http://localhost:5058");
+}
+else
+{
+    app.Run();
+}
+
