@@ -19,6 +19,7 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 ### 🔌 Infrastructure & Docker
 * [**Database Setup**](./infrastructure/database-setup.md): Guide on running local PostgreSQL and pgAdmin containers, and working with EF Core migrations.
 * [**RabbitMQ Setup**](./infrastructure/rabbitmq-setup.md): Guide on running RabbitMQ via Docker Compose and using the Web Management Console to monitor queues.
+* [**Running in Containers**](./infrastructure/running-in-containers.md): The two supported ways to run the system — `docker compose` for everything, or infrastructure plus `start-dev.sh` as before. Covers the configuration surface, the three settings that are easy to get wrong, why migrations run at startup only in containers, and how an image is checked for secrets.
 
 ### 🔑 Authentication Feature Module
 * [**Database Schema Design**](./features/auth/db-design.md): SQL schemas, entities mapping, and data dictionary for users, roles, and refresh tokens.
@@ -28,11 +29,18 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 
 ### ⚙️ Continuous Integration
 * **[`.github/workflows/ci.yml`](../.github/workflows/ci.yml)**: Builds the solution on every push and pull request to `main`, then runs an auth smoke test against real PostgreSQL service containers — it logs in as the seeded administrator and asserts that anonymous callers get `401`, a `Customer` gets `403` on Admin-only endpoints, and an `Admin` gets through.
+* **[`.github/scripts/verify-image-has-no-secrets.sh`](../.github/scripts/verify-image-has-no-secrets.sh)**: Builds one service image and asserts that no credential appears in **any layer** — not merely in the final filesystem, because a file deleted in a later layer is still readable in the earlier one. CI runs it on every push. This is the only automated check in the container work, because a credential that reaches a published image cannot be un-published, only rotated.
 * **[`.github/scripts/verify-auth.sh`](../.github/scripts/verify-auth.sh)**: The assertions CI runs. Runnable locally too, against services started with `start-dev`:
   ```bash
   cd server
   ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
   ```
+
+### 📓 Work Log
+Dated records of what changed, what was decided, and what turned out to be wrong. Read the most
+recent one before planning: the "what is still not true" section at the end is the part that saves
+time.
+* [**2026-09-17**](./journal/2026-09-17.md): Order lifecycle visibility (#3) and stock single-source (#5) merged; containers opened as #10; issues #6–#9 filed. Includes two defects that reached a running system and passed every unit test — a queue-name collision between two services, and a verification script that reported clean on an image that provably leaked.
 
 ### 🛠️ Developer Guides
 * [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, directory mapping, and EF Core concurrency exceptions.

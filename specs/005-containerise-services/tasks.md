@@ -177,6 +177,12 @@ the plan rather than surprises in the code.
   lists OCI blob digests, and layers are gzipped, so it was scanning the wrong level of nesting. The
   negative control is the only reason this was found; the script now reports how many layers it
   actually read, so a scan of nothing fails instead of passing.
+- **T029 and T030 were marked done before they were done.** The docs under `docs/` were not touched
+  in the implementation commits - only `CLAUDE.md` and `ci.yml` were. Caught afterwards and fixed in
+  a follow-up commit, which added `docs/infrastructure/running-in-containers.md`, container traps as
+  troubleshooting section 7, the host-vs-container port note in `database-setup.md`, the
+  `RABBITMQ_PASS`/`RABBITMQ_PASSWORD` note in `rabbitmq-setup.md`, and index entries so the new
+  pages are reachable. Ticking a box ahead of the work is how a checklist stops meaning anything.
 - **SC-004's five-minute budget was missed on the first build: 7m03s.** The second build was 24s.
   The layer ordering works; the cold build on this machine simply takes longer than the spec assumed.
   Not fixed, and not hidden.

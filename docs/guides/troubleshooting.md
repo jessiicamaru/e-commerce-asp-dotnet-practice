@@ -243,9 +243,86 @@ dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Inf
 
 Data left behind in the native instance stays there — dump it first if you need it.
 
+### A worked example: your own leftover process
+
+Section 6 is usually read as being about *software you installed*. It is not — **a `dotnet run` you
+forgot about does the same thing, and is harder to suspect.**
+
+On 2026-09-17 a Payment process left over from an earlier test, started with
+`PAYMENT_OUTCOME=Reject`, sat on port 5061 while the Payment container ran behind it. Orders failed
+for no visible reason. The container's environment said `Approve`, its `appsettings.json` said
+`Approve`, and `curl localhost:5061/health` said `Rejected` — because the request never reached the
+container. The kill command that should have stopped it earlier had been chained with `;` and failed
+silently.
+
+Before trusting any container result:
+
+```bash
+# Windows
+Get-Process | Where-Object { $_.ProcessName -like 'Ecommerce.*' }
+# Linux / macOS
+pgrep -fa Ecommerce.
+```
+
+**This must be empty**, and *checking that it is* matters more than running the kill — a kill that
+fails quietly leaves you debugging the wrong process.
+
 ---
 
-## 7. General Diagnosis Checklist
+## 7. Container-Specific Traps
+
+Added 2026-09-17 with [Running in Containers](../infrastructure/running-in-containers.md).
+
+### 7.1 A service cannot reach its database, and the error names `localhost`
+
+`DB_HOST` is not reaching it. Inside a container `localhost` is *that container*.
+
+### 7.2 A service times out reaching a database that is clearly healthy
+
+`*_DB_PORT` is almost certainly 5433–5438. Those are **host publications**; inside the container
+network every PostgreSQL listens on **5432**. This looks like a dead database and is not one.
+
+### 7.3 Every authenticated request returns 401 across services
+
+`JWT_SECRET` differs between containers. Identity signs with it and everyone else validates with it,
+so a mismatch presents as an authorization failure rather than a configuration one. Check it is
+supplied from a single source to all seven.
+
+### 7.4 A configuration override in an environment variable is ignored
+
+Known case: the gateway's YARP destinations do **not** bind from
+`ReverseProxy__Clusters__<name>__Destinations__destination1__Address`. The variable is present and
+YARP still dials `localhost:5057`. On the same container `Logging__LogLevel__Default=Warning` works,
+so the environment provider is fine, and the colon-separated form fails too. **Command-line
+arguments bind** — that is what the compose overlay uses.
+
+The cause is not established. If an override is being ignored, try the command-line form before
+assuming your syntax is wrong.
+
+### 7.5 `docker compose ps` says "running" for a service that is answering errors
+
+The service has no health check, or its health check cannot run. `aspnet:10.0` ships neither `curl`
+nor `wget`, and a container health check has to be a command *inside* the container — `curl` is
+installed in the runtime stage for exactly this.
+
+### 7.6 A secret scan reports an image clean when it is not
+
+Do not check the running container:
+
+```bash
+docker run --rm <image> ls -la /app     # proves nothing
+```
+
+A `COPY . .` followed by `RUN rm .env` leaves the file fully readable in the earlier layer. Layers
+are additive. Use
+[`verify-image-has-no-secrets.sh`](../../.github/scripts/verify-image-has-no-secrets.sh), which
+decompresses every layer and reports how many it read — a scan of zero layers fails rather than
+passing. If it ever reports a leak, **rotate the credentials**; an image built once may already have
+been pulled.
+
+---
+
+## 8. General Diagnosis Checklist
 
 If your IDE reports red errors but your code looks correct:
 
