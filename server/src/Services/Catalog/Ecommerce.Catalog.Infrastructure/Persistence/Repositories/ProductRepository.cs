@@ -77,4 +77,39 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
     {
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    /// <summary>
+    /// One statement:
+    /// <code>
+    /// UPDATE products
+    ///    SET "Availability" = @isAvailable, "AvailabilityObservedAt" = @observedAt
+    ///  WHERE "Id" = @productId
+    ///    AND ("AvailabilityObservedAt" IS NULL OR "AvailabilityObservedAt" &lt; @observedAt)
+    /// </code>
+    /// Do not "simplify" this by dropping the timestamp comparison and only writing when the value
+    /// differs. That survives a duplicate and fails an overtaken announcement — an older
+    /// "out of stock" landing after a newer "in stock" would win, and the listing would offer goods
+    /// that are gone. The two cases look like one requirement and are not.
+    /// </summary>
+    public async Task<int> TryRecordAvailabilityAsync(
+        Guid productId,
+        bool isAvailable,
+        DateTime observedAt,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Products
+            .Where(p => p.Id == productId
+                && (p.AvailabilityObservedAt == null || p.AvailabilityObservedAt < observedAt))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(p => p.Availability, isAvailable)
+                    .SetProperty(p => p.AvailabilityObservedAt, observedAt)
+                    .SetProperty(p => p.UpdatedAt, DateTime.UtcNow),
+                cancellationToken);
+    }
+
+    public async Task<bool> ExistsAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Products.AnyAsync(p => p.Id == productId, cancellationToken);
+    }
 }

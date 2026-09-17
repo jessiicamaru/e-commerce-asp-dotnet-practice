@@ -26,7 +26,7 @@ public class GetProductsQueryHandler(IProductRepository productRepository)
             p.Name,
             p.Description,
             p.Price,
-            p.StockQuantity,
+            ProductAvailability.From(p.Availability),
             p.Sku,
             p.CategoryId,
             p.IsActive

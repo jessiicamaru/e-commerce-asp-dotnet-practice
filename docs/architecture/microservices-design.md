@@ -160,11 +160,33 @@ When transitioning to Microservices, you will need to implement:
 
 ## Stock ownership
 
-> **`Product.StockQuantity` in the Catalog service is descriptive only.** Since the Inventory
-> service was introduced it is the sole authority on sellable quantity: it learns a product exists
-> from `ProductCreatedEvent`, registers it at zero, and staff set quantities through Inventory.
->
-> The Catalog field is not removed — that would be a breaking API change — but **nothing may read
-> it for an availability decision**. One fact, one owner; a duplicated copy that informs a decision
-> is how two sources of truth start disagreeing. See
-> [constitution.md](../../.specify/memory/constitution.md) principle I.
+**Inventory is the sole authority on sellable quantity.** It learns a product exists from
+`ProductCreatedEvent`, registers it at zero, and staff set quantities through Inventory.
+`GET /api/stock/{productId}` is where a real number comes from; it is public.
+
+Catalog holds `Product.Availability` — a **read model**, fed by `StockAvailabilityChangedEvent`
+from Inventory, exposed as `"InStock"` / `"OutOfStock"` and never as a count. Nothing sells against
+it: checkout reserves under `FOR UPDATE` against Inventory's row, and it must stay that way, because
+a read model fed by messages is seconds behind by design.
+
+### What this section used to say, and why it was wrong
+
+It used to say `Product.StockQuantity` was "descriptive only", that the field was not removed
+because "that would be a breaking API change", and that "nothing may read it for an availability
+decision".
+
+The first two were accurate. The third was not enforceable, and in practice was false: the field was
+returned by `GET /api/products`, which is `[AllowAnonymous]`, so every shopper read it while deciding
+whether to buy. **A shopper's decision to buy is an availability decision** — the most important one
+there is. Meanwhile the number could never change: Catalog had no update command and consumed no
+messages, so it stayed at whatever was typed at creation. Measured on 2026-09-17, one product read
+50 in the catalogue while Inventory went from 10 to 8.
+
+Filed as [#4](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/4) and fixed in
+[specs/004-stock-single-source](../../specs/004-stock-single-source/). The breaking change was taken:
+there is no frontend in this repository, so a caller that breaks finds out immediately, whereas a
+caller reading a stale number never does.
+
+The lesson worth keeping is not about stock. It is that **"nothing may read this" is a wish, not a
+constraint.** A duplicated value that is reachable will be read. See
+[constitution.md](../../.specify/memory/constitution.md) principle I.

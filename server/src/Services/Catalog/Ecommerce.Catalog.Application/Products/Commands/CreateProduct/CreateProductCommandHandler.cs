@@ -39,7 +39,6 @@ public class CreateProductCommandHandler(
             Name = request.Name,
             Description = request.Description,
             Price = request.Price,
-            StockQuantity = request.StockQuantity,
             Sku = request.Sku,
             CategoryId = request.CategoryId
         };
@@ -64,7 +63,7 @@ public class CreateProductCommandHandler(
             product.Name,
             product.Description,
             product.Price,
-            product.StockQuantity,
+            ProductAvailability.From(product.Availability),
             product.Sku,
             product.CategoryId,
             product.IsActive

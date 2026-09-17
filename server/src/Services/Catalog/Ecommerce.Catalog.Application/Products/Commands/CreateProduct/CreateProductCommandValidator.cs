@@ -17,9 +17,6 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
         RuleFor(x => x.Price)
             .GreaterThan(0).WithMessage("Product price must be greater than 0.");
 
-        RuleFor(x => x.StockQuantity)
-            .GreaterThanOrEqualTo(0).WithMessage("Product stock quantity must be greater than or equal to 0.");
-
         RuleFor(x => x.Sku)
             .NotEmpty().WithMessage("Product SKU is required.")
             .MaximumLength(50).WithMessage("Product SKU must be less than 50 characters.");

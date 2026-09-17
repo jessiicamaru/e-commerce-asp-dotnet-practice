@@ -1,5 +1,7 @@
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Domain.Enums;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +12,14 @@ public class ExpireStockCommandHandler(
     IUnitOfWork unitOfWork,
     IStockRepository stockRepository,
     IReservationRepository reservationRepository,
+    IPublishEndpoint publishEndpoint,
     ILogger<ExpireStockCommandHandler> logger
 ) : IRequestHandler<ExpireStockCommand, int>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
     private readonly IReservationRepository _reservationRepository = reservationRepository;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ILogger<ExpireStockCommandHandler> _logger = logger;
 
     public async Task<int> Handle(ExpireStockCommand request, CancellationToken cancellationToken)
@@ -53,6 +57,10 @@ public class ExpireStockCommandHandler(
                 reservation.SettlementReason = "Holding period elapsed with no settlement";
                 settled++;
             }
+
+            // Every stock row this loop touched, announced before the single save so the
+            // movement and the announcement commit together.
+            await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stockItems, ct);
 
             await _reservationRepository.SaveChangesAsync(ct);
         }, cancellationToken);
