@@ -1,0 +1,216 @@
+# The seven services. An OVERLAY on docker-compose.yml, never a replacement:
+#
+#   docker compose up -d                                          # infrastructure only, for start-dev.sh
+#   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   # everything
+#
+# Keeping them separate is what lets `./start-dev.sh` go on working untouched.
+# Merging them would force every contributor down the container path.
+#
+# Two things in here are easy to get wrong and expensive to debug:
+#
+#  - *_DB_PORT is 5432 for every service. The 5433-5438 in .env are HOST
+#    publications; inside this network each Postgres listens on 5432. Getting
+#    this wrong produces a connection timeout that looks like a dead database.
+#
+#  - JWT_SECRET must be the same everywhere. Identity signs with it and everyone
+#    else validates with it, so a mismatch is a 401 that looks like a
+#    permissions bug rather than a configuration one.
+
+x-service-common: &service-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  environment: &env-common
+    ASPNETCORE_URLS: http://+:8080
+    # A runtime image has neither the SDK nor the source, so `dotnet ef database
+    # update` - how start-dev.sh and CI create these schemas - cannot run here.
+    RUN_MIGRATIONS_ON_STARTUP: "true"
+    DB_USER: ${DB_USER}
+    DB_PASSWORD: ${DB_PASSWORD}
+    JWT_SECRET: ${JWT_SECRET}
+    RABBITMQ_HOST: rabbitmq
+    RABBITMQ_USER: ${RABBITMQ_USER}
+    # The services read RABBITMQ_PASS; docker-compose.yml reads RABBITMQ_PASSWORD.
+    # Both are set from the same value on purpose - see CLAUDE.md's Gotchas.
+    RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
+
+x-healthcheck: &service-healthcheck
+  healthcheck:
+    test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 40s
+
+services:
+  identity:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-identity
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Identity/Ecommerce.Identity.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-identity
+      IDENTITY_DB_PORT: "5432"
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "5056:8080"
+    depends_on:
+      postgres-identity:
+        condition: service_healthy
+
+  catalog:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-catalog
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Catalog/Ecommerce.Catalog.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-catalog
+      CATALOG_DB_PORT: "5432"
+    ports:
+      - "5057:8080"
+    depends_on:
+      postgres-catalog:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  orchestrator:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-orchestrator
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-orchestrator
+      ORCHESTRATOR_DB_PORT: "5432"
+    ports:
+      - "5058:8080"
+    depends_on:
+      postgres-orchestrator:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    # The orchestrator has no controllers and therefore no /health endpoint.
+    # Saying so beats a health check that reports unhealthy forever.
+    healthcheck:
+      disable: true
+
+  order:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-order
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Order/Ecommerce.Order.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-order
+      ORDER_DB_PORT: "5432"
+    ports:
+      - "5059:8080"
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  inventory:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-inventory
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Inventory/Ecommerce.Inventory.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-inventory
+      INVENTORY_DB_PORT: "5432"
+      INVENTORY_RESERVATION_TTL_MINUTES: ${INVENTORY_RESERVATION_TTL_MINUTES:-15}
+      INVENTORY_SWEEP_INTERVAL_SECONDS: ${INVENTORY_SWEEP_INTERVAL_SECONDS:-30}
+    ports:
+      - "5060:8080"
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  payment:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-payment
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Payment/Ecommerce.Payment.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-payment
+      PAYMENT_DB_PORT: "5432"
+      # Still a stand-in that moves no money. /health reports this value.
+      PAYMENT_OUTCOME: ${PAYMENT_OUTCOME:-Approve}
+    ports:
+      - "5061:8080"
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  gateway:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-gateway
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/ApiGateway/Ecommerce.ApiGateway
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    # The gateway is the one service whose configuration genuinely differs between
+    # host and container: it is the only one that needs to know where the others
+    # are. appsettings.json points at http://localhost:50XX, which is wrong in here.
+    #
+    # These are COMMAND-LINE arguments, not environment variables, and that is not
+    # a style choice. The documented double-underscore form
+    #   ReverseProxy__Clusters__catalog-cluster__Destinations__destination1__Address
+    # does NOT bind here - verified by running a gateway container with it set and
+    # watching YARP still dial localhost:5057. On the same container
+    # Logging__LogLevel__Default=Warning took effect, so the environment provider
+    # itself works; the colon-separated form failed too. Command-line arguments
+    # bind and were verified end to end (200 through the proxy). Cause not
+    # established - see research.md D4.
+    command:
+      - "--ReverseProxy:Clusters:identity-cluster:Destinations:destination1:Address=http://identity:8080/"
+      - "--ReverseProxy:Clusters:catalog-cluster:Destinations:destination1:Address=http://catalog:8080/"
+      - "--ReverseProxy:Clusters:order-cluster:Destinations:destination1:Address=http://order:8080/"
+      - "--ReverseProxy:Clusters:inventory-cluster:Destinations:destination1:Address=http://inventory:8080/"
+      - "--ReverseProxy:Clusters:payment-cluster:Destinations:destination1:Address=http://payment:8080/"
+    ports:
+      - "5000:8080"
+    depends_on:
+      identity:
+        condition: service_healthy
+      catalog:
+        condition: service_healthy
+      order:
+        condition: service_healthy
+      inventory:
+        condition: service_healthy
+      payment:
+        condition: service_healthy

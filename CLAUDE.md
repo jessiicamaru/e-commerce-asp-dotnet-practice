@@ -148,15 +148,47 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))`. Check
   `docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers` — a queue with
   **2 consumers** that should have one subscriber per service is the symptom.
-- **The `.env` loader overrides real environment variables**, it does not fall back to them. Every
-  `Program.cs` calls `Environment.SetEnvironmentVariable` for each line in `.env`, so
-  `PAYMENT_OUTCOME=Reject dotnet run ...` is silently ignored when `.env` sets it. Edit `.env` (and
-  put it back), or delete the line.
+- **The `.env` loader falls back; it no longer overrides.** Precedence is
+  `environment variable > .env > appsettings.json > hardcoded default`. Before feature 005 it was
+  the other way round and `PAYMENT_OUTCOME=Reject dotnet run ...` was silently ignored; it now
+  works. If you relied on the file winning, that is the change.
 - Services installed natively on the host silently shadow the compose containers when they share a
   port. Identity's database is published on `5435` rather than `5432` for exactly this reason. The
   services connect to RabbitMQ over the default `5672` and the code passes no port, so a native
   broker on that port wins — stop it and let the container have it. Documented in
   [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) §6.
+
+## Running in containers
+
+`docker compose up -d` still brings up **infrastructure only**, which is what `start-dev.sh`
+expects. The seven services live in an overlay:
+
+```bash
+cd server
+docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   # everything
+docker compose up -d                                                           # infra only
+```
+
+Host ports are unchanged (5000, 5056-5061); inside their containers every service binds 8080. One
+[Dockerfile](server/Dockerfile) builds all seven, selected by a `PROJECT` build argument.
+
+Three traps, each of which cost time to find:
+
+- **`*_DB_PORT` is `5432` inside the container network.** The 5433-5438 in `.env` are *host*
+  publications. Getting this wrong looks like a dead database.
+- **The gateway's YARP destinations are overridden by command-line arguments, not environment
+  variables.** The documented `ReverseProxy__Clusters__<name>__Destinations__destination1__Address`
+  form does **not** bind — verified, with `Logging__LogLevel__Default` taking effect on the same
+  container, so the environment provider itself works. Cause not established; see
+  [research D4](specs/005-containerise-services/research.md).
+- **A leftover host process shadows a container's published port.** A stray `dotnet run` from an
+  earlier session answered on 5061 while the Payment container sat behind it, and the symptom was an
+  order failing for no visible reason. Before trusting any container result:
+  `Get-Process | Where-Object { $_.ProcessName -like 'Ecommerce.*' }` must be empty.
+
+`server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
+[.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)
+checks every layer, not the running container, and CI runs it.
 
 ## Project constitution
 

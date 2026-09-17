@@ -1,0 +1,38 @@
+# Docker does NOT read .gitignore. This file is the only thing standing between a
+# `COPY . .` and a real JWT_SECRET, DB_PASSWORD and ADMIN_PASSWORD inside an image
+# layer — and a layer is additive, so deleting the file in a later step does not
+# remove it. See specs/005-containerise-services/research.md D6.
+#
+# The build context is this directory (server/), which is where Docker looks for
+# this file. A copy at the repository root would be ignored.
+
+# --- secrets: the reason this file exists, first ---
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pfx
+**/*.p12
+**/secrets.json
+
+# --- host build output: wrong architecture, and large ---
+**/bin/
+**/obj/
+**/TestResults/
+**/*.user
+**/*.suo
+
+# --- version control: history contains every secret ever committed ---
+.git/
+.gitignore
+.gitattributes
+
+# --- not needed at runtime ---
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.md
+Dockerfile
+.dockerignore
+docker-compose*.yml
+start-dev.ps1
+start-dev.sh

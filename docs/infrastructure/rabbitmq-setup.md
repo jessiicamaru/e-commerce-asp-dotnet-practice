@@ -59,6 +59,18 @@ docker compose up -d
 
 This will download the image, create the `rabbitmq_data` volume, and start the container in detached (background) mode.
 
+> **Two variable names, one password.** The services read **`RABBITMQ_PASS`**; this compose file and
+> `.env.example` use **`RABBITMQ_PASSWORD`**. A non-default password needs *both* set to the same
+> value, or the services fall back to `guest` and fail to connect against a broker that no longer
+> accepts it.
+>
+> **In containers**, `RABBITMQ_HOST` is `rabbitmq` — the compose service name — not `localhost`.
+> The host path is unchanged. See [Running in Containers](./running-in-containers.md).
+>
+> The broker has a health check as of 2026-09-17, so `docker compose ps` reports whether it is
+> actually ready rather than merely running. Services wait on it with
+> `depends_on: condition: service_healthy`.
+
 ---
 
 ## 4. How to Monitor RabbitMQ (Management UI)

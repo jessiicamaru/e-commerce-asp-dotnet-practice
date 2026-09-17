@@ -80,11 +80,31 @@ docker compose up -d
 docker compose ps
 ```
 
+> **This starts the databases only.** Since 2026-09-17 the services can also run in containers; see
+> [Running in Containers](./running-in-containers.md). `docker compose up -d` on its own is
+> unchanged and is still what `start-dev.sh` expects.
+
+### Ports: host vs container
+
+The `*_DB_PORT` values in `.env` — 5433 to 5438 — are **host publications**. Inside the container
+network every PostgreSQL listens on **5432**, so the compose overlay sets each service's
+`*_DB_PORT` to `5432`.
+
+Getting this wrong produces a connection timeout that looks exactly like a dead database. It is the
+single most common mistake when moving a service into a container here.
+
 ---
 
 ## 4. EF Core Migrations CLI Reference
 
 Always execute `dotnet ef` commands from the **`server/`** directory.
+
+> **In the container path, nobody runs these.** Each service applies its own migrations at startup
+> because the overlay sets `RUN_MIGRATIONS_ON_STARTUP=true`. That setting is **off everywhere else**
+> on purpose — a service that migrates on every start needs permission to alter its own schema
+> forever. A runtime image has neither the SDK nor the source, so `dotnet ef` cannot run inside one,
+> which is why the setting had to exist. Before 2026-09-17 nothing called `Database.Migrate()` at
+> all, so a container stack would have come up healthy and empty.
 
 ### 4.1 Identity Microservice Migrations
 ```bash

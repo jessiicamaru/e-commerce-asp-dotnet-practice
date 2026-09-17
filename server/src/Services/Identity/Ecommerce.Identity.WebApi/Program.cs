@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Ecommerce.Application;
 using Ecommerce.Infrastructure;
 using Ecommerce.Infrastructure.Persistence;
@@ -36,7 +37,16 @@ if (!string.IsNullOrEmpty(dotenv))
         {
             var key = parts[0].Trim();
             var value = parts[1].Trim();
-            Environment.SetEnvironmentVariable(key, value);
+
+            // Fall back, never override. A variable already set in the real environment wins.
+            // That precedence is what makes an image configurable at all: a settings file that
+            // reached a layer must not be able to ignore what the container is told at run time.
+            // Before feature 005 this call was unconditional, which is why
+            // `PAYMENT_OUTCOME=Reject dotnet run ...` was silently ignored.
+            if (Environment.GetEnvironmentVariable(key) is null)
+            {
+                Environment.SetEnvironmentVariable(key, value);
+            }
         }
     }
 }
@@ -64,9 +74,10 @@ var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
 var dbName = Environment.GetEnvironmentVariable("IDENTITY_DB_NAME") ?? "ecommerce_identity_db";
 var dbPort = Environment.GetEnvironmentVariable("IDENTITY_DB_PORT") ?? "5432";
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 
 builder.Configuration["ConnectionStrings:DefaultConnection"] =
-    $"Host=localhost;Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
+    $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -138,4 +149,31 @@ app.MapHealthChecks("/health", new HealthCheckOptions
     }
 });
 
-app.Run("http://localhost:5056");
+
+// Applying migrations from inside the service exists for one reason: a runtime image has neither
+// the SDK nor the source, so `dotnet ef database update` - which is how start-dev.sh and CI create
+// these schemas - cannot run there. Off unless asked, because "started successfully" and "was
+// allowed to alter the schema" should not be the same event in a real deployment.
+if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
+{
+    await using var migrationScope = app.Services.CreateAsyncScope();
+    await migrationScope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>()
+        .Database.MigrateAsync();
+}
+
+// Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not
+// localhost, or nothing outside it can connect however the ports are published. Falling back to
+// the pinned address rather than dropping the argument keeps start-dev.sh working: with no
+// argument every service would default to the same port and collide.
+var listenUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+
+if (string.IsNullOrWhiteSpace(listenUrls))
+{
+    app.Run("http://localhost:5056");
+}
+else
+{
+    app.Run();
+}
+

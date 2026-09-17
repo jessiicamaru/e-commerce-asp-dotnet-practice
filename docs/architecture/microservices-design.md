@@ -149,6 +149,68 @@ We use Microsoft's official **YARP (Yet Another Reverse Proxy)** library running
 
 ---
 
+## 4.5 Runtime Topology — How the Services Actually Run
+
+Changed on 2026-09-17 ([spec 005](../../specs/005-containerise-services/)). Until then the design
+described above only ever ran in one place: a developer's own machine. Every connection string
+hardcoded `Host=localhost`, every service pinned `app.Run("http://localhost:PORT")`, and there was
+no artifact at all — running the system elsewhere meant copying the source and building it again.
+
+### The shift: configuration moves out of the code
+
+| | Before | After |
+| :--- | :--- | :--- |
+| Database address | `Host=localhost` in six `Program.cs` | `DB_HOST`, defaulting to `localhost` |
+| Listen address | `app.Run("http://localhost:5057")` | `ASPNETCORE_URLS`, falling back to the pinned address |
+| Settings precedence | `.env` **overrode** the environment | environment **overrides** `.env` |
+| Artifact | none | one image per service |
+| Schema creation | `dotnet ef` from the host, only | that, or `RUN_MIGRATIONS_ON_STARTUP` in a container |
+
+The precedence inversion is the one that mattered architecturally. A settings file that wins over
+the environment makes an image unconfigurable: whatever a container is told at run time would be
+overridden by a file inside it, and the same image would behave identically everywhere. Fixing it is
+what made "build once, run anywhere with different settings" possible at all.
+
+### Two run modes, deliberately both supported
+
+```text
+docker compose up -d                          infrastructure only  -> start-dev.sh, debugger attached
+  + -f docker-compose.app.yml                 everything           -> one command, nothing on the host
+```
+
+The services live in an **overlay** file rather than in `docker-compose.yml`. Merging them would
+force every contributor down the container path; keeping them apart means the existing workflow is
+untouched. That is why every new setting defaults to today's local value rather than to a container
+value.
+
+### What each service looks like now
+
+- One [Dockerfile](../../server/Dockerfile) builds all seven, selected by a `PROJECT` build argument.
+  Seven near-identical files would drift — a fix applied to six of them is invisible and nothing
+  fails.
+- Inside its container a service binds `8080`; compose maps that to the port it has always used on
+  the host, so the gateway routes, the port table and every guide stay true.
+- The gateway is the only service whose configuration genuinely differs between the two modes,
+  because it is the only one that needs to know where the *others* are.
+- Services wait for their dependencies through `depends_on: condition: service_healthy` plus a
+  connection retry. Containers start in parallel; a service reaching its database a moment early is
+  normal, not a failure.
+
+### What this deliberately does not do
+
+It makes images and runs them locally. It does **not** publish them, tag them, or let you roll back
+to an earlier one — that is [#8](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/8).
+
+And rolling back an image does **not** undo a migration. This design has already produced one
+example: dropping `products.StockQuantity` means any Catalog build from before that change now fails
+against the schema. Making schema changes survive a rollback needs expand/contract as a rule, which
+is [#9](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/9).
+
+Operational detail lives in [Running in Containers](../infrastructure/running-in-containers.md);
+step-by-step startup is in [Getting Started](../guides/getting-started.md).
+
+---
+
 ## 5. Key Challenges & Patterns to Implement
 
 When transitioning to Microservices, you will need to implement:
