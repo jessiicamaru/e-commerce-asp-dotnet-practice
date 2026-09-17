@@ -52,15 +52,34 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:5059/api/orders/$ORDE
 
 **Expect**: `"status": "Completed"`, `updatedAt` later than `createdAt`.
 
+**Observed on 2026-09-17**: `Completed` after 2 seconds, `updatedAt` 0.9s after `createdAt`, stock
+`onHand 10 → 8`, `reserved 2 → 0`.
+
 **Failure looks like**: `"Submitted"` five seconds later. Check that `OrderCompletedConsumer` is
 registered and that its queue exists in the RabbitMQ management UI — a consumer that is written but
 not added to `AddMassTransit` produces exactly this, with no error anywhere.
+
+**Also check the stock, not only the status.** The first run of this scenario settled the order
+correctly *and left the units held*, because Inventory has a consumer class of the same name and the
+two services were competing for one queue:
+
+```bash
+docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers
+```
+
+`OrderCompleted` with **2 consumers** is the symptom. Each service should have its own queue —
+`OrderCompleted` for Inventory, `OrderSvcOrderCompleted` for Order.
 
 ---
 
 ## Scenario 2 — A rejected payment says why *(US2, FR-002, FR-003, SC-002)*
 
-Restart Payment with `PAYMENT_OUTCOME=Reject`, then submit another order.
+Set `PAYMENT_OUTCOME=Reject`, restart Payment, then submit another order.
+
+> **`PAYMENT_OUTCOME=Reject dotnet run ...` does not work.** Every `Program.cs` loads `.env` by
+> calling `Environment.SetEnvironmentVariable` per line, which *overwrites* what you exported. Edit
+> `server/.env` and put it back afterwards. Confirm it took before wasting a run — `/health` reports
+> `configuredOutcome`, which is what caught it here.
 
 **Expect**: `"status": "Failed"` and a non-empty `failureReason` naming the rejection. Then confirm
 the compensation still ran:
@@ -158,8 +177,11 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:5000/api/orders      
 same body as the direct call.
 
 **The gateway line is not a formality.** `order-route` matches `/api/orders/{**catch-all}`, and
-nothing in this repository has previously called the bare `/api/orders` through it. If it 404s, add
-a route for the bare path — do not change the endpoint.
+nothing in this repository had previously called the bare `/api/orders` through it.
+
+**Observed on 2026-09-17**: it matches. `GET http://localhost:5000/api/orders` without a token
+returns **401** (so the request reached Order's authentication rather than the gateway's 404), and
+with a token returns 200 with the same body as the direct call. No extra route is needed.
 
 ---
 
@@ -176,13 +198,17 @@ while appearing to have passed earlier.
 
 ---
 
-## What passing all eight does not prove
+## The gap this feature closed, and the one it did not
 
-The owner filter is exercised with a substituted `ICurrentUser`, not with a real signed token — the
-tests confirm the filter is applied to whatever identity is handed in, not that the right identity is
-handed in at runtime. Scenario 7 covers that manually, but nothing in CI does.
+**Closed.** The owner filter used to be exercised only with a substituted `ICurrentUser`, which
+proves the filter is applied to whatever identity is handed in — not that the right identity arrives
+at runtime. That is the shape of the role-claim incident this project has already had.
+`.github/scripts/verify-auth.sh` now asserts, with **real signed tokens**, that a shopper reads their
+own orders back and that another shopper's order is 404 and not 403; CI starts the Order service so
+this runs on every push. Observed locally on 2026-09-17: 14 checks, all passing.
 
-That is the same shape as the role-claim incident this project has already had, where a hand-minted
-token agreed with a hand-written expectation while every real token was rejected. Closing it means
-asserting an order read in `.github/scripts/verify-auth.sh`, which is a task in `tasks.md` rather
-than a line in this document.
+**Still open.** Nothing in CI runs the saga end to end — `auth-smoke` starts Identity, Catalog and
+Order, but not Inventory, Payment or the Orchestrator. So the consumers are covered by unit tests
+against a real database and by the manual runs above, but a regression in the *saga wiring* (a queue
+name collision, for instance — see scenario 1) would not be caught automatically. That belongs to
+Phase 7's E2E verification.

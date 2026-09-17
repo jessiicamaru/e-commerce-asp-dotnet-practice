@@ -1,6 +1,7 @@
 using Ecommerce.Order.Application;
 using Ecommerce.Order.Infrastructure;
 using Ecommerce.Order.Infrastructure.Persistence;
+using Ecommerce.Order.WebApi.Consumers;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Middlewares;
 using MassTransit;
@@ -67,6 +68,31 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
+    // The first consumers this service has ever had. Until now it published OrderSubmittedEvent and
+    // then stopped taking part, which is why every order row read Submitted however checkout ended.
+    x.AddConsumer<OrderCompletedConsumer>();
+    x.AddConsumer<OrderFailedConsumer>();
+
+    // Queue names are derived from consumer CLASS names, and Inventory already has a class called
+    // OrderCompletedConsumer. Without this prefix both services bind to a queue named
+    // "OrderCompleted" and *compete* for it: each completion goes to one service or the other, so
+    // roughly half of all orders would settle without Inventory ever confirming the stock, and the
+    // other half would confirm the stock without the order ever settling.
+    //
+    // This was not theoretical — it happened. The first end-to-end run of this feature settled the
+    // order and left its units held, and `rabbitmqctl list_queues` showed OrderCompleted with two
+    // consumers. Publish/subscribe fans out per *endpoint*, not per service, and two services
+    // naming a consumer the same thing collapses into one endpoint.
+    x.SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", includeNamespace: false));
+
+    // Transport-level duplicate suppression on every receive endpoint. The guarded UPDATE in
+    // OrderRepository.TrySettleAsync is the actual guarantee — this only keeps the ordinary
+    // redelivery from having to reach the database. No migration was needed: InboxState and
+    // OutboxState have been in this database since 20260903142425_InitialOrderSchema, because
+    // OrderDbContext has always called AddTransactionalOutboxEntities().
+    x.AddConfigureEndpointsCallback((context, _, cfg) =>
+        cfg.UseEntityFrameworkOutbox<OrderDbContext>(context));
+
     x.AddEntityFrameworkOutbox<OrderDbContext>(o =>
     {
         o.UsePostgres();

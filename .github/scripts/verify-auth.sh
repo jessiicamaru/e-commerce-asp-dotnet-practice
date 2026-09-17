@@ -4,8 +4,10 @@
 #
 #   ADMIN_EMAIL=... ADMIN_PASSWORD=... .github/scripts/verify-auth.sh
 #
-# Requires the Identity and Catalog services to be up already. Used by CI, and
-# runnable locally against `./start-dev.ps1` with the values from server/.env.
+# Requires the Identity and Catalog services to be up already. The Order service
+# is optional: if it is not listening, the order ownership checks report that they
+# were skipped rather than passing silently. Used by CI, and runnable locally
+# against `./start-dev.ps1` with the values from server/.env.
 #
 # Needs only bash, curl and Python — no jq.
 set -euo pipefail
@@ -25,6 +27,7 @@ fi
 
 IDENTITY_URL="${IDENTITY_URL:-http://localhost:5056}"
 CATALOG_URL="${CATALOG_URL:-http://localhost:5057}"
+ORDER_URL="${ORDER_URL:-http://localhost:5059}"
 
 : "${ADMIN_EMAIL:?ADMIN_EMAIL is required}"
 : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
@@ -124,5 +127,83 @@ public=$(status "$CATALOG_URL/api/products")
 [ "$public" != "401" ] || fail "Anonymous product listing should not require a token."
 pass "anonymous product listing still public"
 
+# 6. An order belongs to the shopper who placed it, and to nobody else.
+#
+#    This is the only part of the order-read path that uses a REAL signed token.
+#    The unit tests substitute ICurrentUser, so they prove the owner filter is
+#    applied to whatever identity is handed in - not that the identity handed in
+#    came from a valid token. That distinction is exactly what went wrong once
+#    before in this repository, where a hand-minted token agreed with a
+#    hand-written expectation while every real token was rejected.
+# curl already prints 000 on a refused connection, but it also exits non-zero,
+# and this script runs under `set -e`. The `|| true` keeps a missing Order
+# service from ending the run before the skip is reported.
+order_health=$(status --max-time 5 "$ORDER_URL/health" || true)
+
+if [ "$order_health" = "000" ]; then
+  SKIPPED_ORDER_CHECKS=1
+  echo "  SKIPPED  order ownership checks - nothing listening on $ORDER_URL"
+else
+  SKIPPED_ORDER_CHECKS=0
+
+  anon_orders=$(status "$ORDER_URL/api/orders")
+  [ "$anon_orders" = "401" ] || fail "Anonymous order listing should be 401, got $anon_orders."
+  pass "anonymous order listing rejected with 401"
+
+  order_body='{"items":[{"productId":"11111111-1111-1111-1111-111111111111","productName":"CI Widget","quantity":1,"unitPrice":9.99}]}'
+
+  order_id=$(
+    curl -fsS -X POST "$ORDER_URL/api/orders" \
+      -H 'Content-Type: application/json' \
+      -H "Authorization: Bearer $customer_token" \
+      -d "$order_body" | json_field orderId
+  )
+  [ -n "$order_id" ] || fail "The customer could not submit an order."
+  pass "customer submits an order ($order_id)"
+
+  # The owner reads it back. If the token's 'sub' were not reaching ICurrentUser,
+  # this would be an empty list rather than an error - which is why the count is
+  # asserted and not just the status code.
+  own_count=$(
+    curl -fsS "$ORDER_URL/api/orders" \
+      -H "Authorization: Bearer $customer_token" | json_field totalCount
+  )
+  [ "${own_count:-0}" -ge 1 ] 2>/dev/null \
+    || fail "The order owner sees '${own_count:-<nothing>}' of their own orders; expected at least 1."
+  pass "order owner reads their own orders back (totalCount=$own_count)"
+
+  own_detail=$(status "$ORDER_URL/api/orders/$order_id" -H "Authorization: Bearer $customer_token")
+  [ "$own_detail" = "200" ] || fail "The owner should read their own order, got $own_detail."
+  pass "order owner reads their own order by id"
+
+  # A second, unrelated shopper.
+  other_email="other-$(date +%s)-$RANDOM@ci.local"
+  other_token=$(
+    curl -fsS -X POST "$IDENTITY_URL/api/auth/register" \
+      -H 'Content-Type: application/json' \
+      -d "$(json_object email "$other_email" password 'Passw0rd!23' firstName CI lastName Other)" | json_field token
+  )
+  [ -n "$other_token" ] || fail "The second customer could not register."
+
+  other_list=$(
+    curl -fsS "$ORDER_URL/api/orders" \
+      -H "Authorization: Bearer $other_token" | json_field totalCount
+  )
+  [ "$other_list" = "0" ] || fail "A different shopper sees $other_list orders; they should see none."
+  pass "a different shopper sees none of that order"
+
+  # 404 and not 403. A 403 would still 'reject the request' while confirming the
+  # id is real, which is the disclosure this rule exists to prevent.
+  other_detail=$(status "$ORDER_URL/api/orders/$order_id" -H "Authorization: Bearer $other_token")
+  [ "$other_detail" = "404" ] || fail \
+    "Another shopper's order should be 404 (indistinguishable from absent), got $other_detail."
+  pass "another shopper's order is 404, not 403"
+fi
+
 echo
-echo "All authentication and authorization checks passed."
+if [ "${SKIPPED_ORDER_CHECKS:-0}" = "1" ]; then
+  echo "Authentication and authorization checks passed, EXCEPT the order ownership"
+  echo "checks, which were skipped because the Order service was not running."
+else
+  echo "All authentication and authorization checks passed."
+fi

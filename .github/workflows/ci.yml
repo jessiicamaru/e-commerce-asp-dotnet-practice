@@ -47,6 +47,19 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      postgres-order:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_order_db
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -68,9 +81,10 @@ jobs:
       - name: Build
         run: dotnet build Ecommerce.slnx --configuration Release --no-restore
 
-      # The inventory suite needs a real PostgreSQL: the guarantees it asserts — no overselling
-      # under concurrency, a unique constraint stopping a duplicate reservation — are the
-      # database's behaviour, and an in-memory provider would pass against broken code.
+      # The suites need a real PostgreSQL: every guarantee they assert — no overselling under
+      # concurrency, a unique constraint stopping a duplicate payment, a guarded UPDATE refusing
+      # to re-settle an order — is the database's behaviour, and an in-memory provider would pass
+      # against broken code.
       - name: Test
         env:
           DB_PASSWORD: postgres
@@ -133,6 +147,22 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Order now consumes OrderCompletedEvent and OrderFailedEvent, so the smoke
+      # test starts it too - the order ownership assertions are the only place a
+      # REAL signed token is put through ICurrentUser and the owner filter.
+      postgres-order-smoke:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_order_db
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       rabbitmq:
         image: rabbitmq:3-management-alpine
         env:
@@ -154,6 +184,8 @@ jobs:
       CATALOG_DB_PORT: '5433'
       INVENTORY_DB_NAME: ecommerce_inventory_db
       INVENTORY_DB_PORT: '5437'
+      ORDER_DB_NAME: ecommerce_order_db
+      ORDER_DB_PORT: '5434'
       # CI-only values. Real secrets belong in repository secrets, never here.
       JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
       ADMIN_EMAIL: admin@ci.local
@@ -193,6 +225,9 @@ jobs:
           dotnet ef database update \
             --project src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ \
             --startup-project src/Services/Catalog/Ecommerce.Catalog.WebApi/
+          dotnet ef database update \
+            --project src/Services/Order/Ecommerce.Order.Infrastructure/ \
+            --startup-project src/Services/Order/Ecommerce.Order.WebApi/
 
       - name: Start services
         run: |
@@ -201,6 +236,8 @@ jobs:
             --configuration Release --no-build --no-launch-profile > /tmp/identity.log 2>&1 &
           dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/ \
             --configuration Release --no-build --no-launch-profile > /tmp/catalog.log 2>&1 &
+          dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/ \
+            --configuration Release --no-build --no-launch-profile > /tmp/order.log 2>&1 &
 
           # 000 means nothing is listening yet; anything else means the service
           # answered, so a non-2xx tells us it is up but reporting unhealthy.
@@ -208,21 +245,23 @@ jobs:
 
           identity_code=000
           catalog_code=000
+          order_code=000
 
           for i in $(seq 1 90); do
             identity_code=$(probe http://localhost:5056/health)
             catalog_code=$(probe http://localhost:5057/health)
+            order_code=$(probe http://localhost:5059/health)
 
-            if [ "$identity_code" = "200" ] && [ "$catalog_code" = "200" ]; then
-              echo "Both services are healthy after ${i}s."
+            if [ "$identity_code" = "200" ] && [ "$catalog_code" = "200" ] && [ "$order_code" = "200" ]; then
+              echo "All three services are healthy after ${i}s."
               exit 0
             fi
             sleep 1
           done
 
-          echo "::error::Not healthy in time (identity=$identity_code, catalog=$catalog_code; 000 = not listening)."
+          echo "::error::Not healthy in time (identity=$identity_code, catalog=$catalog_code, order=$order_code; 000 = not listening)."
 
-          for name in identity:5056 catalog:5057; do
+          for name in identity:5056 catalog:5057 order:5059; do
             echo "--- ${name%%:*} /health ---"
             curl -s -i --max-time 5 "http://localhost:${name##*:}/health" || echo "(no response)"
             echo
@@ -244,7 +283,7 @@ jobs:
       - name: Dump service logs on failure
         if: failure()
         run: |
-          for service in identity catalog; do
+          for service in identity catalog order; do
             echo "::group::$service (first 60 lines)"
             head -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
             echo "::endgroup::"
