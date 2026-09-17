@@ -33,6 +33,13 @@ graph TD
 
 - **Framework**: .NET 10.0 (ASP.NET Core Web API)
 - **Database**: PostgreSQL (relational database suited for transaction consistency)
+- **Messaging**: RabbitMQ via MassTransit, with a transactional outbox and inbox
+- **Gateway**: YARP, fronting all services on port 5000
+- **Packaging**: one container image per service, configured entirely from the environment. Since
+  2026-09-17 the system runs either fully in containers or, as before, with the services on the
+  developer's machine and infrastructure in Docker — see
+  [Getting Started](../guides/getting-started.md) and
+  [Runtime Topology](./microservices-design.md#45-runtime-topology--how-the-services-actually-run)
 - **Architecture**: Clean Architecture (Domain-Centric)
 - **Design Patterns**:
   - **CQRS (Command Query Responsibility Segregation)**: Separating write operations (Commands) from read operations (Queries) using **MediatR**.

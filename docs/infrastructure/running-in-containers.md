@@ -20,9 +20,11 @@ container path.
 
 ## 1. Quick start
 
+**Step-by-step startup, both paths, lives in [Getting Started](../guides/getting-started.md).** This
+page is the container reference behind it.
+
 ```bash
 cd server
-cp .env.example .env        # then fill it in
 docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 

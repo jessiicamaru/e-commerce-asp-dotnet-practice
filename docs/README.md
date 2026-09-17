@@ -36,14 +36,9 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
   ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
   ```
 
-### 📓 Work Log
-Dated records of what changed, what was decided, and what turned out to be wrong. Read the most
-recent one before planning: the "what is still not true" section at the end is the part that saves
-time.
-* [**2026-09-17**](./journal/2026-09-17.md): Order lifecycle visibility (#3) and stock single-source (#5) merged; containers opened as #10; issues #6–#9 filed. Includes two defects that reached a running system and passed every unit test — a queue-name collision between two services, and a verification script that reported clean on an image that provably leaked.
-
 ### 🛠️ Developer Guides
-* [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, directory mapping, and EF Core concurrency exceptions.
+* [**Getting Started**](./guides/getting-started.md): **Start here.** The two supported ways to run the project — everything in containers, or infrastructure in Docker with the services on your machine — plus configuring `.env`, checking the system is really up, placing an order end to end, and running the tests.
+* [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, EF Core concurrency exceptions, a locally installed service shadowing a container, and the container-specific traps.
 
 ---
 

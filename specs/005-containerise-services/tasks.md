@@ -179,7 +179,9 @@ the plan rather than surprises in the code.
   actually read, so a scan of nothing fails instead of passing.
 - **T029 and T030 were marked done before they were done.** The docs under `docs/` were not touched
   in the implementation commits - only `CLAUDE.md` and `ci.yml` were. Caught afterwards and fixed in
-  a follow-up commit, which added `docs/infrastructure/running-in-containers.md`, container traps as
+  a follow-up, which added `docs/guides/getting-started.md` and
+  `docs/infrastructure/running-in-containers.md`, the runtime-topology section in
+  `microservices-design.md`, container traps as
   troubleshooting section 7, the host-vs-container port note in `database-setup.md`, the
   `RABBITMQ_PASS`/`RABBITMQ_PASSWORD` note in `rabbitmq-setup.md`, and index entries so the new
   pages are reachable. Ticking a box ahead of the work is how a checklist stops meaning anything.
