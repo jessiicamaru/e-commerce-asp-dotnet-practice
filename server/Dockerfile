@@ -66,6 +66,16 @@ RUN dotnet publish "${PROJECT}/$(basename ${PROJECT}).csproj" \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
+# The aspnet image ships neither curl nor wget, and a container health check has
+# to be a command that runs inside the container. Without one, `docker compose ps`
+# reports "running" for a service that is answering 500s, which is exactly the
+# distinction the health endpoint exists to make. A few megabytes for that is
+# worth it; the alternative is health that only an external prober can see.
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Not root. A service that serves HTTP and talks to Postgres needs no privilege
 # beyond that, and the aspnet image ships this user for the purpose.
 USER $APP_UID
@@ -82,4 +92,8 @@ COPY --from=build /app/publish .
 # Resolved at build time so one Dockerfile can produce seven different services.
 ARG PROJECT
 ENV SERVICE_DLL="${PROJECT}"
-ENTRYPOINT ["/bin/sh", "-c", "exec dotnet $(basename ${SERVICE_DLL}).dll"]
+# "--" occupies $0 so that anything compose puts in `command:` arrives as $1..$n
+# and is forwarded to the app. The gateway needs that: its YARP destinations have
+# to be overridden per environment, and the double-underscore env form does not
+# bind them (see specs/005-containerise-services/research.md D4).
+ENTRYPOINT ["/bin/sh", "-c", "exec dotnet $(basename ${SERVICE_DLL}).dll \"$@\"", "--"]
