@@ -31,5 +31,12 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
             .WithOne(x => x.Order)
             .HasForeignKey(x => x.OrderId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Every order-list request filters on UserId and sorts by CreatedAt descending. Matching
+        // the sort direction lets one index satisfy both the filter and the ordering, instead of
+        // an index scan followed by a sort.
+        builder.HasIndex(x => new { x.UserId, x.CreatedAt })
+            .IsDescending(false, true)
+            .HasDatabaseName("IX_orders_UserId_CreatedAt");
     }
 }

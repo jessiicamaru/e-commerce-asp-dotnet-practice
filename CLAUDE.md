@@ -33,11 +33,11 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (19 tests, PostgreSQL on 5437) and
-`Ecommerce.Payment.Tests` (11 tests, PostgreSQL on 5438). They run against a **real
-PostgreSQL** — the guarantees under test are the database's row locking and unique
-constraints, so an in-memory provider would pass against code that oversells. Run them with
-`DB_PASSWORD` set:
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (19 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (11 tests, PostgreSQL on 5438) and `Ecommerce.Order.Tests` (15 tests,
+PostgreSQL on 5434). They run against a **real PostgreSQL** — the guarantees under test are the
+database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
+against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
 ```bash
 cd server
@@ -46,7 +46,10 @@ DB_PASSWORD=<your password> dotnet test
 
 There is also an end-to-end auth check,
 [.github/scripts/verify-auth.sh](.github/scripts/verify-auth.sh), which CI runs and which also runs
-locally against started services:
+locally against started services. It needs Identity and Catalog; if Order is also up it additionally
+checks order ownership with real signed tokens — the one place that path is exercised without a
+substituted `ICurrentUser`. When Order is not running it says the checks were **skipped** rather than
+passing quietly:
 
 ```bash
 cd server
@@ -65,7 +68,7 @@ script. If adding unit tests there is no existing convention to follow — pick 
 | Identity | 5056 | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
 | Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
-| Order | 5059 | 5434 / `ecommerce_order_db` | SubmitOrder + outbox |
+| Order | 5059 | 5434 / `ecommerce_order_db` | Submit + outbox; settles on the saga's outcome, owner-scoped reads |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 
@@ -97,7 +100,11 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 
 ⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
 
-Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf. The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–4 done, Phase 5 = observability/Seq/E2E is next).
+Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf.
+
+**Order consumes `OrderCompletedEvent` and `OrderFailedEvent` too**, and settles its own row with a guarded `UPDATE ... WHERE Status = 'Submitted'` so a redelivery affects zero rows. Note `OrderFailedEvent` is published on **both** failure branches — reservation failure and payment rejection. Four `OrderStatus` values are unreachable by design (`Pending`, `StockReserved`, `Paid`, `Cancelled`); see [specs/003-order-lifecycle/data-model.md](specs/003-order-lifecycle/data-model.md) before assuming one of them can happen.
+
+The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–6.5 done, Phase 7 = observability/Seq/E2E is next).
 
 ### Authentication
 `Ecommerce.Shared/Authentication/` holds the whole story. Identity **signs** tokens; every other
@@ -132,6 +139,17 @@ Catalog still carries **dead duplicates** of both — `Catalog.Application/Commo
 - The services read **`RABBITMQ_PASS`**, but `.env.example` and compose use **`RABBITMQ_PASSWORD`** — a non-default RabbitMQ password requires both names set.
 - `DB_PORT` variables (`CATALOG_DB_PORT` etc.) aren't in `.env.example`; the per-service defaults in `Program.cs` are the real source of truth.
 - Hosts are hardcoded to `localhost` in connection strings, so the services are not container-ready as written.
+- **A consumer's class name becomes its queue name.** Two services with a consumer class of the same
+  name bind to the *same* queue and compete for it, so a published event reaches one of them instead
+  of both. This happened: Inventory and Order both had `OrderCompletedConsumer`, the order settled
+  and the stock stayed held. Order now calls
+  `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))`. Check
+  `docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers` — a queue with
+  **2 consumers** that should have one subscriber per service is the symptom.
+- **The `.env` loader overrides real environment variables**, it does not fall back to them. Every
+  `Program.cs` calls `Environment.SetEnvironmentVariable` for each line in `.env`, so
+  `PAYMENT_OUTCOME=Reject dotnet run ...` is silently ignored when `.env` sets it. Edit `.env` (and
+  put it back), or delete the line.
 - Services installed natively on the host silently shadow the compose containers when they share a
   port. Identity's database is published on `5435` rather than `5432` for exactly this reason. The
   services connect to RabbitMQ over the default `5672` and the code passes no port, so a native

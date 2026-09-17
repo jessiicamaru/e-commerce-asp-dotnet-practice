@@ -1,4 +1,6 @@
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Orders.Common;
+using Ecommerce.Order.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ecommerce.Order.Infrastructure.Persistence.Repositories;
@@ -31,5 +33,101 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// One statement:
+    /// <code>
+    /// UPDATE orders
+    ///    SET "Status" = @settled, "FailureReason" = @reason, "UpdatedAt" = @at
+    ///  WHERE "Id" = @orderId AND "Status" = 'Submitted'
+    /// </code>
+    /// The guard is in the WHERE clause on purpose. Do not "improve" this by loading the order and
+    /// testing its status first — that reintroduces the race the guard exists to close, and the
+    /// window is small enough that no test would notice.
+    /// </summary>
+    public async Task<int> TrySettleAsync(
+        Guid orderId,
+        OrderStatus settledStatus,
+        string? failureReason,
+        DateTime settledAt,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders
+            .Where(x => x.Id == orderId && x.Status == OrderStatus.Submitted)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.Status, settledStatus)
+                    .SetProperty(x => x.FailureReason, failureReason)
+                    .SetProperty(x => x.UpdatedAt, settledAt),
+                cancellationToken);
+    }
+
+    public async Task<bool> ExistsAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders.AnyAsync(x => x.Id == orderId, cancellationToken);
+    }
+
+    public async Task<(List<OrderSummaryResponse> Orders, int TotalCount)> GetPageByUserAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Orders
+            .AsNoTracking()
+            .Where(x => x.UserId == userId);
+
+        // Counted before paging, so the caller learns the true total even when they have asked for
+        // a page past the end — which is how they find out they overshot.
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Projected in SQL, not loaded and mapped. The item count becomes a correlated COUNT, so a
+        // page of ten orders holding a hundred lines between them still transfers ten rows.
+        //
+        // Status stays an enum here and is turned into a string below. Projecting
+        // `x.Status.ToString()` would read more directly, but whether it translates depends on the
+        // provider's handling of a value-converted enum, and a projection that silently falls back
+        // to client evaluation — or throws at runtime — is not worth the line it saves.
+        var rows = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.Id,
+                x.TotalAmount,
+                x.Status,
+                x.FailureReason,
+                ItemCount = x.Items.Count,
+                x.CreatedAt,
+                x.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var orders = rows.Select(x => new OrderSummaryResponse(
+            x.Id,
+            x.TotalAmount,
+            x.Status.ToString(),
+            x.FailureReason,
+            x.ItemCount,
+            x.CreatedAt,
+            x.UpdatedAt)).ToList();
+
+        return (orders, totalCount);
+    }
+
+    public async Task<Domain.Entities.Order?> GetByIdForUserAsync(
+        Guid orderId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // Both predicates, one query. Loading by id and comparing the owner afterwards would read
+        // another shopper's order into memory before deciding to refuse it, and would make a "not
+        // yours" answer distinguishable from a "no such order" one.
+        return await _context.Orders
+            .AsNoTracking()
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == orderId && x.UserId == userId, cancellationToken);
     }
 }

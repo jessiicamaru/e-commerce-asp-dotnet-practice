@@ -181,6 +181,34 @@ graph TD
 
 ---
 
+### 🟢 Phase 6.5: Order Lifecycle Visibility (`Ecommerce.Order` learns the outcome) (Completed)
+* **Goal**: Make the order record agree with what the saga actually did, and let a shopper read it.
+* **Why it needed its own phase**: Phase 6 declared checkout complete, and it was — the payment was
+  recorded and the stock was deducted. But the `orders` row was never told. Eleven completed orders
+  read `Submitted`, and `OrdersController` had only `POST`, so nothing could show otherwise. Filed
+  as issue #2 and specified in [specs/003-order-lifecycle](../../specs/003-order-lifecycle/).
+* **Deliverables**:
+  1. `OrderCompletedConsumer` and `OrderFailedConsumer` — the first consumers this service has had.
+  2. A **guarded transition**: `UPDATE ... WHERE Id = @id AND Status = 'Submitted'`, so a redelivery
+     affects zero rows. Mutation-checked — removing the guard fails three tests.
+  3. `GET /api/orders` (paged) and `GET /api/orders/{id}`, scoped by `ICurrentUser`. Another
+     shopper's order answers **404, not 403**, so the response does not confirm the id is real.
+  4. `Ecommerce.Order.Tests` (15 tests) against a real PostgreSQL, and order-ownership assertions in
+     the auth smoke script using real signed tokens.
+
+> ⚠️ **Consumer class names become queue names.** Inventory and Order both have a class called
+> `OrderCompletedConsumer`, so both bound to a queue named `OrderCompleted` and *competed* for it —
+> each completion reached one service or the other. The order settled and the stock stayed held.
+> Order now sets an endpoint name prefix. Publish/subscribe fans out per **endpoint**, not per
+> service.
+
+Two `OrderStatus` values remain deliberately unreachable: `StockReserved` and `Paid`. The saga
+passes through both states but announces neither, and adding an announcement means changing a shared
+contract every service deserializes. Documented in the feature's `data-model.md` rather than left to
+be rediscovered.
+
+---
+
 ### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
