@@ -1,5 +1,7 @@
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Domain.Enums;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -13,12 +15,14 @@ public class ConfirmStockCommandHandler(
     IUnitOfWork unitOfWork,
     IStockRepository stockRepository,
     IReservationRepository reservationRepository,
+    IPublishEndpoint publishEndpoint,
     ILogger<ConfirmStockCommandHandler> logger
 ) : IRequestHandler<ConfirmStockCommand, int>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
     private readonly IReservationRepository _reservationRepository = reservationRepository;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ILogger<ConfirmStockCommandHandler> _logger = logger;
 
     public async Task<int> Handle(ConfirmStockCommand request, CancellationToken cancellationToken)
@@ -61,6 +65,10 @@ public class ConfirmStockCommandHandler(
 
                 settled++;
             }
+
+            // Every stock row this loop touched, announced before the single save so the
+            // movement and the announcement commit together.
+            await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stockItems, ct);
 
             await _reservationRepository.SaveChangesAsync(ct);
         }, cancellationToken);

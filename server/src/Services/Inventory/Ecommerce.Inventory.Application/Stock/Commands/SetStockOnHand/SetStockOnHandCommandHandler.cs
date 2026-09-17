@@ -1,17 +1,21 @@
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Application.Stock.Common;
 using Ecommerce.Shared.Exceptions;
+using MassTransit;
 using MediatR;
 
 namespace Ecommerce.Inventory.Application.Stock.Commands.SetStockOnHand;
 
 public class SetStockOnHandCommandHandler(
     IUnitOfWork unitOfWork,
-    IStockRepository stockRepository
+    IStockRepository stockRepository,
+    IPublishEndpoint publishEndpoint
 ) : IRequestHandler<SetStockOnHandCommand, StockResponse>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     public async Task<StockResponse> Handle(SetStockOnHandCommand request, CancellationToken cancellationToken)
     {
@@ -36,6 +40,8 @@ public class SetStockOnHandCommandHandler(
 
             stock.QuantityOnHand = request.QuantityOnHand;
             stock.UpdatedAt = DateTime.UtcNow;
+
+            await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stock, ct);
 
             await _stockRepository.SaveChangesAsync(ct);
 

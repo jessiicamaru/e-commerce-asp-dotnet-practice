@@ -22,7 +22,7 @@ public class GetProductByIdQueryHandler(IProductRepository productRepository)
             product.Name,
             product.Description,
             product.Price,
-            product.StockQuantity,
+            ProductAvailability.From(product.Availability),
             product.Sku,
             product.CategoryId,
             product.IsActive

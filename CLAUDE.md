@@ -33,9 +33,9 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (19 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (11 tests, PostgreSQL on 5438) and `Ecommerce.Order.Tests` (15 tests,
-PostgreSQL on 5434). They run against a **real PostgreSQL** — the guarantees under test are the
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (11 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (15 tests,
+PostgreSQL on 5434) and `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -66,7 +66,7 @@ script. If adding unit tests there is no existing convention to follow — pick 
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
 | Identity | 5056 | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
-| Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox |
+| Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Submit + outbox; settles on the saga's outcome, owner-scoped reads |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
@@ -122,6 +122,8 @@ Roles (`Admin`, `Customer`) and the first administrator are seeded at Identity s
 admin exists. Self-registration always grants `Customer`.
 
 ### Shared building blocks
+**Inventory owns stock; Catalog reports a read model of it.** `Product.Availability` is fed by `StockAvailabilityChangedEvent` and surfaces as `"InStock"` / `"OutOfStock"` — never a count. **Nothing may sell against it**: checkout reserves under `FOR UPDATE` against Inventory's row, and a read model fed by messages is seconds behind by design. A real number comes from `GET /api/stock/{productId}` on Inventory, which is public. Six handlers move stock and every one must announce — if you add a seventh, it must call `StockAvailabilityAnnouncer` too, and `Ecommerce.Inventory.Tests/AnnouncementTests.cs` is what catches the omission. Background in [specs/004-stock-single-source](specs/004-stock-single-source/).
+
 - **`Ecommerce.Contracts`** — the only cross-service coupling allowed: message records grouped by owning domain (`Catalog/`, `Order/`, `Inventory/`, `Payment/`). Pure records, no dependencies. Any new integration event goes here — but only once something publishes it and something consumes it. A record with neither states that a service says something it does not say; `Identity/UserRegisteredEvent` sat here unused until `81b7551`.
 - **`Ecommerce.Shared`** — `GlobalExceptionHandler` (RFC 7807 ProblemDetails; maps `ValidationException` → 400 with an `errors` extension, `NotFoundException` → 404, `ConflictException` → 409, detail hidden outside Development) and `ValidationBehavior` (MediatR open behavior that throws on validator failures). Wired with `AddExceptionHandler<GlobalExceptionHandler>()` + `AddProblemDetails()` + `app.UseExceptionHandler()`.
 

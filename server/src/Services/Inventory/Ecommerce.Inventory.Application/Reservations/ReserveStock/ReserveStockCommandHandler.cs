@@ -1,4 +1,5 @@
 using Ecommerce.Contracts.Inventory;
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Domain.Entities;
 using Ecommerce.Inventory.Domain.Enums;
@@ -33,6 +34,11 @@ public class ReserveStockCommandHandler(
 
         await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
+            // Rows whose availability this delivery actually moved. Declared out here because the
+            // locked items live inside the else-branch below, and only a successful reservation
+            // changes anything worth announcing - a failed one leaves every row as it found it.
+            List<StockItem> movedStock = [];
+
             // The broker redelivers as normal operation. Reservations already on file for this
             // order mean the original delivery succeeded and its reply is already in the outbox;
             // doing the work again would deduct stock twice.
@@ -111,6 +117,8 @@ public class ReserveStockCommandHandler(
                     }
 
                     await _reservationRepository.AddRangeAsync(reservations, ct);
+
+                    movedStock = requested.Select(line => byProduct[line.ProductId]).ToList();
                 }
             }
 
@@ -121,6 +129,10 @@ public class ReserveStockCommandHandler(
             {
                 await _publishEndpoint.Publish(
                     new InventoryReservedEvent(request.OrderId, DateTime.UtcNow), ct);
+
+                // Reserving the last units is the commonest way a product becomes unbuyable, so
+                // this is the announcement the catalogue most depends on.
+                await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, movedStock, ct);
             }
             else
             {
