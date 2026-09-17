@@ -122,10 +122,10 @@ Roles (`Admin`, `Customer`) and the first administrator are seeded at Identity s
 admin exists. Self-registration always grants `Customer`.
 
 ### Shared building blocks
-- **`Ecommerce.Contracts`** — the only cross-service coupling allowed: message records grouped by owning domain (`Catalog/`, `Order/`, `Inventory/`, `Payment/`). Pure records, no dependencies. Any new integration event goes here.
+- **`Ecommerce.Contracts`** — the only cross-service coupling allowed: message records grouped by owning domain (`Catalog/`, `Order/`, `Inventory/`, `Payment/`). Pure records, no dependencies. Any new integration event goes here — but only once something publishes it and something consumes it. A record with neither states that a service says something it does not say; `Identity/UserRegisteredEvent` sat here unused until `81b7551`.
 - **`Ecommerce.Shared`** — `GlobalExceptionHandler` (RFC 7807 ProblemDetails; maps `ValidationException` → 400 with an `errors` extension, `NotFoundException` → 404, `ConflictException` → 409, detail hidden outside Development) and `ValidationBehavior` (MediatR open behavior that throws on validator failures). Wired with `AddExceptionHandler<GlobalExceptionHandler>()` + `AddProblemDetails()` + `app.UseExceptionHandler()`.
 
-Catalog still carries **dead duplicates** of both — `Catalog.Application/Common/Behaviors/ValidationBehavior.cs`, `Catalog.WebApi/Middlewares/GlobalExceptionHandler.cs`, `Catalog.Domain/Exceptions/*`. The shared versions are the live ones (`Program.cs` and `DependencyInjection.cs` reference `Ecommerce.Shared`). Don't extend the copies; throw `Ecommerce.Shared.Exceptions.*` from handlers.
+Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. There is now exactly one `ValidationBehavior`, one `GlobalExceptionHandler` and one each of `NotFoundException` / `ConflictException`, all in `Ecommerce.Shared`. **Don't reintroduce a per-service copy** — two exception types with the same name in two namespaces compiles, reviews clean, and falls through the shared handler to a 500, because that handler pattern-matches on `Ecommerce.Shared.Exceptions`. Throw `Ecommerce.Shared.Exceptions.*` from handlers.
 
 ## Conventions
 
