@@ -9,6 +9,18 @@ Two supported ways to run this system. Both work; pick by what you are doing.
 
 Either way the ports are the same: gateway on **5000**, services on **5056–5061**.
 
+There is a third way that skips building entirely — pull a published image:
+
+```bash
+docker pull ghcr.io/jessiicamaru/ecommerce-catalog:sha-<short-sha>
+```
+
+Every merge to `main` publishes seven of these, each named by the commit it came from and never
+overwritten. Use it to run an exact past version without checking that commit out. The `:main` tag
+also exists for convenience, but it moves, so it can never name "the version from before" —
+[release-artifacts.md](../../specs/006-release-and-rollback/contracts/release-artifacts.md) has the
+guarantees.
+
 ---
 
 ## 0. Prerequisites

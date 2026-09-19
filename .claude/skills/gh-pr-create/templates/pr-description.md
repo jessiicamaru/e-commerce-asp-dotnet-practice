@@ -75,6 +75,11 @@ alternative you rejected and why. Delete if you genuinely have nothing.}}
 - [ ] Any new or changed consumer is safe to process the same message twice,
       enforced by a constraint or a guarded update rather than configuration
 - [ ] Caller identity comes from `ICurrentUser`, never from the request (constitution IV)
+- [ ] **The previous image can run against this schema, or the change is split into
+      expand and contract** — constitution, *Technology & Implementation Constraints*.
+      Dropping, renaming or narrowing a column means redeploying an earlier version
+      takes the service down rather than restoring it. Delete this line when the change
+      touches no migration
 - [ ] No secret, token or credential added to a tracked file
 - [ ] Docs under `docs/` that this change contradicts were updated in the same change
 ```

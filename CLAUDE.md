@@ -190,6 +190,25 @@ Three traps, each of which cost time to find:
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)
 checks every layer, not the running container, and CI runs it.
 
+## Published images
+
+A merge to `main` whose checks pass publishes seven images to GHCR, each built, scanned for
+credentials, and only then pushed:
+
+```text
+ghcr.io/jessiicamaru/ecommerce-<service>:sha-<short-sha>   # immutable; the only deployable name
+ghcr.io/jessiicamaru/ecommerce-<service>:main              # moves; convenience only
+```
+
+**`:main` cannot answer "the previous version"**, which is why nothing deployable may be named by it.
+A pull request publishes nothing. See
+[specs/006-release-and-rollback/contracts/release-artifacts.md](specs/006-release-and-rollback/contracts/release-artifacts.md).
+
+**A schema change must not strand an earlier image.** Dropping, renaming or narrowing a column means
+redeploying a previous version takes the service down rather than restoring it — split it into expand
+then contract. The constitution states the rule; a `schema-compatibility` job comments on any pull
+request that adds a migration doing one of those, and never blocks.
+
 ## Project constitution
 
 [.specify/memory/constitution.md](.specify/memory/constitution.md) holds the ratified principles

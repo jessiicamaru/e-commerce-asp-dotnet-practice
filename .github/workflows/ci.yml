@@ -140,6 +140,57 @@ jobs:
       - name: Assert no credential in any layer
         run: .github/scripts/verify-image-has-no-secrets.sh ecommerce-catalog:ci
 
+  schema-compatibility:
+    name: Schema compatibility
+    runs-on: ubuntu-latest
+    # Pull requests only: the point is to inform a reviewer while they are still
+    # deciding. By the time it is merged the decision has been taken.
+    if: github.event_name == 'pull_request'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The script diffs base...HEAD, so it needs both sides.
+          fetch-depth: 0
+
+      - name: Look for schema changes earlier images cannot survive
+        id: check
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=0 origin "${{ github.base_ref }}" 2>/dev/null || true
+          .github/scripts/check-schema-compatibility.sh "origin/${{ github.base_ref }}" > /tmp/report.md
+          if [ -s /tmp/report.md ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only when there is something to say. A check that comments on every pull
+      # request is noise, and noise is how a real warning gets scrolled past.
+      - name: Comment on the pull request
+        if: steps.check.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: fs.readFileSync('/tmp/report.md', 'utf8'),
+            });
+
+      # It never fails. Nothing is deployed anywhere, so a block would fire on a risk
+      # that does not yet exist, be overridden as a matter of course, and teach people
+      # that overriding this class of guard is routine. A guard people learn to ignore
+      # is worse than none, because it carries authority it has not earned.
+      - name: This check never blocks
+        run: echo "Informational only - see specs/006-release-and-rollback/research.md D5"
+
   publish:
     name: Publish images
     runs-on: ubuntu-latest
