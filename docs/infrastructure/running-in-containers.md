@@ -187,13 +187,29 @@ explanation, so that whoever picks it up starts from what was actually tested. I
 
 ---
 
-## 7. What this does not do
+## 7. Published images
 
-- **Publish images anywhere.** Nothing is tagged, pushed or rollable-back-to —
-  [#8](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/8).
-- **Make a schema change survive an image rollback.** Redeploying an older image does not undo a
-  migration, and a dropped column will break it —
-  [#9](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/9).
+Since 2026-09-19, a merge to `main` whose checks pass publishes these same images to GHCR:
+
+```bash
+docker pull ghcr.io/jessiicamaru/ecommerce-catalog:sha-<short-sha>
+```
+
+Each is built, **scanned for credentials, and only then pushed** — in that order, because once an
+image is published the scanned bytes and the shipped bytes have to be the same artifact. All seven
+are built and scanned before any is pushed; a partial release is not a release.
+
+`:main` also exists and **moves**, so it can never name "the version from before". Only `sha-` tags
+may name something deployable.
+[release-artifacts.md](../../specs/006-release-and-rollback/contracts/release-artifacts.md) has the
+guarantees; a published image takes the same configuration as one you build locally.
+
+**A schema change can still strand an older image.** Dropping, renaming or narrowing a column means
+redeploying a previous version takes the service down rather than restoring it. The constitution now
+carries the expand/contract rule, and a `schema-compatibility` job says so on any pull request that
+adds such a migration — without blocking it.
+
+## 8. What this does not do
 - **Run on more than one machine.** No cluster, no scaling, no service mesh.
 - **Introduce a secret manager.** It stops secrets being copied where they do not belong; it does
   not manage them.

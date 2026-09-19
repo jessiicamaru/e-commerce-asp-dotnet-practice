@@ -6,7 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege by default. Only the publish job widens this, and only for
+# packages - see specs/006-release-and-rollback/contracts/release-artifacts.md.
+permissions:
+  contents: read
+
 env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/jessiicamaru/ecommerce
   DOTNET_VERSION: '10.0.x'
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
@@ -113,25 +120,174 @@ jobs:
     name: Image carries no secret
     runs-on: ubuntu-latest
     needs: build
-    defaults:
-      run:
-        working-directory: server
+    # Pull requests only. On a merge the same check runs inside `publish`, against
+    # each of the seven images it is about to push. Without this job a PR would get
+    # no scan at all, and a leaked credential would only be caught after merge.
+    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v4
 
-      # One service is enough: every image comes from the same Dockerfile and the
-      # same .dockerignore, so a leak in one is a leak in all seven.
+      # One service is enough here: every image comes from the same Dockerfile and
+      # the same .dockerignore, so a leak in one is a leak in all seven. On a merge
+      # all seven are scanned anyway, because there the scanned bytes must be the
+      # pushed bytes.
       - name: Build one image
+        working-directory: server
         run: |
           docker build             --build-arg PROJECT=src/Services/Catalog/Ecommerce.Catalog.WebApi             -t ecommerce-catalog:ci .
 
-      # The only part of feature 005 worth automating: a credential that reaches a
-      # published image cannot be un-published, only rotated. Everything else in
-      # that feature fails loudly the moment somebody runs it.
       - name: Assert no credential in any layer
-        working-directory: .
         run: .github/scripts/verify-image-has-no-secrets.sh ecommerce-catalog:ci
+
+  schema-compatibility:
+    name: Schema compatibility
+    runs-on: ubuntu-latest
+    # Pull requests only: the point is to inform a reviewer while they are still
+    # deciding. By the time it is merged the decision has been taken.
+    if: github.event_name == 'pull_request'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The script diffs base...HEAD, so it needs both sides.
+          fetch-depth: 0
+
+      - name: Look for schema changes earlier images cannot survive
+        id: check
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=0 origin "${{ github.base_ref }}" 2>/dev/null || true
+          .github/scripts/check-schema-compatibility.sh "origin/${{ github.base_ref }}" > /tmp/report.md
+          if [ -s /tmp/report.md ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Only when there is something to say. A check that comments on every pull
+      # request is noise, and noise is how a real warning gets scrolled past.
+      - name: Comment on the pull request
+        if: steps.check.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: fs.readFileSync('/tmp/report.md', 'utf8'),
+            });
+
+      # It never fails. Nothing is deployed anywhere, so a block would fire on a risk
+      # that does not yet exist, be overridden as a matter of course, and teach people
+      # that overriding this class of guard is routine. A guard people learn to ignore
+      # is worse than none, because it carries authority it has not earned.
+      - name: This check never blocks
+        run: echo "Informational only - see specs/006-release-and-rollback/research.md D5"
+
+  publish:
+    name: Publish images
+    runs-on: ubuntu-latest
+    # Both conditions, not either. Without `needs` a merge whose tests failed would
+    # still publish something that looks releasable - worse than publishing nothing,
+    # because the artifact exists and carries the implication that it passed. Without
+    # the event guard every pull request would publish: this workflow triggers on
+    # push AND pull_request to main.
+    needs: [build, auth-smoke]
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # ALL SEVEN are built and scanned BEFORE ANY is pushed.
+      #
+      # Not a matrix, deliberately. A matrix runs the services in parallel, so one
+      # failing after others have pushed leaves a partial release - and a partial
+      # release is not a release. One job also shares the SDK and restore layers
+      # across all seven builds, so sequential here is not seven times the work.
+      #
+      # The order build -> scan -> push is the other half. Before this job existed a
+      # separate image-secrets job built its own Catalog image and scanned THAT; once
+      # images are published, the scanned bytes and the shipped bytes would be
+      # different artifacts and the guarantee would attach to the wrong one. This
+      # repository is public: a credential in a published layer is readable by anyone,
+      # and one that has been pulled must be ROTATED, not deleted.
+      # ALL SEVEN are built and scanned BEFORE ANY is pushed.
+      #
+      # Not a matrix, deliberately. A matrix runs the services in parallel, so one
+      # failing after others have pushed leaves a partial release - and a partial
+      # release is not a release. One job also shares the SDK and restore layers
+      # across all seven builds, so sequential here is not seven times the work.
+      #
+      # The order build -> scan -> push is the other half. Before this job existed a
+      # separate image-secrets job built its own Catalog image and scanned THAT; once
+      # images are published, the scanned bytes and the shipped bytes would be
+      # different artifacts and the guarantee would attach to the wrong one. This
+      # repository is public: a credential in a published layer is readable by anyone,
+      # and one that has been pulled must be ROTATED, not deleted.
+      - name: Build and scan all seven
+        env:
+          SHORT_SHA: ${{ steps.sha.outputs.short }}
+        run: |
+          set -euo pipefail
+          while IFS='|' read -r service project; do
+            [ -n "$service" ] || continue
+            echo "::group::$service"
+            docker build \
+              --build-arg "PROJECT=$project" \
+              -t "$IMAGE_PREFIX-$service:sha-$SHORT_SHA" \
+              -t "$IMAGE_PREFIX-$service:main" \
+              server
+            .github/scripts/verify-image-has-no-secrets.sh "$IMAGE_PREFIX-$service:sha-$SHORT_SHA"
+            echo "::endgroup::"
+          done <<'SERVICES'
+          identity|src/Services/Identity/Ecommerce.Identity.WebApi
+          catalog|src/Services/Catalog/Ecommerce.Catalog.WebApi
+          order|src/Services/Order/Ecommerce.Order.WebApi
+          orchestrator|src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi
+          inventory|src/Services/Inventory/Ecommerce.Inventory.WebApi
+          payment|src/Services/Payment/Ecommerce.Payment.WebApi
+          gateway|src/ApiGateway/Ecommerce.ApiGateway
+          SERVICES
+
+      - name: Log in to GHCR
+        # No stored secret: GITHUB_TOKEN is minted per run, scoped by the permissions
+        # block above, and expires with the job. The constitution requires that secrets
+        # are never written into a workflow file; needing none is the strongest form.
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push all seven
+        # sha- is immutable and is the only tag anything deployable may be named by.
+        # :main moves, so it can never answer "the previous version" - it is a
+        # convenience, and the contract says so.
+        env:
+          SHORT_SHA: ${{ steps.sha.outputs.short }}
+        run: |
+          set -euo pipefail
+          echo "### Published sha-$SHORT_SHA" >> "$GITHUB_STEP_SUMMARY"
+          for service in identity catalog order orchestrator inventory payment gateway; do
+            docker push "$IMAGE_PREFIX-$service:sha-$SHORT_SHA"
+            docker push "$IMAGE_PREFIX-$service:main"
+            echo "- $IMAGE_PREFIX-$service:sha-$SHORT_SHA" >> "$GITHUB_STEP_SUMMARY"
+          done
 
   auth-smoke:
     name: Auth smoke test

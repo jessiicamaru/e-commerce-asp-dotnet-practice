@@ -1,38 +1,46 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: none (unfilled template) → 1.0.0
-Bump rationale: MAJOR. First ratified version. The file previously contained only
-placeholder tokens, so every principle here is newly defined rather than amended.
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR. A section is added to Technology & Implementation Constraints
+(Schema evolution). No principle is removed or redefined, so this is not MAJOR; the
+addition is materially new guidance rather than a clarification, so it is not PATCH.
 
-Modified principles: none (no prior principles existed)
+Modified principles: none. The five Core Principles are unchanged.
 
 Added sections:
-  - Core Principles I-V
-  - Technology & Implementation Constraints
-  - Development Workflow & Quality Gates
-  - Governance
+  - Technology & Implementation Constraints → **Schema evolution** (expand/contract)
+
+Corrected sections:
+  - Technology & Implementation Constraints → Service topology. It said each service
+    "pins its own HTTP port in app.Run(...)". Feature 005 made that conditional on
+    ASPNETCORE_URLS with the pinned address as the fallback. Found while reading this
+    file for an unrelated amendment; Governance forbids resolving a disagreement
+    between the code and this document by ignoring it. PATCH-level on its own, riding
+    along with a MINOR addition.
 
 Removed sections: none
 
-Principles derived from: conventions the codebase demonstrably follows, plus three
-defects already committed and fixed in this repository's history — outbox publish
-ordering (commits 140fb39, ca5bc20), user id taken from the request body (725a700),
-and a role claim validated against an assumption rather than a real token (c0c10b4).
+Driven by: issue #9 and specs/006-release-and-rollback. The rule existed nowhere, and
+a single-step breaking change had already shipped (products.StockQuantity, PR #5).
 
-Templates requiring updates:
-  ✅ .specify/templates/plan-template.md      — no change needed; its Constitution
-                                                Check references this file dynamically
-  ✅ .specify/templates/spec-template.md      — no change needed; adds no mandatory
-                                                sections or constraints
-  ✅ .specify/templates/tasks-template.md     — no change needed; principle-driven
-                                                checks fit the existing Polish phase
-  ✅ .claude/skills/speckit-*/SKILL.md        — verified; all reference the
-                                                constitution generically, no stale
-                                                agent-specific naming
-  ✅ specs/001-inventory-reservations/plan.md — Constitution Check rewritten; it
-                                                previously recorded a vacuous pass
+Templates and dependent artifacts checked:
+  ✅ .specify/templates/plan-template.md      — its Constitution Check is generated
+                                                from this file, so no edit needed
+  ✅ .specify/templates/spec-template.md      — no mandatory section added or removed
+  ✅ .specify/templates/tasks-template.md     — principle-driven task types unchanged
+  ✅ .claude/skills/speckit-*/SKILL.md        — all reference this file generically
+  ✅ .claude/skills/gh-pr-create/templates/pr-description.md
+                                              — checklist gains the schema question
+  ✅ .github/pull_request_template.md         — created; same question, for anyone not
+                                                using the skill
   ✅ CLAUDE.md                                — points at this file as the authority
+
+Enforcement: a `schema-compatibility` job comments on any pull request adding a
+migration with DropColumn/DropTable/RenameColumn/RenameTable, and flags AlterColumn as
+possibly breaking. It never blocks - nothing is deployed, so a block would fire on a
+risk that does not yet exist and would be overridden as a matter of course. The
+reasoning is in specs/006-release-and-rollback/research.md D5.
 
 Deferred TODOs: none
 -->
@@ -149,6 +157,31 @@ only, through `IEntityTypeConfiguration<T>`. Tables are snake_case plural; money
 `decimal(18,2)`; enums persist as strings. Invariants that matter MUST be expressed as
 database constraints as well as in code.
 
+**Schema evolution**: A schema change MUST be shaped so that the previously released
+image can still run against it, or MUST be split into two releases.
+
+*Breaking* — dropping, renaming or narrowing a column; dropping or renaming a table;
+adding a `NOT NULL` column with no default. *Additive* — adding a nullable column, a
+column with a default, a table or an index; widening a type. Most changes are additive
+and MUST stay cheap; this rule taxes only the changes that strand an earlier image.
+
+A breaking change becomes two releases:
+
+1. **expand** — add the new shape, write both, read the new one. The previous image
+   still runs, because the old shape is still there.
+2. **contract** — remove the old shape, once nothing deployed reads it.
+
+The rejected alternative is a single-step breaking change relying on the migration's
+`Down` method to recover. Reverting a migration is not a rollback: it needs the
+database, it needs the new code stopped first, and anything written since is lost. It
+is a recovery, performed under pressure, in place of an operation that should have been
+redeploying an earlier image.
+
+This has already cost something. `products.StockQuantity` was dropped in a single step
+on 2026-09-17 (PR #5); every Catalog image built before that commit selects that column
+on every product query and now fails against the schema. Rolling Catalog back past that
+commit takes the catalogue down rather than restoring it.
+
 **Errors**: All failures surface as RFC 7807 `ProblemDetails` through
 `Ecommerce.Shared.Middlewares.GlobalExceptionHandler`. Internal messages are masked
 outside Development.
@@ -157,9 +190,9 @@ outside Development.
 placed in `appsettings.json`, and never written into a workflow file. A service that
 cannot find a required secret MUST fail at startup rather than failing every request.
 
-**Service topology**: Each service pins its own HTTP port in `app.Run(...)`, owns a
-database on its own host port, exposes `/health`, and is reachable through a gateway
-route. Host ports MUST avoid those commonly held by natively installed software —
+**Service topology**: Each service takes its listening address from `ASPNETCORE_URLS`
+and falls back to its own pinned HTTP port when that is unset, owns a database on its
+own host port, exposes `/health`, and is reachable through a gateway route. Host ports MUST avoid those commonly held by natively installed software —
 notably `5432` (PostgreSQL) and `5672` (RabbitMQ) — because a local install shadows a
 container silently and the divergence only appears somewhere else, such as CI.
 
@@ -213,4 +246,4 @@ NON-NEGOTIABLE marking means it admits no Complexity Tracking entry at all.
 **Runtime guidance**: [CLAUDE.md](../../CLAUDE.md) carries the operational detail —
 commands, service map, and the traps this codebase has already sprung.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-16 | **Last Amended**: 2026-09-16
+**Version**: 1.1.0 | **Ratified**: 2026-09-16 | **Last Amended**: 2026-09-19
