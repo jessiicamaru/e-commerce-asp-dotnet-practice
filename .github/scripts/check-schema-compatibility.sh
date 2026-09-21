@@ -37,23 +37,52 @@ FINDINGS=""
 BREAKING='DropColumn|DropTable|RenameColumn|RenameTable'
 MAYBE='AlterColumn'
 
+# Only the Up method counts.
+#
+# EF generates Down as the inverse of Up, so EVERY migration that creates a table
+# carries a DropTable and every one that adds a column carries a DropColumn -
+# in Down. Scanning the whole file therefore reported almost every additive
+# migration as breaking, which is the failure research D5 named in advance: "a
+# check that overstates is a check that gets ignored."
+#
+# Down is also the wrong thing to judge. It runs only if someone reverts the
+# migration, and the constitution is explicit that reverting a migration is not a
+# rollback - the whole point of the rule is that you redeploy an earlier image
+# instead. What matters is what `database update` does to the schema, which is Up.
+up_method() {
+  awk '
+    /void[[:space:]]+Up[[:space:]]*\(/ { inside = 1 }
+    /void[[:space:]]+Down[[:space:]]*\(/ { inside = 0 }
+    inside
+  ' "$1"
+}
+
 while IFS= read -r file; do
   [ -n "$file" ] || continue
   [ -f "$file" ] || continue
   EXAMINED=$((EXAMINED + 1))
 
-  while IFS= read -r op; do
-    [ -n "$op" ] || continue
-    FINDINGS="${FINDINGS}  • ${op} — breaking"$'\n'
-  done < <(grep -oE "(${BREAKING})" "$file" | sort -u || true)
+  UP="$(up_method "$file")"
+
+  # Per file, not accumulated. FINDINGS collects every file's results, so testing
+  # IT for emptiness named a clean migration whenever an earlier one had found
+  # something - and prepended, so the name landed above somebody else's finding.
+  # A comment that points a reviewer at the wrong migration is worse than one
+  # that says nothing.
+  FILE_FINDINGS=""
 
   while IFS= read -r op; do
     [ -n "$op" ] || continue
-    FINDINGS="${FINDINGS}  • ${op} — may be breaking (widening is safe, narrowing is not; the diff cannot tell)"$'\n'
-  done < <(grep -oE "(${MAYBE})" "$file" | sort -u || true)
+    FILE_FINDINGS="${FILE_FINDINGS}  • ${op} — breaking"$'\n'
+  done < <(printf '%s' "$UP" | grep -oE "(${BREAKING})" | sort -u || true)
 
-  if [ -n "$FINDINGS" ]; then
-    FINDINGS="\`$(basename "$file")\`"$'\n'"${FINDINGS}"
+  while IFS= read -r op; do
+    [ -n "$op" ] || continue
+    FILE_FINDINGS="${FILE_FINDINGS}  • ${op} — may be breaking (widening is safe, narrowing is not; the diff cannot tell)"$'\n'
+  done < <(printf '%s' "$UP" | grep -oE "(${MAYBE})" | sort -u || true)
+
+  if [ -n "$FILE_FINDINGS" ]; then
+    FINDINGS="${FINDINGS}\`$(basename "$file")\`"$'\n'"${FILE_FINDINGS}"$'\n'
   fi
 done <<< "$MIGRATIONS"
 
