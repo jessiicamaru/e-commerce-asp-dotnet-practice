@@ -1,0 +1,35 @@
+info:
+  name: customer cannot create a product (403)
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Should never exist",
+        "description": null,
+        "price": 1,
+        "sku": "NOPE-1",
+        "categoryId": "{{categoryId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

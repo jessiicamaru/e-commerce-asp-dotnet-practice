@@ -1,0 +1,47 @@
+info:
+  name: get order by id
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/{{orderId}}"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The saga settles the order asynchronously. Wait (up to ~15s) until it leaves
+        // "Submitted", so this request - and admin-audit after it - see a finished order.
+        const axios = require("axios");
+        const url = bru.interpolate("{{baseUrl}}/api/orders/{{orderId}}");
+        const headers = { Authorization: "Bearer " + bru.getVar("customerToken") };
+        for (let i = 0; i < 30; i++) {
+          try {
+            const r = await axios.get(url, { headers });
+            if (r.data.status !== "Submitted") break;
+          } catch (e) { /* not visible yet - keep waiting */ }
+          await bru.sleep(500);
+        }
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+            test("the saga settled it", function() {
+              expect(["Completed", "Failed"]).to.include(res.body.status);
+            });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Waits for the saga first, then returns the settled order: `Completed`, or `Failed` when Payment
+  runs with `PAYMENT_OUTCOME=Reject`. Still `Submitted` after 15s usually means the Orchestrator is
+  not running. Another customer's order id returns **404**, not 403.

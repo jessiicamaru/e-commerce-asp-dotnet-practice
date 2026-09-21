@@ -77,6 +77,25 @@ and exercising both means running it twice with Payment restarted between. `SAGA
 forces a branch and exists for the negative control. Background in
 [specs/007-saga-e2e-verification](specs/007-saga-e2e-verification/).
 
+### Bruno collection
+
+[bruno/](bruno/) is a [Bruno](https://www.usebruno.com/) collection (OpenCollection YAML) covering
+**every public endpoint**, all through the gateway (`{{baseUrl}}` = `:5000`). Open the folder in
+Bruno, pick the `local` environment, fill `adminEmail` / `adminPassword` (marked secret — Bruno keeps
+the values out of the file; never commit them), then run the collection top to bottom: scripts carry
+`customerToken`, `adminToken`, `categoryId`, `productId` and `orderId` from one request to the next,
+and every request has tests. It runs headless too:
+
+```bash
+cd bruno
+npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD"
+```
+
+**Adding or changing an endpoint means updating `bruno/` in the same change** — a new request file
+with a status test, and the gateway route it goes through. `security-checks/` holds the negative
+cases (401, 403, 400, 404); `duplicate registration is 409` is **known failing** (Identity throws a
+bare `Exception`, so it returns 500) and stays red until that is fixed.
+
 CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then **two smoke jobs side
 by side** — `auth-smoke` (three services) and `saga-e2e` (six services plus RabbitMQ, both branches,
 Payment restarted in between). They depend only on `build`, so they run concurrently, and `publish`

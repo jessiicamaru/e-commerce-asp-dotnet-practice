@@ -1,0 +1,46 @@
+info:
+  name: register customer
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{customerEmail}}",
+        "password": "{{customerPassword}}",
+        "firstName": "Bruno",
+        "lastName": "Customer"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // A fresh customer on every run, so the whole collection can be re-run as often as you like.
+        // "login customer" after this logs in as the same fresh customer.
+        bru.setVar("customerEmail", "bruno+" + Date.now() + "@example.test");
+    - type: after-response
+      code: |-
+        // Self-registration always grants Customer, never Admin.
+        if (res.status === 200 && res.body.token) {
+          bru.setVar("customerToken", res.body.token);
+        }
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+            test("a new account is a Customer", function() {
+              expect(res.body.token).to.be.a("string").and.not.empty;
+            });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

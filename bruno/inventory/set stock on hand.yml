@@ -1,0 +1,44 @@
+info:
+  name: set stock on hand
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/stock/{{productId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "quantityOnHand": 50
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Inventory creates the stock row when the ProductCreated event arrives - a moment
+        // after "create product". Wait (up to ~10s) for it to exist.
+        const axios = require("axios");
+        const url = bru.interpolate("{{baseUrl}}/api/stock/{{productId}}");
+        for (let i = 0; i < 20; i++) {
+          try { await axios.get(url); break; } catch (e) { await bru.sleep(500); }
+        }
+    - type: tests
+      code: |-
+        test("status is one of 200, 204", function() {
+          expect([200, 204]).to.include(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Admin only. Returns **404 for a second or two after "create product"**: the stock row is created
+  by Inventory when the ProductCreated event arrives. Just send it again.
