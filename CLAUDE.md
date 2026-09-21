@@ -56,9 +56,31 @@ cd server
 ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
 ```
 
-CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then an `auth-smoke` job
-that spins up PostgreSQL service containers, migrates, starts Identity and Catalog, and runs that
-script. If adding unit tests there is no existing convention to follow — pick one and say so.
+There is also an **end-to-end check of the checkout saga**,
+[.github/scripts/verify-saga.sh](.github/scripts/verify-saga.sh) — the only check in this repository
+that can see *between* services. It places a real order over HTTP with a real signed customer token,
+follows it to a terminal state, and asserts the stock moved by exactly the amount ordered with
+nothing left held. It needs **all six** services; without them it reports **skipped** rather than
+passing quietly, unless `SAGA_E2E_REQUIRE_ALL=1` (which CI sets) makes a skip fatal.
+
+```bash
+cd server
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-saga.sh
+```
+
+It asserts on `QuantityOnHand` **and** `QuantityReserved`, never on the derived `QuantityAvailable`
+alone — during the queue-collision bug `Available` was correct while the units stayed held, so a
+check reading only that number would have passed. Payment resolves its outcome once at startup, so
+one running Payment gives you one of the two branches; the script runs whichever one Payment reports
+and exercising both means running it twice with Payment restarted between. `SAGA_E2E_SCENARIO`
+forces a branch and exists for the negative control. Background in
+[specs/007-saga-e2e-verification](specs/007-saga-e2e-verification/).
+
+CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then **two smoke jobs side
+by side** — `auth-smoke` (three services) and `saga-e2e` (six services plus RabbitMQ, both branches,
+Payment restarted in between). They depend only on `build`, so they run concurrently, and `publish`
+is gated on both. If adding unit tests there is no existing convention to follow — pick one and say
+so.
 
 ## Service map
 
@@ -148,6 +170,12 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))`. Check
   `docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers` — a queue with
   **2 consumers** that should have one subscriber per service is the symptom.
+- **The Orchestrator has no `/health` endpoint** — it has no controllers, so `GET :5058/health` is a
+  404, and `docker-compose.app.yml` disables its health check for that reason. It is therefore the
+  one service nothing can wait for or probe, which is why an order that never leaves `Submitted`
+  usually means the Orchestrator rather than anything the check could test. The constitution says
+  every service exposes `/health`; this one does not, and that disagreement is recorded but not yet
+  resolved.
 - **A failed `SaveChangesAsync` does not untrack what it tried to write.** The rows stay `Added`, so
   the next save on that same context re-attempts them. Catching a unique violation and then saving
   again therefore raises the *same* violation, outside the catch — which is how Payment's
