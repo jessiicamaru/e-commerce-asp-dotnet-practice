@@ -58,10 +58,18 @@ the contract.
 - **Registry v2 HTTP directly** (`HEAD /v2/<name>/manifests/<tag>`). The cleanest possible signal —
   200 against 404 — and it means fetching a bearer token by hand from the `WWW-Authenticate`
   challenge. Worth it if the string matching ever proves brittle.
-- **GHCR's own immutable-tag setting.** This is the right answer if it exists for this account;
-  the registry refusing an overwrite beats a script declining to attempt one. Not relied on here
-  because it could not be confirmed as available, and a guarantee that might be off is not a
-  guarantee. **Worth checking before implementing** — if present, this feature becomes much smaller.
+- **GHCR's own immutable-tag setting.** The right answer if it exists, because a registry refusing
+  an overwrite beats a script declining to attempt one.
+
+  **Checked (T001), and the answer is already in the evidence**: GHCR *accepted* an overwrite on
+  2026-09-21 — `sha-2cee71a` went from `b7bfe138` to `8d98ec97` on a second push. Whatever the
+  setting's availability, it is **not in force on these packages**, so the pipeline check is needed.
+
+  Whether it *could* be switched on is **unverified**: reading package settings needs the
+  `read:packages` scope, which this token does not carry (`gh auth refresh -s read:packages` would
+  grant it). Left unverified deliberately rather than guessed. If it can be switched on, do both —
+  the registry as the guarantee, the pipeline check so a release reports a skip instead of failing
+  on a rejected push.
 
 ---
 

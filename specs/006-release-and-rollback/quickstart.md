@@ -73,17 +73,44 @@ exists, looks exactly like a good one, and carries the implication that it passe
 
 ## Scenario 5 — Tags are immutable *(FR-003, SC-002)*
 
+> ### ⚠️ This scenario's original expectation was WRONG, and it found a real defect
+>
+> It used to read *"**Expect**: the same digest"*, with nothing in the pipeline making that true.
+> The first time it was actually run — 2026-09-21 — it produced the opposite. A publish job failed
+> partway, was re-run on the same commit, and the three images already pushed came back as
+> different artifacts under the same name:
+>
+> | service | `sha-2cee71a` before the re-run | after |
+> | :-- | :-- | :-- |
+> | identity | `sha256:b7bfe138…` | `sha256:8d98ec97…` |
+> | catalog | `sha256:25a9242b…` | `sha256:02deb77c…` |
+> | order | `sha256:8196d2b6…` | `sha256:5bca4688…` |
+>
+> `docker build` is not reproducible and `docker push` moves a tag without complaint, so
+> immutability was a property of the naming *convention* and never of the pipeline. Filed as
+> [#12](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/12) and fixed in
+> [specs/008-immutable-release-tags](../008-immutable-release-tags/).
+>
+> **The expectation below is now correct because something enforces it** — the release asks the
+> registry before pushing a permanent name and skips it if it already resolves. The record of the
+> original error stays here deliberately: a test corrected quietly looks like it always said that,
+> and the next person loses the evidence that the scheme had a hole.
+
 ```bash
-docker manifest inspect ghcr.io/jessiicamaru/ecommerce-catalog:sha-$SHA \
-  | python -c "import sys,json; print(json.load(sys.stdin)['config']['digest'])"
+docker manifest inspect --verbose ghcr.io/jessiicamaru/ecommerce-catalog:sha-$SHA \
+  | python -c "import sys,json; d=json.load(sys.stdin); print((d[0] if isinstance(d,list) else d)['Descriptor']['digest'])"
 ```
 
 Record the digest. Re-run the publish job for the same commit. Inspect again.
 
-**Expect**: the same digest.
+**Expect**: the same digest, **and** a log line reading `already present, left unchanged`. The
+digest matching without that line would mean the push happened to produce identical bytes, which it
+cannot — so the line is the part that proves the guarantee rather than a coincidence.
 
 **Also confirm the opposite for `:main`** — merge something else, and `:main` moves. That is what
-makes it unusable for naming a version to go back to, and why the contract says so.
+makes it unusable for naming a version to go back to, and why the contract says so. It is also the
+control: if *both* names hold still, the check is refusing everything and the pipeline has quietly
+stopped publishing.
 
 ---
 
