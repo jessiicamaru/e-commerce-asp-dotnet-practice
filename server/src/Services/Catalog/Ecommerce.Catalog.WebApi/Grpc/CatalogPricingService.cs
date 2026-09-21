@@ -95,4 +95,61 @@ public class CatalogPricingService(
 
         return response;
     }
+
+    /// <summary>
+    /// Describes products for display, answering for each one rather than refusing the lot.
+    /// </summary>
+    /// <remarks>
+    /// Never NOT_FOUND, deliberately - that is GetPrices' job, and it is right there because a sale
+    /// must be all-or-nothing. A cart being shown needs a missing product reported and the rest
+    /// answered, or one deleted product would hide the price of everything else.
+    /// </remarks>
+    public override async Task<DescribeProductsResponse> DescribeProducts(
+        DescribeProductsRequest request,
+        ServerCallContext context)
+    {
+        var requested = new List<Guid>();
+        var response = new DescribeProductsResponse();
+
+        foreach (var raw in request.ProductIds)
+        {
+            if (Guid.TryParse(raw, out var id))
+            {
+                if (!requested.Contains(id))
+                {
+                    requested.Add(id);
+                }
+            }
+            else
+            {
+                // Not a product id at all - it cannot exist, so it is reported as missing.
+                response.MissingProductIds.Add(raw);
+            }
+        }
+
+        if (requested.Count == 0)
+        {
+            return response;
+        }
+
+        var found = await _products.GetByIdsAsync(requested, context.CancellationToken);
+
+        foreach (var product in found)
+        {
+            response.Products.Add(new PricedProduct
+            {
+                ProductId = product.Id.ToString(),
+                Name = product.Name,
+                Price = product.Price.ToString(CultureInfo.InvariantCulture),
+                Sellable = product.IsActive
+            });
+        }
+
+        foreach (var id in requested.Where(id => found.All(p => p.Id != id)))
+        {
+            response.MissingProductIds.Add(id.ToString());
+        }
+
+        return response;
+    }
 }

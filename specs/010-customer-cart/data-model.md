@@ -17,7 +17,6 @@ One per customer.
 | `UserId` | `uuid` | **unique** — one cart per customer, enforced by the database, not by code |
 | `CreatedAt` | `timestamptz` | |
 | `UpdatedAt` | `timestamptz` | |
-| `Version` | `xmin` | concurrency token — see *Two devices* below |
 
 `UserId` comes from the validated token and never from a request. The unique constraint is what makes
 "exactly one cart per customer" (FR-001) a fact rather than an intention: two first-ever adds racing
@@ -89,10 +88,14 @@ That table is US2 scenario 5 and SC-005, and it is why removal is a decrement.
 
 ## Two devices, one cart
 
-Two changes to the same cart at once must not silently undo each other. `carts.Version` maps
-PostgreSQL's `xmin` as an EF concurrency token; a line write touches its cart's `UpdatedAt`, so two
-concurrent writes to one cart conflict and the loser retries against the fresh state rather than
-overwriting it.
+Two changes to the same cart at once must not silently undo each other.
+
+**Changed during implementation.** The plan was an `xmin` concurrency token with a retry on conflict.
+What was built instead is **`SELECT … FOR UPDATE` on the cart row**, taken by every write before it
+reads the lines — the same pattern Inventory uses for stock. It serialises writes to one cart
+outright, so there is no conflict to detect and no retry loop to get wrong, and first-ever creation is
+an `INSERT … ON CONFLICT ("UserId") DO NOTHING` followed by the same lock, so twenty concurrent first
+adds still produce one cart. Verified by `Two_first_ever_adds_at_once_make_one_cart`.
 
 ---
 

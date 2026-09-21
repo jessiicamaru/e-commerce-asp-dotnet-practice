@@ -17,6 +17,28 @@ service CatalogPricing {
   // in full" into something a person has to remember rather than something the
   // shape guarantees.
   rpc GetPrices (GetPricesRequest) returns (GetPricesResponse);
+
+  // Describes products for DISPLAY, answering per product.
+  //
+  // Unlike GetPrices this never refuses the whole request because one product is missing: it
+  // answers for the ones that exist and lists the ones that do not. GetPrices is all-or-nothing
+  // because deciding a sale must be; a cart being shown needs the opposite, or one deleted product
+  // would hide the price of everything else in it. Two callers, two questions, two methods.
+  //
+  // Additive: no existing method or message changes.
+  rpc DescribeProducts (DescribeProductsRequest) returns (DescribeProductsResponse);
+}
+
+message DescribeProductsRequest {
+  repeated string product_ids = 1;
+}
+
+message DescribeProductsResponse {
+  // The ones that exist.
+  repeated PricedProduct products = 1;
+
+  // The ones that do not. Reported, never an error.
+  repeated string missing_product_ids = 2;
 }
 
 message GetPricesRequest {

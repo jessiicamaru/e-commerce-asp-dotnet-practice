@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecommerce.Contracts.Grpc";
+
+package cart.reading.v1;
+
+// What is in the caller's cart, asked by Order at checkout.
+service CartReading {
+  rpc GetMyCart (GetMyCartRequest) returns (GetMyCartResponse);
+}
+
+// DELIBERATELY EMPTY.
+//
+// Whose cart is decided by the customer's bearer token, which Order forwards in the call's
+// `authorization` metadata. Cart reads the user from it through ICurrentUser, exactly as its REST
+// endpoints do. A user_id field here would let anything on the network read anybody's cart by naming
+// them - the UserId-in-the-request-body defect again, one hop further in. See Constitution IV and
+// specs/010-customer-cart research D4.
+message GetMyCartRequest {}
+
+message GetMyCartResponse {
+  repeated CartItem items = 1;
+}
+
+// No price. Checkout re-prices from Catalog, which owns it; a price here could only be a stale copy,
+// and the constitution forbids a non-owning copy informing a charge.
+message CartItem {
+  string product_id = 1;
+  int32 quantity = 2;
+}

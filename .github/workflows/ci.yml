@@ -68,6 +68,19 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      postgres-cart:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_cart_db
+        ports: ['5439:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       postgres-order:
         image: postgres:16-alpine
         env:
@@ -264,7 +277,7 @@ jobs:
       # different artifacts and the guarantee would attach to the wrong one. This
       # repository is public: a credential in a published layer is readable by anyone,
       # and one that has been pulled must be ROTATED, not deleted.
-      - name: Build and scan all seven
+      - name: Build and scan every service
         env:
           SHORT_SHA: ${{ steps.sha.outputs.short }}
         run: |
@@ -286,6 +299,7 @@ jobs:
           orchestrator|src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi
           inventory|src/Services/Inventory/Ecommerce.Inventory.WebApi
           payment|src/Services/Payment/Ecommerce.Payment.WebApi
+          cart|src/Services/Cart/Ecommerce.Cart.WebApi
           gateway|src/ApiGateway/Ecommerce.ApiGateway
           SERVICES
 
@@ -299,7 +313,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push all seven
+      - name: Push every service
         # sha- is the only tag anything deployable may be named by, and this step is
         # what makes that true. Before feature 008 it was true only because nobody had
         # pushed twice: on 2026-09-21 a run failed partway, was re-run on the same
@@ -319,7 +333,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SERVICES="identity catalog order orchestrator inventory payment gateway"
+          SERVICES="identity catalog order orchestrator inventory payment cart gateway"
 
           # Does this name already refer to something?
           #
@@ -426,7 +440,13 @@ jobs:
           set -euo pipefail
           present=0
           missing=""
-          for service in identity catalog order orchestrator inventory payment gateway; do
+          # Counted from the list rather than written down as a number. "7" was hardcoded
+          # here and in three messages, and went stale the moment an eighth service arrived -
+          # the same drift the Dockerfile's COPY list and this job's other two lists suffer.
+          SERVICES="identity catalog order orchestrator inventory payment cart gateway"
+          total=$(set -- $SERVICES; echo $#)
+
+          for service in $SERVICES; do
             if docker manifest inspect "$IMAGE_PREFIX-$service:sha-$SHORT_SHA" > /dev/null 2>&1; then
               present=$((present + 1))
             else
@@ -434,17 +454,17 @@ jobs:
             fi
           done
 
-          if [ "$present" -eq 7 ]; then
-            echo "7 of 7 permanent names present - release complete"
+          if [ "$present" -eq "$total" ]; then
+            echo "$total of $total permanent names present - release complete"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "**7 of 7 permanent names present — release complete.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "**$total of $total permanent names present — release complete.**" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "**$present of 7 permanent names present — release INCOMPLETE.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "**$present of $total permanent names present — release INCOMPLETE.**" >> "$GITHUB_STEP_SUMMARY"
             echo "Missing:$missing" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Re-running this job publishes the missing ones and leaves the others untouched." >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::$present of 7 permanent names present. Missing:$missing. Re-running this job will publish them and leave the rest untouched."
+            echo "::error::$present of $total permanent names present. Missing:$missing. Re-running this job will publish them and leave the rest untouched."
             exit 1
           fi
 
@@ -515,6 +535,21 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Checkout reads the customer's cart (feature 010), and this job places an
+      # order, so the cart and its database have to be up here too.
+      postgres-cart:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_cart_db
+        ports: ['5439:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       rabbitmq:
         image: rabbitmq:3-management-alpine
         env:
@@ -538,6 +573,8 @@ jobs:
       INVENTORY_DB_PORT: '5437'
       ORDER_DB_NAME: ecommerce_order_db
       ORDER_DB_PORT: '5434'
+      CART_DB_NAME: ecommerce_cart_db
+      CART_DB_PORT: '5439'
       # CI-only values. Real secrets belong in repository secrets, never here.
       JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
       ADMIN_EMAIL: admin@ci.local
@@ -580,6 +617,9 @@ jobs:
           dotnet ef database update \
             --project src/Services/Order/Ecommerce.Order.Infrastructure/ \
             --startup-project src/Services/Order/Ecommerce.Order.WebApi/
+          dotnet ef database update \
+            --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ \
+            --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
 
       - name: Start services
         run: |
@@ -590,6 +630,8 @@ jobs:
             --configuration Release --no-build --no-launch-profile > /tmp/catalog.log 2>&1 &
           dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/ \
             --configuration Release --no-build --no-launch-profile > /tmp/order.log 2>&1 &
+          dotnet run --project src/Services/Cart/Ecommerce.Cart.WebApi/ \
+            --configuration Release --no-build --no-launch-profile > /tmp/cart.log 2>&1 &
 
           # 000 means nothing is listening yet; anything else means the service
           # answered, so a non-2xx tells us it is up but reporting unhealthy.
@@ -598,22 +640,24 @@ jobs:
           identity_code=000
           catalog_code=000
           order_code=000
+          cart_code=000
 
           for i in $(seq 1 90); do
             identity_code=$(probe http://localhost:5056/health)
             catalog_code=$(probe http://localhost:5057/health)
             order_code=$(probe http://localhost:5059/health)
+            cart_code=$(probe http://localhost:5062/health)
 
-            if [ "$identity_code" = "200" ] && [ "$catalog_code" = "200" ] && [ "$order_code" = "200" ]; then
-              echo "All three services are healthy after ${i}s."
+            if [ "$identity_code" = "200" ] && [ "$catalog_code" = "200" ] && [ "$order_code" = "200" ] && [ "$cart_code" = "200" ]; then
+              echo "All four services are healthy after ${i}s."
               exit 0
             fi
             sleep 1
           done
 
-          echo "::error::Not healthy in time (identity=$identity_code, catalog=$catalog_code, order=$order_code; 000 = not listening)."
+          echo "::error::Not healthy in time (identity=$identity_code, catalog=$catalog_code, order=$order_code, cart=$cart_code; 000 = not listening)."
 
-          for name in identity:5056 catalog:5057 order:5059; do
+          for name in identity:5056 catalog:5057 order:5059 cart:5062; do
             echo "--- ${name%%:*} /health ---"
             curl -s -i --max-time 5 "http://localhost:${name##*:}/health" || echo "(no response)"
             echo
@@ -635,7 +679,7 @@ jobs:
       - name: Dump service logs on failure
         if: failure()
         run: |
-          for service in identity catalog order; do
+          for service in identity catalog order cart; do
             echo "::group::$service (first 60 lines)"
             head -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
             echo "::endgroup::"
@@ -741,6 +785,19 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      postgres-cart:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_cart_db
+        ports: ['5439:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       # The saga is the thing under test, so a real broker is not optional here:
       # the queue-name collision this check exists to catch is invisible without
       # one. The built-in 'guest' account only accepts connections from inside
@@ -776,6 +833,8 @@ jobs:
       INVENTORY_DB_PORT: '5437'
       PAYMENT_DB_NAME: ecommerce_payment_db
       PAYMENT_DB_PORT: '5438'
+      CART_DB_NAME: ecommerce_cart_db
+      CART_DB_PORT: '5439'
       # CI-only values. Real secrets belong in repository secrets, never here.
       JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
       ADMIN_EMAIL: admin@ci.local
@@ -835,6 +894,9 @@ jobs:
           dotnet ef database update \
             --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ \
             --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+          dotnet ef database update \
+            --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ \
+            --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
 
       - name: Start services
         run: |
@@ -851,6 +913,7 @@ jobs:
           start Orchestrator orchestrator
           start Inventory inventory
           start Payment payment
+          start Cart cart
 
           # 000 means nothing is listening; anything else means the service
           # answered, so a non-2xx tells us it is up but reporting unhealthy.
@@ -862,7 +925,7 @@ jobs:
           ready=0
           for _ in $(seq 1 120); do
             ok=1
-            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061; do
+            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061 cart:5062; do
               [ "$(probe "http://localhost:${pair##*:}/health")" = "200" ] || ok=0
             done
             if [ "$ok" = "1" ]; then ready=1; break; fi
@@ -870,7 +933,7 @@ jobs:
           done
 
           if [ "$ready" != "1" ]; then
-            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061; do
+            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061 cart:5062; do
               echo "::error::${pair%%:*} did not become healthy (last code: $(probe "http://localhost:${pair##*:}/health"); 000 = not listening)."
             done
             exit 1
@@ -920,7 +983,7 @@ jobs:
       - name: Dump service logs on failure
         if: failure()
         run: |
-          for service in identity catalog order orchestrator inventory payment payment-reject; do
+          for service in identity catalog order orchestrator inventory payment payment-reject cart; do
             echo "::group::$service (first 60 lines)"
             head -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
             echo "::endgroup::"

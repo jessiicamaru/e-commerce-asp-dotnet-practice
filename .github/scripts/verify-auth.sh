@@ -28,6 +28,7 @@ fi
 IDENTITY_URL="${IDENTITY_URL:-http://localhost:5056}"
 CATALOG_URL="${CATALOG_URL:-http://localhost:5057}"
 ORDER_URL="${ORDER_URL:-http://localhost:5059}"
+CART_URL="${CART_URL:-http://localhost:5062}"
 
 : "${ADMIN_EMAIL:?ADMIN_EMAIL is required}"
 : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
@@ -181,18 +182,18 @@ print(json.dumps({
   )
   [ -n "$auth_product_id" ] || fail "Could not create a product for the order checks."
 
-  # No price and no name in the body: OrderItemRequest no longer has either, and
-  # Order takes both from Catalog.
-  order_body="$("$PYTHON" -c '
+  # An order is placed THROUGH THE CART now (feature 010): put the product in the
+  # customer's cart, then check out with no body. What is bought comes from the
+  # cart, who is buying from the token, and what it costs from Catalog.
+  cart_line="$("$PYTHON" -c '
 import json, sys
-print(json.dumps({"items": [{"productId": sys.argv[1], "quantity": 1}]}))
+print(json.dumps({"productId": sys.argv[1], "quantity": 1}))
 ' "$auth_product_id")"
 
+  curl -fsS -X POST "$CART_URL/api/cart/items"     -H 'Content-Type: application/json'     -H "Authorization: Bearer $customer_token"     -d "$cart_line" > /dev/null     || fail "The customer could not add to their cart."
+
   order_id=$(
-    curl -fsS -X POST "$ORDER_URL/api/orders" \
-      -H 'Content-Type: application/json' \
-      -H "Authorization: Bearer $customer_token" \
-      -d "$order_body" | json_field orderId
+    curl -fsS -X POST "$ORDER_URL/api/orders"       -H "Authorization: Bearer $customer_token" | json_field orderId
   )
   [ -n "$order_id" ] || fail "The customer could not submit an order."
   pass "customer submits an order ($order_id)"
