@@ -84,11 +84,24 @@ h2c rather than TLS because it is the shape a service mesh would produce anyway 
 cleartext HTTP/2, encryption is a sidecar's problem — and because certificates in development, in
 containers and in CI are the most painful part of this and teach nothing about gRPC.
 
-**Unverified, and it must be checked during implementation**: Microsoft documents that
-`Http1AndHttp2` on a plaintext endpoint still resolves to HTTP/1.1 and gRPC fails. That is why a
-*separate* port is specified rather than widening the existing one. Confirm it on .NET 10 rather
-than inheriting it — if `Http1AndHttp2` does work, one port would be simpler and this decision
-should change.
+**Now verified (T001), on .NET 10, with a control.** A minimal app was given two plaintext
+endpoints — one `Http1AndHttp2`, one `Http2` — and probed from a container:
+
+```text
+port 7311, Http1AndHttp2 (the question)
+  --http1.1                proto=1.1 code=200
+  --http2-prior-knowledge  proto=0   code=000     <- refused
+
+port 7312, Http2 only (the control)
+  --http2-prior-knowledge  proto=2   code=200     <- works
+```
+
+Microsoft's documented behaviour holds: **`Http1AndHttp2` on a plaintext endpoint does not serve
+h2c.** The control matters as much as the result — without it, `proto=0` would equally well have
+meant the test harness was broken.
+
+So the second port is **required**, not a preference, and this decision stands rather than
+collapsing.
 
 **Alternatives considered**:
 
@@ -232,9 +245,23 @@ is the argument for relying on it rather than adding a second container probe.
 order to be **refused**, plus a negative control proving that scenario fails against a system that
 accepts one.
 
-**Rationale**: FR-012 and SC-005, and the reason is written into the defect itself. Sixty-one tests
-pass today and **none of them can see this**, because each supplies its own price and asserts
-against the same number. Adding a test shaped the same way would produce the same blindness.
+**Rationale**: FR-012 and SC-005, and the reason is written into the defect itself.
+
+**Corrected during implementation.** This section originally said the tests each supply their own
+price and assert against the same number. They do not:
+
+```bash
+$ grep -rln "SubmitOrder" tests/ --include=*.cs
+(nothing)
+```
+
+**No test exercises order submission at all.** The fifteen Order tests are six query tests and nine
+settlement tests, and they construct `OrderItem` entities directly. The defect did not slip past
+badly-shaped tests — the submit path has never had any, which is also why removing two fields from
+`OrderItemRequest` broke no test and the solution built first time.
+
+That makes FR-012 more important, not less: the only thing that will ever exercise this path is the
+end-to-end check.
 
 The control is cheap: the current `main` accepts a fabricated price, so the scenario can be run
 against `main` and must fail there. That is a negative control that needs no deliberate breakage —

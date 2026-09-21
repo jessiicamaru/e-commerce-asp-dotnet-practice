@@ -27,8 +27,16 @@ stock after:     4                  ← gone
 
 The payment was recorded and approved at `1.00`.
 
-**No test catches this, and none can.** All sixty-one pass. Every one of them supplies its own price
-and then asserts against that same number — they verify arithmetic, not authority.
+**No test catches this.** All sixty-one pass, and the reason is worse than it first looked.
+
+The original reading was that each test supplies its own price and asserts against that same number,
+verifying arithmetic rather than authority. That was wrong, and checking it was worth the minute:
+**no test exercises order submission at all.** `grep -rln SubmitOrder tests/` returns nothing. The
+fifteen Order tests cover reading orders back (six) and settling them (nine), and they build
+`OrderItem` entities directly rather than going through the handler.
+
+So the path that creates an order and decides what it costs has **zero** coverage, and the remedy is
+not better-shaped tests for that path — it is that the path has none.
 
 ### The same mistake, twice
 
@@ -93,8 +101,8 @@ history later. An order line is a record of a transaction, not a pointer to a cu
 Somebody, later, adds a way for a price to come from a request again. It is caught before it merges.
 
 **Why this priority**: Equal first, and it is the only story that is about *time*. This defect
-survived because sixty-one tests were structured so that none of them could see it. Fixing the code
-without fixing that blindness leaves the next person free to reintroduce it exactly as innocently.
+survived because the path it lives on has no automated test of any kind — see above. Fixing the code
+without fixing that absence leaves the next person free to reintroduce it exactly as innocently.
 
 **Independent Test**: Deliberately accept a fabricated price and confirm the automated checks go red.
 

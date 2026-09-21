@@ -76,8 +76,14 @@ services:
       <<: *env-common
       DB_HOST: postgres-catalog
       CATALOG_DB_PORT: "5432"
+      # gRPC, on its own port. One plaintext port cannot serve HTTP/1.1 and HTTP/2:
+      # telling them apart needs ALPN, which is part of TLS. Verified on .NET 10.
+      CATALOG_GRPC_PORT: "8081"
     ports:
       - "5057:8080"
+      # The health check below deliberately keeps probing REST on 8080 - curl cannot
+      # speak gRPC health, so repointing it would leave a green probe testing nothing.
+      - "6057:8081"
     depends_on:
       postgres-catalog:
         condition: service_healthy
@@ -120,6 +126,10 @@ services:
       <<: *env-common
       DB_HOST: postgres-order
       ORDER_DB_PORT: "5432"
+      # The first synchronous cross-service dependency. Catalog serves gRPC on its own
+      # port because one plaintext port cannot carry HTTP/1.1 and HTTP/2 - see
+      # specs/009-catalog-owns-price. If this is wrong, orders are refused with 503.
+      CATALOG_GRPC_ADDRESS: http://catalog:8081
     ports:
       - "5059:8080"
     depends_on:

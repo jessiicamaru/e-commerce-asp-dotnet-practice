@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The gRPC contract, kept OUT of Ecommerce.Contracts on purpose.
+
+    That project has zero package references and CLAUDE.md says so as a property
+    worth keeping. Adding Grpc.Tools and Google.Protobuf would end it.
+
+    The split is also honest rather than merely convenient: a gRPC contract and a
+    message contract are different kinds of coupling - one synchronous, one not.
+    The constitution's rule that the only code shared across service boundaries is
+    Ecommerce.Contracts is about the discipline, not the file count; a second,
+    equally narrow contracts project keeps that discipline.
+
+    Both Server and Client are generated here so one project serves Catalog (which
+    implements it) and Order (which calls it).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.28.3" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.66.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.67.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\catalog_pricing.proto" GrpcServices="Both" />
+  </ItemGroup>
+
+</Project>

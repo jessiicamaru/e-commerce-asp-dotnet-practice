@@ -3,6 +3,7 @@ using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Authentication;
+using Ecommerce.Shared.Exceptions;
 using MassTransit;
 using MediatR;
 
@@ -11,12 +12,14 @@ namespace Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 public class SubmitOrderCommandHandler(
     IOrderRepository orderRepository,
     IPublishEndpoint publishEndpoint,
-    ICurrentUser currentUser
+    ICurrentUser currentUser,
+    ICatalogPrices catalogPrices
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ICurrentUser _currentUser = currentUser;
+    private readonly ICatalogPrices _catalogPrices = catalogPrices;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
     {
@@ -25,16 +28,46 @@ public class SubmitOrderCommandHandler(
         var userId = _currentUser.Id
             ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
+        // Ask the catalogue what these things cost, BEFORE anything is staged.
+        //
+        // The price and the name used to come from the request body, which is how a product listed
+        // at 40,000,000 was bought for 1 (issue #18). Catalog owns both; the customer owns only
+        // which product and how many.
+        //
+        // The position matters as much as the call. This runs before the order is staged, so a
+        // refusal leaves no row, no event and no reservation - all-or-nothing by construction.
+        // Putting it between the publish and the save would widen the window between staging and
+        // commit whenever Catalog is slow, and Principle III is non-negotiable.
+        var priced = await _catalogPrices.GetPricesAsync(
+            request.Items.Select(i => i.ProductId).Distinct().ToList(),
+            cancellationToken);
+
+        var byProduct = priced.ToDictionary(p => p.ProductId);
+
+        // "Exists but cannot be sold" is an answer, not a failure, and it is the caller's to act on.
+        // 409 rather than 404, so it stays distinguishable from a product that is not there.
+        var unsellable = priced.Where(p => !p.Sellable).Select(p => p.Name).ToList();
+
+        if (unsellable.Count > 0)
+        {
+            throw new ConflictException(
+                $"Not currently for sale: {string.Join(", ", unsellable)}.");
+        }
+
         var orderId = Guid.NewGuid();
 
+        // What comes back is COPIED onto the line, never referenced. An order line is a record of
+        // a transaction: a price change next week must not rewrite what somebody already bought,
+        // and the name is copied too so the order still describes itself after the product is
+        // renamed or withdrawn.
         var orderItems = request.Items.Select(item => new OrderItem
         {
             Id = Guid.NewGuid(),
             OrderId = orderId,
             ProductId = item.ProductId,
-            ProductName = item.ProductName,
+            ProductName = byProduct[item.ProductId].Name,
             Quantity = item.Quantity,
-            UnitPrice = item.UnitPrice
+            UnitPrice = byProduct[item.ProductId].Price
         }).ToList();
 
         var totalAmount = orderItems.Sum(x => x.TotalPrice);

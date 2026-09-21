@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.WebApi.Grpc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Infrastructure;
@@ -10,6 +12,71 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// TWO endpoints: HTTP/1.1 for REST, HTTP/2 for gRPC. Both are declared here, and
+// that is not a style choice - see the warning below.
+//
+// One plaintext port cannot serve both protocols, because telling HTTP/1.1 and
+// HTTP/2 apart needs ALPN and ALPN is part of the TLS handshake. Measured on
+// .NET 10 against a control:
+//
+//     Http1AndHttp2   --http1.1               -> proto=1.1 code=200
+//     Http1AndHttp2   --http2-prior-knowledge -> proto=0   code=000   (refused)
+//     Http2           --http2-prior-knowledge -> proto=2   code=200   (works)
+//
+// No TLS, because this is the shape a service mesh produces: the application
+// speaks cleartext HTTP/2 and a sidecar handles mTLS. IF THIS EVER LEAVES A
+// TRUSTED NETWORK that stops being true.
+//
+// ⚠️ CALLING ListenAnyIP AT ALL REPLACES ASPNETCORE_URLS - it does not add to it.
+// Configuring only the gRPC endpoint here silently unbound REST: the container
+// came up listening on 8081 alone, answered nothing on 8080, and went unhealthy.
+// Kestrel says so, in a warning nobody reads:
+//
+//     Overriding address(es) 'http://+:8080'. Binding to endpoints defined via
+//     IConfiguration and/or UseKestrel() instead.
+//
+// So the HTTP port is declared here too, derived from ASPNETCORE_URLS exactly as
+// the fallback at the end of this file derives it - localhost when unset so
+// start-dev keeps its pinned port, all interfaces when a container sets it.
+var listenUrlsAtStartup = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+var inContainer = !string.IsNullOrWhiteSpace(listenUrlsAtStartup);
+
+var httpPort = PortFrom(listenUrlsAtStartup) ?? 5057;
+var grpcPort = int.TryParse(Environment.GetEnvironmentVariable("CATALOG_GRPC_PORT"), out var parsedGrpc)
+    ? parsedGrpc
+    : 5157;
+
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    if (inContainer)
+    {
+        kestrel.ListenAnyIP(httpPort, e => e.Protocols = HttpProtocols.Http1);
+        kestrel.ListenAnyIP(grpcPort, e => e.Protocols = HttpProtocols.Http2);
+    }
+    else
+    {
+        kestrel.ListenLocalhost(httpPort, e => e.Protocols = HttpProtocols.Http1);
+        kestrel.ListenLocalhost(grpcPort, e => e.Protocols = HttpProtocols.Http2);
+    }
+});
+
+static int? PortFrom(string? urls)
+{
+    if (string.IsNullOrWhiteSpace(urls))
+    {
+        return null;
+    }
+
+    // "http://+:8080" or "http://0.0.0.0:8080;http://..." - the first one wins.
+    var first = urls.Split(';', StringSplitOptions.RemoveEmptyEntries)[0];
+    var lastColon = first.LastIndexOf(':');
+
+    return lastColon >= 0 && int.TryParse(first[(lastColon + 1)..].TrimEnd('/'), out var port)
+        ? port
+        : null;
+}
+
 
 // Load .env file at startup if it exists (searching upward recursively)
 var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -133,6 +200,19 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+builder.Services.AddGrpc();
+builder.Services.AddGrpcHealthChecks();
+
+// Reflection, so the service can be poked by hand with grpcurl. Without it a caller
+// must already hold the .proto to ask anything, which makes diagnosing a live
+// endpoint need a checkout of this repository.
+//
+// It does publish the service surface to anyone who can reach the port. For an
+// internal endpoint on a trusted network that is the same trade already made by
+// serving h2c without TLS - and it stops being acceptable in the same moment, if
+// this port is ever exposed to anything untrusted.
+builder.Services.AddGrpcReflection();
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -154,6 +234,16 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Only reachable on the HTTP/2 endpoint above; the REST port cannot carry it.
+app.MapGrpcService<CatalogPricingService>();
+
+// gRPC health is its own protocol and curl cannot speak it, so the CONTAINER health check keeps
+// probing REST /health and is deliberately not repointed here - a probe that cannot fail is worse
+// than no probe. The consequence, stated rather than left to be found: Catalog can report healthy
+// over REST while this endpoint is broken, and what catches that is the end-to-end check.
+app.MapGrpcHealthChecksService();
+app.MapGrpcReflectionService();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
@@ -189,18 +279,12 @@ if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
         .Database.MigrateAsync();
 }
 
-// Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not
-// localhost, or nothing outside it can connect however the ports are published. Falling back to
-// the pinned address rather than dropping the argument keeps start-dev.sh working: with no
-// argument every service would default to the same port and collide.
-var listenUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-
-if (string.IsNullOrWhiteSpace(listenUrls))
-{
-    app.Run("http://localhost:5057");
-}
-else
-{
-    app.Run();
-}
+// ASPNETCORE_URLS is still honoured - it is read at the top of this file, where the
+// Kestrel endpoints are declared, because adding a second protocol made declaring
+// them explicitly unavoidable. A container binds 0.0.0.0 and start-dev binds
+// localhost on its pinned port, exactly as before.
+//
+// Passing an address here as well would be a third opinion about where to listen,
+// and the one that loses would lose silently.
+app.Run();
 

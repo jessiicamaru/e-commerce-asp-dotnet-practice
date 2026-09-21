@@ -47,6 +47,14 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
                 "Unauthorized",
                 null
             ),
+            // 503, not 500. A 500 says "we are broken"; this says "a dependency is down, try
+            // again shortly", and the difference decides whether a caller retries and whether a
+            // monitor pages somebody at 3am.
+            DependencyUnavailableException => (
+                StatusCodes.Status503ServiceUnavailable,
+                "Service Unavailable",
+                null
+            ),
             _ => (
                 StatusCodes.Status500InternalServerError,
                 "Internal Server Error",

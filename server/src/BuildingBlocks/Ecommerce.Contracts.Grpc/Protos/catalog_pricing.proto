@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecommerce.Contracts.Grpc";
+
+package catalog.pricing.v1;
+
+// What a product costs, answered by the service that owns the price.
+//
+// This exists because Order used to take the unit price from the customer's own
+// request - see issue #18, where a product listed at 40,000,000 was bought for 1,
+// the stock was deducted, and the payment recorded 1.00 Approved.
+service CatalogPricing {
+  // Prices several products at once.
+  //
+  // ONE call per order, never one per line. Per-line calls leave the caller
+  // holding partial state when the third line fails, and turn "refuse the order
+  // in full" into something a person has to remember rather than something the
+  // shape guarantees.
+  rpc GetPrices (GetPricesRequest) returns (GetPricesResponse);
+}
+
+message GetPricesRequest {
+  // Product ids as UUID strings. Duplicates are allowed; the response carries
+  // each distinct product once.
+  repeated string product_ids = 1;
+}
+
+message GetPricesResponse {
+  repeated PricedProduct products = 1;
+}
+
+message PricedProduct {
+  string product_id = 1;
+
+  // The catalogue's name for it. Copied onto the order line so an order still
+  // describes what was bought after the product is renamed or withdrawn.
+  string name = 2;
+
+  // A decimal, as a STRING, deliberately.
+  //
+  // Protobuf has no decimal type. `double` is the obvious choice and is wrong for
+  // money: it cannot represent 0.1 exactly, and this system stores money as
+  // decimal(18,2) because the constitution says so. A string crosses the wire
+  // exactly and parses back with no rounding anywhere in between.
+  //
+  // sint64 scaled by 100 is the other correct answer, and it encodes an
+  // assumption about scale into the contract. This does not.
+  string price = 3;
+
+  // Whether it can be bought - the question being asked, rather than whichever
+  // flag Catalog happens to keep. If Catalog later gains a second reason
+  // something cannot be sold, this contract does not change.
+  bool sellable = 4;
+}
+
+// DELIBERATELY ABSENT: availability, stock, any count.
+//
+// Catalog holds an Availability read model fed by events from Inventory, and its
+// own source carries a comment saying nothing may sell against it. Putting it in
+// a payload whose entire purpose is deciding a sale would invite exactly that
+// misuse. Stock is answered by Inventory, under a row lock, at reservation time.
