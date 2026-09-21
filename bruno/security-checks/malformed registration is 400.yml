@@ -1,0 +1,40 @@
+info:
+  name: malformed registration is 400
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "not-an-email",
+        "password": "1",
+        "firstName": "",
+        "lastName": ""
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("every bad field is named", function() {
+          const fields = Object.keys(res.body.errors || {});
+          ["Email", "Password", "FirstName", "LastName"].forEach(f => expect(fields).to.include(f));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Created an account and returned a token until #43 - no auth command had a validator.
