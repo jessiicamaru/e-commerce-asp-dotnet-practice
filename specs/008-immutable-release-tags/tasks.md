@@ -149,3 +149,56 @@ Then Phase 4 (recovery becomes real), Phase 5 (proof it can refuse, plus the doc
 like paranoia until the day it is not and it is the one that inverts the guarantee; T012, because
 `:main` moving feels obvious and is the only control that catches a check refusing *everything*; and
 T023, because recording that a test was wrong is less comfortable than fixing it quietly.
+
+
+---
+
+## What actually happened, against what this list assumed
+
+- **T001 answered itself from evidence already in hand.** The task was to check whether GHCR
+  enforces immutable tags natively, because that would have shrunk the feature. It does not — GHCR
+  *accepted* the overwrite on 2026-09-21, which is the defect. Whether the setting could be switched
+  on is **unverified**: reading package settings needs the `read:packages` scope, which this token
+  does not carry (`gh auth refresh -s read:packages` would grant it). Recorded as unverified rather
+  than guessed in either direction.
+
+- **T002's before-picture, for scenario 1 to compare against.** Seven digests for `f0e203d`:
+
+  ```text
+  identity      sha256:c7a65754ac95939f6a28f9bfa0eee03414cf7258625a0d63f5fd2716e7479a5e
+  catalog       sha256:223a9be39f7bbb60f4053c427009ac01a3e215e139830c2f4b4d2de1f7786fc1
+  order         sha256:36770c863aea91e1973f772681cb91249a2209bae3f073e77e06b0f44b459f42
+  orchestrator  sha256:528744ebc1cb88fa85c0ec9e16ae012683c23592f5f197a6452e53cfcb4de471
+  inventory     sha256:ae7b26ec4d0cf4cafb62e6f01cdf6467b81ba3222d7a366f32515639d28e0409
+  payment       sha256:2eede446c19895cd345c95b19243db647c539a134b96be44b21c7d6851d61b03
+  gateway       sha256:87967cfe7cfb693c0b2a30c96604fbe7858bef414eebf7b889ceee9c7a8db343
+  ```
+
+- **The classifier was tested standalone before being trusted**, which is not a task on this list
+  and should have been. Extracted from the job and run against all four real cases:
+
+  ```text
+    ok  exists         ghcr.io/jessiicamaru/ecommerce-catalog:sha-f0e203d
+    ok  absent         ghcr.io/jessiicamaru/ecommerce-catalog:sha-deadbee
+    ok  absent         ghcr.io/jessiicamaru/ecommerce-nosuchsvc:sha-f0e203d
+    ok  unanswerable   ghcr.invalid.example/foo/bar:baz
+  ```
+
+  That covers T019's *mechanism*. It does not cover T019 itself, which is whether the **release**
+  stops when the classifier says `unanswerable` — that needs a real run.
+
+- **T026 turned out to be two defects, not one.** The comment claiming *"a partial release is not a
+  release"* was not only wrong about the push loop; the entire thirteen-line block was **duplicated
+  verbatim**, twice in a row, left over from feature 006. Both are now one corrected block.
+
+- **T011, T012, T015–T019, T022, T029 and T030 cannot be done before merging.** `publish` runs on a
+  push to `main` or a manual dispatch and never on a pull request — that guard is FR-006 of feature
+  006 and is not being loosened to make this list easier to finish. They stay unticked rather than
+  claiming evidence that does not exist. Each is a quickstart scenario with a written expected
+  result, so they are runnable the moment this lands.
+
+- **The task list did not anticipate that scenario 1 needs two signals, not one.** A matching digest
+  alone is weak evidence, because it could in principle mean the push produced identical bytes. It
+  cannot — builds are not reproducible — but the *log line* `already present, left unchanged` is
+  what proves the guarantee rather than a coincidence. Both are now required, in 006's corrected
+  scenario 5 and in this feature's quickstart.
