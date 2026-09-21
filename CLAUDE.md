@@ -40,7 +40,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (46 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (31 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
+(10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (39 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -283,10 +283,10 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   rule. Now `where TRequest : notnull`. `Ecommerce.Cart.Tests/ValidationTests` is what fails if it
   regresses.
 - **A new service needs its own `appsettings.json` with `JwtSettings`.** Without it `Issuer` and
-  `Audience` are empty and **every** token is rejected with 401 (`IDX10208: Unable to validate
-  audience`) — while the service starts and reports healthy. The constitution says a missing
-  required setting must fail at startup; `AddJwtAuthentication` does not, which is a gap in the
-  shared building block, recorded rather than fixed.
+  `Audience` are empty. That used to start cleanly, report healthy, and reject **every** token with
+  401 (`IDX10208: Unable to validate audience`). Since #30, `AddJwtAuthentication` refuses to start
+  with an empty `Issuer` or `Audience`, or a secret under 32 bytes, and its error names each problem.
+  `JwtStartupTests` covers it.
 - **An application-generated `Guid` key needs `ValueGeneratedNever()`.** By convention a `Guid`
   key is `ValueGeneratedOnAdd`, so a new child discovered through a navigation collection with its
   id already set is taken for an *existing* row: EF issues an `UPDATE`, it affects zero rows, and

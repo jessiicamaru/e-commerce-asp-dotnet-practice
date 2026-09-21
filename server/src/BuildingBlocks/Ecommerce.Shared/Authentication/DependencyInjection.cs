@@ -22,11 +22,7 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 $"Configuration section '{JwtSettings.SectionName}' is missing.");
 
-        if (string.IsNullOrWhiteSpace(jwtSettings.Secret))
-        {
-            throw new InvalidOperationException(
-                "JWT signing secret is not configured. Set the JWT_SECRET environment variable.");
-        }
+        EnsureComplete(jwtSettings);
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
@@ -68,5 +64,47 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         return services;
+    }
+
+    /// <summary>HMAC-SHA256 needs a key of at least 256 bits; a shorter one fails on every signing.</summary>
+    public const int MinimumSecretBytes = 32;
+
+    /// <summary>
+    /// Refuses to start with settings that would reject every token (issue #30).
+    /// </summary>
+    /// <remarks>
+    /// An empty <c>Issuer</c> or <c>Audience</c> used to start cleanly, report healthy, and answer every
+    /// request with 401 <c>IDX10208</c> - which reads as a permissions bug, not a configuration one. It
+    /// happened to Cart, which had no <c>appsettings.json</c>. The constitution says a missing required
+    /// setting fails at startup, so every problem is named here at once, rather than one per restart.
+    /// </remarks>
+    public static void EnsureComplete(JwtSettings settings)
+    {
+        var problems = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(settings.Secret))
+        {
+            problems.Add("the signing secret is not configured - set the JWT_SECRET environment variable");
+        }
+        else if (Encoding.UTF8.GetByteCount(settings.Secret) < MinimumSecretBytes)
+        {
+            problems.Add($"the signing secret is shorter than {MinimumSecretBytes} bytes, too short for HMAC-SHA256 - set a longer JWT_SECRET");
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.Issuer))
+        {
+            problems.Add($"'{JwtSettings.SectionName}:Issuer' is empty - add it to this service's appsettings.json");
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.Audience))
+        {
+            problems.Add($"'{JwtSettings.SectionName}:Audience' is empty - add it to this service's appsettings.json");
+        }
+
+        if (problems.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"JWT settings are incomplete, so every token would be rejected: {string.Join("; ", problems)}.");
+        }
     }
 }
