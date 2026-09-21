@@ -1,7 +1,9 @@
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { useAuth } from './auth/useAuth'
 import { RequireAuth } from './auth/RequireAuth'
+import { AddressesPage } from './pages/AddressesPage'
+import { CartPage } from './pages/CartPage'
 import { CatalogPage } from './pages/CatalogPage'
 import { ProductPage } from './pages/ProductPage'
 import { SignInPage } from './pages/SignInPage'
@@ -22,6 +24,8 @@ export default function App() {
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/sign-up" element={<SignUpPage />} />
             <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
+            <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
+            <Route path="/addresses" element={<RequireAuth><AddressesPage /></RequireAuth>} />
             <Route path="/status" element={<StatusPage />} />
             <Route path="*" element={<p>Not found.</p>} />
           </Routes>
@@ -42,6 +46,7 @@ function TopBar() {
         <NavLink to="/status">Status</NavLink>
         {restoring ? null : user ? (
           <>
+            <NavLink to="/cart">Cart</NavLink>
             <NavLink to="/account">{user.firstName}</NavLink>
             <button className="link" onClick={() => void signOut()}>
               Sign out
@@ -67,6 +72,9 @@ function Account() {
         {user?.firstName} {user?.lastName} · {user?.email}
       </p>
       <p className="muted">Signed in. Reload the page: you stay signed in, and no token is stored anywhere a script can read.</p>
+      <p>
+        <Link to="/addresses">Delivery addresses</Link> · <Link to="/cart">Cart</Link>
+      </p>
     </section>
   )
 }
