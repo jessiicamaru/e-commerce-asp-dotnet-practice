@@ -86,14 +86,23 @@ if (!string.IsNullOrEmpty(envJwtSecret))
 }
 ```
 
-Forgetting this in a new service means an empty secret and every token rejected with 401.
+Forgetting this in a new service stops it at startup: `JWT_SECRET` is named in the error.
 
-**`AddJwtAuthentication` does not fail at startup** when `JwtSettings` is missing or incomplete. The
-service starts, reports healthy, and rejects every token — Cart did exactly that in feature 010,
-answering `401` with `IDX10208: Unable to validate audience` because it had no `appsettings.json`.
-A new service needs its own `JwtSettings` (`Issuer`, `Audience`) **and** the `JWT_SECRET` copy
-above. Failing fast here is what the constitution asks for, and is a known gap in the shared
-building block.
+**`AddJwtAuthentication` refuses to start with incomplete settings** (issue #30). An empty
+`Issuer`, an empty `Audience`, or a secret shorter than 32 bytes (too short for HMAC-SHA256) throws at
+startup, and the error names every problem at once:
+
+```text
+Unhandled exception. System.InvalidOperationException: JWT settings are incomplete, so every token
+would be rejected: 'JwtSettings:Audience' is empty - add it to this service's appsettings.json.
+```
+
+Before this check, an empty `Issuer` or `Audience` started cleanly, reported healthy, and rejected
+every token. Cart did exactly that in feature 010, answering `401` with `IDX10208: Unable to validate
+audience` because it had no `appsettings.json`. (A missing section and an empty secret already
+failed at startup.) A new service still needs its own `JwtSettings` (`Issuer`, `Audience`) **and** the
+`JWT_SECRET` copy above; it now finds out at startup, not from its first request.
+`JwtStartupTests` in `Ecommerce.Identity.Tests` covers each case.
 
 ### 3.2 Three traps worth knowing
 
