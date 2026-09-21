@@ -155,15 +155,20 @@ stopped before it is merged.
 
 Record the pipeline duration before and after, from a real run of each:
 
-| | duration |
-| :-- | :-- |
-| before | _fill from the last run on `main`_ |
-| after | _fill_ |
+| run | jobs | wall clock |
+| :-- | :-- | :-- |
+| `4fbfe28` on `main` (2026-09-17) | build + auth-smoke | **3m22s** |
+| `2cee71a` on `main` (2026-09-21) | build + auth-smoke + publish | 9m37s, **contaminated** - the run failed on publish and was re-run, so this is two publish jobs plus a gap, not one pipeline |
+| after this feature | build + (auth-smoke &#124;&#124; saga-e2e) + publish | _fill from the first green run_ |
 
-The new job runs in parallel with `auth-smoke`, so the expectation is that wall clock grows by
-roughly the difference between them rather than by the new job's whole length. If it grows more than
-that, [research D2](./research.md) names the cheaper arrangement that was rejected — say so rather
-than leaving the next person to discover it.
+The honest baseline is the first row: 3m22s for build plus one smoke job. The second is unusable as
+a comparison and saying so is better than quoting it. What this feature adds is a second smoke job
+that runs **beside** `auth-smoke`, so the expected growth is the difference between the two jobs
+rather than the whole of the new one - and the new job starts six services where the old starts
+three, so it is the slower of the pair and becomes the critical path.
+
+If it grows by more than that, [research D2](./research.md) names the cheaper arrangement that was
+rejected — say so rather than leaving the next person to discover it.
 
 ---
 
