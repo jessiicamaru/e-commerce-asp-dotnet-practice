@@ -28,7 +28,7 @@ Plus a moving `:main` tag on each, for convenience.
 
 | Guarantee | What it means |
 | :--- | :--- |
-| **Immutable** | A `sha-` tag is written once. Pulling it in a year returns the same bytes |
+| **Immutable** | A `sha-` tag is written once. Pulling it in a year returns the same bytes — **enforced since [feature 008](../../008-immutable-release-tags/contracts/publish-behaviour.md)**, which also names the one hole left. Before that this line was a statement of intent: nothing checked, and [#12](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/12) is what happened |
 | **Earned** | Published only after `build` (including all tests) and `auth-smoke` pass |
 | **Scanned** | Each image is scanned for credentials **before** it is pushed. A failed scan pushes nothing |
 | **Complete** | All seven, or none — a partial release is not a release |

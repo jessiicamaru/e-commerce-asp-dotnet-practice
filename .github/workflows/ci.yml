@@ -5,6 +5,20 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # The escape hatch, and the only route to overwriting an already-published
+  # release. Deliberately NOT reachable by merging: no commit-message trigger, no
+  # branch name, nothing a pull request can carry. Somebody has to open the Actions
+  # tab and tick a box.
+  #
+  # It exists because a guarantee with no escape hatch gets worked around, and the
+  # workaround here would be deleting the package - which breaks anything that had
+  # already pulled it, cannot be undone, and leaves no record.
+  workflow_dispatch:
+    inputs:
+      force_republish:
+        description: 'Overwrite already-published sha- tags for this commit'
+        type: boolean
+        default: false
 
 # Least privilege by default. Only the publish job widens this, and only for
 # packages - see specs/006-release-and-rollback/contracts/release-artifacts.md.
@@ -200,7 +214,21 @@ jobs:
     # the event guard every pull request would publish: this workflow triggers on
     # push AND pull_request to main.
     needs: [build, auth-smoke, saga-e2e]
-    if: github.event_name == 'push'
+    # A merge, or a deliberate manual run. Never a pull request - which is what this
+    # guard was protecting against in the first place, and adding a third trigger is
+    # exactly how that kind of guard gets loosened by accident.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    # One release at a time. Two changes merged close together otherwise produce two
+    # runs that both push :main, in whatever order the runners happen to finish, so
+    # :main can end up pointing at the OLDER of the two.
+    #
+    # cancel-in-progress is false on purpose, and it is the load-bearing half:
+    # cancelling a publish mid-loop is precisely how a partial release happens, and
+    # not producing those is what this job now exists to guarantee.
+    concurrency:
+      group: publish-images
+      cancel-in-progress: false
 
     permissions:
       contents: read
@@ -213,25 +241,22 @@ jobs:
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      # ALL SEVEN are built and scanned BEFORE ANY is pushed.
+      # ALL SEVEN are built and scanned BEFORE ANY is pushed - which is a statement
+      # about THIS step, and about nothing else.
+      #
+      # The original version of this comment went on to say "a partial release is not
+      # a release", as though the job could not produce one. It could, and it did: on
+      # 2026-09-21 the push loop below published three of seven and failed. Build and
+      # scan being all-or-nothing says nothing about what happens while pushing. That
+      # is the same defect as the `fail-fast` claim corrected during feature 006 - a
+      # comment asserting a property the code does not have - and it is why the push
+      # step now checks before it writes and the job ends by asking the registry
+      # whether all seven names exist. See specs/008-immutable-release-tags.
       #
       # Not a matrix, deliberately. A matrix runs the services in parallel, so one
-      # failing after others have pushed leaves a partial release - and a partial
-      # release is not a release. One job also shares the SDK and restore layers
-      # across all seven builds, so sequential here is not seven times the work.
-      #
-      # The order build -> scan -> push is the other half. Before this job existed a
-      # separate image-secrets job built its own Catalog image and scanned THAT; once
-      # images are published, the scanned bytes and the shipped bytes would be
-      # different artifacts and the guarantee would attach to the wrong one. This
-      # repository is public: a credential in a published layer is readable by anyone,
-      # and one that has been pulled must be ROTATED, not deleted.
-      # ALL SEVEN are built and scanned BEFORE ANY is pushed.
-      #
-      # Not a matrix, deliberately. A matrix runs the services in parallel, so one
-      # failing after others have pushed leaves a partial release - and a partial
-      # release is not a release. One job also shares the SDK and restore layers
-      # across all seven builds, so sequential here is not seven times the work.
+      # failing after others have pushed leaves a partial release, and one job also
+      # shares the SDK and restore layers across all seven builds, so sequential here
+      # is not seven times the work.
       #
       # The order build -> scan -> push is the other half. Before this job existed a
       # separate image-secrets job built its own Catalog image and scanned THAT; once
@@ -275,19 +300,153 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push all seven
-        # sha- is immutable and is the only tag anything deployable may be named by.
-        # :main moves, so it can never answer "the previous version" - it is a
-        # convenience, and the contract says so.
+        # sha- is the only tag anything deployable may be named by, and this step is
+        # what makes that true. Before feature 008 it was true only because nobody had
+        # pushed twice: on 2026-09-21 a run failed partway, was re-run on the same
+        # commit, and sha-2cee71a went from sha256:b7bfe138 to sha256:8d98ec97 for
+        # identity, with catalog and order rewritten the same way. Nothing refused it.
+        #
+        # :main moves by design, so it can never answer "the previous version". That is
+        # why it is pushed unconditionally while sha- is not.
+        #
+        # NOTE on the old comment above this step, which claimed "ALL SEVEN are built
+        # and scanned BEFORE ANY is pushed [...] a partial release is not a release":
+        # that is true of build->scan and says nothing about the loop below, which left
+        # three of seven published the same day it was written. See specs/008.
+        env:
+          SHORT_SHA: ${{ steps.sha.outputs.short }}
+          FORCE_REPUBLISH: ${{ github.event.inputs.force_republish || 'false' }}
+        run: |
+          set -euo pipefail
+
+          SERVICES="identity catalog order orchestrator inventory payment gateway"
+
+          # Does this name already refer to something?
+          #
+          # Exit status alone is NOT enough, and getting this wrong inverts the whole
+          # guarantee. `docker manifest inspect` exits non-zero for three different
+          # reasons and only two of them mean "safe to push":
+          #
+          #   exit 0                          -> the name resolves
+          #   exit 1, "manifest unknown"      -> package exists, this tag does not
+          #   exit 1, "denied"                -> package does not exist yet
+          #   exit 1, anything else           -> the registry could not be ASKED
+          #
+          # A DNS failure, an expired token and an outage all land in the fourth row.
+          # Reading those as "absent" would overwrite a published release because the
+          # network hiccupped - using the check built to prevent exactly that. So the
+          # fourth row aborts rather than guessing.
+          #
+          # Measured against the real registry, not inferred: specs/008 research D1.
+          tag_state() {
+            local ref="$1" err rc
+            err="$(docker manifest inspect "$ref" 2>&1 >/dev/null)" && rc=0 || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              echo exists
+            elif printf '%s' "$err" | grep -qE 'manifest unknown|denied'; then
+              echo absent
+            else
+              echo "unanswerable: $err" >&2
+              echo unanswerable
+            fi
+          }
+
+          # Bounded, and the bound matters as much as the retry. `unknown blob` is
+          # transient - it surfaces when docker cross-mounts a shared layer from a
+          # sibling GHCR package, and all seven images share their base layers, so
+          # every service after the first is exposed. Unretried, one hiccup produced a
+          # three-of-seven release. Retrying forever would turn a registry outage into
+          # a job nobody can read the state of, which is worse than failing.
+          push_with_retry() {
+            local ref="$1" attempt
+            for attempt in 1 2 3; do
+              if docker push "$ref"; then
+                [ "$attempt" -gt 1 ] && echo "    (succeeded on attempt $attempt)"
+                return 0
+              fi
+              if [ "$attempt" -lt 3 ]; then
+                local wait=$(( attempt == 1 ? 5 : 15 ))
+                echo "    push failed (attempt $attempt/3); retrying in ${wait}s"
+                sleep "$wait"
+              fi
+            done
+            echo "::error::Giving up on $ref after 3 attempts."
+            return 1
+          }
+
+          {
+            echo "### Release sha-$SHORT_SHA"
+            echo
+            echo "| service | permanent tag |"
+            echo "| :-- | :-- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for service in $SERVICES; do
+            permanent="$IMAGE_PREFIX-$service:sha-$SHORT_SHA"
+            moving="$IMAGE_PREFIX-$service:main"
+
+            if [ "$FORCE_REPUBLISH" = "true" ]; then
+              echo "::warning::$service: force_republish is set - overwriting $permanent"
+              push_with_retry "$permanent"
+              outcome="republished (forced)"
+            else
+              case "$(tag_state "$permanent")" in
+                exists)
+                  echo "$service: already present, left unchanged"
+                  outcome="already present, left unchanged"
+                  ;;
+                absent)
+                  echo "$service: publishing"
+                  push_with_retry "$permanent"
+                  outcome="published"
+                  ;;
+                *)
+                  echo "::error::Could not ask the registry about $permanent. Aborting rather than guessing: treating an unanswerable registry as 'absent' would overwrite an already-published release."
+                  exit 1
+                  ;;
+              esac
+            fi
+
+            # The moving tag is never checked. It exists to move.
+            push_with_retry "$moving"
+
+            echo "| \`$service\` | $outcome |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Confirm the release is whole
+        # ASK the registry, do not count what the loop did.
+        #
+        # Counting answers "did the steps run?". Asking answers "does the release
+        # exist?", and only the second is what a release is. This matters more now
+        # that skipping is normal: without it, a run that skipped everything and a run
+        # that quietly never reached a service look identical from the inside.
         env:
           SHORT_SHA: ${{ steps.sha.outputs.short }}
         run: |
           set -euo pipefail
-          echo "### Published sha-$SHORT_SHA" >> "$GITHUB_STEP_SUMMARY"
+          present=0
+          missing=""
           for service in identity catalog order orchestrator inventory payment gateway; do
-            docker push "$IMAGE_PREFIX-$service:sha-$SHORT_SHA"
-            docker push "$IMAGE_PREFIX-$service:main"
-            echo "- $IMAGE_PREFIX-$service:sha-$SHORT_SHA" >> "$GITHUB_STEP_SUMMARY"
+            if docker manifest inspect "$IMAGE_PREFIX-$service:sha-$SHORT_SHA" > /dev/null 2>&1; then
+              present=$((present + 1))
+            else
+              missing="$missing $service"
+            fi
           done
+
+          if [ "$present" -eq 7 ]; then
+            echo "7 of 7 permanent names present - release complete"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**7 of 7 permanent names present — release complete.**" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**$present of 7 permanent names present — release INCOMPLETE.**" >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing:$missing" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Re-running this job publishes the missing ones and leaves the others untouched." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::$present of 7 permanent names present. Missing:$missing. Re-running this job will publish them and leave the rest untouched."
+            exit 1
+          fi
 
   auth-smoke:
     name: Auth smoke test

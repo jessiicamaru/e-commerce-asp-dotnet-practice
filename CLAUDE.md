@@ -253,6 +253,17 @@ ghcr.io/jessiicamaru/ecommerce-<service>:main              # moves; convenience 
 A pull request publishes nothing. See
 [specs/006-release-and-rollback/contracts/release-artifacts.md](specs/006-release-and-rollback/contracts/release-artifacts.md).
 
+**What makes `sha-` immutable is a check, not a convention.** Before pushing a `sha-` tag the
+release asks the registry whether it already resolves and skips it if so, so re-running a publish
+never rewrites an existing one — and re-running is therefore the *correct* way to finish a release
+that stopped partway, rather than the way to corrupt it. It was not always so: on 2026-09-21 a
+re-run silently changed what `sha-2cee71a` meant for three services. The job ends by asking the
+registry whether all seven names exist, so a green publish means the release is whole rather than
+that the steps ran. Overwriting on purpose is possible only through a manual `workflow_dispatch`
+with `force_republish`, which no merge can reach. Details and the one remaining hole —
+`denied` cannot distinguish "no such package" from "no permission to read it" — are in
+[specs/008-immutable-release-tags/contracts/publish-behaviour.md](specs/008-immutable-release-tags/contracts/publish-behaviour.md).
+
 **A schema change must not strand an earlier image.** Dropping, renaming or narrowing a column means
 redeploying a previous version takes the service down rather than restoring it — split it into expand
 then contract. The constitution states the rule; a `schema-compatibility` job comments on any pull
