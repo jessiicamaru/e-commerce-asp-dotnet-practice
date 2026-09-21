@@ -32,7 +32,6 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  **Known failing (2026-09-21): returns 500.** `RegisterCommandHandler` throws a bare
-  `System.Exception("Email is already registered")`, which the shared `GlobalExceptionHandler`
-  cannot map, so a client mistake is reported as a server fault. Should throw
-  `Ecommerce.Shared.Exceptions.ConflictException`. This check stays red until that is fixed.
+  Registering an email that already has an account is a **409**, through the shared ProblemDetails
+  handler. It was a 500 until #28: `RegisterCommandHandler` threw a bare `System.Exception`, which the
+  handler cannot map.

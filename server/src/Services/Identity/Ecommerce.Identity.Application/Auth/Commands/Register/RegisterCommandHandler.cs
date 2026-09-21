@@ -3,6 +3,7 @@ using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Common.Constants;
 using Ecommerce.Domain.Constants;
 using Ecommerce.Domain.Entities;
+using Ecommerce.Shared.Exceptions;
 using MediatR;
 
 namespace Ecommerce.Application.Auth.Commands.Register;
@@ -25,7 +26,10 @@ IJwtTokenGenerator jwtTokenGenerator
 
         if (existingUser != null)
         {
-            throw new Exception("Email is already registered");
+            // 409 through the shared handler. A bare Exception here reported a client's mistake as a
+            // server fault (500) - issue #28. That this reveals the email has an account is accepted:
+            // the sign-in page reveals the same, and the error contract already promises 409.
+            throw new ConflictException("An account with this email already exists.");
         }
 
         var passwordHash = _passwordHasher.HashPassword(request.Password);

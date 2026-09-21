@@ -18,7 +18,9 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
 
         if (user == null || !_passwordHasher.VerifyPassword(user.PasswordHash, request.Password))
         {
-            throw new Exception("Invalid email or password.");
+            // 401, and the same message for "no such email" and "wrong password" so the answer cannot be
+            // used to learn which emails have accounts. Was a bare Exception - a 500 (issue #28).
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);

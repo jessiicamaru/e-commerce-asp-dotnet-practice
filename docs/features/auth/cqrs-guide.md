@@ -201,10 +201,10 @@ The command triggers the registration logic. The handler handles it:
 
 ---
 
-> **The code does not do this yet.** `RegisterCommandHandler` throws a bare `Exception` here, which
-> the shared `GlobalExceptionHandler` cannot map, so registering an existing email returns **500**.
-> The snippet above shows the intended shape; the Bruno check
-> `security-checks/duplicate registration is 409` stays red until the code matches it.
+> **Fixed in #28.** `RegisterCommandHandler` used to throw a bare `Exception` here, which the shared
+> `GlobalExceptionHandler` cannot map, so registering an existing email returned **500**. It now
+> throws `ConflictException` (409); login throws `UnauthorizedAccessException` (401) with one message
+> for "no such email" and "wrong password".
 
 ## 4. Web API Controller Setup
 In [`AuthController.cs`](../../../server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `Mediator` and hide the `RefreshToken` from the response body by using C#'s `with` expression:

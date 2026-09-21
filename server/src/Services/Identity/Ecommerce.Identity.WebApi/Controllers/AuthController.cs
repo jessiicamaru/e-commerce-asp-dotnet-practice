@@ -35,21 +35,17 @@ public class AuthController : ApiControllerBase
     {
         if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
         {
-            return Unauthorized("No session cookie found.");
+            throw new UnauthorizedAccessException("No session. Sign in again.");
         }
 
-        try
-        {
-            var result = await Mediator.Send(new RefreshTokenCommand(refreshToken));
+        // No catch-all (issue #28). It used to turn EVERY exception - a database outage included - into
+        // "logged out", with the exception's own text as the body. A bad session is now a 401 from the
+        // handler; anything else is what it is, through the shared ProblemDetails handler.
+        var result = await Mediator.Send(new RefreshTokenCommand(refreshToken));
 
-            SetRefreshTokenCookie(result.RefreshToken);
+        SetRefreshTokenCookie(result.RefreshToken);
 
-            return Ok(result with { RefreshToken = "" });
-        }
-        catch (Exception ex)
-        {
-            return Unauthorized(ex.Message);
-        }
+        return Ok(result with { RefreshToken = "" });
     }
 
     private void SetRefreshTokenCookie(string refreshToken)

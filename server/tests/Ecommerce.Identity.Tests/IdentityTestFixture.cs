@@ -3,6 +3,8 @@ using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Infrastructure.Persistence.Repositories;
+using Ecommerce.Infrastructure.Security;
+using Ecommerce.Domain.Constants;
 using Ecommerce.Shared.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,7 +42,12 @@ public class IdentityTestFixture : IAsyncLifetime
         }
 
         await using var scope = For(Guid.Empty).CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await db.Database.MigrateAsync();
+
+        // Registration grants Customer; the service seeds it at startup, the tests seed it here.
+        db.Roles.Add(new Role { Id = Guid.CreateVersion7(), Name = RoleNames.Customer, Description = "Shopper" });
+        await db.SaveChangesAsync();
     }
 
     /// <summary>A provider whose caller is <paramref name="userId"/>.</summary>
@@ -52,6 +59,20 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(_connectionString));
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Sign-up and sign-in (issue #28) - the real repositories, hasher and token generator.
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
+        {
+            Secret = "identity-tests-signing-key-of-at-least-32-bytes",
+            Issuer = "EcommerceApi",
+            Audience = "EcommerceClients",
+            ExpiryMinutes = 15,
+            RefreshTokenExpiryDays = 7
+        }));
         services.AddSingleton<ICurrentUser>(new FixedUser(userId));
         return services.BuildServiceProvider(validateScopes: true);
     }

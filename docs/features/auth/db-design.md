@@ -209,4 +209,4 @@ Exposes REST endpoints.
 - [x] **Password Hashing**: Never store plain passwords. Use **BCrypt.Net-Next** in the Application/Infrastructure layer.
 - [x] **JWT Tokens**: Issue short-lived Access Tokens (e.g., 15 minutes) containing Claims (User ID, Email, Roles).
 - [x] **Refresh Tokens**: Issue long-lived Refresh Tokens (e.g., 7 days) stored securely in HttpOnly cookies, and rotate them on use to prevent replay attacks.
-- [ ] **Email Uniqueness**: the database enforces it, but the application check throws a bare `Exception`, so the client gets **500** rather than a friendly 409. See the [CQRS guide](./cqrs-guide.md).
+- [x] **Email Uniqueness**: enforced by the database, and an existing email is a **409** from the application check (#28). Two registrations of the same email at the same instant can still reach the unique index and surface as 500 — rare, and recorded rather than handled.

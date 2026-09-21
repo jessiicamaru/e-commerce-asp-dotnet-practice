@@ -19,13 +19,13 @@ public class RefreshTokenCommandHandler(
         var user = await _userRepository.GetByUserRefreshTokenAsync(request.RefreshToken, cancellationToken);
         if (user == null)
         {
-            throw new Exception("Invalid session.");
+            throw new UnauthorizedAccessException("The session is not valid. Sign in again.");
         }
 
         var activeToken = user.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
         if (activeToken == null || activeToken.IsExpired || activeToken.RevokedAt != null)
         {
-            throw new Exception("Session expired or invalid.");
+            throw new UnauthorizedAccessException("The session is not valid. Sign in again.");
         }
 
         user.RefreshTokens.Remove(activeToken);
