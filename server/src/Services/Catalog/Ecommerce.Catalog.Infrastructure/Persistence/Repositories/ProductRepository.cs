@@ -16,6 +16,20 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
+    public async Task<List<Product>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var wanted = ids.Distinct().ToList();
+
+        // AsNoTracking: this is a read that answers a question and changes nothing, and it sits on
+        // checkout's critical path.
+        return await _context.Products
+            .AsNoTracking()
+            .Where(p => wanted.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
     {
         return await _context.Products

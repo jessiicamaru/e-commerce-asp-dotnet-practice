@@ -150,7 +150,43 @@ else
   [ "$anon_orders" = "401" ] || fail "Anonymous order listing should be 401, got $anon_orders."
   pass "anonymous order listing rejected with 401"
 
-  order_body='{"items":[{"productId":"11111111-1111-1111-1111-111111111111","productName":"CI Widget","quantity":1,"unitPrice":9.99}]}'
+  # The product has to be real now.
+  #
+  # This used to order productId 11111111-1111-1111-1111-111111111111 - an id that
+  # has never existed in any catalogue - with a name and a price supplied in the
+  # body, and it worked. Order believed whatever it was told, which is the defect
+  # closed by feature 009 (issue #18). It now asks Catalog, so a fictional product
+  # is refused with 404 and this script would fail at the next line.
+  #
+  # Creating one here keeps this script about AUTHORIZATION rather than about
+  # pricing - what is being asserted below is still only who may read whose orders.
+  ORDER_RUN_ID="$(date +%s)$$"
+
+  auth_category_id=$(
+    curl -fsS -X POST "$CATALOG_URL/api/categories"       -H 'Content-Type: application/json' -H "Authorization: Bearer $admin_token"       -d "$(json_object name "Auth CI $ORDER_RUN_ID" slug "auth-ci-$ORDER_RUN_ID")" | json_field id
+  )
+  [ -n "$auth_category_id" ] || fail "Could not create a category for the order checks."
+
+  auth_product_id=$(
+    curl -fsS -X POST "$CATALOG_URL/api/products"       -H 'Content-Type: application/json' -H "Authorization: Bearer $admin_token"       -d "$("$PYTHON" -c '
+import json, sys
+print(json.dumps({
+    "name": "CI Widget " + sys.argv[1],
+    "description": None,
+    "price": 9.99,
+    "sku": "AUTHCI" + sys.argv[1],
+    "categoryId": sys.argv[2],
+}))
+' "$ORDER_RUN_ID" "$auth_category_id")" | json_field id
+  )
+  [ -n "$auth_product_id" ] || fail "Could not create a product for the order checks."
+
+  # No price and no name in the body: OrderItemRequest no longer has either, and
+  # Order takes both from Catalog.
+  order_body="$("$PYTHON" -c '
+import json, sys
+print(json.dumps({"items": [{"productId": sys.argv[1], "quantity": 1}]}))
+' "$auth_product_id")"
 
   order_id=$(
     curl -fsS -X POST "$ORDER_URL/api/orders" \

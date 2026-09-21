@@ -220,16 +220,20 @@ CATEGORY_ID="$(post_json "$CATALOG_URL/api/categories" \
   "$ADMIN_TOKEN" | json_field id)"
 [ -n "$CATEGORY_ID" ] || fail "Could not create a category. The administrator signed in, so this is Catalog rejecting the request rather than an authorization problem."
 
+# The catalogue price, named once so the order assertion can compare against it
+# rather than against a number repeated in two places.
+PRODUCT_PRICE="9.99"
+
 PRODUCT_BODY="$("$PYTHON" -c '
 import json, sys
 print(json.dumps({
     "name": "E2E Widget " + sys.argv[1],
     "description": "created by verify-saga.sh",
-    "price": 9.99,
+    "price": float(sys.argv[3]),
     "sku": "E2E" + sys.argv[1],
     "categoryId": sys.argv[2],
 }))
-' "$RUN_ID" "$CATEGORY_ID")"
+' "$RUN_ID" "$CATEGORY_ID" "$PRODUCT_PRICE")"
 
 PRODUCT_ID="$(post_json "$CATALOG_URL/api/products" "$PRODUCT_BODY" "$ADMIN_TOKEN" | json_field id)"
 [ -n "$PRODUCT_ID" ] || fail "Could not create a product in category $CATEGORY_ID."
@@ -278,22 +282,61 @@ BEFORE_RESERVED="$(printf '%s' "$BEFORE" | json_field quantityReserved)"
 BEFORE_AVAILABLE="$(printf '%s' "$BEFORE" | json_field quantityAvailable)"
 pass "stock before: on-hand=$BEFORE_ON_HAND reserved=$BEFORE_RESERVED available=$BEFORE_AVAILABLE"
 
+# The order body carries a FABRICATED price and a FABRICATED name, on purpose, on
+# every run.
+#
+# SubmitOrderCommand has no field for either any more, so this is raw JSON with
+# extra properties - which is the only honest way to test it. Sending a typed
+# object would test the type system rather than the server, and a determined
+# caller can always put whatever it likes on the wire.
+#
+# Until 2026-09-21 the server believed both. A product listed at 40,000,000 was
+# bought for 1, the stock was permanently deducted and the payment recorded
+# 1.00 Approved (issue #18). Nothing caught it, because nothing tested order
+# submission at all: `grep -rln SubmitOrder tests/` returns nothing to this day.
+#
+# There is no user id here either, for the same reason and by the same rule.
+FABRICATED_PRICE="0.01"
+FABRICATED_NAME="FABRICATED - the server must ignore this"
+
 ORDER_BODY="$("$PYTHON" -c '
 import json, sys
 print(json.dumps({"items": [{
     "productId": sys.argv[1],
-    "productName": "E2E Widget " + sys.argv[2],
+    "productName": sys.argv[2],
     "quantity": int(sys.argv[3]),
-    "unitPrice": 9.99,
+    "unitPrice": float(sys.argv[4]),
 }]}))
-' "$PRODUCT_ID" "$RUN_ID" "$ORDER_QUANTITY")"
+' "$PRODUCT_ID" "$FABRICATED_NAME" "$ORDER_QUANTITY" "$FABRICATED_PRICE")"
 
-# No user id in the body, deliberately: SubmitOrderCommand has none and the
-# handler reads the caller from the validated token.
 ORDER_RESPONSE="$(post_json "$ORDER_URL/api/orders" "$ORDER_BODY" "$CUSTOMER_TOKEN")"
 ORDER_ID="$(printf '%s' "$ORDER_RESPONSE" | json_field orderId)"
 [ -n "$ORDER_ID" ] || fail "The order was not accepted. Response: $ORDER_RESPONSE"
-pass "order $ORDER_ID submitted"
+pass "order $ORDER_ID submitted (claiming $FABRICATED_PRICE each)"
+
+# The assertion the whole of issue #18 turns on: the shop decides what things cost.
+ORDER_TOTAL="$(printf '%s' "$ORDER_RESPONSE" | json_field totalAmount)"
+EXPECTED_TOTAL="$("$PYTHON" -c '
+import sys
+print(f"{float(sys.argv[1]) * int(sys.argv[2]):.2f}")
+' "$PRODUCT_PRICE" "$ORDER_QUANTITY")"
+ACTUAL_TOTAL="$("$PYTHON" -c 'import sys; print(f"{float(sys.argv[1]):.2f}")' "$ORDER_TOTAL")"
+
+if [ "$ACTUAL_TOTAL" = "$EXPECTED_TOTAL" ]; then
+  pass "charged the catalogue price, not the claimed one ($EXPECTED_TOTAL, claimed $FABRICATED_PRICE each)"
+else
+  fail "The customer set the price. Claimed $FABRICATED_PRICE each and the order totals $ACTUAL_TOTAL, where the catalogue price of $PRODUCT_PRICE x $ORDER_QUANTITY is $EXPECTED_TOTAL. The price on an order line must come from Catalog, which owns it - never from the request body. See issue #18 and specs/009-catalog-owns-price."
+fi
+
+ORDER_ITEM_NAME="$(printf '%s' "$ORDER_RESPONSE" | "$PYTHON" -c '
+import json, sys
+print(json.load(sys.stdin)["items"][0]["productName"])
+')"
+
+if [ "$ORDER_ITEM_NAME" = "$FABRICATED_NAME" ]; then
+  fail "The customer named the product. The order line reads '"'"'$ORDER_ITEM_NAME'"'"', which is what the request claimed. The name belongs to Catalog, and is copied onto the line so the order still describes itself after the product is renamed."
+fi
+pass "recorded the catalogue name, not the claimed one ($ORDER_ITEM_NAME)"
 
 # ---------------------------------------------------------------- settle
 

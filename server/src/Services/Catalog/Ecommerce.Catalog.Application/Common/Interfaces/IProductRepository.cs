@@ -5,6 +5,21 @@ namespace Ecommerce.Catalog.Application.Common.Interfaces;
 public interface IProductRepository
 {
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Loads several products by id, for the pricing call that answers a whole order at once.
+    /// </summary>
+    /// <remarks>
+    /// Returns only the ones that exist, so the caller compares counts and decides. That comparison
+    /// is what makes "refuse the order in full" structural: there is no point at which four of five
+    /// lines are priced and the fifth is not.
+    /// <para>
+    /// No <c>Include</c> of the category - the pricing call needs a name and a number, and dragging
+    /// a navigation property into a hot path for nobody's benefit is how a lookup on checkout's
+    /// critical path stops being invisible.
+    /// </para>
+    /// </remarks>
+    Task<List<Product>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
+
     Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
     Task<List<Product>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default);

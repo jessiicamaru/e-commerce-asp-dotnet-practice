@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/Ecommerce.Contracts/Ecommerce.Contracts.csproj" />
+    <Project Path="src/BuildingBlocks/Ecommerce.Contracts.Grpc/Ecommerce.Contracts.Grpc.csproj" />
     <Project Path="src/BuildingBlocks/Ecommerce.Shared/Ecommerce.Shared.csproj" />
   </Folder>
   <Folder Name="/src/Services/" />

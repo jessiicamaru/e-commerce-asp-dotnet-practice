@@ -1,10 +1,17 @@
 # How Services Talk to Each Other
 
-**Created**: 2026-09-21 | **Status**: describes what is true today, and the decision that is about to change it
+**Created**: 2026-09-21 | **Status**: the decision was taken and built — see [specs/009-catalog-owns-price](../../specs/009-catalog-owns-price/)
 
-## Today: nothing calls anything
+> **Resolved.** gRPC over h2c on a second port, built in feature 009. What follows describes the
+> system *before* that, which is still worth reading because it is why the decision went the way it
+> did — and because two of its predictions were tested rather than assumed:
+> `Http1AndHttp2` on a plaintext endpoint does **not** serve h2c on .NET 10 (measured, with a
+> control), and calling `ListenAnyIP` at all **replaces** `ASPNETCORE_URLS` rather than adding to
+> it, which unbound REST the first time it was tried.
 
-Seven services, and **not one of them calls another synchronously**. Verified, not assumed:
+## Before feature 009: nothing called anything
+
+Seven services, and **not one of them called another synchronously**. Verified, not assumed:
 
 ```bash
 $ grep -rln "HttpClient\|IHttpClientFactory\|AddHttpClient" server/src/Services --include=*.cs
@@ -104,10 +111,24 @@ speaks.
 
 > **Verified above**: the default plaintext endpoint is HTTP/1.1 only.
 >
-> **Documented by Microsoft but NOT verified here**: setting `Http1AndHttp2` on a plaintext endpoint
-> still defaults to HTTP/1.1, and gRPC calls fail; the fix is TLS or an explicit
-> `HttpProtocols.Http2`. Confirm this on .NET 10 before relying on it — it is the kind of
-> version-specific behaviour that changes quietly.
+> **`Http1AndHttp2` — since verified, on .NET 10, with a control.** A minimal app was given two
+> plaintext endpoints and probed from a container:
+>
+> ```text
+> port 7311, Http1AndHttp2   --http1.1               -> proto=1.1 code=200
+> port 7311, Http1AndHttp2   --http2-prior-knowledge -> proto=0   code=000   (refused)
+> port 7312, Http2 only      --http2-prior-knowledge -> proto=2   code=200   (works)
+> ```
+>
+> Microsoft's documented behaviour holds: it does **not** serve h2c, so the second port is required
+> rather than preferred. The control matters as much as the result — without it, `proto=0` would
+> equally well have meant a broken harness.
+>
+> **And one thing nobody documented loudly enough**: calling `ListenAnyIP` at all **replaces**
+> `ASPNETCORE_URLS` rather than adding to it. Configuring only the gRPC endpoint unbound REST — the
+> container listened on 8081 alone and went unhealthy — and Kestrel says so in a warning that is
+> easy to scroll past: `Overriding address(es) 'http://+:8080'`. Both endpoints must be declared
+> together.
 
 ### What real systems do
 

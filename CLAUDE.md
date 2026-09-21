@@ -88,7 +88,7 @@ so.
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
 | Identity | 5056 | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
-| Catalog | 5057 | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory |
+| Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Submit + outbox; settles on the saga's outcome, owner-scoped reads |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
@@ -137,6 +137,20 @@ registers `ICurrentUser` — how the Application layer learns who the caller is 
 `HttpContext`. Three settings in there are load-bearing and easy to break:
 `MapInboundClaims = false` (otherwise `sub` is renamed), `RoleClaimType = "role"` (the signing side
 writes the short name, not the `ClaimTypes.Role` URI), and `ClockSkew = Zero`.
+
+**Neither does the price.** `OrderItemRequest` carries only `ProductId` and `Quantity`; Order asks
+Catalog over gRPC at submission and **freezes** the price and name onto the order line. Before
+feature 009 the price came from the request body and a product listed at 40,000,000 was bought for
+1 — same shape of defect as `UserId`, on the thing a shop exists to get right. The fields are
+**removed, not ignored**, for the same reason `UserId` was.
+
+**This is the only synchronous cross-service call in the system**, and it costs something real:
+Catalog being unreachable now refuses orders (**503**, via `DependencyUnavailableException`) where
+before they were placed at whatever price the customer claimed. Catalog serves gRPC on a **second
+port** because one plaintext port cannot carry HTTP/1.1 and HTTP/2 — telling them apart needs ALPN,
+which is part of TLS. Verified on .NET 10; `Http1AndHttp2` on a plaintext endpoint does **not**
+serve h2c. Background: [docs/architecture/service-to-service-communication.md](docs/architecture/service-to-service-communication.md)
+and [specs/009-catalog-owns-price](specs/009-catalog-owns-price/).
 
 **The user id never comes from the request body.** `SubmitOrderCommand` deliberately has no
 `UserId`; the handler reads it from `ICurrentUser`. Keep it that way for new commands.
@@ -189,6 +203,15 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   usually means the Orchestrator rather than anything the check could test. The constitution says
   every service exposes `/health`; this one does not, and that disagreement is recorded but not yet
   resolved.
+- **Calling `ListenAnyIP` at all replaces `ASPNETCORE_URLS` — it does not add to it.** Configuring
+  only the gRPC endpoint on Catalog silently unbound REST: the container came up listening on 8081
+  alone, answered nothing on 8080, and went unhealthy. Kestrel says so in a warning nobody reads —
+  `Overriding address(es) 'http://+:8080'`. Both endpoints are now declared together, and the
+  `app.Run(url)` fallback was removed because it would be a third opinion about where to listen.
+- **Adding a project means adding a line to [server/Dockerfile](server/Dockerfile).** It copies each
+  `.csproj` by name before `dotnet restore`, then publishes with `--no-restore` — so a missing line
+  fails at publish with a message about the project rather than about the list.
+  `Ecommerce.Contracts.Grpc` cost exactly that on its first container build.
 - **A failed `SaveChangesAsync` does not untrack what it tried to write.** The rows stay `Added`, so
   the next save on that same context re-attempts them. Catching a unique violation and then saving
   again therefore raises the *same* violation, outside the catch — which is how Payment's

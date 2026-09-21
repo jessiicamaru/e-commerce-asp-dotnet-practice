@@ -19,8 +19,15 @@ WORKDIR /src
 # reuses this layer instead of re-downloading every package - which is the
 # difference between a second build measured in seconds and one measured in
 # minutes, and therefore the difference between this path being used and abandoned.
+#
+# ADDING A PROJECT MEANS ADDING A LINE HERE. This list has the same drift problem
+# the comment at the top of this file warns about: restore is run with the list,
+# publish with --no-restore, so a missing line fails at publish with a message
+# about the project rather than about this list. Ecommerce.Contracts.Grpc cost
+# exactly that, the first time it was built (feature 009).
 COPY Ecommerce.slnx ./
 COPY src/BuildingBlocks/Ecommerce.Contracts/*.csproj      src/BuildingBlocks/Ecommerce.Contracts/
+COPY src/BuildingBlocks/Ecommerce.Contracts.Grpc/*.csproj src/BuildingBlocks/Ecommerce.Contracts.Grpc/
 COPY src/BuildingBlocks/Ecommerce.Shared/*.csproj         src/BuildingBlocks/Ecommerce.Shared/
 COPY src/ApiGateway/Ecommerce.ApiGateway/*.csproj         src/ApiGateway/Ecommerce.ApiGateway/
 
