@@ -26,7 +26,8 @@ public record OrderItemResponse(
     string ProductName,
     int Quantity,
     decimal UnitPrice,
-    decimal TotalPrice
+    decimal TotalPrice,
+    decimal? TaxAmount = null
 );
 
 public record OrderResponse(
@@ -38,7 +39,11 @@ public record OrderResponse(
     List<OrderItemResponse> Items,
     Common.ShippingAddressResponse? ShippingAddress = null,
     Common.ShippingOptionResponse? ShippingOption = null,
-    decimal? ShippingPrice = null
+    decimal? ShippingPrice = null,
+    decimal? Subtotal = null,
+    decimal? TaxTotal = null,
+    decimal? DiscountTotal = null,
+    decimal? TaxRate = null
 );
 
 /// <summary>

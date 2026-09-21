@@ -36,7 +36,8 @@ public record OrderItemDetailResponse(
     string ProductName,
     int Quantity,
     decimal UnitPrice,
-    decimal TotalPrice
+    decimal TotalPrice,
+    decimal? TaxAmount = null
 );
 
 /// <summary>
@@ -55,7 +56,11 @@ public record OrderDetailResponse(
     ShippingAddressResponse? ShippingAddress = null,
     ShippingOptionResponse? ShippingOption = null,
     decimal? ShippingPrice = null,
-    string? TrackingReference = null
+    string? TrackingReference = null,
+    decimal? Subtotal = null,
+    decimal? TaxTotal = null,
+    decimal? DiscountTotal = null,
+    decimal? TaxRate = null
 );
 
 /// <summary>

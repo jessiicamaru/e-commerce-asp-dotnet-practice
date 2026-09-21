@@ -47,6 +47,25 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
         builder.Property(x => x.ShippingPrice).HasPrecision(18, 2);
         builder.Property(x => x.TrackingReference).HasMaxLength(100);
 
+        // Feature 012 - the parts of the total, and the rule that they add up, as constraints and not
+        // only as code (constitution: invariants that matter are database constraints too). Every
+        // check lets a NULL Subtotal through: an image from before this feature writes rows without
+        // the parts, and must still be able to (schema evolution rule).
+        builder.Property(x => x.Subtotal).HasPrecision(18, 2);
+        builder.Property(x => x.TaxTotal).HasPrecision(18, 2);
+        builder.Property(x => x.DiscountTotal).HasPrecision(18, 2);
+        builder.Property(x => x.TaxRate).HasPrecision(5, 4);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_orders_parts_sum_to_total",
+                "\"Subtotal\" IS NULL OR \"Subtotal\" + COALESCE(\"ShippingPrice\", 0) + \"TaxTotal\" - \"DiscountTotal\" = \"TotalAmount\"");
+            t.HasCheckConstraint("CK_orders_no_discount_yet",
+                "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" = 0");
+            t.HasCheckConstraint("CK_orders_tax_rate_range",
+                "\"TaxRate\" IS NULL OR (\"TaxRate\" >= 0 AND \"TaxRate\" < 1)");
+        });
+
         // Staff work the fulfilment queue by status, oldest first.
         builder.HasIndex(x => new { x.Status, x.CreatedAt })
             .HasDatabaseName("IX_orders_Status_CreatedAt");

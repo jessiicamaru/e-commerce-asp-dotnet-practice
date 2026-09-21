@@ -28,12 +28,16 @@ public static class OrderMapping
         order.CreatedAt,
         order.UpdatedAt,
         order.Items
-            .Select(x => new OrderItemDetailResponse(x.ProductId, x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice))
+            .Select(x => new OrderItemDetailResponse(x.ProductId, x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, x.TaxAmount))
             .ToList(),
         ToResponse(order.ShipTo),
         order.ShippingOptionCode is null
             ? null
             : new ShippingOptionResponse(order.ShippingOptionCode, order.ShippingOptionName ?? order.ShippingOptionCode),
         order.ShippingPrice,
-        order.TrackingReference);
+        order.TrackingReference,
+        order.Subtotal,
+        order.TaxTotal,
+        order.DiscountTotal,
+        order.TaxRate);
 }

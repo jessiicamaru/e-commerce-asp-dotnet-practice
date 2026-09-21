@@ -22,5 +22,8 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.UnitPrice)
             .HasPrecision(18, 2)
             .IsRequired();
+
+        builder.Property(x => x.TaxAmount)
+            .HasPrecision(18, 2);
     }
 }

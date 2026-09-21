@@ -138,6 +138,7 @@ var app = builder.Build();
 // here, where the log says why, instead of turning every checkout into a 500 (constitution:
 // Configuration). ConfiguredShippingOptions validates in its constructor.
 _ = app.Services.GetRequiredService<Ecommerce.Order.Application.Common.Interfaces.IShippingOptions>();
+_ = app.Services.GetRequiredService<Ecommerce.Order.Application.Common.Interfaces.ITaxRates>();
 
 app.UseExceptionHandler();
 

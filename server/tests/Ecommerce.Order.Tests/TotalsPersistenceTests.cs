@@ -1,0 +1,98 @@
+using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
+using Ecommerce.Order.Domain.Entities;
+using Ecommerce.Order.Domain.Enums;
+using Ecommerce.Order.Infrastructure.Persistence;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Ecommerce.Order.Tests;
+
+/// <summary>
+/// The total as stored (feature 012): taxed by destination, and refused by the database when its parts
+/// do not add up - not merely intended to.
+/// </summary>
+[Collection(nameof(OrderTestCollection))]
+public class TotalsPersistenceTests(OrderTestFixture fixture)
+{
+    private readonly OrderTestFixture _fixture = fixture;
+    private readonly Guid _product = Guid.CreateVersion7();
+
+    private async Task<OrderResponse> CheckoutToAsync(string country)
+    {
+        _fixture.CurrentUser.Id = Guid.CreateVersion7();
+        _fixture.Checkout.Cart = [new CartItem(_product, 3)];
+        _fixture.Checkout.Prices[_product] = new CatalogPrice(_product, "Widget", 9.99m, Sellable: true);
+        _fixture.Checkout.Address = new AddressCopy("A", "1 St", null, "City", null, "12345", country, null);
+
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<ISender>().Send(new SubmitOrderCommand(null, "standard"));
+    }
+
+    [Fact]
+    public async Task The_same_cart_to_two_destinations_has_equal_subtotals_and_different_tax()
+    {
+        var vn = await CheckoutToAsync("VN");   // 10%
+        var gb = await CheckoutToAsync("GB");   // 20%
+
+        Assert.Equal(vn.Subtotal, gb.Subtotal);
+        Assert.Equal(0.10m, vn.TaxRate);
+        Assert.Equal(0.20m, gb.TaxRate);
+        // 29.97 x 10% = 3.00 (2.997), delivery 5.00 x 10% = 0.50
+        Assert.Equal(3.50m, vn.TaxTotal);
+        // 29.97 x 20% = 5.99 (5.994), delivery 5.00 x 20% = 1.00
+        Assert.Equal(6.99m, gb.TaxTotal);
+    }
+
+    [Fact]
+    public async Task An_unlisted_destination_gets_the_default_rate_and_says_so()
+    {
+        var fr = await CheckoutToAsync("FR");
+
+        Assert.Equal(0.10m, fr.TaxRate);
+    }
+
+    [Fact]
+    public async Task Stored_parts_sum_to_the_stored_total_and_each_line_keeps_its_tax()
+    {
+        var response = await CheckoutToAsync("GB");
+        var row = await OrderSeed.ReadAsync(_fixture, response.OrderId);
+
+        Assert.Equal(row.TotalAmount, row.Subtotal + row.ShippingPrice + row.TaxTotal - row.DiscountTotal);
+        Assert.Equal(5.99m, Assert.Single(row.Items).TaxAmount);
+        Assert.Equal(0m, row.DiscountTotal);
+    }
+
+    [Fact]
+    public async Task The_database_refuses_a_total_whose_parts_do_not_add_up()
+    {
+        await using var scope = _fixture.NewScope();
+        var context = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+        var id = Guid.CreateVersion7();
+
+        context.Orders.Add(new Domain.Entities.Order
+        {
+            Id = id,
+            UserId = Guid.CreateVersion7(),
+            Status = OrderStatus.Submitted,
+            Subtotal = 10m,
+            ShippingPrice = 5m,
+            TaxTotal = 1.50m,
+            DiscountTotal = 0m,
+            TaxRate = 0.10m,
+            TotalAmount = 99m,   // should be 16.50
+            Items =
+            [
+                new OrderItem
+                {
+                    Id = Guid.CreateVersion7(), OrderId = id, ProductId = Guid.CreateVersion7(),
+                    ProductName = "X", Quantity = 1, UnitPrice = 10m
+                }
+            ]
+        });
+
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+        Assert.Contains("CK_orders_parts_sum_to_total", ex.InnerException?.Message ?? ex.Message);
+    }
+}

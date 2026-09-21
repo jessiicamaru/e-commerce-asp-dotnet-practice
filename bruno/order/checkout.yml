@@ -32,6 +32,13 @@ runtime:
           expect(res.body.shippingOption.code).to.equal("express");
           expect(res.body.shippingPrice).to.equal(bru.getVar("expressPrice"));
         });
+        test("the parts of the total add up, with tax at the destination's rate", function() {
+          const b = res.body;
+          const cents = v => Math.round(v * 100);
+          expect(cents(b.subtotal) + cents(b.shippingPrice) + cents(b.taxTotal) - cents(b.discountTotal)).to.equal(cents(b.totalAmount));
+          expect(b.taxRate).to.be.a("number");
+          expect(b.discountTotal).to.equal(0);
+        });
 
 settings:
   encodeUrl: true

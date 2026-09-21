@@ -10,6 +10,9 @@ public class OrderItem
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice => Quantity * UnitPrice;
 
+    /// <summary>Tax charged on this line, as rounded at checkout (feature 012). Null on older lines.</summary>
+    public decimal? TaxAmount { get; set; }
+
     // Navigation property
     public Order? Order { get; set; }
 }

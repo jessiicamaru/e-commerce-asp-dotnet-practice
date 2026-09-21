@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Ecommerce.Order.Infrastructure.Identity;
 using Ecommerce.Order.Infrastructure.Shipping;
+using Ecommerce.Order.Infrastructure.Tax;
 
 namespace Ecommerce.Order.Infrastructure;
 
@@ -63,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IAddressReader, GrpcAddressReader>();
 
         services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
+        services.AddSingleton<ITaxRates, ConfiguredTaxRates>();
 
         return services;
     }
