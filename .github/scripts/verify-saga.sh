@@ -451,10 +451,30 @@ fi
 # before the timeout is reached.
 pass "order reached $FINAL_STATUS after ${settled_after}s"
 
-AFTER="$(read_stock)"
-AFTER_ON_HAND="$(printf '%s' "$AFTER" | json_field quantityOnHand)"
-AFTER_RESERVED="$(printf '%s' "$AFTER" | json_field quantityReserved)"
-AFTER_AVAILABLE="$(printf '%s' "$AFTER" | json_field quantityAvailable)"
+# The order's status and the stock settle through DIFFERENT messages. On a declined
+# payment the saga publishes ReleaseInventoryCommand and OrderFailedEvent together;
+# Order and Inventory consume them independently, so the order can read Failed a few
+# milliseconds before Inventory has released the hold (on success, OrderCompletedEvent
+# reaches Order and Inventory separately in the same way). Reading the stock once, the
+# instant the status settles, raced that - and failed CI on PR #40 with the hold still
+# in place 0.07s after "Failed". So: wait (bounded) for the stock to reach the state the
+# outcome implies, then assert on whatever it reached. A genuinely stranded hold still
+# fails, just after the wait instead of before it.
+if [ "$FINAL_STATUS" = "Paid" ]; then
+  WANT_ON_HAND=$((BEFORE_ON_HAND - ORDER_QUANTITY))
+else
+  WANT_ON_HAND=$BEFORE_ON_HAND
+fi
+for i in $(seq 1 15); do
+  AFTER="$(read_stock)"
+  AFTER_ON_HAND="$(printf '%s' "$AFTER" | json_field quantityOnHand)"
+  AFTER_RESERVED="$(printf '%s' "$AFTER" | json_field quantityReserved)"
+  AFTER_AVAILABLE="$(printf '%s' "$AFTER" | json_field quantityAvailable)"
+  if [ "$AFTER_ON_HAND" = "$WANT_ON_HAND" ] && [ "$AFTER_RESERVED" = "$BEFORE_RESERVED" ]; then
+    break
+  fi
+  sleep 1
+done
 
 # ---------------------------------------------------------------- assertions
 
