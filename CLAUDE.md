@@ -115,7 +115,17 @@ so.
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
-pgAdmin `:5050`, RabbitMQ management `:15672`.
+pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`).
+
+**Following one order** (feature 013): every service and the gateway ship logs and traces to Seq over
+OpenTelemetry when `OTLP_ENDPOINT` is set (containers set it; unset, nothing is exported and nothing
+fails). `OrderId = '…'` in Seq returns every service's log lines about an order — a MassTransit
+consume filter (`OrderIdLogScopeFilter`) adds it, so handlers don't have to — and the trace behind them
+spans the whole checkout, across HTTP, gRPC **and** the broker. The gateway ignores a client's
+`traceparent`, so every trace starts there. The saga logs each transition at Information and a reply
+with **no saga instance at Warning** — the thing the 2026-09-21 stall hid for eighteen days. Seq's
+admin password (`SEQ_ADMIN_PASSWORD`) is required by compose, and Seq forces a change at the first
+login. Guide: [docs/guides/observability.md](docs/guides/observability.md).
 
 Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` — except Identity, Catalog and Cart, which serve gRPC too and therefore declare **both** Kestrel endpoints (REST on `50XX`, gRPC on `51XX` on the host, `8080`/`8081` in a container) and have no `app.Run(url)`. Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
 
@@ -157,7 +167,7 @@ the saga still ends at payment. `Pending`, `StockReserved` and `Cancelled` remai
 [specs/011-order-shipping](specs/011-order-shipping/) and the history in
 [specs/003-order-lifecycle/data-model.md](specs/003-order-lifecycle/data-model.md).
 
-The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–6.5 done, Phase 7 = observability/Seq/E2E is next).
+The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–7 done, including observability with Seq).
 
 ### Authentication
 `Ecommerce.Shared/Authentication/` holds the whole story. Identity **signs** tokens; every other

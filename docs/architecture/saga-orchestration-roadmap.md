@@ -206,12 +206,13 @@ to be rediscovered.
 
 ---
 
-### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (In progress)
+### 🟢 Phase 7: Observability, Centralized Logging (Seq) & E2E Verification (Completed)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
-  1. ⬜ Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
-  2. ⬜ Stream structured Serilog JSON logs & Correlation IDs from every service to Seq —
-     [#22](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/22).
+  1. ✅ **Seq** in `docker-compose.yml` (UI `5380`, ingestion `5341`) — feature 013.
+  2. ✅ Structured logs **and distributed traces** from every service to Seq over OpenTelemetry
+     (not Serilog), one trace per checkout across the broker, `OrderId` on every line —
+     [specs/013](../../specs/013-observability/), [#22](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/22).
   3. ~~Replace the stub payment gateway with a real provider integration.~~ Moved out of this phase:
      deliberately deferred, together with deployment.
   4. ✅ **End-to-end verification in CI** — [`verify-saga.sh`](../../.github/scripts/verify-saga.sh)

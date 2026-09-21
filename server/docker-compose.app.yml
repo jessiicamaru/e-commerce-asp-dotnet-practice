@@ -34,6 +34,8 @@ x-service-common: &service-common
     # The services read RABBITMQ_PASS; docker-compose.yml reads RABBITMQ_PASSWORD.
     # Both are set from the same value on purpose - see CLAUDE.md's Gotchas.
     RABBITMQ_PASS: ${RABBITMQ_PASSWORD}
+    # Logs and traces to Seq (feature 013). Unset it and the services export nothing.
+    OTLP_ENDPOINT: http://seq:5341/ingest/otlp
 
 x-healthcheck: &service-healthcheck
   healthcheck:
@@ -227,6 +229,7 @@ services:
         PROJECT: src/ApiGateway/Ecommerce.ApiGateway
     environment:
       ASPNETCORE_URLS: http://+:8080
+      OTLP_ENDPOINT: http://seq:5341/ingest/otlp
     # The gateway is the one service whose configuration genuinely differs between
     # host and container: it is the only one that needs to know where the others
     # are. appsettings.json points at http://localhost:50XX, which is wrong in here.

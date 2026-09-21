@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Application;
 using Ecommerce.Infrastructure;
@@ -132,6 +133,9 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ApplicationDbContext>(name: "identity_postgres_db");
+
+// Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
+builder.AddObservability("identity");
 
 var app = builder.Build();
 

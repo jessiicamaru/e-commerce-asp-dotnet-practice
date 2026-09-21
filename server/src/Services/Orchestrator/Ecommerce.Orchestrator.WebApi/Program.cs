@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Observability;
 using Ecommerce.Orchestrator.WebApi.StateMachines;
 using Ecommerce.Shared.Middlewares;
 using MassTransit;
@@ -126,12 +127,19 @@ builder.Services.AddMassTransit(x =>
             h.Password(rabbitPass);
         });
 
+        // OrderId on every log line and span written while consuming a message about an order, so one
+        // Seq query - OrderId = '...' - returns a checkout across every service (feature 013).
+        cfg.UseConsumeFilter(typeof(OrderIdLogScopeFilter<>), context);
+
         cfg.ConfigureEndpoints(context);
     });
 });
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+// Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
+builder.AddObservability("orchestrator");
 
 var app = builder.Build();
 

@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Observability;
 using Ecommerce.Catalog.WebApi.Grpc;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -196,6 +197,10 @@ builder.Services.AddMassTransit(x =>
             h.Password(rabbitPass);
         });
 
+        // OrderId on every log line and span written while consuming a message about an order, so one
+        // Seq query - OrderId = '...' - returns a checkout across every service (feature 013).
+        cfg.UseConsumeFilter(typeof(OrderIdLogScopeFilter<>), context);
+
         cfg.ConfigureEndpoints(context);
     });
 });
@@ -218,6 +223,9 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<CatalogDbContext>(name: "catalog_postgres_db");
+
+// Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
+builder.AddObservability("catalog");
 
 var app = builder.Build();
 
