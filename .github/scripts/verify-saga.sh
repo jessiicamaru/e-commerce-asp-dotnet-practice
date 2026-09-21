@@ -39,6 +39,7 @@ CATALOG_URL="${CATALOG_URL:-http://localhost:5057}"
 ORDER_URL="${ORDER_URL:-http://localhost:5059}"
 INVENTORY_URL="${INVENTORY_URL:-http://localhost:5060}"
 PAYMENT_URL="${PAYMENT_URL:-http://localhost:5061}"
+CART_URL="${CART_URL:-http://localhost:5062}"
 
 SAGA_TIMEOUT_SECONDS="${SAGA_TIMEOUT_SECONDS:-60}"
 SAGA_E2E_REQUIRE_ALL="${SAGA_E2E_REQUIRE_ALL:-}"
@@ -167,7 +168,7 @@ fi
 
 unreachable=""
 for pair in "Identity:$IDENTITY_URL" "Catalog:$CATALOG_URL" "Order:$ORDER_URL" \
-            "Inventory:$INVENTORY_URL" "Payment:$PAYMENT_URL"; do
+            "Inventory:$INVENTORY_URL" "Payment:$PAYMENT_URL" "Cart:$CART_URL"; do
   name="${pair%%:*}"
   url="${pair#*:}"
   code="$(status "$url/health")"
@@ -282,37 +283,55 @@ BEFORE_RESERVED="$(printf '%s' "$BEFORE" | json_field quantityReserved)"
 BEFORE_AVAILABLE="$(printf '%s' "$BEFORE" | json_field quantityAvailable)"
 pass "stock before: on-hand=$BEFORE_ON_HAND reserved=$BEFORE_RESERVED available=$BEFORE_AVAILABLE"
 
-# The order body carries a FABRICATED price and a FABRICATED name, on purpose, on
-# every run.
+# The order is placed THROUGH THE CART, the way a customer does it: put things in
+# the cart, then check out. Checkout takes no body - what is bought comes from the
+# cart, who is buying from the token, and what it costs from Catalog.
 #
-# SubmitOrderCommand has no field for either any more, so this is raw JSON with
-# extra properties - which is the only honest way to test it. Sending a typed
-# object would test the type system rather than the server, and a determined
-# caller can always put whatever it likes on the wire.
-#
-# Until 2026-09-21 the server believed both. A product listed at 40,000,000 was
-# bought for 1, the stock was permanently deducted and the payment recorded
-# 1.00 Approved (issue #18). Nothing caught it, because nothing tested order
-# submission at all: `grep -rln SubmitOrder tests/` returns nothing to this day.
-#
-# There is no user id here either, for the same reason and by the same rule.
+# Both requests still carry a FABRICATED price and a FABRICATED name, on purpose,
+# on every run, as raw JSON with extra properties. Until 2026-09-21 the server
+# believed a price in the request (issue #18): a product listed at 40,000,000 was
+# bought for 1. The cart is a new place a price could be smuggled in - through the
+# add-to-cart body, or through a body sent to checkout that should now be ignored
+# entirely - so both routes are tried, and the charge must still be the catalogue's.
 FABRICATED_PRICE="0.01"
 FABRICATED_NAME="FABRICATED - the server must ignore this"
 
-ORDER_BODY="$("$PYTHON" -c '
+HOSTILE_LINE="$("$PYTHON" -c '
 import json, sys
-print(json.dumps({"items": [{
+print(json.dumps({
     "productId": sys.argv[1],
-    "productName": sys.argv[2],
-    "quantity": int(sys.argv[3]),
-    "unitPrice": float(sys.argv[4]),
-}]}))
-' "$PRODUCT_ID" "$FABRICATED_NAME" "$ORDER_QUANTITY" "$FABRICATED_PRICE")"
+    "quantity": int(sys.argv[2]),
+    "unitPrice": float(sys.argv[3]),
+    "productName": sys.argv[4],
+}))
+' "$PRODUCT_ID" "$ORDER_QUANTITY" "$FABRICATED_PRICE" "$FABRICATED_NAME")"
 
-ORDER_RESPONSE="$(post_json "$ORDER_URL/api/orders" "$ORDER_BODY" "$CUSTOMER_TOKEN")"
+add_code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST "$CART_URL/api/cart/items" \
+  -H 'Content-Type: application/json' -H "Authorization: Bearer $CUSTOMER_TOKEN" -d "$HOSTILE_LINE" || true)"
+[ "$add_code" = "204" ] || fail "Could not add to the cart (HTTP $add_code)."
+pass "added $ORDER_QUANTITY to the cart (claiming $FABRICATED_PRICE each)"
+
+CART_BEFORE_QTY="$(get_json "$CART_URL/api/cart" "$CUSTOMER_TOKEN" | "$PYTHON" -c '
+import json, sys
+lines = json.load(sys.stdin).get("lines", [])
+print(next((l["quantity"] for l in lines if l["productId"] == sys.argv[1]), 0))
+' "$PRODUCT_ID")"
+[ "$CART_BEFORE_QTY" = "$ORDER_QUANTITY" ] \
+  || fail "The cart holds $CART_BEFORE_QTY of the product after adding $ORDER_QUANTITY."
+pass "cart holds $CART_BEFORE_QTY"
+
+# A body sent to checkout is IGNORED - there is no field for it to bind to. Sent
+# anyway, because a determined caller can always put whatever it likes on the wire.
+HOSTILE_ORDER="$("$PYTHON" -c '
+import json, sys
+print(json.dumps({"items": [{"productId": sys.argv[1], "quantity": 99,
+                             "unitPrice": float(sys.argv[2]), "productName": sys.argv[3]}]}))
+' "$PRODUCT_ID" "$FABRICATED_PRICE" "$FABRICATED_NAME")"
+
+ORDER_RESPONSE="$(post_json "$ORDER_URL/api/orders" "$HOSTILE_ORDER" "$CUSTOMER_TOKEN")"
 ORDER_ID="$(printf '%s' "$ORDER_RESPONSE" | json_field orderId)"
-[ -n "$ORDER_ID" ] || fail "The order was not accepted. Response: $ORDER_RESPONSE"
-pass "order $ORDER_ID submitted (claiming $FABRICATED_PRICE each)"
+[ -n "$ORDER_ID" ] || fail "Checkout was not accepted. Response: $ORDER_RESPONSE"
+pass "order $ORDER_ID checked out from the cart (body claiming 99 at $FABRICATED_PRICE ignored)"
 
 # The assertion the whole of issue #18 turns on: the shop decides what things cost.
 ORDER_TOTAL="$(printf '%s' "$ORDER_RESPONSE" | json_field totalAmount)"
@@ -445,9 +464,47 @@ else
     "Available went $BEFORE_AVAILABLE -> $AFTER_AVAILABLE, expected it unchanged after a failed order."
 fi
 
+# ---------------------------------------------------------------- the cart after settlement
+#
+# Completed: the ordered lines leave the cart. Failed: the cart is left EXACTLY as
+# it was, so a customer whose payment was declined can simply check out again -
+# the saga's Failed is terminal, and removing the lines at submission would leave
+# them with an empty cart and a dead order (specs/010-customer-cart, research D1).
+#
+# Polled, not read once: the cart learns of the outcome from an event and is a
+# moment behind by design.
+cart_qty() {
+  get_json "$CART_URL/api/cart" "$CUSTOMER_TOKEN" | "$PYTHON" -c '
+import json, sys
+lines = json.load(sys.stdin).get("lines", [])
+print(next((l["quantity"] for l in lines if l["productId"] == sys.argv[1]), 0))
+' "$PRODUCT_ID"
+}
+
+if [ "$SCENARIO" = "approve" ]; then
+  CART_AFTER=""
+  for i in $(seq 1 20); do
+    CART_AFTER="$(cart_qty)"
+    [ "$CART_AFTER" = "0" ] && break
+    sleep 1
+  done
+  assert_eq "$CART_AFTER" "0" \
+    "the cart gave up what was ordered once the order completed" \
+    "The order completed but the cart still holds $CART_AFTER of the product after 20s. Cart removes the ordered lines on OrderCompletedEvent, remembering the items from OrderSubmittedEvent; check both CartSvc queues exist with one consumer each. If Cart's consumers lost their CartSvc prefix they share a queue with Inventory's and Order's and compete for the event."
+else
+  # Give the failure event time to arrive before asserting nothing happened -
+  # asserting "unchanged" instantly would pass even if the cart were wrongly
+  # emptied a second later.
+  sleep 3
+  CART_AFTER="$(cart_qty)"
+  assert_eq "$CART_AFTER" "$ORDER_QUANTITY" \
+    "the cart is untouched after a declined payment (still $CART_AFTER)" \
+    "The payment was declined and the order failed, but the cart went $ORDER_QUANTITY -> $CART_AFTER. A failed order must leave the cart alone, or a customer whose card was declined loses what they chose."
+fi
+
 if [ "$FAILURES" -gt 0 ]; then
   echo
-  echo "$FAILURES of 4 assertions failed for scenario '$SCENARIO'."
+  echo "$FAILURES of 5 assertions failed for scenario '$SCENARIO'."
   echo "1 of 1 scenario exercised: $SCENARIO=FAIL"
   exit 1
 fi

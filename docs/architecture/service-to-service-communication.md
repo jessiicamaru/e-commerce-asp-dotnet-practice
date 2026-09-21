@@ -190,6 +190,42 @@ file.
 
 ---
 
+## Feature 010: the second call, and why it carries the customer's token
+
+The cart ([specs/010-customer-cart](../../specs/010-customer-cart/)) added a second synchronous call
+on checkout's path. `POST /api/orders` now takes no body; Order asks Cart for the cart over gRPC
+(`CartReading.GetMyCart`, Cart's port 6062 on the host, 8081 in a container), then prices it
+through Catalog exactly as before.
+
+```text
+customer ──POST /api/orders (bearer token)──▶ Order
+                                                │ gRPC GetMyCart, same bearer token as metadata
+                                                ├──────────────────────────────▶ Cart   (what)
+                                                │ gRPC GetPrices
+                                                ├──────────────────────────────▶ Catalog (how much)
+                                                ▼
+                                   order row + OrderSubmittedEvent, one transaction
+```
+
+**The request message is empty.** Cart learns whose cart to return from the token Order forwards, the
+same way every service learns who the caller is. A `GetCart(userId)` would have been easier to write
+and would have let anything on the network read anybody's cart — `UserId` in the body, one hop
+further in. Principle IV applies between services as much as at the edge.
+
+**Checkout now depends on Catalog and Cart.** Either being down stops orders; both are retried a
+bounded number of times and then refused with 503, never guessed. Cart's own read of prices is the
+opposite: when Catalog does not answer, the cart still renders, with prices marked unavailable and
+checkout disabled — a customer can look at what they chose while the shop is degraded.
+
+**The cart stores no price**, so the question left open above — what happens when a price changes
+between adding and paying — has the simplest answer: the cart always shows today's price, and
+checkout charges today's price. There is no stored number to disagree with.
+
+The cart's *removal* of ordered lines is not synchronous: it listens for `OrderCompletedEvent`. That
+decision, and why it needs `OrderSubmittedEvent` too, is in the spec's research D1–D3.
+
+---
+
 ## What none of this touches: messaging
 
 **Messages are completely unaffected by anything above.**
@@ -212,7 +248,9 @@ constitution requires of a recorded decision:
 
 - **REST or gRPC**, given the costs above.
 - **h2c on a second port, or TLS**, if gRPC.
-- **Ask at submission, or price the cart** ([#19](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/19)).
+- ~~**Ask at submission, or price the cart**~~ — decided in feature 010: ask at submission, and the
+  cart stores no price at all. See above.
+- *(Original note)* **Ask at submission, or price the cart** ([#19](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/19)).
   A priced cart matches what shops actually do — *the price you saw is the price you pay* — and it
   moves the call off checkout's critical path. It does not remove the need to ask Catalog; it moves
   when. And it raises its own question: what happens when the price changes between adding to the

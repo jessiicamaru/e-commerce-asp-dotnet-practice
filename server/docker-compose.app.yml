@@ -130,6 +130,9 @@ services:
       # port because one plaintext port cannot carry HTTP/1.1 and HTTP/2 - see
       # specs/009-catalog-owns-price. If this is wrong, orders are refused with 503.
       CATALOG_GRPC_ADDRESS: http://catalog:8081
+      # The second synchronous dependency of checkout (feature 010). Order forwards the customer's
+      # token so Cart identifies them itself - the request carries no user id.
+      CART_GRPC_ADDRESS: http://cart:8081
     ports:
       - "5059:8080"
     depends_on:
@@ -182,6 +185,33 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # The eighth service. REST for the customer, gRPC (h2c, its own port) for Order at checkout.
+  # Both endpoints are declared together in Program.cs: calling ListenAnyIP at all replaces
+  # ASPNETCORE_URLS, which unbound Catalog's REST the first time it was tried (feature 009).
+  cart:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-cart
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Cart/Ecommerce.Cart.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-cart
+      CART_DB_PORT: "5432"
+      CART_GRPC_PORT: "8081"
+      # The cart asks Catalog what its products look like right now - it stores no price.
+      CATALOG_GRPC_ADDRESS: http://catalog:8081
+    ports:
+      - "5062:8080"
+      - "6062:8081"
+    depends_on:
+      postgres-cart:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   gateway:
     <<: [*service-common, *service-healthcheck]
     container_name: ecommerce-gateway
@@ -211,6 +241,7 @@ services:
       - "--ReverseProxy:Clusters:order-cluster:Destinations:destination1:Address=http://order:8080/"
       - "--ReverseProxy:Clusters:inventory-cluster:Destinations:destination1:Address=http://inventory:8080/"
       - "--ReverseProxy:Clusters:payment-cluster:Destinations:destination1:Address=http://payment:8080/"
+      - "--ReverseProxy:Clusters:cart-cluster:Destinations:destination1:Address=http://cart:8080/"
     ports:
       - "5000:8080"
     depends_on:

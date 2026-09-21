@@ -38,7 +38,19 @@ public record OrderResponse(
     List<OrderItemResponse> Items
 );
 
-// UserId is intentionally absent: it is read from the access token, never from the request body.
-public record SubmitOrderCommand(
-    List<OrderItemRequest> Items
-) : IRequest<OrderResponse>;
+/// <summary>
+/// Check out the caller's cart.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Carries nothing, on purpose.</b> Not the items - they come from the caller's cart, read from
+/// the Cart service at checkout (feature 010). Not a user id - that comes from the access token, never
+/// from the request body (Constitution IV). Not a price or a name - those come from Catalog (feature
+/// 009, issue #18).
+/// </para>
+/// <para>
+/// Each of those fields once existed, or could have, and each would have let the client assert
+/// something the server owns.
+/// </para>
+/// </remarks>
+public record SubmitOrderCommand : IRequest<OrderResponse>;

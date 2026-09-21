@@ -35,7 +35,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (15 tests,
-PostgreSQL on 5434) and `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433). They run against a **real PostgreSQL** — the guarantees under test are the
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433) and
+`Ecommerce.Cart.Tests` (10 tests, PostgreSQL on 5439). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -93,6 +94,7 @@ so.
 | Order | 5059 | 5434 / `ecommerce_order_db` | Submit + outbox; settles on the saga's outcome, owner-scoped reads |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
+| Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`.
 
@@ -144,7 +146,21 @@ feature 009 the price came from the request body and a product listed at 40,000,
 1 — same shape of defect as `UserId`, on the thing a shop exists to get right. The fields are
 **removed, not ignored**, for the same reason `UserId` was.
 
-**This is the only synchronous cross-service call in the system**, and it costs something real:
+**Checkout now reads the cart too** (feature 010). `POST /api/orders` takes **no body**: Order asks
+Cart for the caller's cart over gRPC, **forwarding the customer's bearer token** so Cart identifies
+them through `ICurrentUser` like every service does. The request message is empty on purpose — a
+`GetCart(userId)` would let anything on the network read anybody's cart, the `UserId`-in-the-body
+defect one hop further in. So checkout depends synchronously on **Catalog and Cart**.
+
+**The cart removes what was ordered on `OrderCompletedEvent`, not on submission** — `Failed` is
+terminal, and removing at submission would leave a customer whose card was declined with an empty
+cart and a dead order. `OrderCompletedEvent` carries only an order id, so Cart also consumes
+`OrderSubmittedEvent` to learn the items, and because nothing orders delivery across message types
+(which is what #15 was) **whichever of the two arrives second applies the removal**, guarded by an
+`Applied` flag under `FOR UPDATE`. Removal is a *decrement*, so anything added during checkout
+survives. See [specs/010-customer-cart](specs/010-customer-cart/).
+
+**Order → Catalog was the first synchronous cross-service call in the system**, and it costs something real:
 Catalog being unreachable now refuses orders (**503**, via `DependencyUnavailableException`) where
 before they were placed at whatever price the customer claimed. Catalog serves gRPC on a **second
 port** because one plaintext port cannot carry HTTP/1.1 and HTTP/2 — telling them apart needs ALPN,
@@ -203,6 +219,22 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   usually means the Orchestrator rather than anything the check could test. The constitution says
   every service exposes `/health`; this one does not, and that disagreement is recorded but not yet
   resolved.
+- **Validation silently skipped every command that returns nothing — until feature 010.** The
+  shared `ValidationBehavior` was constrained to `where TRequest : IRequest<TResponse>`, and in
+  MediatR 12 a void command implements `IRequest`, a *separate* interface. The pipeline asked for
+  `IPipelineBehavior<TCommand, Unit>`, the constraint could not be met, and the behavior was
+  dropped without a word — the cart accepted a quantity of `-1` with 204 despite a `GreaterThan(0)`
+  rule. Now `where TRequest : notnull`. `Ecommerce.Cart.Tests/ValidationTests` is what fails if it
+  regresses.
+- **A new service needs its own `appsettings.json` with `JwtSettings`.** Without it `Issuer` and
+  `Audience` are empty and **every** token is rejected with 401 (`IDX10208: Unable to validate
+  audience`) — while the service starts and reports healthy. The constitution says a missing
+  required setting must fail at startup; `AddJwtAuthentication` does not, which is a gap in the
+  shared building block, recorded rather than fixed.
+- **An application-generated `Guid` key needs `ValueGeneratedNever()`.** By convention a `Guid`
+  key is `ValueGeneratedOnAdd`, so a new child discovered through a navigation collection with its
+  id already set is taken for an *existing* row: EF issues an `UPDATE`, it affects zero rows, and
+  the save throws `DbUpdateConcurrencyException`. All eight Cart tests failed that way first time.
 - **Calling `ListenAnyIP` at all replaces `ASPNETCORE_URLS` — it does not add to it.** Configuring
   only the gRPC endpoint on Catalog silently unbound REST: the container came up listening on 8081
   alone, answered nothing on 8080, and went unhealthy. Kestrel says so in a warning nobody reads —

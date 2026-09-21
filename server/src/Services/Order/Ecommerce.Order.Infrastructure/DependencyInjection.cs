@@ -1,5 +1,6 @@
 using Ecommerce.Contracts.Grpc;
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Infrastructure.Cart;
 using Ecommerce.Order.Infrastructure.Catalog;
 using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Order.Infrastructure.Persistence.Repositories;
@@ -40,6 +41,15 @@ public static class DependencyInjection
             o.Address = new Uri(catalogGrpc));
 
         services.AddScoped<ICatalogPrices, GrpcCatalogPrices>();
+
+        // The second synchronous dependency of checkout. Cart serves gRPC on its own port too.
+        var cartGrpc = configuration["Cart:GrpcAddress"]
+            ?? Environment.GetEnvironmentVariable("CART_GRPC_ADDRESS")
+            ?? "http://localhost:5162";
+
+        services.AddGrpcClient<CartReading.CartReadingClient>(o => o.Address = new Uri(cartGrpc));
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICartReader, GrpcCartReader>();
 
         return services;
     }

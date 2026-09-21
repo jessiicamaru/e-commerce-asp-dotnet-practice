@@ -73,6 +73,26 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # The cart's own database. Host port 5439: 5433-5438 are taken by the other six, and 5432 is
+  # avoided on purpose because a natively installed PostgreSQL silently shadows it.
+  postgres-cart:
+    image: postgres:16-alpine
+    container_name: ecommerce-cart-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_cart_db
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_cart_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
   postgres-payment:
     image: postgres:16-alpine
     container_name: ecommerce-payment-db
@@ -151,4 +171,5 @@ volumes:
   postgres_order_data:
   postgres_inventory_data:
   postgres_payment_data:
+  postgres_cart_data:
   rabbitmq_data:

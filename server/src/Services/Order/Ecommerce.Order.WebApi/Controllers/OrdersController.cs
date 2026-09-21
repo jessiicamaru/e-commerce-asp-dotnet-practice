@@ -9,10 +9,14 @@ namespace Ecommerce.Order.WebApi.Controllers;
 [Authorize]
 public class OrdersController : ApiControllerBase
 {
+    /// <summary>
+    /// Check out the caller's cart. No body: what is bought comes from the cart, who is buying from
+    /// the token, and what it costs from Catalog.
+    /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Submit([FromBody] SubmitOrderCommand command)
+    public async Task<IActionResult> Submit()
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(new SubmitOrderCommand());
         return Ok(result);
     }
 

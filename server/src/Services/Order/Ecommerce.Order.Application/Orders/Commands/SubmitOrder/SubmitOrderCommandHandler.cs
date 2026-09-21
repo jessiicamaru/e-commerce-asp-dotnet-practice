@@ -13,13 +13,15 @@ public class SubmitOrderCommandHandler(
     IOrderRepository orderRepository,
     IPublishEndpoint publishEndpoint,
     ICurrentUser currentUser,
-    ICatalogPrices catalogPrices
+    ICatalogPrices catalogPrices,
+    ICartReader cartReader
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly ICatalogPrices _catalogPrices = catalogPrices;
+    private readonly ICartReader _cartReader = cartReader;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
     {
@@ -38,8 +40,17 @@ public class SubmitOrderCommandHandler(
         // refusal leaves no row, no event and no reservation - all-or-nothing by construction.
         // Putting it between the publish and the save would widen the window between staging and
         // commit whenever Catalog is slow, and Principle III is non-negotiable.
+        // What is being bought comes from the caller's CART, not from the request (feature 010).
+        // Read over gRPC with the caller's own token forwarded, so Cart identifies them itself.
+        var cartItems = await _cartReader.GetMyCartAsync(cancellationToken);
+
+        if (cartItems.Count == 0)
+        {
+            throw new ConflictException("The cart is empty, so there is nothing to order.");
+        }
+
         var priced = await _catalogPrices.GetPricesAsync(
-            request.Items.Select(i => i.ProductId).Distinct().ToList(),
+            cartItems.Select(i => i.ProductId).Distinct().ToList(),
             cancellationToken);
 
         var byProduct = priced.ToDictionary(p => p.ProductId);
@@ -60,7 +71,7 @@ public class SubmitOrderCommandHandler(
         // a transaction: a price change next week must not rewrite what somebody already bought,
         // and the name is copied too so the order still describes itself after the product is
         // renamed or withdrawn.
-        var orderItems = request.Items.Select(item => new OrderItem
+        var orderItems = cartItems.Select(item => new OrderItem
         {
             Id = Guid.NewGuid(),
             OrderId = orderId,
