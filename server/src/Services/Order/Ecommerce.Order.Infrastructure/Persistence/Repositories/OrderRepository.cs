@@ -63,6 +63,70 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 cancellationToken);
     }
 
+    public async Task<int> TryAdvanceAsync(
+        Guid orderId,
+        OrderStatus from,
+        OrderStatus to,
+        string? trackingReference,
+        DateTime at,
+        CancellationToken cancellationToken = default)
+    {
+        // A legacy Completed row is a Paid order by another name (feature 011, research D3).
+        var alsoFrom = from == OrderStatus.Paid ? OrderStatus.Completed : from;
+
+        var query = _context.Orders
+            .Where(x => x.Id == orderId && (x.Status == from || x.Status == alsoFrom));
+
+        // One statement, the guard in its WHERE clause - the same shape as TrySettleAsync, for the same
+        // reason: reading, checking and then writing would let two clicks both succeed.
+        return trackingReference is null
+            ? await query.ExecuteUpdateAsync(
+                s => s.SetProperty(x => x.Status, to).SetProperty(x => x.UpdatedAt, at),
+                cancellationToken)
+            : await query.ExecuteUpdateAsync(
+                s => s.SetProperty(x => x.Status, to)
+                      .SetProperty(x => x.TrackingReference, trackingReference)
+                      .SetProperty(x => x.UpdatedAt, at),
+                cancellationToken);
+    }
+
+    public async Task<(List<OrderSummaryResponse> Orders, int TotalCount)> GetPageByStatusAsync(
+        OrderStatus status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var alsoStatus = status == OrderStatus.Paid ? OrderStatus.Completed : status;
+
+        var query = _context.Orders
+            .AsNoTracking()
+            .Where(x => x.Status == status || x.Status == alsoStatus);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var rows = await query
+            .OrderBy(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.Id,
+                x.TotalAmount,
+                x.Status,
+                x.FailureReason,
+                ItemCount = x.Items.Count,
+                x.CreatedAt,
+                x.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var orders = rows.Select(x => new OrderSummaryResponse(
+            x.Id, x.TotalAmount, OrderMapping.Describe(x.Status), x.FailureReason, x.ItemCount, x.CreatedAt, x.UpdatedAt))
+            .ToList();
+
+        return (orders, totalCount);
+    }
+
     public async Task<bool> ExistsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AnyAsync(x => x.Id == orderId, cancellationToken);
@@ -108,7 +172,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         var orders = rows.Select(x => new OrderSummaryResponse(
             x.Id,
             x.TotalAmount,
-            x.Status.ToString(),
+            OrderMapping.Describe(x.Status),
             x.FailureReason,
             x.ItemCount,
             x.CreatedAt,

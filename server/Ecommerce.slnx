@@ -53,6 +53,7 @@
     <Project Path="tests/Ecommerce.Inventory.Tests/Ecommerce.Inventory.Tests.csproj" />
     <Project Path="tests/Ecommerce.Order.Tests/Ecommerce.Order.Tests.csproj" />
     <Project Path="tests/Ecommerce.Cart.Tests/Ecommerce.Cart.Tests.csproj" />
+    <Project Path="tests/Ecommerce.Identity.Tests/Ecommerce.Identity.Tests.csproj" />
     <Project Path="tests/Ecommerce.Payment.Tests/Ecommerce.Payment.Tests.csproj" />
   </Folder>
 </Solution>

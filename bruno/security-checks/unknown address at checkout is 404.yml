@@ -1,0 +1,45 @@
+info:
+  name: unknown address at checkout is 404
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders"
+  body:
+    type: json
+    data: |-
+      {
+        "addressId": "00000000-0000-0000-0000-000000000001",
+        "shippingOption": "standard"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The cart emptied when the order completed. Put something back, or checkout would
+        // answer 409 (empty cart) before it ever looked at the address.
+        const axios = require("axios");
+        await axios.post(bru.interpolate("{{baseUrl}}/api/cart/items"),
+          { productId: bru.getVar("productId"), quantity: 1 },
+          { headers: { Authorization: "Bearer " + bru.getVar("customerToken") } });
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Somebody else's address answers exactly like this - the same 404 - so checkout cannot be used to
+  learn which address ids exist. That is proven with two real customers in
+  `.github/scripts/verify-auth.sh`; this collection has only one customer.

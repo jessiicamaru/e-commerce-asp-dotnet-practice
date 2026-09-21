@@ -8,7 +8,7 @@ Two supported ways to run this system. Both work; pick by what you are doing.
 | **B. Host** | You are writing code and want a debugger attached, or fast rebuilds of one service | `docker compose up -d` then `./start-dev.sh` |
 
 Either way the ports are the same: gateway on **5000**, services on **5056–5062**, and gRPC on
-**6057** (Catalog) and **6062** (Cart) for calls between services.
+**6056** (Identity), **6057** (Catalog) and **6062** (Cart) for calls between services.
 
 There is a third way that skips building entirely — pull a published image:
 
@@ -155,10 +155,12 @@ curl -X PUT http://localhost:5060/api/stock/<productId> \
 
 # 4. Register a shopper, fill their cart, check out, then read the order back
 #    POST   /api/auth/register    -> token (use it as the shopper's Bearer token below)
+#    POST   /api/addresses        {"recipientName","line1","city","postalCode","country"}
 #    POST   /api/cart/items       {"productId", "quantity"}
-#    POST   /api/orders           no body - the cart says what, the token says who,
-#                                 and Catalog says how much
-#    GET    /api/orders/{id}      -> "Completed" within a few seconds
+#    POST   /api/orders           {"addressId", "shippingOption": "express"} - the cart says
+#                                 what, the token says who, Catalog and the option say how much
+#    GET    /api/orders/{id}      -> "Paid" within a few seconds; an admin then moves it to
+#                                 Preparing and Shipped (POST .../preparing, .../shipment)
 #    GET    /api/cart             -> the ordered lines are gone
 ```
 
@@ -169,7 +171,7 @@ Two things to notice, because they are recent and deliberate:
 
 - **A newly created product reads `"availability": "OutOfStock"`** until you stock it through
   Inventory. The catalogue reports what the stock owner last told it and never a count of its own.
-- **The order settles by itself.** `GET /api/orders/{id}` moves from `Submitted` to `Completed` when
+- **The order settles by itself.** `GET /api/orders/{id}` moves from `Submitted` to `Paid` when
   the saga finishes, or to `Failed` with a reason when it does not.
 - **Nothing the client sends decides the price.** Checkout charges Catalog's current price for what
   is in the cart; an empty cart is refused with `409`, and Catalog or Cart being unreachable with

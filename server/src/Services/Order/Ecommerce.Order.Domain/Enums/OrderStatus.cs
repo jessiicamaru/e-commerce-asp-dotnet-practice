@@ -8,5 +8,9 @@ public enum OrderStatus
     Paid = 4,
     Completed = 5,
     Cancelled = 6,
-    Failed = 7
+    Failed = 7,
+
+    // Feature 011. After Paid, fulfilment - moved only by staff.
+    Preparing = 8,
+    Shipped = 9
 }

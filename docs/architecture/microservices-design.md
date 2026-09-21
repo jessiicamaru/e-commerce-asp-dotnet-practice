@@ -20,6 +20,7 @@ graph TD
     Gateway -->|REST| Cart[Cart :5062]
 
     Order -->|gRPC GetMyCart| Cart
+    Order -->|gRPC GetMyAddress| Identity
     Order -->|gRPC GetPrices| Catalog
     Cart -->|gRPC DescribeProducts| Catalog
 
@@ -50,10 +51,13 @@ transactional outbox.
 
 Each microservice is fully self-contained, owning its business logic, database, and scaling profile.
 
-### 2.1 Identity & Auth Service (Present)
-* **Responsibility**: User management, authentication, role assignment, token validation (Access + Refresh tokens).
+### 2.1 Identity & Auth Service (Implemented: `Ecommerce.Identity`)
+* **Responsibility**: User management, authentication, role assignment, token signing (Access + Refresh
+  tokens) — and, since feature 011, **the customer's delivery address book** (several addresses, exactly
+  one default, enforced by a partial unique index). Serves `AddressReading.GetMyAddress` to Order over
+  gRPC on `6056`, identifying the customer from the forwarded token.
 * **Database**: `ecommerce-identity-db` (Postgres).
-* **Key Entities**: `User`, `Role`, `RefreshToken`.
+* **Key Entities**: `User`, `Role`, `RefreshToken`, `DeliveryAddress`.
 
 ### 2.2 Product Catalog Service
 * **Responsibility**: Managing brands, categories, dynamic product specifications, pricing, search indexes, and media.
@@ -65,9 +69,11 @@ Each microservice is fully self-contained, owning its business logic, database, 
 * No cache, and no brands or dynamic attributes — see [Proposed, not built](#6-proposed-not-built).
 
 #### 2.3 Ordering Service (Implemented: `Ecommerce.Order`)
-* **Responsibility**: Checkout — reads the caller's cart from Cart and the prices from Catalog, creates
-  the order, and publishes `OrderSubmittedEvent`. Settles the order on the saga's outcome and serves
-  owner-scoped reads. It does **not** hold the cart.
+* **Responsibility**: Checkout — reads the caller's cart from Cart, the prices from Catalog and the
+  delivery address from Identity, prices delivery from its own options, creates the order with a frozen
+  copy of all of it, and publishes `OrderSubmittedEvent`. Settles the order to `Paid` on the saga's
+  outcome; staff then move it to `Preparing` and `Shipped` (feature 011). It does **not** hold the cart
+  or the address book.
 * **Database**: `ecommerce-order-db` (Port `5434`, Postgres, due to strong transactional ACID requirements).
 * **Key Entities**: `Order`, `OrderItem`.
 
@@ -128,17 +134,18 @@ RabbitMQ Broker ──► Saga Orchestrator (OrderStateMachine)
 ```
 
 ### 3.2 Synchronous calls (gRPC)
-There are exactly three, all reads, all on checkout's path or the cart's:
+There are exactly four, all reads, all on checkout's path or the cart's:
 
 | Caller | Callee | RPC | Why it cannot be a message |
 | :--- | :--- | :--- | :--- |
 | Order | Cart | `GetMyCart` | what is being bought has to be known before the order exists |
 | Order | Catalog | `GetPrices` | the price is a decision about money, taken at the moment of sale |
 | Cart | Catalog | `DescribeProducts` | showing today's name and price; the cart renders without it if Catalog is down |
+| Order | Identity | `GetMyAddress` | where the order goes is copied onto it at the moment of sale (feature 011) |
 
-They run over **h2c on a second port** (Catalog `6057`, Cart `6062`), because one plaintext port
-cannot serve both HTTP/1.1 and HTTP/2. The cost is real: Catalog or Cart being down stops checkout
-(`503`). The reasoning and the measurements are in
+They run over **h2c on a second port** (Identity `6056`, Catalog `6057`, Cart `6062`), because one
+plaintext port cannot serve both HTTP/1.1 and HTTP/2. The cost is real: Catalog, Cart or Identity
+being down stops checkout (`503`). The reasoning and the measurements are in
 [How Services Talk to Each Other](./service-to-service-communication.md).
 
 **Order does not ask Inventory whether something is in stock.** An answer read before the

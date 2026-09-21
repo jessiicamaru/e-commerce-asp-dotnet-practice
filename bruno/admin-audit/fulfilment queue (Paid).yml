@@ -1,0 +1,32 @@
+info:
+  name: fulfilment queue (Paid)
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/fulfilment?status=Paid"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("every order in the queue is Paid, oldest first", function() {
+          expect(res.body.totalCount).to.be.at.least(1);
+          res.body.items.forEach(o => expect(o.status).to.equal("Paid"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Staff only. Every customer's orders in one status - `Paid`, `Preparing` or `Shipped` - oldest first.

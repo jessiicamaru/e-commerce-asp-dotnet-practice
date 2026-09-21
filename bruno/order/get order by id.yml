@@ -1,7 +1,7 @@
 info:
   name: get order by id
   type: http
-  seq: 2
+  seq: 3
 
 http:
   method: GET
@@ -32,7 +32,7 @@ runtime:
           expect(res.status).to.equal(200);
         });
             test("the saga settled it", function() {
-              expect(["Completed", "Failed"]).to.include(res.body.status);
+              expect(["Paid", "Failed"]).to.include(res.body.status);
             });
 
 settings:
@@ -42,6 +42,6 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Waits for the saga first, then returns the settled order: `Completed`, or `Failed` when Payment
+  Waits for the saga first, then returns the settled order: `Paid`, or `Failed` when Payment
   runs with `PAYMENT_OUTCOME=Reject`. Still `Submitted` after 15s usually means the Orchestrator is
   not running. Another customer's order id returns **404**, not 403.

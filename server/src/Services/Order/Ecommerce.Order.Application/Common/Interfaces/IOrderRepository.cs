@@ -62,6 +62,31 @@ public interface IOrderRepository
     /// asking for one that does not exist both get <c>null</c>, which is what makes the two
     /// indistinguishable from outside.
     /// </summary>
+    /// <summary>
+    /// Moves an order one fulfilment step: <c>UPDATE ... WHERE "Id" = @id AND "Status" = @from</c>.
+    /// Returns the rows changed; zero means it was not in <paramref name="from"/> - already moved, moved
+    /// further, failed, or not there. The caller re-reads to tell which. The guard is in the statement
+    /// so two staff clicks cannot both succeed (Constitution III).
+    /// </summary>
+    /// <remarks>
+    /// Moving from <see cref="OrderStatus.Paid"/> also accepts a legacy <see cref="OrderStatus.Completed"/>
+    /// row, which means the same thing.
+    /// </remarks>
+    Task<int> TryAdvanceAsync(
+        Guid orderId,
+        OrderStatus from,
+        OrderStatus to,
+        string? trackingReference,
+        DateTime at,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>A page of every customer's orders in one status, oldest first - staff work a queue.</summary>
+    Task<(List<OrderSummaryResponse> Orders, int TotalCount)> GetPageByStatusAsync(
+        OrderStatus status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
     Task<Domain.Entities.Order?> GetByIdForUserAsync(
         Guid orderId,
         Guid userId,

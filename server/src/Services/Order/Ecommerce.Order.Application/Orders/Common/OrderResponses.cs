@@ -18,6 +18,19 @@ public record OrderSummaryResponse(
     DateTime UpdatedAt
 );
 
+public record ShippingAddressResponse(
+    string RecipientName,
+    string Line1,
+    string? Line2,
+    string City,
+    string? Region,
+    string PostalCode,
+    string Country,
+    string? Phone
+);
+
+public record ShippingOptionResponse(string Code, string Name);
+
 public record OrderItemDetailResponse(
     Guid ProductId,
     string ProductName,
@@ -38,7 +51,11 @@ public record OrderDetailResponse(
     string? FailureReason,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    List<OrderItemDetailResponse> Items
+    List<OrderItemDetailResponse> Items,
+    ShippingAddressResponse? ShippingAddress = null,
+    ShippingOptionResponse? ShippingOption = null,
+    decimal? ShippingPrice = null,
+    string? TrackingReference = null
 );
 
 /// <summary>

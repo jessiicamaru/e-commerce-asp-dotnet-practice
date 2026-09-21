@@ -9,6 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<DeliveryAddress> DeliveryAddresses => Set<DeliveryAddress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

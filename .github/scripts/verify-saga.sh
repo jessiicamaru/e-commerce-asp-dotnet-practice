@@ -271,6 +271,24 @@ CUSTOMER_TOKEN="$(post_json "$IDENTITY_URL/api/auth/register" \
 [ -n "$CUSTOMER_TOKEN" ] || fail "Could not register a customer. Self-registration always grants Customer, so this is not a role problem."
 pass "customer registered and signed in"
 
+# Somewhere to send it (feature 011). Saved in Identity's address book; checkout
+# names it, and Order reads it over gRPC with this customer's own token.
+ADDRESS_RECIPIENT="E2E Recipient $RUN_ID"
+ADDRESS_ID="$(post_json "$IDENTITY_URL/api/addresses" \
+  "$(json_object recipientName "$ADDRESS_RECIPIENT" line1 "1 Test Street" city "Ha Noi" postalCode "100000" country "VN")" \
+  "$CUSTOMER_TOKEN" | json_field id)"
+[ -n "$ADDRESS_ID" ] || fail "Could not save a delivery address in Identity."
+pass "delivery address saved: $ADDRESS_ID"
+
+# The delivery price comes from Order's own option list - read it, never assume it.
+SHIPPING_OPTION="express"
+SHIPPING_PRICE="$(get_json "$ORDER_URL/api/orders/shipping-options" | "$PYTHON" -c '
+import json, sys
+print(next((o["price"] for o in json.load(sys.stdin) if o["code"] == sys.argv[1]), ""))
+' "$SHIPPING_OPTION")"
+[ -n "$SHIPPING_PRICE" ] || fail "Order offers no '$SHIPPING_OPTION' delivery option."
+pass "$SHIPPING_OPTION delivery costs $SHIPPING_PRICE"
+
 # ---------------------------------------------------------------- readings
 
 read_stock() {
@@ -320,13 +338,18 @@ print(next((l["quantity"] for l in lines if l["productId"] == sys.argv[1]), 0))
   || fail "The cart holds $CART_BEFORE_QTY of the product after adding $ORDER_QUANTITY."
 pass "cart holds $CART_BEFORE_QTY"
 
-# A body sent to checkout is IGNORED - there is no field for it to bind to. Sent
-# anyway, because a determined caller can always put whatever it likes on the wire.
+# Checkout's body carries only where to send it and how (feature 011). Everything
+# else is IGNORED - there is no field for it to bind to - and is sent anyway,
+# including a fabricated delivery price and somebody else's user id, because a
+# determined caller can always put whatever it likes on the wire.
 HOSTILE_ORDER="$("$PYTHON" -c '
 import json, sys
-print(json.dumps({"items": [{"productId": sys.argv[1], "quantity": 99,
+print(json.dumps({"addressId": sys.argv[4], "shippingOption": sys.argv[5],
+                  "shippingPrice": float(sys.argv[2]),
+                  "userId": "00000000-0000-0000-0000-000000000001",
+                  "items": [{"productId": sys.argv[1], "quantity": 99,
                              "unitPrice": float(sys.argv[2]), "productName": sys.argv[3]}]}))
-' "$PRODUCT_ID" "$FABRICATED_PRICE" "$FABRICATED_NAME")"
+' "$PRODUCT_ID" "$FABRICATED_PRICE" "$FABRICATED_NAME" "$ADDRESS_ID" "$SHIPPING_OPTION")"
 
 ORDER_RESPONSE="$(post_json "$ORDER_URL/api/orders" "$HOSTILE_ORDER" "$CUSTOMER_TOKEN")"
 ORDER_ID="$(printf '%s' "$ORDER_RESPONSE" | json_field orderId)"
@@ -335,14 +358,15 @@ pass "order $ORDER_ID checked out from the cart (body claiming 99 at $FABRICATED
 
 # The assertion the whole of issue #18 turns on: the shop decides what things cost.
 ORDER_TOTAL="$(printf '%s' "$ORDER_RESPONSE" | json_field totalAmount)"
+# Goods at the catalogue's price, PLUS delivery at the option's price (feature 011).
 EXPECTED_TOTAL="$("$PYTHON" -c '
 import sys
-print(f"{float(sys.argv[1]) * int(sys.argv[2]):.2f}")
-' "$PRODUCT_PRICE" "$ORDER_QUANTITY")"
+print(f"{float(sys.argv[1]) * int(sys.argv[2]) + float(sys.argv[3]):.2f}")
+' "$PRODUCT_PRICE" "$ORDER_QUANTITY" "$SHIPPING_PRICE")"
 ACTUAL_TOTAL="$("$PYTHON" -c 'import sys; print(f"{float(sys.argv[1]):.2f}")' "$ORDER_TOTAL")"
 
 if [ "$ACTUAL_TOTAL" = "$EXPECTED_TOTAL" ]; then
-  pass "charged the catalogue price, not the claimed one ($EXPECTED_TOTAL, claimed $FABRICATED_PRICE each)"
+  pass "charged the catalogue price plus delivery, not anything claimed ($EXPECTED_TOTAL, claimed $FABRICATED_PRICE each)"
 else
   fail "The customer set the price. Claimed $FABRICATED_PRICE each and the order totals $ACTUAL_TOTAL, where the catalogue price of $PRODUCT_PRICE x $ORDER_QUANTITY is $EXPECTED_TOTAL. The price on an order line must come from Catalog, which owns it - never from the request body. See issue #18 and specs/009-catalog-owns-price."
 fi
@@ -357,6 +381,14 @@ if [ "$ORDER_ITEM_NAME" = "$FABRICATED_NAME" ]; then
 fi
 pass "recorded the catalogue name, not the claimed one ($ORDER_ITEM_NAME)"
 
+ORDER_SHIP_TO="$(printf '%s' "$ORDER_RESPONSE" | "$PYTHON" -c '
+import json, sys
+print((json.load(sys.stdin).get("shippingAddress") or {}).get("recipientName", ""))
+')"
+[ "$ORDER_SHIP_TO" = "$ADDRESS_RECIPIENT" ] \
+  || fail "The order was not sent to the chosen address: recipient '$ORDER_SHIP_TO', expected '$ADDRESS_RECIPIENT'."
+pass "order is addressed to the chosen address ($ORDER_SHIP_TO)"
+
 # ---------------------------------------------------------------- settle
 
 FINAL_STATUS=""
@@ -365,7 +397,7 @@ settled_after=""
 for i in $(seq 1 "$SAGA_TIMEOUT_SECONDS"); do
   LAST_STATUS="$(get_json "$ORDER_URL/api/orders/$ORDER_ID" "$CUSTOMER_TOKEN" | json_field status)"
   case "$LAST_STATUS" in
-    Completed|Failed)
+    Paid|Failed)
       FINAL_STATUS="$LAST_STATUS"
       settled_after="$i"
       break
@@ -373,8 +405,10 @@ for i in $(seq 1 "$SAGA_TIMEOUT_SECONDS"); do
     Submitted|"")
       ;;
     *)
-      # Pending, StockReserved, Paid and Cancelled are unreachable by design -
-      # see specs/003-order-lifecycle/data-model.md. Observing one means the
+      # A successful checkout settles to Paid (feature 011; it used to read
+      # Completed). Pending, StockReserved and Cancelled are unreachable, and
+      # Preparing/Shipped need an administrator - none of them can appear here.
+      # See specs/003-order-lifecycle/data-model.md. Observing one means the
       # system stopped matching the description this check is built on, which
       # is worth failing over rather than tolerating.
       fail "Order $ORDER_ID reported status '$LAST_STATUS', which is documented as unreachable. Either the lifecycle changed or something is writing a status the saga does not produce; this check's assumptions no longer hold."
@@ -425,9 +459,9 @@ assert_eq() {
 }
 
 if [ "$SCENARIO" = "approve" ]; then
-  assert_eq "$FINAL_STATUS" "Completed" \
-    "status is Completed" \
-    "Order $ORDER_ID ended '$FINAL_STATUS', expected 'Completed'. The flow ran to a terminal state and reached the wrong one - this is not a stall."
+  assert_eq "$FINAL_STATUS" "Paid" \
+    "status is Paid" \
+    "Order $ORDER_ID ended '$FINAL_STATUS', expected 'Paid'. The flow ran to a terminal state and reached the wrong one - this is not a stall."
 
   assert_eq "$AFTER_ON_HAND" "$((BEFORE_ON_HAND - ORDER_QUANTITY))" \
     "on-hand fell by exactly $ORDER_QUANTITY ($BEFORE_ON_HAND -> $AFTER_ON_HAND)" \
@@ -502,9 +536,55 @@ else
     "The payment was declined and the order failed, but the cart went $ORDER_QUANTITY -> $CART_AFTER. A failed order must leave the cart alone, or a customer whose card was declined loses what they chose."
 fi
 
+# ---------------------------------------------------------------- what was charged, and what happens next
+#
+# Feature 011. The order row says items + delivery; what matters is what PAYMENT
+# was asked to take, which comes from the saga, which comes from the event.
+if [ "$SCENARIO" = "approve" ]; then
+  CHARGED="$(get_json "$PAYMENT_URL/api/payments/$ORDER_ID" "$ADMIN_TOKEN" | "$PYTHON" -c '
+import json, sys
+print("%.2f" % float(json.load(sys.stdin).get("amount", 0)))
+')"
+  assert_eq "$CHARGED" "$EXPECTED_TOTAL" \
+    "Payment was asked for items plus delivery ($CHARGED)" \
+    "Payment was asked for $CHARGED, but the order is $EXPECTED_TOTAL including delivery. The total travels in OrderSubmittedEvent; if delivery is missing here it was left out of TotalAmount."
+
+  # Staff move it on: Paid -> Preparing -> Shipped. The customer sees each step.
+  TRACKING="E2E-$RUN_ID"
+  post_json "$ORDER_URL/api/orders/$ORDER_ID/preparing" '{}' "$ADMIN_TOKEN" > /dev/null
+  post_json "$ORDER_URL/api/orders/$ORDER_ID/shipment" "$(json_object trackingReference "$TRACKING")" "$ADMIN_TOKEN" > /dev/null
+  SHIPPED="$(get_json "$ORDER_URL/api/orders/$ORDER_ID" "$CUSTOMER_TOKEN" | "$PYTHON" -c '
+import json, sys
+o = json.load(sys.stdin)
+print(o.get("status", ""), o.get("trackingReference") or "")
+')"
+  assert_eq "$SHIPPED" "Shipped $TRACKING" \
+    "an administrator moved it to Shipped, and the customer sees the tracking reference" \
+    "After preparing and shipping, the customer reads '$SHIPPED', expected 'Shipped $TRACKING'."
+
+  # An address edited after the order must not move the parcel (FR-008).
+  put_json "$IDENTITY_URL/api/addresses/$ADDRESS_ID" \
+    "$(json_object recipientName "Somebody Else" line1 "9 Other Road" city "Da Nang" postalCode "550000" country "VN")" \
+    "$CUSTOMER_TOKEN" > /dev/null
+  STILL_TO="$(get_json "$ORDER_URL/api/orders/$ORDER_ID" "$CUSTOMER_TOKEN" | "$PYTHON" -c '
+import json, sys
+print((json.load(sys.stdin).get("shippingAddress") or {}).get("recipientName", ""))
+')"
+  assert_eq "$STILL_TO" "$ADDRESS_RECIPIENT" \
+    "editing the address book afterwards left the order's destination alone" \
+    "The address was edited after the order, and the order now reads '$STILL_TO'. An order must hold a copy of where it was sent, not a reference to the address book."
+else
+  # A failed order never enters fulfilment.
+  REFUSED="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST \
+    "$ORDER_URL/api/orders/$ORDER_ID/preparing" -H "Authorization: Bearer $ADMIN_TOKEN")"
+  assert_eq "$REFUSED" "409" \
+    "a failed order cannot be moved into fulfilment (409)" \
+    "Preparing a Failed order answered $REFUSED; it must be refused with 409."
+fi
+
 if [ "$FAILURES" -gt 0 ]; then
   echo
-  echo "$FAILURES of 5 assertions failed for scenario '$SCENARIO'."
+  echo "$FAILURES assertion(s) failed for scenario '$SCENARIO'."
   echo "1 of 1 scenario exercised: $SCENARIO=FAIL"
   exit 1
 fi

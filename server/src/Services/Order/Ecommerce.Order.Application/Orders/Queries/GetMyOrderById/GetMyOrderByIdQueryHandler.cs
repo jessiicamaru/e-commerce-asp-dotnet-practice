@@ -31,21 +31,6 @@ public class GetMyOrderByIdQueryHandler(
             throw new NotFoundException("Order not found.");
         }
 
-        return new OrderDetailResponse(
-            order.Id,
-            order.UserId,
-            order.TotalAmount,
-            order.Status.ToString(),
-            order.FailureReason,
-            order.CreatedAt,
-            order.UpdatedAt,
-            order.Items
-                .Select(x => new OrderItemDetailResponse(
-                    x.ProductId,
-                    x.ProductName,
-                    x.Quantity,
-                    x.UnitPrice,
-                    x.TotalPrice))
-                .ToList());
+        return OrderMapping.ToDetail(order);
     }
 }

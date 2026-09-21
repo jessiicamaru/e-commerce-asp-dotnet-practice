@@ -1,0 +1,51 @@
+info:
+  name: save home address
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/addresses"
+  body:
+    type: json
+    data: |-
+      {
+        "recipientName": "Bruno Customer",
+        "line1": "12 Ly Thuong Kiet",
+        "line2": null,
+        "city": "Ha Noi",
+        "region": null,
+        "postalCode": "100000",
+        "country": "VN",
+        "phone": "+84 912 345 678"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201) bru.setVar("addressId", res.body.id);
+    - type: tests
+      code: |-
+        test("status 201", function() {
+          expect(res.status).to.equal(201);
+        });
+        test("the first address is the default without being asked", function() {
+          expect(res.body.isDefault).to.equal(true);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Addresses live in **Identity** (feature 011). The owner is always the signed-in customer - no route
+  or body field names a user. The first address saved becomes the default.
+
+  Validation checks that fields are **well-formed** (required parts, lengths, a two-letter ISO
+  country, a plausible postcode shape). It does **not** check that a parcel can reach the address.

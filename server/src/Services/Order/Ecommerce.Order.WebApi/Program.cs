@@ -134,6 +134,11 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// Resolved now, not at the first checkout: a missing or malformed Shipping:Options stops the service
+// here, where the log says why, instead of turning every checkout into a 500 (constitution:
+// Configuration). ConfiguredShippingOptions validates in its constructor.
+_ = app.Services.GetRequiredService<Ecommerce.Order.Application.Common.Interfaces.IShippingOptions>();
+
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())

@@ -107,6 +107,20 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Identity.Tests (feature 011) - the address book's one-default index and owner lock.
+      postgres-identity:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_identity_db
+        ports: ['5435:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
