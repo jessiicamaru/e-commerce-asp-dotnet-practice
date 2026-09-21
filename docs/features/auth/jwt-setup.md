@@ -142,7 +142,7 @@ In requests, clients must pass the token in the `Authorization` header:
 | `POST /api/products`, `POST /api/categories`, `PUT /api/stock/{productId}` | `Admin` only |
 | `GET /api/reservations/{orderId}`, `GET /api/payments` | `Admin` only |
 | `/api/cart` (all), `/api/addresses` (all) | Any authenticated user — always **their own** cart / addresses; another customer's address is **404** |
-| `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}` | Any authenticated user — another customer's order is **404**, not 403 |
+| `POST /api/orders`, `GET /api/orders/quote`, `GET /api/orders`, `GET /api/orders/{id}` | Any authenticated user — another customer's order is **404**, not 403 |
 | `GET /api/orders/shipping-options` | Anonymous |
 | `GET /api/orders/fulfilment`, `POST /api/orders/{id}/preparing`, `POST /api/orders/{id}/shipment` | `Admin` only |
 

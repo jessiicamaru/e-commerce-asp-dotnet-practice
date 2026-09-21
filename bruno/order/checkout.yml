@@ -1,7 +1,7 @@
 info:
   name: checkout
   type: http
-  seq: 2
+  seq: 3
 
 http:
   method: POST
@@ -38,6 +38,9 @@ runtime:
           expect(cents(b.subtotal) + cents(b.shippingPrice) + cents(b.taxTotal) - cents(b.discountTotal)).to.equal(cents(b.totalAmount));
           expect(b.taxRate).to.be.a("number");
           expect(b.discountTotal).to.equal(0);
+        });
+        test("charged exactly what the quote said", function() {
+          expect(res.body.totalAmount).to.equal(bru.getVar("quoteTotal"));
         });
 
 settings:

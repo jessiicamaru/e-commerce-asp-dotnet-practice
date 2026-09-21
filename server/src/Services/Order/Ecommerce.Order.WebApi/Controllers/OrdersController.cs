@@ -1,5 +1,6 @@
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
 using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
+using Ecommerce.Order.Application.Orders.Queries.GetCheckoutQuote;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrderById;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrders;
 using Ecommerce.Order.Application.Orders.Queries.GetOrdersForFulfilment;
@@ -27,6 +28,16 @@ public class OrdersController : ApiControllerBase
     {
         var result = await Mediator.Send(new SubmitOrderCommand(request.AddressId, request.ShippingOption ?? string.Empty));
         return Ok(result);
+    }
+
+    /// <summary>
+    /// What checking out would cost now - the same parts, computed by the same code, as the order the
+    /// same choices would place (#38). Places nothing.
+    /// </summary>
+    [HttpGet("quote")]
+    public async Task<IActionResult> GetQuote([FromQuery] Guid? addressId, [FromQuery] string? shippingOption)
+    {
+        return Ok(await Mediator.Send(new GetCheckoutQuoteQuery(addressId, shippingOption ?? string.Empty)));
     }
 
     /// <summary>The delivery options and what each costs. Public - prices are not a secret.</summary>
