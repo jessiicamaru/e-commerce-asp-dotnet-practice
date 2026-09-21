@@ -93,8 +93,8 @@ npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var 
 
 **Adding or changing an endpoint means updating `bruno/` in the same change** — a new request file
 with a status test, and the gateway route it goes through. `security-checks/` holds the negative
-cases (401, 403, 400, 404); `duplicate registration is 409` is **known failing** (Identity throws a
-bare `Exception`, so it returns 500) and stays red until that is fixed.
+cases (401, 403, 400, 404, 409). The whole collection passes; `duplicate registration is 409` was red
+until #28 stopped Identity throwing bare `Exception`s.
 
 CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then **two smoke jobs side
 by side** — `auth-smoke` (three services) and `saga-e2e` (six services plus RabbitMQ, both branches,

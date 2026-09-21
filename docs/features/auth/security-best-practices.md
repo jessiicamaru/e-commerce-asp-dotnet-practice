@@ -235,12 +235,11 @@ Add the refresh endpoint to `AuthController.cs` in the WebApi project:
 
 The code in §4 is what runs today, and three things about it are worth knowing before building on it:
 
-1. **Every exception becomes "logged out".** `Refresh()` catches `Exception` and returns
-   `Unauthorized(ex.Message)`. A database outage during refresh therefore looks to the client like an
-   expired session, and whatever the exception says is sent to the client verbatim. The better shape
-   is a dedicated exception that `GlobalExceptionHandler` maps to 401, and no catch-all.
-2. **The handler throws bare `Exception`s** for an invalid or expired session — the same pattern that
-   makes duplicate registration return 500 (see the [CQRS guide](./cqrs-guide.md)).
+1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
+   `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
+   session and the exception text reached the client. The catch-all is gone; a bad session is a 401
+   from the handler, through the shared ProblemDetails handler.
+2. ~~**The handler throws bare `Exception`s.**~~ **Fixed in #28** — `UnauthorizedAccessException`.
 3. **Rotation deletes the old token instead of revoking it.** `RevokedAt` and `ReplacedByToken` exist
    in the schema but nothing writes them, so a stolen refresh token that is replayed after the real
    owner rotated it is simply "not found" — the reuse cannot be detected, and the whole token family

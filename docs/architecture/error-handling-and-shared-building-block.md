@@ -122,8 +122,7 @@ answered by ASP.NET Core with a bare `401` plus a `WWW-Authenticate` header.
 | anything else | 500 | Internal Server Error |
 
 **"Anything else" includes a bare `System.Exception`.** Throwing one for a client mistake reports it
-as a server fault. Identity still does this when an email is already registered (500 instead of
-409) — see §6.
+as a server fault — see §6.
 
 ---
 
@@ -194,6 +193,7 @@ app.UseAuthorization();
   `IRequest`, a *different* interface, so the constraint could not be met and MediatR dropped the
   behavior without a word — every such command's validator was dead code. Found in feature 010 when
   the cart accepted a quantity of `-1`; `Ecommerce.Cart.Tests/ValidationTests` fails if it returns.
-- **Known gap:** Identity's register and refresh handlers throw bare `Exception`s. Register returns
-  500 for a duplicate email; the Bruno check `security-checks/duplicate registration is 409` stays
-  red until it throws `ConflictException`.
+- **Bare `Exception`s are 500s.** Identity's register, login and refresh handlers threw them, so a
+  duplicate email and a wrong password both answered 500 until #28. Throw `Ecommerce.Shared.Exceptions.*`
+  or `UnauthorizedAccessException`; a bare `Exception` is always a server fault by the time it reaches
+  the client.
