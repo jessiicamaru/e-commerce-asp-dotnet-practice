@@ -30,6 +30,12 @@ public class PaymentTestFixture : IAsyncLifetime
 
     public ServiceProvider Services { get; private set; } = null!;
 
+    /// <summary>
+    /// The throwaway database this fixture created, so a test can build its own provider against
+    /// the same data — used by the one that needs a deliberately blind repository.
+    /// </summary>
+    public string ConnectionString => _connectionString;
+
     public ITestHarness Harness => Services.GetRequiredService<ITestHarness>();
 
     public async Task InitializeAsync()

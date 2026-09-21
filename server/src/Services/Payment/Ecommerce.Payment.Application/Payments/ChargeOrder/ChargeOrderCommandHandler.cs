@@ -39,6 +39,12 @@ public class ChargeOrderCommandHandler(
                 "Concurrent payment for order {OrderId}; reporting the outcome that was recorded.",
                 request.OrderId);
 
+            // Throw away the insert that just lost. A failed SaveChangesAsync leaves its rows
+            // tracked as Added, so without this the recovery below re-attempts the very insert that
+            // raised the violation - raising it again, outside this catch. The staged outbox
+            // message goes with it, correctly: it described a payment the database never accepted.
+            _unitOfWork.DiscardPendingChanges();
+
             await _unitOfWork.ExecuteInTransactionAsync(
                 ct => ReplyWithExistingAsync(request.OrderId, r => result = r, ct), cancellationToken);
         }

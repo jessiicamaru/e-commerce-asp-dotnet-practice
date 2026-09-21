@@ -7,6 +7,8 @@ public class UnitOfWork(PaymentDbContext context) : IUnitOfWork
 {
     private readonly PaymentDbContext _context = context;
 
+    public void DiscardPendingChanges() => _context.ChangeTracker.Clear();
+
     public async Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken cancellationToken = default)

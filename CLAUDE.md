@@ -34,7 +34,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (11 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (15 tests,
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (15 tests,
 PostgreSQL on 5434) and `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -148,6 +148,14 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))`. Check
   `docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers` — a queue with
   **2 consumers** that should have one subscriber per service is the symptom.
+- **A failed `SaveChangesAsync` does not untrack what it tried to write.** The rows stay `Added`, so
+  the next save on that same context re-attempts them. Catching a unique violation and then saving
+  again therefore raises the *same* violation, outside the catch — which is how Payment's
+  `Fifty_simultaneous_requests_record_exactly_one_payment` broke CI on a tree byte-identical to one
+  that had passed on a pull request minutes earlier. Payment's `IUnitOfWork.DiscardPendingChanges()`
+  (`ChangeTracker.Clear()`) is called before the recovery read for exactly this reason, and it
+  discards the staged outbox message with it — correctly, since that message described a payment the
+  database never accepted.
 - **The `.env` loader falls back; it no longer overrides.** Precedence is
   `environment variable > .env > appsettings.json > hardcoded default`. Before feature 005 it was
   the other way round and `PAYMENT_OUTCOME=Reject dotnet run ...` was silently ignored; it now
