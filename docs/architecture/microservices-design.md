@@ -71,7 +71,9 @@ Each microservice is fully self-contained, owning its business logic, database, 
 #### 2.3 Ordering Service (Implemented: `Ecommerce.Order`)
 * **Responsibility**: Checkout — reads the caller's cart from Cart, the prices from Catalog and the
   delivery address from Identity, prices delivery from its own options, creates the order with a frozen
-  copy of all of it, and publishes `OrderSubmittedEvent`. Settles the order to `Paid` on the saga's
+  copy of all of it, computes tax for the destination, stores the total in named parts (subtotal,
+  delivery, tax, discount, total — [ADR-002](./adr-002-tax-exclusive-prices.md)), and publishes
+  `OrderSubmittedEvent`. Settles the order to `Paid` on the saga's
   outcome; staff then move it to `Preparing` and `Shipped` (feature 011). It does **not** hold the cart
   or the address book.
 * **Database**: `ecommerce-order-db` (Port `5434`, Postgres, due to strong transactional ACID requirements).

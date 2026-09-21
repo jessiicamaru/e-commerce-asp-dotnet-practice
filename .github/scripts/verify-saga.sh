@@ -358,15 +358,25 @@ pass "order $ORDER_ID checked out from the cart (body claiming 99 at $FABRICATED
 
 # The assertion the whole of issue #18 turns on: the shop decides what things cost.
 ORDER_TOTAL="$(printf '%s' "$ORDER_RESPONSE" | json_field totalAmount)"
-# Goods at the catalogue's price, PLUS delivery at the option's price (feature 011).
+# Goods at the catalogue's price, PLUS delivery at the option's price (feature 011),
+# PLUS tax at the rate the order stored for its destination (feature 012) - recomputed
+# here with the documented rule, independently of Order: per line and on delivery,
+# rounded to 2 decimals with halves away from zero (ADR-002). Decimal, never float.
+ORDER_TAX_RATE="$(printf '%s' "$ORDER_RESPONSE" | json_field taxRate)"
 EXPECTED_TOTAL="$("$PYTHON" -c '
 import sys
-print(f"{float(sys.argv[1]) * int(sys.argv[2]) + float(sys.argv[3]):.2f}")
-' "$PRODUCT_PRICE" "$ORDER_QUANTITY" "$SHIPPING_PRICE")"
+from decimal import Decimal, ROUND_HALF_UP
+q = Decimal("0.01")
+price, qty, ship, rate = Decimal(sys.argv[1]), int(sys.argv[2]), Decimal(sys.argv[3]), Decimal(sys.argv[4])
+sub = price * qty
+tax = (sub * rate).quantize(q, ROUND_HALF_UP) + (ship * rate).quantize(q, ROUND_HALF_UP)
+print(sub + ship + tax)
+' "$PRODUCT_PRICE" "$ORDER_QUANTITY" "$SHIPPING_PRICE" "$ORDER_TAX_RATE")"
 ACTUAL_TOTAL="$("$PYTHON" -c 'import sys; print(f"{float(sys.argv[1]):.2f}")' "$ORDER_TOTAL")"
+EXPECTED_TOTAL="$("$PYTHON" -c 'import sys; print(f"{float(sys.argv[1]):.2f}")' "$EXPECTED_TOTAL")"
 
 if [ "$ACTUAL_TOTAL" = "$EXPECTED_TOTAL" ]; then
-  pass "charged the catalogue price plus delivery, not anything claimed ($EXPECTED_TOTAL, claimed $FABRICATED_PRICE each)"
+  pass "charged the catalogue price plus delivery plus tax at $ORDER_TAX_RATE, not anything claimed ($EXPECTED_TOTAL, claimed $FABRICATED_PRICE each)"
 else
   fail "The customer set the price. Claimed $FABRICATED_PRICE each and the order totals $ACTUAL_TOTAL, where the catalogue price of $PRODUCT_PRICE x $ORDER_QUANTITY is $EXPECTED_TOTAL. The price on an order line must come from Catalog, which owns it - never from the request body. See issue #18 and specs/009-catalog-owns-price."
 fi
@@ -388,6 +398,18 @@ print((json.load(sys.stdin).get("shippingAddress") or {}).get("recipientName", "
 [ "$ORDER_SHIP_TO" = "$ADDRESS_RECIPIENT" ] \
   || fail "The order was not sent to the chosen address: recipient '$ORDER_SHIP_TO', expected '$ADDRESS_RECIPIENT'."
 pass "order is addressed to the chosen address ($ORDER_SHIP_TO)"
+
+# The parts of the total are stored and add up (feature 012) - the database enforces
+# it too, but a caller should be able to check it from what it is shown.
+PARTS="$(printf '%s' "$ORDER_RESPONSE" | "$PYTHON" -c '
+import json, sys
+from decimal import Decimal
+o = json.load(sys.stdin)
+parts = [Decimal(str(o[k])) for k in ("subtotal", "shippingPrice", "taxTotal", "discountTotal", "totalAmount")]
+print("ok" if parts[0] + parts[1] + parts[2] - parts[3] == parts[4] else "subtotal %s + delivery %s + tax %s - discount %s != total %s" % tuple(parts))
+')"
+[ "$PARTS" = "ok" ] || fail "The order total's parts do not add up: $PARTS."
+pass "subtotal + delivery + tax - discount = total"
 
 # ---------------------------------------------------------------- settle
 

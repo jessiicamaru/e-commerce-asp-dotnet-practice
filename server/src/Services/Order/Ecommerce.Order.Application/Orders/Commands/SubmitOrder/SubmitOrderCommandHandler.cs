@@ -17,7 +17,8 @@ public class SubmitOrderCommandHandler(
     ICatalogPrices catalogPrices,
     ICartReader cartReader,
     IAddressReader addressReader,
-    IShippingOptions shippingOptions
+    IShippingOptions shippingOptions,
+    ITaxRates taxRates
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
@@ -27,6 +28,7 @@ public class SubmitOrderCommandHandler(
     private readonly ICartReader _cartReader = cartReader;
     private readonly IAddressReader _addressReader = addressReader;
     private readonly IShippingOptions _shippingOptions = shippingOptions;
+    private readonly ITaxRates _taxRates = taxRates;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
     {
@@ -106,9 +108,20 @@ public class SubmitOrderCommandHandler(
             UnitPrice = byProduct[item.ProductId].Price
         }).ToList();
 
-        // What is charged is the goods PLUS delivery. This number travels in OrderSubmittedEvent and the
-        // saga charges it, so no contract changes for the payment to include shipping.
-        var totalAmount = orderItems.Sum(x => x.TotalPrice) + shipping.Price;
+        // The total, in named parts (feature 012): goods + delivery + tax - discount. Tax follows the
+        // destination, is computed per line and on delivery and rounded half away from zero (ADR-002).
+        // The grand total travels in OrderSubmittedEvent and the saga charges exactly that, so no
+        // contract changes. The rate is stored, so a rate changed tomorrow never rewrites this order.
+        var taxRate = _taxRates.RateFor(address.Country);
+        var totals = OrderTotals.Compute(
+            orderItems.Select(i => (i.UnitPrice, i.Quantity)).ToList(), shipping.Price, taxRate);
+
+        for (var i = 0; i < orderItems.Count; i++)
+        {
+            orderItems[i].TaxAmount = totals.LineTaxes[i];
+        }
+
+        var totalAmount = totals.Total;
 
         var order = new Domain.Entities.Order
         {
@@ -134,7 +147,11 @@ public class SubmitOrderCommandHandler(
             },
             ShippingOptionCode = shipping.Code,
             ShippingOptionName = shipping.Name,
-            ShippingPrice = shipping.Price
+            ShippingPrice = shipping.Price,
+            Subtotal = totals.Subtotal,
+            TaxTotal = totals.Tax,
+            DiscountTotal = totals.Discount,
+            TaxRate = taxRate
         };
 
         // 1. Stage Order Entity in DbContext
@@ -159,7 +176,8 @@ public class SubmitOrderCommandHandler(
             x.ProductName,
             x.Quantity,
             x.UnitPrice,
-            x.TotalPrice
+            x.TotalPrice,
+            x.TaxAmount
         )).ToList();
 
         return new OrderResponse(
@@ -171,7 +189,11 @@ public class SubmitOrderCommandHandler(
             itemResponses,
             OrderMapping.ToResponse(order.ShipTo),
             new ShippingOptionResponse(shipping.Code, shipping.Name),
-            shipping.Price
+            shipping.Price,
+            totals.Subtotal,
+            totals.Tax,
+            totals.Discount,
+            taxRate
         );
     }
 }

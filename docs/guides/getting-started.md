@@ -173,6 +173,9 @@ Two things to notice, because they are recent and deliberate:
   Inventory. The catalogue reports what the stock owner last told it and never a count of its own.
 - **The order settles by itself.** `GET /api/orders/{id}` moves from `Submitted` to `Paid` when
   the saga finishes, or to `Failed` with a reason when it does not.
+- **The total has parts.** An order shows `subtotal`, `shippingPrice`, `taxTotal`, `discountTotal`
+  and `totalAmount`, plus the `taxRate` for its destination — prices exclude tax
+  ([ADR-002](../architecture/adr-002-tax-exclusive-prices.md)).
 - **Nothing the client sends decides the price.** Checkout charges Catalog's current price for what
   is in the cart; an empty cart is refused with `409`, and Catalog or Cart being unreachable with
   `503`.

@@ -26,6 +26,7 @@ design records (why each decision was taken, and what it was measured against) a
 * [**Error Handling & `Ecommerce.Shared`**](./architecture/error-handling-and-shared-building-block.md): RFC 7807 responses, the exception-to-status map, request validation, and the lessons recorded against them.
 * [**Overview & Scope**](./architecture/architecture-overview.md): target modules, technology stack, and which parts of that scope are done.
 * [**ADR-001: UUID v7 primary keys**](./architecture/adr-001-uuidv7-primary-keys.md): why time-ordered UUIDs, what they reveal, and how far the code has caught up.
+* [**ADR-002: Prices exclude tax**](./architecture/adr-002-tax-exclusive-prices.md): how a total is reached — tax by destination, per line and on delivery, rounded half away from zero — and why not tax-inclusive prices.
 
 ### 🔑 Authentication (Identity)
 * [**JWT Setup**](./features/auth/jwt-setup.md): who signs and who validates, the three settings that break silently, and who may call which endpoint.

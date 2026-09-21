@@ -253,3 +253,8 @@ Two features that did not change the saga's shape but changed what it is trusted
   so the charge — includes delivery, with no contract change. After the saga the order reads **`Paid`**
   (no longer `Completed`), and staff move it to `Preparing` and `Shipped`. The saga still ends at
   payment: despatch is manual until something can actually despatch.
+* **[specs/012](../../specs/012-order-totals/) — a total with something behind it.** The total is
+  stored as subtotal, delivery, tax, discount and grand total, with the rate applied; the database
+  refuses parts that do not add up. Tax follows the destination; prices exclude it
+  ([ADR-002](./adr-002-tax-exclusive-prices.md)). Still no contract change — the saga charges the
+  stored grand total.

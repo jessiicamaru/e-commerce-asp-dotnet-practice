@@ -57,8 +57,9 @@ public class CheckoutShippingTests(OrderTestFixture fixture)
 
         var response = await CheckoutAsync(null, "EXPRESS");   // codes are case-insensitive
 
-        // 3 x 9.99 + 15.00
-        Assert.Equal(44.97m, response.TotalAmount);
+        // 3 x 9.99 = 29.97, + 15.00 express, + 10% VN tax: 3.00 on the line (2.997 rounded) and 1.50
+        // on delivery (feature 012) = 49.47.
+        Assert.Equal(49.47m, response.TotalAmount);
         Assert.Equal(15.00m, response.ShippingPrice);
         Assert.Equal("express", response.ShippingOption!.Code);
 
@@ -68,13 +69,13 @@ public class CheckoutShippingTests(OrderTestFixture fixture)
         Assert.Equal("VN", row.ShipTo.Country);
         Assert.Equal("Express delivery", row.ShippingOptionName);
         Assert.Equal(15.00m, row.ShippingPrice);
-        Assert.Equal(44.97m, row.TotalAmount);
+        Assert.Equal(49.47m, row.TotalAmount);
 
         // The number the saga charges is the one in the event - it must include delivery too.
         var published = _fixture.Harness.Published
             .Select<OrderSubmittedEvent>()
             .Single(m => m.Context.Message.OrderId == response.OrderId);
-        Assert.Equal(44.97m, published.Context.Message.TotalAmount);
+        Assert.Equal(49.47m, published.Context.Message.TotalAmount);
     }
 
     [Fact]

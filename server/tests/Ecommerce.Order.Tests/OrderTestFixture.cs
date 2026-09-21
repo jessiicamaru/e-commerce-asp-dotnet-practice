@@ -3,6 +3,7 @@ using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Order.Infrastructure.Persistence.Repositories;
 using Ecommerce.Order.Infrastructure.Shipping;
+using Ecommerce.Order.Infrastructure.Tax;
 using Ecommerce.Order.WebApi.Consumers;
 using Ecommerce.Shared.Authentication;
 using MassTransit;
@@ -81,7 +82,11 @@ public class OrderTestFixture : IAsyncLifetime
                 ["Shipping:Options:0:Price"] = "5.00",
                 ["Shipping:Options:1:Code"] = "express",
                 ["Shipping:Options:1:Name"] = "Express delivery",
-                ["Shipping:Options:1:Price"] = "15.00"
+                ["Shipping:Options:1:Price"] = "15.00",
+                ["Tax:DefaultRate"] = "0.10",
+                ["Tax:Rates:VN"] = "0.10",
+                ["Tax:Rates:GB"] = "0.20",
+                ["Tax:Rates:US"] = "0.00"
             })
             .Build();
 
@@ -108,6 +113,7 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddSingleton<ICatalogPrices>(Checkout);
         services.AddSingleton<IAddressReader>(Checkout);
         services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
+        services.AddSingleton<ITaxRates, ConfiguredTaxRates>();
 
         // The real consumers, so at least one test per event proves the wiring and not only the
         // handler. The repetition tests dispatch the command directly instead — the guard is what

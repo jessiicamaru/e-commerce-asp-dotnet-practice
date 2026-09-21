@@ -34,7 +34,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (31 tests,
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (41 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (16 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -180,8 +180,13 @@ them through `ICurrentUser` like every service does. The request message is empt
 defect one hop further in. So checkout depends synchronously on **Catalog and Cart** — and, since
 feature 011, **Identity**: the body names an `addressId` and a `shippingOption`, Order reads the
 address from Identity over gRPC with the same forwarded token, and **freezes a copy** of it and of
-the option's name and price onto the order. `TotalAmount` = items + delivery, so the saga charges
-delivery with no contract change. Someone else's address id is a 404, indistinguishable from a
+the option's name and price onto the order. Since feature 012 the total is **stored in named
+parts** — `Subtotal`, `ShippingPrice`, `TaxTotal`, `DiscountTotal` (always 0 for now) and the
+`TaxRate` applied — and a CHECK constraint refuses a row whose parts do not sum to `TotalAmount`.
+**Prices exclude tax** ([ADR-002](docs/architecture/adr-002-tax-exclusive-prices.md)); tax is per
+line and on delivery, at the destination country's configured rate (`Tax:Rates`, `Tax:DefaultRate`),
+rounded half **away from zero** — not .NET's default banker's rounding. The saga charges
+`TotalAmount`, so none of this changed a contract. Someone else's address id is a 404, indistinguishable from a
 missing one.
 
 **The cart removes what was ordered on `OrderCompletedEvent`, not on submission** — `Failed` is
