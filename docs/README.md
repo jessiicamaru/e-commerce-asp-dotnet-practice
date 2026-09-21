@@ -15,6 +15,7 @@ design records (why each decision was taken, and what it was measured against) a
 
 ### 🛠️ Start here
 * [**Getting Started**](./guides/getting-started.md): run the system — all in containers, or infrastructure in Docker with the services on your machine — check it is really up, place an order end to end, and run the tests.
+* [**Storefront**](../client/README.md): the thin React client under `client/` — how to run it against the gateway, and how it handles tokens.
 * [**Bruno collection**](../bruno/): every public endpoint, runnable and tested, through the gateway. Open the folder in Bruno, pick the `local` environment, fill the two secret admin variables, run it top to bottom.
 * [**Observability**](./guides/observability.md): Seq, one trace per checkout, and the queries that answer "what happened to order X".
 * [**Troubleshooting**](./guides/troubleshooting.md): compile errors, EF Core key generation, a local install or a stray process shadowing a container, and the container-specific traps.

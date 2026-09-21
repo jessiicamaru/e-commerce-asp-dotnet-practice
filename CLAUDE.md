@@ -6,7 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 .NET 10 e-commerce backend built as microservices. Each service is Clean Architecture (Domain → Application → Infrastructure → WebApi), owns its own PostgreSQL database, and communicates asynchronously over RabbitMQ via MassTransit. A standalone Saga Orchestrator coordinates the checkout flow; YARP fronts everything as an API Gateway.
 
-There is no frontend and no test project in the repo yet — everything lives under [server/](server/).
+The backend lives under [server/](server/). A deliberately thin storefront lives under
+[client/](client/) (React + Vite + TypeScript, issue #23): it talks **only to the gateway**, through
+Vite's dev proxy (`/api` → `:5000`, one origin, no CORS), keeps the access token in memory and relies on
+Identity's HttpOnly refresh cookie. CI job `client` lints, type-checks and builds it. Its purpose is to
+exercise the API as a person would and to file what the backend lacks — not polish.
 
 ## Commands
 

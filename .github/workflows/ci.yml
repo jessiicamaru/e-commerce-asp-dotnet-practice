@@ -232,6 +232,33 @@ jobs:
       - name: This check never blocks
         run: echo "Informational only - see specs/006-release-and-rollback/research.md D5"
 
+  # The storefront (client/, feature 014): type-check, lint and build on every change. It publishes
+  # nothing yet - there is nowhere to deploy it - so the proof is that it builds against the API it
+  # was written for. Independent of the backend jobs, so it runs alongside them.
+  client:
+    name: Storefront build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check and build
+        run: npm run build
+
   publish:
     name: Publish images
     runs-on: ubuntu-latest
