@@ -209,9 +209,26 @@ be rediscovered.
 
 ---
 
-### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
+### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (In progress)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
-  1. Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
-  2. Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
-  3. Replace the stub payment gateway with a real provider integration.
+  1. ⬜ Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
+  2. ⬜ Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
+  3. ⬜ Replace the stub payment gateway with a real provider integration.
+  4. ✅ **End-to-end verification in CI** — [`verify-saga.sh`](../../.github/scripts/verify-saga.sh)
+     places a real order over HTTP and follows it through all six services, asserting that the stock
+     moved by exactly the amount ordered and that nothing is left held. Both branches on every
+     change: payment approving, and payment refusing so compensation is exercised. Design and
+     evidence in [specs/007-saga-e2e-verification](../../specs/007-saga-e2e-verification/).
+
+> **Why this one came first.** Every other test here is confined to a single service, and the saga's
+> characteristic failures are not. The queue-name collision recorded under Phase 6.5 settled an order
+> while its stock stayed held, and all fifteen Order tests were green throughout. Seq makes such a
+> failure easier to *diagnose*; this makes it *detected*, which has to come first.
+
+> ⚠️ **Open, unexplained.** On its first run against a freshly built stack, an order stalled in
+> `Submitted` and never settled — with `InventoryReservedEvent` published and routed, the saga's
+> queue showing `deliver=2 ack=2` with no fault, and the saga never transitioning. Seven later runs
+> passed. The orchestrator's database holds stranded sagas from **2026-09-03, 09-16 and 09-17**, so
+> this predates the check and nobody had noticed. The mechanism is **not established** — deliberately
+> not guessed at. This is the first thing Seq and correlation IDs would help with.
