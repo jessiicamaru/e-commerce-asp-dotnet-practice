@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Domain.Entities;
@@ -6,49 +7,94 @@ using Ecommerce.Application.Common.Constants;
 
 namespace Ecommerce.Application.Auth.Commands.Refresh;
 
+/// <summary>
+/// Trades a refresh token for a new pair, and notices when a used one comes back (issue #29).
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Rotation revokes; it does not delete.</b> The old token's row stays, with <c>RevokedAt</c> and
+/// <c>ReplacedByToken</c> set. Deleting it made a replayed token look exactly like a typo, so a thief
+/// who used a stolen token after its owner had refreshed was indistinguishable from nobody.
+/// </para>
+/// <para>
+/// <b>A revoked token presented again is reuse</b>: two parties hold the same token, and the server
+/// cannot tell which is the owner. Every session of that user is revoked, the legitimate one included,
+/// which is the trade-off the OAuth 2.0 Security BCP recommends. Losing a session is recoverable;
+/// leaving a thief signed in is not.
+/// </para>
+/// <para>
+/// <b>Except within <see cref="ReuseGrace"/> of the rotation.</b> Two tabs share one HttpOnly cookie,
+/// so both can send the same token at the same moment. The second is refused with an ordinary 401, and
+/// nothing else is revoked. That tab picks up the new cookie on its next request.
+/// </para>
+/// </remarks>
 public class RefreshTokenCommandHandler(
     IUserRepository userRepository,
-    IJwtTokenGenerator jwtTokenGenerator
+    IJwtTokenGenerator jwtTokenGenerator,
+    ILogger<RefreshTokenCommandHandler> logger
 ) : IRequestHandler<RefreshTokenCommand, AuthResponse>
 {
+    public static readonly TimeSpan ReuseGrace = TimeSpan.FromSeconds(10);
+
+    private const string NotValid = "The session is not valid. Sign in again.";
+
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
+    private readonly ILogger<RefreshTokenCommandHandler> _logger = logger;
 
     public async Task<AuthResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByUserRefreshTokenAsync(request.RefreshToken, cancellationToken);
-        if (user == null)
+        var now = DateTime.UtcNow;
+
+        var user = await _userRepository.GetByUserRefreshTokenAsync(request.RefreshToken, cancellationToken)
+            ?? throw new UnauthorizedAccessException(NotValid);
+
+        var presented = user.RefreshTokens.First(t => t.Token == request.RefreshToken);
+
+        if (presented.RevokedAt is { } revokedAt)
         {
-            throw new UnauthorizedAccessException("The session is not valid. Sign in again.");
+            var concurrentRefresh = presented.ReplacedByToken is not null && now - revokedAt <= ReuseGrace;
+
+            if (!concurrentRefresh)
+            {
+                var revoked = await _userRepository.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
+
+                // No token value in the log: it is a credential, even a revoked one.
+                _logger.LogWarning(
+                    "Refresh token reuse for user {UserId}: a token revoked at {RevokedAt:o} was presented again. Revoked {Count} active session(s).",
+                    user.Id, revokedAt, revoked);
+            }
+
+            // The same answer either way, so the caller learns nothing about which case this was.
+            throw new UnauthorizedAccessException(NotValid);
         }
 
-        var activeToken = user.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
-        if (activeToken == null || activeToken.IsExpired || activeToken.RevokedAt != null)
+        if (presented.IsExpired)
         {
-            throw new UnauthorizedAccessException("The session is not valid. Sign in again.");
+            throw new UnauthorizedAccessException(NotValid);
         }
 
-        user.RefreshTokens.Remove(activeToken);
-
-        var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
-        var newRefreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
-
-        user.RefreshTokens.Add(new RefreshToken
+        var replacement = new RefreshToken
         {
-            Token = newRefreshTokenString,
+            Token = _jwtTokenGenerator.GenerateRefreshToken(),
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
-        });
+            ExpiresAt = now.AddDays(JwtConstants.TokenDurationDay)
+        };
 
-        await _userRepository.SaveChangesAsync(cancellationToken);
+        if (!await _userRepository.TryRotateRefreshTokenAsync(request.RefreshToken, replacement, now, cancellationToken))
+        {
+            // Another request rotated this token between our read and our write: a concurrent
+            // refresh, handled as the grace case above.
+            throw new UnauthorizedAccessException(NotValid);
+        }
 
         return new AuthResponse(
             user.Id,
             user.Email,
             user.FirstName,
             user.LastName,
-            newAccessToken,
-            newRefreshTokenString
+            _jwtTokenGenerator.GenerateAccessToken(user),
+            replacement.Token
         );
     }
 }

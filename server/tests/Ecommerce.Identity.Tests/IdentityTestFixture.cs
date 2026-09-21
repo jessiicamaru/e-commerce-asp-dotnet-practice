@@ -56,7 +56,9 @@ public class IdentityTestFixture : IAsyncLifetime
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddApplication();
-        services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(_connectionString));
+        // With retries on, as in production: a retrying strategy refuses a hand-opened transaction, and a
+        // fixture without it passed code that answered every refresh with 500 (found building #29).
+        services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(_connectionString, npgsql => npgsql.EnableRetryOnFailure()));
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 

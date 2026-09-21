@@ -127,76 +127,28 @@ namespace Ecommerce.Application.Auth.Commands.Refresh;
 public record RefreshTokenCommand(string RefreshToken) : IRequest<AuthResponse>;
 ```
 
-### 4.2 Create the Handler
-Create `RefreshTokenCommandHandler.cs` in `Application/Auth/Commands/Refresh/`. The handler should:
-1. Fetch the user associated with this Refresh Token from the database.
-2. Verify if the token is valid, not expired, and not revoked.
-3. Generate a new Access Token and a **new Refresh Token** (Rolling Refresh).
-4. Revoke/remove the old Refresh Token and append the new one.
-5. Save changes to the database and return the DTO.
+### 4.2 The handler: rotate, and recognise reuse (#29)
 
-```csharp
-using MediatR;
-using Ecommerce.Application.Common.Interfaces;
-using Ecommerce.Application.Auth.Common;
-using Ecommerce.Domain.Entities;
-using Ecommerce.Application.Common.Constants;
+[`RefreshTokenCommandHandler`](../../../server/src/Services/Identity/Ecommerce.Identity.Application/Auth/Commands/Refresh/RefreshTokenCommandHandler.cs)
+does four things:
 
-namespace Ecommerce.Application.Auth.Commands.Refresh;
+1. **Finds the token.** An unknown token is a 401.
+2. **A revoked token coming back is reuse.** Two parties hold the same token, and the server cannot
+   tell which is the owner, so it revokes **every** active refresh token of that user (every device)
+   and answers 401. This is the trade-off the OAuth 2.0 Security BCP recommends. A warning is logged
+   with the user id; the token itself is never logged.
+3. **Except within 10 seconds of the rotation** (`ReuseGrace`). Two tabs share one HttpOnly cookie,
+   so both can send the same token at once. The second gets an ordinary 401 and nothing else is
+   revoked.
+4. **Rotates atomically.** In one transaction, a guarded
+   `UPDATE ... SET RevokedAt, ReplacedByToken WHERE Token = @t AND RevokedAt IS NULL AND ExpiresAt > now`
+   decides the single winner, the successor is inserted, and the user's expired tokens are deleted.
+   Ten simultaneous refreshes with one token mint exactly one successor. A revoked token that has not
+   expired is **kept**, because it is what recognises a replay.
 
-public class RefreshTokenCommandHandler(
-    IUserRepository userRepository,
-    IJwtTokenGenerator jwtTokenGenerator
-) : IRequestHandler<RefreshTokenCommand, AuthResponse>
-{
-    private readonly IUserRepository _userRepository = userRepository;
-    private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
-
-    public async Task<AuthResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
-    {
-        // 1. Fetch user by refresh token
-        var user = await _userRepository.GetByUserRefreshTokenAsync(request.RefreshToken, cancellationToken);
-        if (user == null)
-        {
-            throw new Exception("Invalid session.");
-        }
-
-        // 2. Locate the active token
-        var activeToken = user.RefreshTokens.FirstOrDefault(t => t.Token == request.RefreshToken);
-        if (activeToken == null || activeToken.IsExpired || activeToken.RevokedAt != null)
-        {
-            throw new Exception("Session expired or invalid.");
-        }
-
-        // 3. Revoke/remove the old refresh token
-        user.RefreshTokens.Remove(activeToken);
-
-        // 4. Generate new tokens
-        var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
-        var newRefreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
-
-        // 5. Save the new refresh token
-        user.RefreshTokens.Add(new RefreshToken
-        {
-            Token = newRefreshTokenString,
-            UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
-        });
-
-        await _userRepository.SaveChangesAsync(cancellationToken);
-
-        return new AuthResponse(
-            user.Id,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            newAccessToken,
-            newRefreshTokenString
-        );
-    }
-}
-```
-*(Note: You will need to add the method `GetByUserRefreshTokenAsync(string token, CancellationToken cancellationToken)` to your `IUserRepository` interface and implement it in `UserRepository` using `_context.Users.Include(u => u.RefreshTokens).FirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.Token == token))`)*
+The rows answer the questions afterwards: `RevokedAt` says when a token stopped working, and
+`ReplacedByToken` says what replaced it (null when it was revoked by a reuse). `RefreshTokenReuseTests`
+covers each case against a real PostgreSQL.
 
 ### 4.3 Add the Endpoint to AuthController
 Add the refresh endpoint to `AuthController.cs` in the WebApi project:
@@ -244,14 +196,13 @@ restored on reload through the cookie, one shared refresh for concurrent 401s.
 
 ## 5. Known weaknesses in the current implementation
 
-The code in §4 is what runs today, and three things about it are worth knowing before building on it:
+§4 describes what runs today. Three weaknesses were recorded here; all three are now fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
    session and the exception text reached the client. The catch-all is gone; a bad session is a 401
    from the handler, through the shared ProblemDetails handler.
 2. ~~**The handler throws bare `Exception`s.**~~ **Fixed in #28** — `UnauthorizedAccessException`.
-3. **Rotation deletes the old token instead of revoking it.** `RevokedAt` and `ReplacedByToken` exist
-   in the schema but nothing writes them, so a stolen refresh token that is replayed after the real
-   owner rotated it is simply "not found" — the reuse cannot be detected, and the whole token family
-   cannot be revoked.
+3. ~~**Rotation deletes the old token instead of revoking it.**~~ **Fixed in #29.** A stolen token
+   replayed after its owner rotated it used to be simply "not found". It is now recognised as reuse,
+   and every session of that user is revoked (§4.2).
