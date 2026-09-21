@@ -1,14 +1,14 @@
-# E-Commerce Microservices Development Startup Script (PowerShell)
+﻿# E-Commerce Microservices Development Startup Script (PowerShell)
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 Write-Host "🚀 Starting E-Commerce Microservices Infrastructure..." -ForegroundColor Cyan
 
 # 1. Start Docker Containers
-Write-Host "📦 Starting Docker containers (Identity DB, Catalog DB, Orchestrator DB, RabbitMQ, pgAdmin)..." -ForegroundColor Yellow
+Write-Host "📦 Starting Docker containers (7 PostgreSQL databases, RabbitMQ, pgAdmin)..." -ForegroundColor Yellow
 docker compose up -d
 
 # 2. Apply EF Core Migrations
-Write-Host "🔄 Applying EF Core Migrations for Identity DB (Port 5432)..." -ForegroundColor Yellow
+Write-Host "🔄 Applying EF Core Migrations for Identity DB (Port 5435)..." -ForegroundColor Yellow
 dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
 
 Write-Host "🔄 Applying EF Core Migrations for Catalog DB (Port 5433)..." -ForegroundColor Yellow
@@ -26,6 +26,9 @@ dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.I
 Write-Host "Applying EF Core Migrations for Payment DB (Port 5438)..." -ForegroundColor Yellow
 dotnet ef database update --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
 
+Write-Host "Applying EF Core Migrations for Cart DB (Port 5439)..." -ForegroundColor Yellow
+dotnet ef database update --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
+
 # 3. Launch Microservices in Separate Terminal Windows
 Write-Host "🌐 Launching Microservices and API Gateway..." -ForegroundColor Green
 
@@ -35,6 +38,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Order Service (Port 5059)...' -ForegroundColor Green; dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Inventory Service (Port 5060)...' -ForegroundColor Green; dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Payment Service (Port 5061)...' -ForegroundColor Green; dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting Cart Service (Port 5062)...' -ForegroundColor Green; dotnet run --project src/Services/Cart/Ecommerce.Cart.WebApi/"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ScriptDir'; Write-Host 'Starting API Gateway (Port 5000)...' -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/"
 
 Write-Host "✨ All services launched successfully!" -ForegroundColor Green
@@ -45,5 +49,6 @@ Write-Host "  - Orchestrator API: http://localhost:5058" -ForegroundColor Cyan
 Write-Host "  - Order API:        http://localhost:5059" -ForegroundColor Cyan
 Write-Host "  - Inventory API:    http://localhost:5060" -ForegroundColor Cyan
 Write-Host "  - Payment API:      http://localhost:5061" -ForegroundColor Cyan
+Write-Host "  - Cart API:         http://localhost:5062" -ForegroundColor Cyan
 Write-Host "  - pgAdmin:          http://localhost:5050" -ForegroundColor Cyan
 Write-Host "  - RabbitMQ UI:      http://localhost:15672" -ForegroundColor Cyan

@@ -7,11 +7,11 @@ echo "🚀 Starting E-Commerce Microservices Infrastructure..."
 export MSYS_NO_PATHCONV=1
 
 # 1. Start Docker Containers
-echo "📦 Starting Docker containers (Identity DB, Catalog DB, Orchestrator DB, RabbitMQ, pgAdmin)..."
+echo "📦 Starting Docker containers (7 PostgreSQL databases, RabbitMQ, pgAdmin)..."
 docker compose up -d
 
 # 2. Apply EF Core Migrations
-echo "🔄 Applying EF Core Migrations for Identity DB (Port 5432)..."
+echo "🔄 Applying EF Core Migrations for Identity DB (Port 5435)..."
 dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
 
 echo "🔄 Applying EF Core Migrations for Catalog DB (Port 5433)..."
@@ -29,6 +29,9 @@ dotnet ef database update --project src/Services/Payment/Ecommerce.Payment.Infra
 echo "Applying EF Core Migrations for Inventory DB (Port 5437)..."
 dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
 
+echo "Applying EF Core Migrations for Cart DB (Port 5439)..."
+dotnet ef database update --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
+
 # 3. Launch Microservices in Separate Windows
 echo "🌐 Launching Microservices and API Gateway..."
 
@@ -38,6 +41,8 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Orchestrator Service (Port 5058)\" -ForegroundColor Green; dotnet run --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Order Service (Port 5059)\" -ForegroundColor Green; dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Inventory Service (Port 5060)\" -ForegroundColor Green; dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Payment Service (Port 5061)\" -ForegroundColor Green; dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Cart Service (Port 5062)\" -ForegroundColor Green; dotnet run --project src/Services/Cart/Ecommerce.Cart.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"API Gateway (Port 5000)\" -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/'"
 else
     dotnet run --project src/Services/Identity/Ecommerce.Identity.WebApi/ &
@@ -46,10 +51,11 @@ else
     dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/ &
     dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/ &
     dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/ &
+    dotnet run --project src/Services/Cart/Ecommerce.Cart.WebApi/ &
     dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/ &
 fi
 
-echo "✨ All 7 services launched successfully in separate windows!"
+echo "✨ All 8 services launched successfully in separate windows!"
 echo "  - API Gateway:      http://localhost:5000"
 echo "  - Identity API:     http://localhost:5056"
 echo "  - Catalog API:      http://localhost:5057"
@@ -57,5 +63,6 @@ echo "  - Orchestrator API: http://localhost:5058"
 echo "  - Order API:        http://localhost:5059"
 echo "  - Inventory API:    http://localhost:5060"
 echo "  - Payment API:      http://localhost:5061"
+echo "  - Cart API:         http://localhost:5062"
 echo "  - pgAdmin:          http://localhost:5050"
 echo "  - RabbitMQ UI:      http://localhost:15672"
