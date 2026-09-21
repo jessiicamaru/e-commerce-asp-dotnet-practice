@@ -34,7 +34,7 @@ Unchanged. Cascade-deleted with its order; carries `ProductId`, `ProductName`, `
 
 | From | Trigger | To | Also written |
 | :--- | :--- | :--- | :--- |
-| `Submitted` | `OrderCompletedEvent` | `Completed` | `UpdatedAt` |
+| `Submitted` | `OrderCompletedEvent` | ~~`Completed`~~ **`Paid`** (since feature 011) | `UpdatedAt` |
 | `Submitted` | `OrderFailedEvent` | `Failed` | `FailureReason`, `UpdatedAt` |
 
 Every other combination is a no-op **by construction**, because the source state is in the `WHERE`
@@ -53,12 +53,17 @@ None of these raise an error. They affect zero rows, are logged, and the message
 | `Pending` | **No** | It is the field initialiser on the entity. `SubmitOrderCommandHandler` overwrites it with `Submitted` before the row is ever saved, so no row is persisted holding it |
 | `Submitted` | Yes | Order submission |
 | `StockReserved` | **No** | The saga reaches `InventoryReservedState`, but publishes nothing that announces it. Left unreachable by decision on 2026-09-16 — see the spec's Assumptions |
-| `Paid` | **No** | Same: `PaymentProcessedEvent` goes to the saga, which announces only the completed order that follows |
-| `Completed` | Yes | This feature |
+| `Paid` | **Yes — since feature 011** | Was unreachable by design here. [specs/011](../011-order-shipping/research.md) (D3) made it what a successful checkout settles to, because *Completed* meant *paid* and fulfilment now follows it |
+| `Completed` | **No longer written** | Settled to by this feature until 011. Kept in the enum so older rows and a rolled-back image still parse; every read reports it as `Paid`, and migration `AddShippingToOrders` rewrote existing rows |
 | `Cancelled` | **No** | Belongs to a shopper-initiated cancellation that does not exist |
 | `Failed` | Yes | This feature |
 
-Four of seven values are unreachable, and that is written down here rather than left to be
+> **Changed by feature 011 (2026-09-21).** `Paid` is reachable, `Completed` is no longer written, and
+> `Preparing` / `Shipped` follow `Paid` through staff action. The table above is kept as this
+> feature decided it, with the changes marked, rather than rewritten as if it had always said so.
+> The current lifecycle is in [specs/011 data-model](../011-order-shipping/data-model.md).
+
+Four of seven values were unreachable when this feature shipped, and that is written down here rather than left to be
 rediscovered. **Do not delete them**: `Pending` is the entity's default and removing it changes
 construction; the other three are the vocabulary the transitions above would extend into.
 

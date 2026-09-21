@@ -1,11 +1,18 @@
 info:
   name: checkout
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
   url: "{{baseUrl}}/api/orders"
+  body:
+    type: json
+    data: |-
+      {
+        "addressId": "{{addressId}}",
+        "shippingOption": "express"
+      }
   auth:
     type: bearer
     token: "{{customerToken}}"
@@ -17,12 +24,14 @@ runtime:
         if (res.body && res.body.orderId) bru.setVar("orderId", res.body.orderId);
     - type: tests
       code: |-
-        test("status is one of 200, 201, 202", function() {
-          expect([200, 201, 202]).to.include(res.status);
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
         });
-            test("charged the catalogue price, not anything the client said", function() {
-              expect(res.body.totalAmount).to.be.a("number");
-            });
+        test("sent to the chosen address, charged for express delivery", function() {
+          expect(res.body.shippingAddress.recipientName).to.equal("Bruno Customer");
+          expect(res.body.shippingOption.code).to.equal("express");
+          expect(res.body.shippingPrice).to.equal(bru.getVar("expressPrice"));
+        });
 
 settings:
   encodeUrl: true
@@ -31,11 +40,14 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  **No body.** What is bought comes from the caller's cart, who is buying from the token, and what
-  it costs from Catalog. Anything you put in a body here is ignored.
+  The body says **where** (`addressId`, omitted = your default) and **how** (`shippingOption`,
+  required). What is bought comes from the cart, who is buying from the token, and what it costs
+  from Catalog plus the delivery option. Any other field is ignored.
 
-  - Empty cart -> **409**
-  - Catalog or Cart unreachable -> **503**
+  - Empty cart -> **409**; no address and no default -> **409**
+  - Unknown `addressId` (including somebody else's) -> **404**
+  - Missing or unknown `shippingOption` -> **400**
+  - Catalog, Cart or Identity unreachable -> **503**
 
-  The order starts `Submitted`; the saga settles it a moment later. Ordered lines leave the cart
-  only when the order **completes** - a declined payment leaves the cart as it was.
+  `totalAmount` = items + delivery, and that is what Payment is asked to take. The order keeps a
+  **copy** of the address: editing the address book later does not move it.

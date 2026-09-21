@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Ecommerce.Order.Infrastructure.Identity;
+using Ecommerce.Order.Infrastructure.Shipping;
+
 namespace Ecommerce.Order.Infrastructure;
 
 public static class DependencyInjection
@@ -50,6 +53,16 @@ public static class DependencyInjection
         services.AddGrpcClient<CartReading.CartReadingClient>(o => o.Address = new Uri(cartGrpc));
         services.AddHttpContextAccessor();
         services.AddScoped<ICartReader, GrpcCartReader>();
+
+        // The third (feature 011): Identity, for the delivery address. Same pattern, own port.
+        var identityGrpc = configuration["Identity:GrpcAddress"]
+            ?? Environment.GetEnvironmentVariable("IDENTITY_GRPC_ADDRESS")
+            ?? "http://localhost:5156";
+
+        services.AddGrpcClient<AddressReading.AddressReadingClient>(o => o.Address = new Uri(identityGrpc));
+        services.AddScoped<IAddressReader, GrpcAddressReader>();
+
+        services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
 
         return services;
     }

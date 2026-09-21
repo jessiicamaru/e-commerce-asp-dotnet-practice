@@ -192,8 +192,16 @@ print(json.dumps({"productId": sys.argv[1], "quantity": 1}))
 
   curl -fsS -X POST "$CART_URL/api/cart/items"     -H 'Content-Type: application/json'     -H "Authorization: Bearer $customer_token"     -d "$cart_line" > /dev/null     || fail "The customer could not add to their cart."
 
+  # Somewhere to send it (feature 011): checkout now names an address and a delivery
+  # option. The address is saved in Identity and read by Order with this token.
+  address_id=$(
+    curl -fsS -X POST "$IDENTITY_URL/api/addresses"       -H 'Content-Type: application/json' -H "Authorization: Bearer $customer_token"       -d "$(json_object recipientName "CI Customer" line1 "1 Test Street" city "Ha Noi" postalCode "100000" country "VN")"       | json_field id
+  )
+  [ -n "$address_id" ] || fail "The customer could not save a delivery address."
+  pass "customer saves a delivery address ($address_id)"
+
   order_id=$(
-    curl -fsS -X POST "$ORDER_URL/api/orders"       -H "Authorization: Bearer $customer_token" | json_field orderId
+    curl -fsS -X POST "$ORDER_URL/api/orders"       -H 'Content-Type: application/json' -H "Authorization: Bearer $customer_token"       -d "$(json_object addressId "$address_id" shippingOption standard)" | json_field orderId
   )
   [ -n "$order_id" ] || fail "The customer could not submit an order."
   pass "customer submits an order ($order_id)"
@@ -235,6 +243,30 @@ print(json.dumps({"productId": sys.argv[1], "quantity": 1}))
   [ "$other_detail" = "404" ] || fail \
     "Another shopper's order should be 404 (indistinguishable from absent), got $other_detail."
   pass "another shopper's order is 404, not 403"
+
+  # Addresses, with two real signed tokens (feature 011, SC-003). Another customer's
+  # address must answer exactly like an address that does not exist - for reading,
+  # changing, deleting and checking out with it.
+  random_id="$("$PYTHON" -c 'import uuid; print(uuid.uuid4())')"
+  for target in "$address_id" "$random_id"; do
+    label=$([ "$target" = "$address_id" ] && echo "another customer's" || echo "a nonexistent")
+    got_get=$(status "$IDENTITY_URL/api/addresses/$target" -H "Authorization: Bearer $other_token")
+    got_put=$(status -X PUT "$IDENTITY_URL/api/addresses/$target" -H "Authorization: Bearer $other_token"       -H 'Content-Type: application/json'       -d "$(json_object recipientName Mallory line1 "1 Evil St" city Nowhere postalCode 00000 country GB)")
+    got_del=$(status -X DELETE "$IDENTITY_URL/api/addresses/$target" -H "Authorization: Bearer $other_token")
+    [ "$got_get $got_put $got_del" = "404 404 404" ] || fail       "For $label address the other shopper got GET=$got_get PUT=$got_put DELETE=$got_del; all must be 404."
+    pass "$label address is 404 to the other shopper, for read, change and delete"
+  done
+
+  # The other shopper checks out naming the first shopper's address. They have a cart
+  # (so the refusal is about the address), and it must be the same 404 a random id gets.
+  curl -fsS -X POST "$CART_URL/api/cart/items" -H 'Content-Type: application/json'     -H "Authorization: Bearer $other_token" -d "$cart_line" > /dev/null     || fail "The other shopper could not add to their cart."
+  stolen=$(status -X POST "$ORDER_URL/api/orders" -H 'Content-Type: application/json'     -H "Authorization: Bearer $other_token" -d "$(json_object addressId "$address_id" shippingOption standard)")
+  [ "$stolen" = "404" ] || fail     "Checking out with another customer's address answered $stolen; it must be refused with 404, like a missing address."
+  pass "checking out with another customer's address is refused (404)"
+
+  still_mine=$(curl -fsS "$IDENTITY_URL/api/addresses/$address_id" -H "Authorization: Bearer $customer_token" | json_field recipientName)
+  [ "$still_mine" = "CI Customer" ] || fail "The owner's address changed to '$still_mine' after the other shopper's attempts."
+  pass "the owner's address is untouched"
 fi
 
 echo

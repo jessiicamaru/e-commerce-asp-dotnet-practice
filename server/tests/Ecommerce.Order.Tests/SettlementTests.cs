@@ -33,7 +33,7 @@ public class SettlementTests(OrderTestFixture fixture)
 
         var order = await WaitForSettlementAsync(orderId);
 
-        Assert.Equal(OrderStatus.Completed, order.Status);
+        Assert.Equal(OrderStatus.Paid, order.Status);
         Assert.Null(order.FailureReason);
         Assert.True(order.UpdatedAt > order.CreatedAt);
     }
@@ -60,7 +60,7 @@ public class SettlementTests(OrderTestFixture fixture)
         var order = await ReadAsync(orderId);
 
         Assert.Equal(1, settledCount);
-        Assert.Equal(OrderStatus.Completed, order.Status);
+        Assert.Equal(OrderStatus.Paid, order.Status);
 
         // The timestamp is the real assertion. A status check alone would pass even if every
         // delivery rewrote the row, because it would keep rewriting it to the same status.
@@ -114,7 +114,7 @@ public class SettlementTests(OrderTestFixture fixture)
 
         var order = await ReadAsync(orderId);
 
-        Assert.Equal(OrderStatus.Completed, order.Status);
+        Assert.Equal(OrderStatus.Paid, order.Status);
         Assert.Null(order.FailureReason);
     }
 

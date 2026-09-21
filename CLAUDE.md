@@ -34,9 +34,9 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (15 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433) and
-`Ecommerce.Cart.Tests` (10 tests, PostgreSQL on 5439). They run against a **real PostgreSQL** — the guarantees under test are the
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (31 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+(10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (16 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -107,17 +107,17 @@ so.
 | Service | HTTP port | DB port / name | Notes |
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
-| Identity | 5056 | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; no MassTransit yet |
+| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; no MassTransit |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
-| Order | 5059 | 5434 / `ecommerce_order_db` | Submit + outbox; settles on the saga's outcome, owner-scoped reads |
+| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`.
 
-Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` (Identity is the exception — it uses launchSettings). Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
+Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` — except Identity, Catalog and Cart, which serve gRPC too and therefore declare **both** Kestrel endpoints (REST on `50XX`, gRPC on `51XX` on the host, `8080`/`8081` in a container) and have no `app.Run(url)`. Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
 
 ## Architecture
 
@@ -147,7 +147,15 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 
 Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf.
 
-**Order consumes `OrderCompletedEvent` and `OrderFailedEvent` too**, and settles its own row with a guarded `UPDATE ... WHERE Status = 'Submitted'` so a redelivery affects zero rows. Note `OrderFailedEvent` is published on **both** failure branches — reservation failure and payment rejection. Four `OrderStatus` values are unreachable by design (`Pending`, `StockReserved`, `Paid`, `Cancelled`); see [specs/003-order-lifecycle/data-model.md](specs/003-order-lifecycle/data-model.md) before assuming one of them can happen.
+**Order consumes `OrderCompletedEvent` and `OrderFailedEvent` too**, and settles its own row with a guarded `UPDATE ... WHERE Status = 'Submitted'` so a redelivery affects zero rows. Note `OrderFailedEvent` is published on **both** failure branches — reservation failure and payment rejection.
+
+**Since feature 011 a successful checkout settles to `Paid`, not `Completed`** — the event keeps its
+name, only Order's own status changed; `Completed` is still in the enum so old rows and a rolled-back
+image parse, and every read reports it as `Paid`. After `Paid`, **only an Admin** moves an order to
+`Preparing` and then `Shipped` (with a tracking reference), through guarded single-statement updates;
+the saga still ends at payment. `Pending`, `StockReserved` and `Cancelled` remain unreachable. See
+[specs/011-order-shipping](specs/011-order-shipping/) and the history in
+[specs/003-order-lifecycle/data-model.md](specs/003-order-lifecycle/data-model.md).
 
 The roadmap is in [docs/architecture/saga-orchestration-roadmap.md](docs/architecture/saga-orchestration-roadmap.md) (Phases 1–6.5 done, Phase 7 = observability/Seq/E2E is next).
 
@@ -169,7 +177,12 @@ feature 009 the price came from the request body and a product listed at 40,000,
 Cart for the caller's cart over gRPC, **forwarding the customer's bearer token** so Cart identifies
 them through `ICurrentUser` like every service does. The request message is empty on purpose — a
 `GetCart(userId)` would let anything on the network read anybody's cart, the `UserId`-in-the-body
-defect one hop further in. So checkout depends synchronously on **Catalog and Cart**.
+defect one hop further in. So checkout depends synchronously on **Catalog and Cart** — and, since
+feature 011, **Identity**: the body names an `addressId` and a `shippingOption`, Order reads the
+address from Identity over gRPC with the same forwarded token, and **freezes a copy** of it and of
+the option's name and price onto the order. `TotalAmount` = items + delivery, so the saga charges
+delivery with no contract change. Someone else's address id is a 404, indistinguishable from a
+missing one.
 
 **The cart removes what was ordered on `OrderCompletedEvent`, not on submission** — `Failed` is
 terminal, and removing at submission would leave a customer whose card was declined with an empty

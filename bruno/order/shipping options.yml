@@ -1,0 +1,34 @@
+info:
+  name: shipping options
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/shipping-options"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const express = (res.body || []).find(o => o.code === "express");
+        if (express) bru.setVar("expressPrice", express.price);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("at least two priced options", function() {
+          expect(res.body.length).to.be.at.least(2);
+          res.body.forEach(o => expect(o.price).to.be.a("number"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Public. The delivery price is decided here, by Order - never by the client.

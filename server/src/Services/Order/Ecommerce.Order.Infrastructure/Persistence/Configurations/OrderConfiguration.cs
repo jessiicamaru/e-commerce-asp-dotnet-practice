@@ -27,6 +27,30 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
         builder.Property(x => x.FailureReason)
             .HasMaxLength(512);
 
+        // Feature 011. Columns on orders, not a table: one per order, never shared, never queried on
+        // their own. All nullable - orders placed before this feature have none - which also keeps the
+        // migration additive under the constitution's schema rule.
+        builder.OwnsOne(x => x.ShipTo, a =>
+        {
+            a.Property(p => p.RecipientName).HasColumnName("ShipTo_RecipientName").HasMaxLength(100);
+            a.Property(p => p.Line1).HasColumnName("ShipTo_Line1").HasMaxLength(200);
+            a.Property(p => p.Line2).HasColumnName("ShipTo_Line2").HasMaxLength(200);
+            a.Property(p => p.City).HasColumnName("ShipTo_City").HasMaxLength(100);
+            a.Property(p => p.Region).HasColumnName("ShipTo_Region").HasMaxLength(100);
+            a.Property(p => p.PostalCode).HasColumnName("ShipTo_PostalCode").HasMaxLength(16);
+            a.Property(p => p.Country).HasColumnName("ShipTo_Country").HasMaxLength(2);
+            a.Property(p => p.Phone).HasColumnName("ShipTo_Phone").HasMaxLength(30);
+        });
+
+        builder.Property(x => x.ShippingOptionCode).HasMaxLength(32);
+        builder.Property(x => x.ShippingOptionName).HasMaxLength(100);
+        builder.Property(x => x.ShippingPrice).HasPrecision(18, 2);
+        builder.Property(x => x.TrackingReference).HasMaxLength(100);
+
+        // Staff work the fulfilment queue by status, oldest first.
+        builder.HasIndex(x => new { x.Status, x.CreatedAt })
+            .HasDatabaseName("IX_orders_Status_CreatedAt");
+
         builder.HasMany(x => x.Items)
             .WithOne(x => x.Order)
             .HasForeignKey(x => x.OrderId)

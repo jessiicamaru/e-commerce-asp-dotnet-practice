@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecommerce.Contracts.Grpc";
+
+package identity.addresses.v1;
+
+// One of the caller's delivery addresses, asked by Order at checkout.
+service AddressReading {
+  rpc GetMyAddress (GetMyAddressRequest) returns (GetMyAddressResponse);
+}
+
+// NO USER FIELD, deliberately, and there never will be one.
+//
+// Whose address book is decided by the customer's bearer token, which Order forwards in the call's
+// `authorization` metadata; Identity reads the user from it through ICurrentUser. An address_id that
+// belongs to somebody else is therefore simply not found. See Constitution IV and
+// specs/011-order-shipping research D4.
+message GetMyAddressRequest {
+  // Empty means "my default address".
+  string address_id = 1;
+}
+
+// "Not found", "not yours" and "you have no default" are all found = false - indistinguishable on
+// purpose, so the answer cannot be used to learn whether somebody else's address exists. Kept out of
+// the gRPC status so it is never confused with a transport failure worth retrying.
+message GetMyAddressResponse {
+  bool found = 1;
+  DeliveryAddress address = 2;
+}
+
+message DeliveryAddress {
+  string id = 1;
+  string recipient_name = 2;
+  string line1 = 3;
+  string line2 = 4;
+  string city = 5;
+  string region = 6;
+  string postal_code = 7;
+  string country = 8;
+  string phone = 9;
+}

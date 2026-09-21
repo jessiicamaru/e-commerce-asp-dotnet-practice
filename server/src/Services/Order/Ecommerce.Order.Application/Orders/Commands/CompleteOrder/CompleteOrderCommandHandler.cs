@@ -17,7 +17,9 @@ public class CompleteOrderCommandHandler(
     {
         var rowsAffected = await _orderRepository.TrySettleAsync(
             request.OrderId,
-            OrderStatus.Completed,
+            // Paid, not Completed (feature 011). The saga's "completed" means checkout completed; for
+            // the order that is the moment it is paid, and fulfilment starts from here.
+            OrderStatus.Paid,
             failureReason: null,
             settledAt: request.CompletedAt,
             cancellationToken);
@@ -25,7 +27,7 @@ public class CompleteOrderCommandHandler(
         if (rowsAffected > 0)
         {
             _logger.LogInformation(
-                "Order {OrderId} settled as Completed at {CompletedAt:o}.",
+                "Order {OrderId} settled as Paid at {CompletedAt:o}.",
                 request.OrderId,
                 request.CompletedAt);
 

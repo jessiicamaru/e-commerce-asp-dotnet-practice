@@ -35,15 +35,20 @@ public record OrderResponse(
     decimal TotalAmount,
     string Status,
     DateTime CreatedAt,
-    List<OrderItemResponse> Items
+    List<OrderItemResponse> Items,
+    Common.ShippingAddressResponse? ShippingAddress = null,
+    Common.ShippingOptionResponse? ShippingOption = null,
+    decimal? ShippingPrice = null
 );
 
 /// <summary>
-/// Check out the caller's cart.
+/// Check out the caller's cart, to one of their addresses, by a delivery option they chose.
 /// </summary>
+/// <param name="AddressId">One of the caller's addresses in Identity; <c>null</c> for their default.</param>
+/// <param name="ShippingOption">A delivery option code - required, because it costs money.</param>
 /// <remarks>
 /// <para>
-/// <b>Carries nothing, on purpose.</b> Not the items - they come from the caller's cart, read from
+/// <b>Carries only choices the customer owns</b> - where to send it and how (feature 011). Not the items - they come from the caller's cart, read from
 /// the Cart service at checkout (feature 010). Not a user id - that comes from the access token, never
 /// from the request body (Constitution IV). Not a price or a name - those come from Catalog (feature
 /// 009, issue #18).
@@ -53,4 +58,4 @@ public record OrderResponse(
 /// something the server owns.
 /// </para>
 /// </remarks>
-public record SubmitOrderCommand : IRequest<OrderResponse>;
+public record SubmitOrderCommand(Guid? AddressId, string ShippingOption) : IRequest<OrderResponse>;

@@ -5,6 +5,8 @@ using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Ecommerce.WebApi.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +81,36 @@ var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 builder.Configuration["ConnectionStrings:DefaultConnection"] =
     $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
 
+// Two endpoints, declared together (feature 011). Identity now serves the address book to Order over
+// gRPC, and one plaintext port cannot carry both HTTP/1.1 and HTTP/2 - telling them apart needs ALPN,
+// which is part of TLS (measured in feature 009).
+//
+// CALLING ListenAnyIP AT ALL REPLACES ASPNETCORE_URLS - it does not add to it. Declaring only the gRPC
+// endpoint silently unbinds REST; that is how Catalog went unhealthy the first time. So the HTTP port
+// is declared here too, derived from ASPNETCORE_URLS - localhost:5056 when unset, so start-dev keeps
+// its pinned port, all interfaces when a container sets it - and nothing else decides where to listen.
+var listenUrlsAtStartup = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+var inContainer = !string.IsNullOrWhiteSpace(listenUrlsAtStartup);
+
+var httpPort = PortFrom(listenUrlsAtStartup) ?? 5056;
+var grpcPort = int.TryParse(Environment.GetEnvironmentVariable("IDENTITY_GRPC_PORT"), out var parsedGrpc)
+    ? parsedGrpc
+    : 5156;
+
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    if (inContainer)
+    {
+        kestrel.ListenAnyIP(httpPort, e => e.Protocols = HttpProtocols.Http1);
+        kestrel.ListenAnyIP(grpcPort, e => e.Protocols = HttpProtocols.Http2);
+    }
+    else
+    {
+        kestrel.ListenLocalhost(httpPort, e => e.Protocols = HttpProtocols.Http1);
+        kestrel.ListenLocalhost(grpcPort, e => e.Protocols = HttpProtocols.Http2);
+    }
+});
+
 // Add services to the container.
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
@@ -86,6 +118,14 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+builder.Services.AddGrpc();
+builder.Services.AddGrpcHealthChecks();
+
+// Reflection, so the endpoint can be poked by hand with grpcurl. It publishes the service surface to
+// anyone who can reach the port - the same trade as serving h2c without TLS, acceptable only while
+// that port is internal.
+builder.Services.AddGrpcReflection();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -128,6 +168,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Only reachable on the HTTP/2 endpoint above.
+app.MapGrpcService<AddressReadingService>();
+app.MapGrpcHealthChecksService();
+app.MapGrpcReflectionService();
+
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
@@ -162,18 +207,22 @@ if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
         .Database.MigrateAsync();
 }
 
-// Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not
-// localhost, or nothing outside it can connect however the ports are published. Falling back to
-// the pinned address rather than dropping the argument keeps start-dev.sh working: with no
-// argument every service would default to the same port and collide.
-var listenUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+// Where to listen was decided once, in ConfigureKestrel above. No URL here: a second opinion about
+// the address is how REST and gRPC end up disagreeing.
+app.Run();
 
-if (string.IsNullOrWhiteSpace(listenUrls))
+static int? PortFrom(string? urls)
 {
-    app.Run("http://localhost:5056");
-}
-else
-{
-    app.Run();
-}
+    if (string.IsNullOrWhiteSpace(urls))
+    {
+        return null;
+    }
 
+    // "http://+:8080" or "http://0.0.0.0:8080;http://..." - the first one wins.
+    var first = urls.Split(';', StringSplitOptions.RemoveEmptyEntries)[0];
+    var lastColon = first.LastIndexOf(':');
+
+    return lastColon >= 0 && int.TryParse(first[(lastColon + 1)..].TrimEnd('/'), out var port)
+        ? port
+        : null;
+}

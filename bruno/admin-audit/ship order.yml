@@ -1,0 +1,38 @@
+info:
+  name: ship order
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/shipment"
+  body:
+    type: json
+    data: |-
+      {
+        "trackingReference": "BRUNO-{{orderId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("now Shipped, with the tracking reference", function() {
+          expect(res.body.status).to.equal("Shipped");
+          expect(res.body.trackingReference).to.contain("BRUNO-");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Preparing -> Shipped. The same reference again is a no-op; a different one is 409.

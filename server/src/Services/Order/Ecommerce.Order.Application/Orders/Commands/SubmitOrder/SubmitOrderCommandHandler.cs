@@ -1,5 +1,6 @@
 using Ecommerce.Contracts.Order;
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Authentication;
@@ -14,7 +15,9 @@ public class SubmitOrderCommandHandler(
     IPublishEndpoint publishEndpoint,
     ICurrentUser currentUser,
     ICatalogPrices catalogPrices,
-    ICartReader cartReader
+    ICartReader cartReader,
+    IAddressReader addressReader,
+    IShippingOptions shippingOptions
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
@@ -22,6 +25,8 @@ public class SubmitOrderCommandHandler(
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly ICatalogPrices _catalogPrices = catalogPrices;
     private readonly ICartReader _cartReader = cartReader;
+    private readonly IAddressReader _addressReader = addressReader;
+    private readonly IShippingOptions _shippingOptions = shippingOptions;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
     {
@@ -49,6 +54,26 @@ public class SubmitOrderCommandHandler(
             throw new ConflictException("The cart is empty, so there is nothing to order.");
         }
 
+        // Where it goes (feature 011) - read from Identity with the caller's own token, BEFORE anything
+        // is staged, like the cart and the prices. Someone else's address id comes back exactly like a
+        // missing one, so the refusal below cannot confirm that it exists.
+        var address = await _addressReader.GetMyAddressAsync(request.AddressId, cancellationToken);
+
+        if (address is null)
+        {
+            if (request.AddressId is not null)
+            {
+                throw new NotFoundException("Delivery address not found.");
+            }
+
+            throw new ConflictException(
+                "No delivery address was chosen and there is no default. Save an address first.");
+        }
+
+        // The validator has already refused an unknown code; this is the same lookup, for the price.
+        var shipping = _shippingOptions.Find(request.ShippingOption)
+            ?? throw new FluentValidation.ValidationException($"'{request.ShippingOption}' is not a delivery option.");
+
         var priced = await _catalogPrices.GetPricesAsync(
             cartItems.Select(i => i.ProductId).Distinct().ToList(),
             cancellationToken);
@@ -65,7 +90,7 @@ public class SubmitOrderCommandHandler(
                 $"Not currently for sale: {string.Join(", ", unsellable)}.");
         }
 
-        var orderId = Guid.NewGuid();
+        var orderId = Guid.CreateVersion7();
 
         // What comes back is COPIED onto the line, never referenced. An order line is a record of
         // a transaction: a price change next week must not rewrite what somebody already bought,
@@ -81,7 +106,9 @@ public class SubmitOrderCommandHandler(
             UnitPrice = byProduct[item.ProductId].Price
         }).ToList();
 
-        var totalAmount = orderItems.Sum(x => x.TotalPrice);
+        // What is charged is the goods PLUS delivery. This number travels in OrderSubmittedEvent and the
+        // saga charges it, so no contract changes for the payment to include shipping.
+        var totalAmount = orderItems.Sum(x => x.TotalPrice) + shipping.Price;
 
         var order = new Domain.Entities.Order
         {
@@ -91,7 +118,23 @@ public class SubmitOrderCommandHandler(
             Status = OrderStatus.Submitted,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            Items = orderItems
+            Items = orderItems,
+
+            // Copies, frozen now. Neither an address edit nor a price change later can reach them.
+            ShipTo = new ShippingAddress
+            {
+                RecipientName = address.RecipientName,
+                Line1 = address.Line1,
+                Line2 = address.Line2,
+                City = address.City,
+                Region = address.Region,
+                PostalCode = address.PostalCode,
+                Country = address.Country,
+                Phone = address.Phone
+            },
+            ShippingOptionCode = shipping.Code,
+            ShippingOptionName = shipping.Name,
+            ShippingPrice = shipping.Price
         };
 
         // 1. Stage Order Entity in DbContext
@@ -125,7 +168,10 @@ public class SubmitOrderCommandHandler(
             order.TotalAmount,
             order.Status.ToString(),
             order.CreatedAt,
-            itemResponses
+            itemResponses,
+            OrderMapping.ToResponse(order.ShipTo),
+            new ShippingOptionResponse(shipping.Code, shipping.Name),
+            shipping.Price
         );
     }
 }

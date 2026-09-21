@@ -226,6 +226,20 @@ decision, and why it needs `OrderSubmittedEvent` too, is in the spec's research 
 
 ---
 
+## Feature 011: the third dependency
+
+The delivery address joined the same shape: `AddressReading.GetMyAddress` on Identity's second port
+(`6056` on the host, `8081` in a container), an **address id and never a user** in the request, the
+customer's token forwarded. "Not found", "not yours" and "you have no default" all come back as
+`found = false` — in the message, not as a gRPC status, so the answer is never mistaken for a
+transport failure worth retrying.
+
+Checkout now waits on **three** services before it writes anything: Cart (what), Identity (where) and
+Catalog (how much). Each is retried a bounded number of times and then refused with 503. Details in
+[specs/011-order-shipping](../../specs/011-order-shipping/).
+
+---
+
 ## What none of this touches: messaging
 
 **Messages are completely unaffected by anything above.**

@@ -1,0 +1,44 @@
+info:
+  name: save work address
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/addresses"
+  body:
+    type: json
+    data: |-
+      {
+        "recipientName": "Bruno Customer (work)",
+        "line1": "1 Hoang Dieu",
+        "line2": null,
+        "city": "Da Nang",
+        "region": null,
+        "postalCode": "550000",
+        "country": "VN",
+        "phone": "+84 912 345 678"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201) bru.setVar("workAddressId", res.body.id);
+    - type: tests
+      code: |-
+        test("status 201", function() {
+          expect(res.status).to.equal(201);
+        });
+        test("a second address is not the default", function() {
+          expect(res.body.isDefault).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

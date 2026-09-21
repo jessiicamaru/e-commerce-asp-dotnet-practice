@@ -58,8 +58,11 @@ services:
       IDENTITY_DB_PORT: "5432"
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      # Feature 011: the address book, served to Order over gRPC on a second port (h2c).
+      IDENTITY_GRPC_PORT: "8081"
     ports:
       - "5056:8080"
+      - "6056:8081"
     depends_on:
       postgres-identity:
         condition: service_healthy
@@ -133,6 +136,8 @@ services:
       # The second synchronous dependency of checkout (feature 010). Order forwards the customer's
       # token so Cart identifies them itself - the request carries no user id.
       CART_GRPC_ADDRESS: http://cart:8081
+      # The third (feature 011): the delivery address, from Identity - same token forwarding.
+      IDENTITY_GRPC_ADDRESS: http://identity:8081
     ports:
       - "5059:8080"
     depends_on:

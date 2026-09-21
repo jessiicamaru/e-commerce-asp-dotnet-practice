@@ -2,6 +2,7 @@ using Ecommerce.Order.Application;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Order.Infrastructure.Persistence.Repositories;
+using Ecommerce.Order.Infrastructure.Shipping;
 using Ecommerce.Order.WebApi.Consumers;
 using Ecommerce.Shared.Authentication;
 using MassTransit;
@@ -33,6 +34,8 @@ public class OrderTestFixture : IAsyncLifetime
     public ServiceProvider Services { get; private set; } = null!;
 
     public TestCurrentUser CurrentUser { get; } = new();
+
+    public FakeCheckoutDependencies Checkout { get; } = new();
 
     public ITestHarness Harness => Services.GetRequiredService<ITestHarness>();
 
@@ -72,7 +75,13 @@ public class OrderTestFixture : IAsyncLifetime
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = _connectionString
+                ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                ["Shipping:Options:0:Code"] = "standard",
+                ["Shipping:Options:0:Name"] = "Standard delivery",
+                ["Shipping:Options:0:Price"] = "5.00",
+                ["Shipping:Options:1:Code"] = "express",
+                ["Shipping:Options:1:Name"] = "Express delivery",
+                ["Shipping:Options:1:Price"] = "15.00"
             })
             .Build();
 
@@ -90,6 +99,15 @@ public class OrderTestFixture : IAsyncLifetime
         // identity is handed in — not that the identity handed in at runtime came from a valid
         // token. That end of the path is exercised by the auth smoke script, not from here.
         services.AddSingleton<ICurrentUser>(CurrentUser);
+
+        // Checkout's three synchronous reads, faked - they are other services, and what the checkout
+        // tests are about is what Order does with the answers. The real gRPC path is exercised end to
+        // end by verify-saga.sh. The delivery options are the REAL class, reading real configuration.
+        services.AddSingleton(Checkout);
+        services.AddSingleton<ICartReader>(Checkout);
+        services.AddSingleton<ICatalogPrices>(Checkout);
+        services.AddSingleton<IAddressReader>(Checkout);
+        services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
 
         // The real consumers, so at least one test per event proves the wiring and not only the
         // handler. The repetition tests dispatch the command directly instead — the guard is what
@@ -132,6 +150,33 @@ public class TestCurrentUser : ICurrentUser
     public string? Email { get; set; }
 
     public bool IsAuthenticated => Id is not null;
+}
+
+/// <summary>
+/// What Cart, Catalog and Identity would answer at checkout. Tests set these before sending.
+/// </summary>
+public class FakeCheckoutDependencies : ICartReader, ICatalogPrices, IAddressReader
+{
+    public List<CartItem> Cart { get; set; } = [];
+    public Dictionary<Guid, CatalogPrice> Prices { get; } = [];
+
+    /// <summary>What Identity returns; <c>null</c> means "not found / not yours / no default".</summary>
+    public AddressCopy? Address { get; set; }
+
+    public Guid? LastAddressIdAsked { get; private set; }
+
+    public Task<IReadOnlyList<CartItem>> GetMyCartAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<CartItem>>(Cart);
+
+    public Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
+        IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<CatalogPrice>>(productIds.Select(id => Prices[id]).ToList());
+
+    public Task<AddressCopy?> GetMyAddressAsync(Guid? addressId, CancellationToken cancellationToken = default)
+    {
+        LastAddressIdAsked = addressId;
+        return Task.FromResult(Address);
+    }
 }
 
 [CollectionDefinition(nameof(OrderTestCollection))]

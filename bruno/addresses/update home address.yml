@@ -1,0 +1,41 @@
+info:
+  name: update home address
+  type: http
+  seq: 5
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/addresses/{{addressId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "recipientName": "Bruno Customer",
+        "line1": "14 Ly Thuong Kiet",
+        "line2": null,
+        "city": "Ha Noi",
+        "region": null,
+        "postalCode": "100000",
+        "country": "VN",
+        "phone": "+84 912 345 678"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("still not the default - editing does not change that", function() {
+          expect(res.body.isDefault).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -248,3 +248,8 @@ Two features that did not change the saga's shape but changed what it is trusted
   caller's cart over gRPC. Cart consumes `OrderSubmitted`, `OrderCompleted` and `OrderFailed`, and
   removes ordered lines only on completion — whichever of the first two arrives second applies it,
   because nothing orders delivery across message types.
+* **[specs/011](../../specs/011-order-shipping/) — somewhere for the order to go.** Addresses live in
+  Identity; checkout names one and a delivery option, and Order freezes a copy of both. The total — and
+  so the charge — includes delivery, with no contract change. After the saga the order reads **`Paid`**
+  (no longer `Completed`), and staff move it to `Preparing` and `Shipped`. The saga still ends at
+  payment: despatch is manual until something can actually despatch.

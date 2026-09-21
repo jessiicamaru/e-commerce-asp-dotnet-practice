@@ -103,7 +103,7 @@ Then, from the `server/` directory:
 | **pgAdmin (DB GUI)** | `5050` | `http://localhost:5050` (`PGADMIN_EMAIL` / `PGADMIN_PASSWORD` from `.env`) |
 | **RabbitMQ Management** | `15672` | `http://localhost:15672` (`RABBITMQ_USER` / `RABBITMQ_PASSWORD` from `.env`) |
 
-Catalog and Cart also serve **gRPC** on a second port — `6057` and `6062` — for the calls checkout
+Identity, Catalog and Cart also serve **gRPC** on a second port — `6056`, `6057` and `6062` — for the calls checkout
 makes between services. Nothing outside the system calls them; see
 [How Services Talk to Each Other](./architecture/service-to-service-communication.md).
 
