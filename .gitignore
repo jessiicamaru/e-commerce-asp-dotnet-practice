@@ -46,3 +46,5 @@ publish/
 dist/
 out/
 node_modules/
+
+/local

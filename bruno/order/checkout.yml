@@ -1,0 +1,41 @@
+info:
+  name: checkout
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.orderId) bru.setVar("orderId", res.body.orderId);
+    - type: tests
+      code: |-
+        test("status is one of 200, 201, 202", function() {
+          expect([200, 201, 202]).to.include(res.status);
+        });
+            test("charged the catalogue price, not anything the client said", function() {
+              expect(res.body.totalAmount).to.be.a("number");
+            });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  **No body.** What is bought comes from the caller's cart, who is buying from the token, and what
+  it costs from Catalog. Anything you put in a body here is ignored.
+
+  - Empty cart -> **409**
+  - Catalog or Cart unreachable -> **503**
+
+  The order starts `Submitted`; the saga settles it a moment later. Ordered lines leave the cart
+  only when the order **completes** - a declined payment leaves the cart as it was.

@@ -1,0 +1,28 @@
+info:
+  name: refresh
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/refresh"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Takes **no body**: the refresh token travels in the `refreshToken` HttpOnly cookie set by the last
+  login, and Bruno's cookie jar sends it back. Note it refreshes whichever account logged in
+  **last** - run "login customer" right before this to refresh the customer.

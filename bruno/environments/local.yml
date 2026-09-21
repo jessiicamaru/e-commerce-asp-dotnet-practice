@@ -1,0 +1,27 @@
+name: local
+variables:
+  - name: baseUrl
+    value: http://localhost:5000
+    enabled: true
+    secret: false
+    description: The YARP gateway. Every request goes through it, like a real client would.
+  - name: adminEmail
+    value: ''
+    enabled: true
+    secret: true
+    description: ADMIN_EMAIL from server/.env. Fill in inside Bruno - never commit it.
+  - name: adminPassword
+    value: ''
+    enabled: true
+    secret: true
+    description: ADMIN_PASSWORD from server/.env. Fill in inside Bruno - never commit it.
+  - name: customerEmail
+    value: bruno.customer@example.test
+    enabled: true
+    secret: false
+    description: A throwaway customer. "register" creates it; if it already exists, just run "login customer".
+  - name: customerPassword
+    value: Bruno-Passw0rd!1
+    enabled: true
+    secret: false
+    description: Password for the throwaway customer above. Not a real credential.

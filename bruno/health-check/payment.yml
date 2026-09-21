@@ -1,0 +1,29 @@
+info:
+  name: payment
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/payment/health"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("payment reports it is the STUB provider", function() {
+          // Payment moves no money. /health says so; if this ever stops saying "Stub",
+          // someone wired a real provider and should know it.
+          expect(JSON.stringify(res.body)).to.contain("Stub");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

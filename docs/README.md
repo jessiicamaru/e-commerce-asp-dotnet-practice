@@ -47,6 +47,7 @@ Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core 
 
 ### 🛠️ Developer Guides
 * [**Getting Started**](./guides/getting-started.md): **Start here.** The two supported ways to run the project — everything in containers, or infrastructure in Docker with the services on your machine — plus configuring `.env`, checking the system is really up, placing an order end to end, and running the tests.
+* [**Bruno collection**](../bruno/): every public endpoint as a runnable [Bruno](https://www.usebruno.com/) collection, through the gateway, with tests on each request and scripts that carry tokens and ids from one request to the next. Open the folder in Bruno, choose the `local` environment, fill the two secret admin variables, and run it top to bottom. Updated in the same change as any endpoint.
 * [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, EF Core concurrency exceptions, a locally installed service shadowing a container, and the container-specific traps.
 
 ---

@@ -1,0 +1,46 @@
+info:
+  name: create product
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "iPhone 16 Pro Max {{runId}}",
+        "description": "Apple iPhone 16 Pro Max 512GB Gold",
+        "price": 1499.99,
+        "sku": "IP16PM-{{runId}}",
+        "categoryId": "{{categoryId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("runId", Date.now());
+    - type: after-response
+      code: |-
+        if (res.body && res.body.id) bru.setVar("productId", res.body.id);
+    - type: tests
+      code: |-
+        test("status is one of 200, 201", function() {
+          expect([200, 201]).to.include(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Needs `categoryId` (set by "create category"). There is **no stock field** - Inventory owns
+  stock. Creating a product announces it, Inventory creates its stock row at 0, and you set the
+  quantity with "inventory / set stock on hand".
