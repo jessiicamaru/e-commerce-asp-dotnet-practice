@@ -22,6 +22,52 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
             .FirstOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.Token == token), cancellationToken);
     }
 
+    public async Task<bool> TryRotateRefreshTokenAsync(
+        string token, RefreshToken replacement, DateTime now, CancellationToken cancellationToken = default)
+    {
+        // EnableRetryOnFailure is on for this context, and a retrying strategy refuses a user-initiated
+        // transaction unless the whole unit runs inside it (the same reason UnitOfWork does this).
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // One statement decides who wins. Reading "RevokedAt is null" and then writing would let two
+            // requests both see an active token and both mint a successor.
+            var revoked = await _context.RefreshTokens
+                .Where(t => t.Token == token && t.RevokedAt == null && t.ExpiresAt > now)
+                .ExecuteUpdateAsync(set => set
+                    .SetProperty(t => t.RevokedAt, now)
+                    .SetProperty(t => t.ReplacedByToken, replacement.Token), cancellationToken);
+
+            if (revoked == 0)
+            {
+                return false;   // the transaction rolls back on dispose; nothing was written
+            }
+
+            // Expired tokens can no longer be replayed, so they are no longer evidence of anything.
+            // Revoked-but-unexpired ones stay: they are what recognises a stolen token coming back.
+            await _context.RefreshTokens
+                .Where(t => t.UserId == replacement.UserId && t.ExpiresAt <= now)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            if (_context.Entry(replacement).State == EntityState.Detached)
+            {
+                _context.RefreshTokens.Add(replacement);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        });
+    }
+
+    public Task<int> RevokeAllRefreshTokensAsync(Guid userId, DateTime now, CancellationToken cancellationToken = default) =>
+        _context.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedAt, now), cancellationToken);
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);
