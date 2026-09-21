@@ -2,6 +2,8 @@ import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { useAuth } from './auth/useAuth'
 import { RequireAuth } from './auth/RequireAuth'
+import { CatalogPage } from './pages/CatalogPage'
+import { ProductPage } from './pages/ProductPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { StatusPage } from './pages/StatusPage'
@@ -15,7 +17,8 @@ export default function App() {
         <TopBar />
         <main>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<CatalogPage />} />
+            <Route path="/products/:id" element={<ProductPage />} />
             <Route path="/sign-in" element={<SignInPage />} />
             <Route path="/sign-up" element={<SignUpPage />} />
             <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
@@ -52,15 +55,6 @@ function TopBar() {
         )}
       </nav>
     </header>
-  )
-}
-
-function Home() {
-  return (
-    <section>
-      <h1>Storefront</h1>
-      <p className="muted">The shop is being built one issue at a time. Check the backend on the Status page.</p>
-    </section>
   )
 }
 
