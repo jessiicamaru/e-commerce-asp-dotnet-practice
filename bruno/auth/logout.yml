@@ -1,0 +1,29 @@
+info:
+  name: logout
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/logout"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 204", function() {
+          expect(res.status).to.equal(204);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Ends the session on the **server**: the refresh token is deleted and the cookie cleared. Without
+  this, a browser that forgets its access token is signed straight back in by the HttpOnly cookie it
+  cannot delete (feature 015). Anonymous and always 204. The access token already issued keeps
+  working until it expires (15 minutes) - stateless JWT.

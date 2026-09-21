@@ -137,7 +137,7 @@ In requests, clients must pass the token in the `Authorization` header:
 
 | Endpoint | Access |
 | :--- | :--- |
-| `POST /api/auth/*` | Anonymous |
+| `POST /api/auth/*` (register, login, refresh, logout) | Anonymous |
 | `GET /api/products`, `GET /api/categories`, `GET /api/stock` | Anonymous (`[AllowAnonymous]`) |
 | `POST /api/products`, `POST /api/categories`, `PUT /api/stock/{productId}` | `Admin` only |
 | `GET /api/reservations/{orderId}`, `GET /api/payments` | `Admin` only |

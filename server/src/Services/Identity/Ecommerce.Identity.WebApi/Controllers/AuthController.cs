@@ -1,4 +1,5 @@
 using Ecommerce.Application.Auth.Commands.Login;
+using Ecommerce.Application.Auth.Commands.Logout;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Commands.Refresh;
 using Ecommerce.Application.Common.Constants;
@@ -46,6 +47,27 @@ public class AuthController : ApiControllerBase
         SetRefreshTokenCookie(result.RefreshToken);
 
         return Ok(result with { RefreshToken = "" });
+    }
+
+    /// <summary>
+    /// Ends the session: the refresh token is deleted server-side and the cookie is cleared. Anonymous
+    /// on purpose - an expired access token must not stop someone signing out. Always 204.
+    /// </summary>
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+
+        await Mediator.Send(new LogoutCommand(refreshToken));
+
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax
+        });
+
+        return NoContent();
     }
 
     private void SetRefreshTokenCookie(string refreshToken)
