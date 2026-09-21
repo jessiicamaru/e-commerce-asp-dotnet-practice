@@ -45,3 +45,13 @@ table.status { border-collapse: collapse; }
 table.status td { padding: 0.35rem 1rem 0.35rem 0; border-bottom: 1px solid var(--line); }
 td.up { color: var(--ok); }
 td.down { color: var(--bad); }
+
+.narrow { max-width: 26rem; }
+.form { display: flex; flex-direction: column; gap: 0.85rem; }
+.form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.95rem; }
+input, select, button { font: inherit; }
+input, select { padding: 0.5rem 0.6rem; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; }
+button { padding: 0.55rem 1rem; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: default; }
+button.link { background: none; color: var(--accent); padding: 0; }
+.error { color: var(--bad); font-size: 0.9rem; }

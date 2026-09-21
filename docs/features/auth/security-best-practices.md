@@ -231,6 +231,17 @@ Add the refresh endpoint to `AuthController.cs` in the WebApi project:
 
 ---
 
+### 4.4 Signing out (feature 015)
+
+`POST /api/auth/logout` deletes the refresh token and clears the cookie. It has to be the server: the
+cookie is HttpOnly, so no script can delete it, and a client that only forgets its access token is
+signed straight back in by the next silent refresh. Anonymous and always 204, so an expired access
+token never stops someone signing out. The access token already issued keeps working until it
+expires - stateless JWT; revoking it early would need a denylist.
+
+The storefront (`client/`) is the first consumer of this whole flow: access token in memory only,
+restored on reload through the cookie, one shared refresh for concurrent 401s.
+
 ## 5. Known weaknesses in the current implementation
 
 The code in §4 is what runs today, and three things about it are worth knowing before building on it:
