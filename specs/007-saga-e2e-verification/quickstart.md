@@ -159,7 +159,13 @@ Record the pipeline duration before and after, from a real run of each:
 | :-- | :-- | :-- |
 | `4fbfe28` on `main` (2026-09-17) | build + auth-smoke | **3m22s** |
 | `2cee71a` on `main` (2026-09-21) | build + auth-smoke + publish | 9m37s, **contaminated** - the run failed on publish and was re-run, so this is two publish jobs plus a gap, not one pipeline |
-| after this feature (PR #13) | build 1m34s, then auth-smoke 1m41s and saga-e2e 3m04s **in parallel** | **4m38s** to the end of the smoke jobs |
+| after this feature (PR #13, green run) | build 1m44s, then auth-smoke 1m59s and saga-e2e 2m15s **in parallel** | **4m01s** to the end of the smoke jobs |
+
+**Measured result: +39s.** 3m22s before, 4m01s after. The new job starts six services where
+`auth-smoke` starts three, so it is the slower of the pair and becomes the critical path — but
+because the two run side by side, the pipeline grew by the difference between them rather than by
+the new job's whole 2m15s. That is what [research D2](./research.md) predicted, and it is why the
+second job was worth its duplicated build.
 
 The honest baseline is the first row: 3m22s for build plus one smoke job. The second is unusable as
 a comparison and saying so is better than quoting it. What this feature adds is a second smoke job

@@ -110,24 +110,24 @@ they are the tasks most likely to be skipped because everything already looks fi
 - [X] T031 Run the script twice: once with Payment approving, then stop Payment, start it with `PAYMENT_OUTCOME=Reject`, and run again. Set `SAGA_E2E_REQUIRE_ALL=1` on both. **Two instances at once would compete for one queue** and each order would be paid by whichever won — the very failure being tested ([research D3](./research.md))
 - [X] T032 Add `saga-e2e` to `publish`'s `needs`, so a merge whose saga check failed publishes nothing. Without this the job informs and does not guard, and FR-013 asks for a guard
 - [X] T033 Dump all six service logs on failure, head and tail, as `auth-smoke` already does. A retrying transport pushes startup lines far out of a plain `tail`
-- [ ] T034 Open a pull request and confirm the job runs, is green, and its log shows **both** scenarios with a restart between them
+- [X] T034 Open a pull request and confirm the job runs, is green, and its log shows **both** scenarios with a restart between them
 
 ---
 
 ## Phase 7: The acceptance test
 
-- [ ] T035 **Reproduce the motivating bug and confirm it is caught.** Remove Order's `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))` call on a scratch branch, so its `OrderCompletedConsumer` collides with Inventory's again. Confirm the job goes **red** on assertion A3 and that `publish` does not run. Then restore it and confirm green. **This is the feature's actual acceptance test** — everything before it demonstrates the script; this demonstrates that the regression class which has already happened here is now stopped before merge
-- [ ] T036 Record T035's output in this file. A control that was run and not recorded is a control the next person cannot check
+- [X] T035 **Reproduce the motivating bug and confirm it is caught.** Remove Order's `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))` call on a scratch branch, so its `OrderCompletedConsumer` collides with Inventory's again. Confirm the job goes **red** on assertion A3 and that `publish` does not run. Then restore it and confirm green. **This is the feature's actual acceptance test** — everything before it demonstrates the script; this demonstrates that the regression class which has already happened here is now stopped before merge
+- [X] T036 Record T035's output in this file. A control that was run and not recorded is a control the next person cannot check
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T037 [P] Update `CLAUDE.md`: the new check beside the existing two in the Commands section, and the new CI job. Note that it needs all six services and reports **skipped** rather than passing quietly when it does not have them
-- [ ] T038 [P] Update `docs/architecture/saga-orchestration-roadmap.md` — Phase 7's "E2E Verification" third is done; Seq and the real payment provider are not. Do not mark the whole phase complete
-- [ ] T039 [P] Update `docs/README.md` if it indexes the scripts or the CI jobs
-- [ ] T040 Fill in the before/after durations in [quickstart.md](./quickstart.md) from real runs (SC-008). If the pipeline got noticeably slower, say so — [research D2](./research.md) names the cheaper arrangement that was rejected and why
-- [ ] T041 Re-read `.github/scripts/verify-saga.sh` end to end and confirm no credential is printed. `ADMIN_PASSWORD` and both tokens pass through it; a token in a public CI log is a live credential until it expires
+- [X] T037 [P] Update `CLAUDE.md`: the new check beside the existing two in the Commands section, and the new CI job. Note that it needs all six services and reports **skipped** rather than passing quietly when it does not have them
+- [X] T038 [P] Update `docs/architecture/saga-orchestration-roadmap.md` — Phase 7's "E2E Verification" third is done; Seq and the real payment provider are not. Do not mark the whole phase complete
+- [X] T039 [P] Update `docs/README.md` if it indexes the scripts or the CI jobs
+- [X] T040 Fill in the before/after durations in [quickstart.md](./quickstart.md) from real runs (SC-008). If the pipeline got noticeably slower, say so — [research D2](./research.md) names the cheaper arrangement that was rejected and why
+- [X] T041 Re-read `.github/scripts/verify-saga.sh` end to end and confirm no credential is printed. `ADMIN_PASSWORD` and both tokens pass through it; a token in a public CI log is a live credential until it expires
 
 ---
 
@@ -173,6 +173,44 @@ asked), Phase 7 (proof it catches the real thing), Phase 8 (docs).
 script will already appear to work, and T035 because it means deliberately breaking something that
 is currently fine. Those three are the entire difference between this feature and a green tick.
 
+
+
+---
+
+## T035/T036 — the acceptance control, as it ran
+
+Throwaway branch `tmp/t035-collision-control` (PR #16, closed unmerged), with Order's
+`SetEndpointNameFormatter` commented out so its `OrderCompletedConsumer` binds to the same queue as
+Inventory's and the two compete for the event.
+
+Run [35591423313](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/actions/runs/35591423313):
+
+```text
+  ok  order reached Completed after 4s
+  ok  status is Completed
+::error::On-hand went 50 -> 50, expected 47. The order completed but the units were never
+         actually consumed, so the sale did not reduce the shelf.
+::error::Stock is still held after the order completed: reserved went 0 -> 3, expected it
+         unchanged. The order settled but Inventory never confirmed the reservation. Check
+         whether two services declare a consumer class of the same name ...
+  ok  available fell by exactly 3 (50 -> 47)
+
+2 of 4 assertions failed for scenario 'approve'.
+1 of 1 scenario exercised: approve=FAIL
+```
+
+`Saga end-to-end: failure`, `Publish images: skipped`.
+
+**This is the whole argument for the feature, demonstrated rather than asserted.** Look at what
+*passed*: the order status was `Completed`, and `QuantityAvailable` fell by exactly the amount
+ordered. A check reading only the order would have gone green. A check reading only `Available` —
+the customer-facing number, and the obvious one to assert on — would **also** have gone green.
+
+Only `QuantityOnHand` and `QuantityReserved` separate a sale from a hold, which is what
+[data-model.md](./data-model.md) says and what the original incident looked like.
+
+It also closes the gap recorded below: A3 (`reserved unchanged`) had never been seen to fail,
+because the forced-mismatch control cannot falsify it. It has now, for the right reason.
 
 ---
 
