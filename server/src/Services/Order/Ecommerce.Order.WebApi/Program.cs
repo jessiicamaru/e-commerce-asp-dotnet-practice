@@ -94,7 +94,10 @@ builder.Services.AddMassTransit(x =>
     // order and left its units held, and `rabbitmqctl list_queues` showed OrderCompleted with two
     // consumers. Publish/subscribe fans out per *endpoint*, not per service, and two services
     // naming a consumer the same thing collapses into one endpoint.
-    x.SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", includeNamespace: false));
+    // T035 NEGATIVE CONTROL - deliberately removed to restore the queue-name collision.
+    // Inventory and Order both declare OrderCompletedConsumer, so without the prefix they bind to
+    // one queue and compete. THIS BRANCH IS THROWAWAY.
+    // x.SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", includeNamespace: false));
 
     // Transport-level duplicate suppression on every receive endpoint. The guarded UPDATE in
     // OrderRepository.TrySettleAsync is the actual guarantee — this only keeps the ordinary
