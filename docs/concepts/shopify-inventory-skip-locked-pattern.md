@@ -1,5 +1,17 @@
 # Architecture Guide: High-Scalability Inventory Reservations via PostgreSQL `FOR UPDATE SKIP LOCKED`
 
+> **Study note — this is not how Inventory works.** The design below was evaluated in
+> [specs/001 research D1](../../specs/001-inventory-reservations/research.md) and **deliberately not
+> adopted**. Inventory keeps one aggregated row per product (`stock_items`, with `QuantityOnHand` and
+> `QuantityReserved`) and reserves with a plain `SELECT … FOR UPDATE`, taking rows in `ProductId`
+> order so two orders cannot deadlock. There is no `inventory_units` table, no `SKIP LOCKED` and no
+> replenishment worker; the expiry sweeper that exists works on reservations, not units.
+>
+> Why not: one row per physical unit, a replenishment worker and a harder mental model buy nothing
+> while the system has no traffic. **The trigger to revisit is measured lock contention on a single
+> product**, and the change would be contained — it alters how `StockItem` is stored, not the message
+> contracts or the consumers' behaviour.
+
 This document details the architectural design for high-throughput, conflict-free inventory reservations using PostgreSQL `FOR UPDATE SKIP LOCKED`, inspired by Shopify Engineering's production architecture.
 
 ---
@@ -47,7 +59,7 @@ FOR UPDATE SKIP LOCKED;
 #### How It Works Under Heavy Load:
 * **Request 1** acquires a lock on `Unit #1`.
 * **Request 2** encounters `Unit #1` locked by Request 1. Instead of **blocking/waiting** (traditional pessimistic locking), `SKIP LOCKED` instructs PostgreSQL to instantly skip `Unit #1` and claim `Unit #2`.
-* **Result**: All 500 concurrent requests acquire 500 distinct unit row locks in parallel with **zero lock contention delay**!
+* **Result**: the 500 requests acquire 500 distinct unit row locks in parallel instead of queueing behind one row — contention moves from waiting on a lock to scanning past locked rows.
 
 ---
 
@@ -146,7 +158,7 @@ WHERE status = 'RESERVED' AND reserved_at < NOW() - INTERVAL '10 minutes';
 
 ## 5. Architectural Strategy Comparison
 
-| Metric / Strategy | Aggregated Counter Lock (`SELECT FOR UPDATE`) | Distributed Redis Lock | **PostgreSQL `SKIP LOCKED` Unit Pool (Chosen)** |
+| Metric / Strategy | Aggregated Counter Lock (`SELECT FOR UPDATE`) — **what Inventory uses** | Distributed Redis Lock | PostgreSQL `SKIP LOCKED` Unit Pool (studied, not adopted) |
 | :--- | :--- | :--- | :--- |
 | **Data Consistency** | ✅ Strong ACID | ❌ Eventual / Risk of State Disagreement | ✅ **Strong Single DB ACID** |
 | **Lock Contention** | ❌ High (Requests queued sequentially) | ⚠️ Medium (Network latency / Key contention) | ✅ **Zero (Non-blocking row skip)** |

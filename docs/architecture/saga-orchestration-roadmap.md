@@ -1,6 +1,6 @@
 # Saga Orchestration Pattern & System Architecture Roadmap
 
-This document outlines the architectural concept of the **Saga Pattern**, compares **Orchestration vs. Choreography**, and details the 5-phase master roadmap for building our distributed E-commerce Monorepo Microservices system.
+This document outlines the architectural concept of the **Saga Pattern**, compares **Orchestration vs. Choreography**, and records the phased roadmap that built our distributed E-commerce Monorepo Microservices system.
 
 ---
 
@@ -65,49 +65,45 @@ We adopt **Saga Orchestration** by building a dedicated, standalone microservice
 
 ```mermaid
 graph TD
-    Client["Web/Mobile Client"] --> Gateway["API Gateway - Port 5000"]
-    Gateway --> OrderService["Ordering Service - Port 5060"]
-    
-    OrderService -->|1. Submit Order Event| RabbitMQ["RabbitMQ Broker - Port 5672"]
-    RabbitMQ -->|2. Event Received| Orchestrator["Standalone Saga Orchestrator - Port 5058"]
-    
-    Orchestrator -->|State Persistence| SagaDB[("Saga DB - Port 5436")]
-    
-    Orchestrator -->|3. Send Command: ReserveStock| InventoryService["Inventory Service - Port 5059"]
-    Orchestrator -->|4. Send Command: ProcessPayment| PaymentService["Payment Service"]
-    
-    InventoryService -->|Reply: StockReserved| RabbitMQ
-    PaymentService -->|Reply: PaymentFailed| RabbitMQ
-    
-    RabbitMQ -->|Trigger Compensation| Orchestrator
-    Orchestrator -->|Compensate: ReleaseStock| InventoryService
-    Orchestrator -->|Compensate: SetOrderCancelled| OrderService
+    Client["Client"] --> Gateway["API Gateway - Port 5000"]
+    Gateway --> OrderService["Order Service - Port 5059"]
+
+    OrderService -->|1. OrderSubmittedEvent| RabbitMQ["RabbitMQ Broker - Port 5672"]
+    RabbitMQ -->|2. Event received| Orchestrator["Saga Orchestrator - Port 5058"]
+
+    Orchestrator -->|State persistence| SagaDB[("Saga DB - Port 5436")]
+
+    Orchestrator -->|3. ReserveInventoryCommand| InventoryService["Inventory Service - Port 5060"]
+    Orchestrator -->|4. ProcessPaymentCommand| PaymentService["Payment Service - Port 5061"]
+
+    InventoryService -->|InventoryReserved / ReservationFailed| RabbitMQ
+    PaymentService -->|PaymentProcessed / PaymentFailed| RabbitMQ
+
+    RabbitMQ -->|Replies| Orchestrator
+    Orchestrator -->|Compensate: ReleaseInventoryCommand| InventoryService
+    Orchestrator -->|OrderCompletedEvent / OrderFailedEvent| OrderService
 ```
 
 ### Microservice Specifications:
 * **Project Name**: `Ecommerce.Orchestrator`
-* **Directory**: `server/src/Services/Orchestrator/Ecommerce.Orchestrator/`
+* **Directory**: `server/src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/` — one project; its
+  `DbContext` lives in the WebApi project too.
 * **HTTP Port**: `5058`
 * **Dedicated Database**: `ecommerce_saga_db` (PostgreSQL on Port `5436`)
-* **Technology**: MassTransit State Machine Saga (`Automatonymous`).
+* **Technology**: MassTransit 8 state machine saga (what was once the separate `Automatonymous`
+  library), persisted with EF Core and optimistic concurrency.
+
+**There is no `SetOrderCancelled` step.** The saga never tells Order to cancel anything: it publishes
+`OrderCompletedEvent` or `OrderFailedEvent`, and Order settles its own row from those. `Cancelled`
+is one of four order statuses that no code path reaches.
 
 ---
 
-## 3. Master 5-Phase Implementation Roadmap
+## 3. Implementation Roadmap
 
-```mermaid
-graph TD
-    Phase1["Phase 1: Global Cross-Cutting Error Handling & Validation"]
-    Phase2["Phase 2: Event Bus Infrastructure (RabbitMQ + MassTransit)"]
-    Phase3["Phase 3: Ordering & Inventory Microservices Scaffold"]
-    Phase4["Phase 4: Standalone Saga Orchestrator Microservice (Ecommerce.Orchestrator)"]
-    Phase5["Phase 5: Observability, Centralized Audit Logging (Seq) & E2E Verification"]
-
-    Phase1 --> Phase2
-    Phase2 --> Phase3
-    Phase3 --> Phase4
-    Phase4 --> Phase5
-```
+The phases below are in the order they were built. The roadmap began with five and grew as each
+phase exposed what the next one needed; Phase 6.5 exists because Phase 6 was declared complete while
+the order record still disagreed with the saga.
 
 ---
 
@@ -125,8 +121,8 @@ graph TD
 * **Goal**: Integrate asynchronous message bus and Outbox pattern into microservices.
 * **Deliverables**:
   1. Standardized `MassTransit.RabbitMQ` and `MassTransit.EntityFrameworkCore` across projects.
-  2. Configured MassTransit transactional outbox (`AddTransactionalOutboxEntities()`, `o.UsePostgres()`, `o.UseBusOutbox()`) in `CatalogDbContext` and `IdentityDbContext`.
-  3. Implemented domain event contracts in `Ecommerce.Contracts` (e.g., `ProductCreatedEvent`, `UserRegisteredEvent`).
+  2. Configured MassTransit transactional outbox (`AddTransactionalOutboxEntities()`, `o.UsePostgres()`, `o.UseBusOutbox()`), first in `CatalogDbContext`; today in every service that publishes — Catalog, Order, Orchestrator, Inventory and Payment. **Identity has no MassTransit at all**, and Cart only consumes.
+  3. Implemented domain event contracts in `Ecommerce.Contracts` (e.g., `ProductCreatedEvent`).
 
 ---
 
@@ -202,10 +198,11 @@ graph TD
 > Order now sets an endpoint name prefix. Publish/subscribe fans out per **endpoint**, not per
 > service.
 
-Two `OrderStatus` values remain deliberately unreachable: `StockReserved` and `Paid`. The saga
-passes through both states but announces neither, and adding an announcement means changing a shared
-contract every service deserializes. Documented in the feature's `data-model.md` rather than left to
-be rediscovered.
+Four `OrderStatus` values are deliberately unreachable: `Pending`, `StockReserved`, `Paid` and
+`Cancelled`. The saga passes through the middle two but announces neither, and adding an announcement
+means changing a shared contract every service deserializes; nothing cancels an order at all.
+Documented in [specs/003 data-model](../../specs/003-order-lifecycle/data-model.md) rather than left
+to be rediscovered.
 
 ---
 
@@ -213,10 +210,12 @@ be rediscovered.
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
   1. ⬜ Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
-  2. ⬜ Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
-  3. ⬜ Replace the stub payment gateway with a real provider integration.
+  2. ⬜ Stream structured Serilog JSON logs & Correlation IDs from every service to Seq —
+     [#22](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/22).
+  3. ~~Replace the stub payment gateway with a real provider integration.~~ Moved out of this phase:
+     deliberately deferred, together with deployment.
   4. ✅ **End-to-end verification in CI** — [`verify-saga.sh`](../../.github/scripts/verify-saga.sh)
-     places a real order over HTTP and follows it through all six services, asserting that the stock
+     places a real order over HTTP and follows it through every service it touches, asserting that the stock
      moved by exactly the amount ordered and that nothing is left held. Both branches on every
      change: payment approving, and payment refusing so compensation is exercised. Design and
      evidence in [specs/007-saga-e2e-verification](../../specs/007-saga-e2e-verification/).
@@ -234,3 +233,18 @@ be rediscovered.
 > non-negotiable. Fixed in `20260921104437_AddTransactionalOutbox`; cold starts now settle in 2–3s,
 > 4 of 4. Four sagas stranded between **2026-09-03 and 09-17** show how long it had been happening
 > without anyone noticing — the second order of any session always worked.
+
+---
+
+### 🟢 After the saga: checkout correctness (Completed)
+
+Two features that did not change the saga's shape but changed what it is trusted with:
+
+* **[specs/009](../../specs/009-catalog-owns-price/) — Catalog owns the price.** The client used to
+  send the unit price and the system charged it; a product listed at 40,000,000 was bought for 1.
+  Order now asks Catalog over gRPC at submission and freezes price and name onto the line — the
+  system's first synchronous cross-service call.
+* **[specs/010](../../specs/010-customer-cart/) — the cart.** Checkout takes no body and reads the
+  caller's cart over gRPC. Cart consumes `OrderSubmitted`, `OrderCompleted` and `OrderFailed`, and
+  removes ordered lines only on completion — whichever of the first two arrives second applies it,
+  because nothing orders delivery across message types.

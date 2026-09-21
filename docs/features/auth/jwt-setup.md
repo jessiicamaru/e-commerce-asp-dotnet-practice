@@ -19,7 +19,7 @@ capability by referencing `Ecommerce.Shared` — no per-service JWT packages.
 ## 2. Configuration Settings
 
 ### Step 2.1: Add JWT Options in `appsettings.json`
-Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/appsettings.json):
+Add the following `JwtSettings` section to your [`appsettings.json`](../../../server/src/Services/Identity/Ecommerce.Identity.WebApi/appsettings.json):
 
 ```json
   "JwtSettings": {
@@ -36,7 +36,7 @@ Add the following `JwtSettings` section to your [`appsettings.json`](file:///d:/
 ## 3. Implementation Steps
 
 Token validation is centralized in
-[`Ecommerce.Shared/Authentication/`](file:///d:/Code/CSharp/e-commerce/server/src/BuildingBlocks/Ecommerce.Shared/Authentication/),
+[`Ecommerce.Shared/Authentication/`](../../../server/src/BuildingBlocks/Ecommerce.Shared/Authentication/),
 so a service does not hand-roll `AddJwtBearer`. It calls one extension method:
 
 ```csharp
@@ -87,7 +87,13 @@ if (!string.IsNullOrEmpty(envJwtSecret))
 ```
 
 Forgetting this in a new service means an empty secret and every token rejected with 401.
-`AddJwtAuthentication` fails fast at startup rather than failing silently per request.
+
+**`AddJwtAuthentication` does not fail at startup** when `JwtSettings` is missing or incomplete. The
+service starts, reports healthy, and rejects every token — Cart did exactly that in feature 010,
+answering `401` with `IDX10208: Unable to validate audience` because it had no `appsettings.json`.
+A new service needs its own `JwtSettings` (`Issuer`, `Audience`) **and** the `JWT_SECRET` copy
+above. Failing fast here is what the constitution asks for, and is a known gap in the shared
+building block.
 
 ### 3.2 Three traps worth knowing
 
@@ -99,7 +105,7 @@ Forgetting this in a new service means an empty secret and every token rejected 
 
 The role trap is easy to miss because a hand-crafted test token signed with your *own* assumptions
 will pass. It only shows up against a token the Identity service actually issued — which is why CI
-runs [`verify-auth.sh`](file:///d:/Code/CSharp/e-commerce/.github/scripts/verify-auth.sh) against
+runs [`verify-auth.sh`](../../../.github/scripts/verify-auth.sh) against
 real logins.
 
 ## 4. Verifying JWT Token in Endpoints
@@ -131,10 +137,15 @@ In requests, clients must pass the token in the `Authorization` header:
 
 | Endpoint | Access |
 | :--- | :--- |
-| `GET /api/products`, `GET /api/categories` | Anonymous (`[AllowAnonymous]`) |
-| `POST /api/products`, `POST /api/categories` | `Admin` only |
-| `POST /api/orders` | Any authenticated user |
 | `POST /api/auth/*` | Anonymous |
+| `GET /api/products`, `GET /api/categories`, `GET /api/stock` | Anonymous (`[AllowAnonymous]`) |
+| `POST /api/products`, `POST /api/categories`, `PUT /api/stock/{productId}` | `Admin` only |
+| `GET /api/reservations/{orderId}`, `GET /api/payments` | `Admin` only |
+| `/api/cart` (all) | Any authenticated user — always **their own** cart |
+| `POST /api/orders`, `GET /api/orders`, `GET /api/orders/{id}` | Any authenticated user — another customer's order is **404**, not 403 |
+
+The [Bruno collection](../../../bruno/) exercises every row, including the 401 / 403 / 404 cases in
+`security-checks/`.
 
 > Because roles live inside the token, granting someone a role does **not** take effect until their
 > current access token expires (15 minutes) or is refreshed. That is inherent to stateless JWT;

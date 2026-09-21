@@ -1,6 +1,6 @@
 # RabbitMQ Setup & Monitoring Guide
 
-This guide explains how to spin up and monitor **RabbitMQ** using Docker Compose. RabbitMQ is used as the message broker for background message processing (e.g., sending emails, payment processing).
+This guide explains how to spin up and monitor **RabbitMQ** using Docker Compose. RabbitMQ carries every asynchronous message in the system: the checkout saga's commands and events, and Inventory's stock announcements to Catalog.
 
 ---
 
@@ -17,7 +17,7 @@ RabbitMQ runs on two primary ports:
 To configure RabbitMQ, we use the official **`rabbitmq:3-management-alpine`** image, which includes the web management plugin out-of-the-box and has a small footprint.
 
 ### 2.1 Update `.env` & `.env.example`
-Add RabbitMQ credentials to your local [**`.env`**](file:///d:/Code/CSharp/e-commerce/server/.env) file:
+Add RabbitMQ credentials to your local [**`.env`**](../../server/.env) file:
 
 ```env
 # RabbitMQ Configuration
@@ -26,7 +26,7 @@ RABBITMQ_PASSWORD=guest
 ```
 
 ### 2.2 Update `docker-compose.yml`
-Add the `rabbitmq` service under the `services` section in [`docker-compose.yml`](file:///d:/Code/CSharp/e-commerce/server/docker-compose.yml):
+Add the `rabbitmq` service under the `services` section in [`docker-compose.yml`](../../server/docker-compose.yml):
 
 ```yaml
   rabbitmq:

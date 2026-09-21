@@ -16,7 +16,6 @@ This guide explains how to implement the User Authentication (Registration & Log
      [IMediator.Send(RegisterCommand)]
            │
      ┌─────┴───────────────┐ (MediatR pipelines / middleware)
-     │ - Logging           │
      │ - Validation (Fluent)
      └─────┬───────────────┘
            │ (Dispatches to Handler)
@@ -65,7 +64,7 @@ To configure MediatR, we install these packages:
 - **`Microsoft.Extensions.DependencyInjection.Abstractions`** (installed in `Ecommerce.Identity.Application` project to create the DI extension method).
 
 ### 3.2 Step 2: Register MediatR in Application Layer
-We define an extension method inside [`DependencyInjection.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.Application/DependencyInjection.cs) in the Application project:
+We define an extension method inside [`DependencyInjection.cs`](../../../server/src/Services/Identity/Ecommerce.Identity.Application/DependencyInjection.cs) in the Application project:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -85,7 +84,7 @@ public static class DependencyInjection
 }
 ```
 
-Then register it in WebApi's [`Program.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Program.cs):
+Then register it in WebApi's [`Program.cs`](../../../server/src/Services/Identity/Ecommerce.Identity.WebApi/Program.cs):
 ```csharp
 using Ecommerce.Application; // Import namespace
 
@@ -131,6 +130,7 @@ The command triggers the registration logic. The handler handles it:
 - **`RegisterCommandHandler.cs`**:
   ```csharp
   using MediatR;
+  using Ecommerce.Shared.Exceptions;
   using Ecommerce.Application.Common.Interfaces;
   using Ecommerce.Application.Common.Constants;
   using Ecommerce.Application.Auth.Common;
@@ -155,7 +155,7 @@ The command triggers the registration logic. The handler handles it:
           var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
           if (existingUser != null)
           {
-              throw new Exception("Email is already registered.");
+              throw new ConflictException("Email is already registered."); // -> 409
           }
 
           // 2. Hash Password
@@ -201,8 +201,13 @@ The command triggers the registration logic. The handler handles it:
 
 ---
 
+> **The code does not do this yet.** `RegisterCommandHandler` throws a bare `Exception` here, which
+> the shared `GlobalExceptionHandler` cannot map, so registering an existing email returns **500**.
+> The snippet above shows the intended shape; the Bruno check
+> `security-checks/duplicate registration is 409` stays red until the code matches it.
+
 ## 4. Web API Controller Setup
-In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `Mediator` and hide the `RefreshToken` from the response body by using C#'s `with` expression:
+In [`AuthController.cs`](../../../server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we send the command via MediatR's `Mediator` and hide the `RefreshToken` from the response body by using C#'s `with` expression:
 
 ```csharp
 using Ecommerce.Application.Auth.Commands.Login;

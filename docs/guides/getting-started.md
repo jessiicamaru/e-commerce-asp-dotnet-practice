@@ -7,7 +7,8 @@ Two supported ways to run this system. Both work; pick by what you are doing.
 | **A. Containers** | You want the whole thing running with one command, or you are checking it behaves the way it will elsewhere | `docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build` |
 | **B. Host** | You are writing code and want a debugger attached, or fast rebuilds of one service | `docker compose up -d` then `./start-dev.sh` |
 
-Either way the ports are the same: gateway on **5000**, services on **5056–5061**.
+Either way the ports are the same: gateway on **5000**, services on **5056–5062**, and gRPC on
+**6057** (Catalog) and **6062** (Cart) for calls between services.
 
 There is a third way that skips building entirely — pull a published image:
 
@@ -15,7 +16,7 @@ There is a third way that skips building entirely — pull a published image:
 docker pull ghcr.io/jessiicamaru/ecommerce-catalog:sha-<short-sha>
 ```
 
-Every merge to `main` publishes seven of these, each named by the commit it came from and never
+Every merge to `main` publishes one of these per service, each named by the commit it came from and never
 overwritten. Use it to run an exact past version without checking that commit out. The `:main` tag
 also exists for convenience, but it moves, so it can never name "the version from before" —
 [release-artifacts.md](../../specs/006-release-and-rollback/contracts/release-artifacts.md) has the
@@ -85,12 +86,12 @@ Deeper detail — the configuration surface, image builds, secret scanning — i
 
 ```bash
 cd server
-docker compose up -d     # infrastructure only: 6 PostgreSQL, RabbitMQ, pgAdmin
+docker compose up -d     # infrastructure only: 7 PostgreSQL, RabbitMQ, pgAdmin
 ./start-dev.sh           # or ./start-dev.ps1 on Windows PowerShell
 ```
 
-`start-dev` applies the six migrations with `dotnet ef database update` and then launches all seven
-services. Nothing about this changed when containers were added — `docker compose up -d` on its own
+`start-dev` applies every service's migrations with `dotnet ef database update` and then launches
+every service and the gateway. Nothing about this changed when containers were added — `docker compose up -d` on its own
 still brings up infrastructure only, which is exactly what this path expects.
 
 To run one service by hand:
@@ -104,7 +105,7 @@ dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/
 ## 2. Check it is really up
 
 ```bash
-for p in 5056 5057 5059 5060 5061; do
+for p in 5056 5057 5059 5060 5061 5062; do
   printf "%s -> " $p
   curl -s -o /dev/null -w '%{http_code}\n' http://localhost:$p/health
 done
@@ -152,11 +153,17 @@ curl -X PUT http://localhost:5060/api/stock/<productId> \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"quantityOnHand":10}'
 
-# 4. Register a shopper, submit an order, then read it back
-#    POST /api/auth/register  -> token
-#    POST /api/orders         {"items":[{productId, productName, quantity, unitPrice}]}
-#    GET  /api/orders/{id}    -> "Completed" within a few seconds
+# 4. Register a shopper, fill their cart, check out, then read the order back
+#    POST   /api/auth/register    -> token (use it as the shopper's Bearer token below)
+#    POST   /api/cart/items       {"productId", "quantity"}
+#    POST   /api/orders           no body - the cart says what, the token says who,
+#                                 and Catalog says how much
+#    GET    /api/orders/{id}      -> "Completed" within a few seconds
+#    GET    /api/cart             -> the ordered lines are gone
 ```
+
+The same flow, with every request written out and tested, is the [Bruno collection](../../bruno/)
+— open it, pick the `local` environment, fill the two admin variables, and run it.
 
 Two things to notice, because they are recent and deliberate:
 
@@ -164,11 +171,15 @@ Two things to notice, because they are recent and deliberate:
   Inventory. The catalogue reports what the stock owner last told it and never a count of its own.
 - **The order settles by itself.** `GET /api/orders/{id}` moves from `Submitted` to `Completed` when
   the saga finishes, or to `Failed` with a reason when it does not.
+- **Nothing the client sends decides the price.** Checkout charges Catalog's current price for what
+  is in the cart; an empty cart is refused with `409`, and Catalog or Cart being unreachable with
+  `503`.
+- **The cart empties only when the order completes.** A declined payment leaves it exactly as it was.
 
 ### Exercising the failure path
 
 The payment service is a stand-in that moves no money. Set `PAYMENT_OUTCOME=Reject` in `server/.env`,
-restart Payment, and an order will fail and release its held stock.
+restart Payment, and an order will fail, release its held stock, and leave the cart alone.
 
 ```bash
 curl -s http://localhost:5061/health   # confirm "configuredOutcome" took effect
@@ -186,9 +197,10 @@ cd server
 DB_PASSWORD=<your password> dotnet test
 ```
 
-59 tests across four projects, all against a **real PostgreSQL** on the ports in `.env` — the
-guarantees under test are row locking, unique constraints and guarded updates, which an in-memory
-provider does not implement. The database containers must be up.
+Five test projects — Catalog, Order, Inventory, Payment and Cart — all against a **real
+PostgreSQL** on the ports in `.env`: the guarantees under test are row locking, unique constraints
+and guarded updates, which an in-memory provider does not implement. The database containers must
+be up.
 
 ---
 
@@ -198,6 +210,7 @@ provider does not implement. The database containers must be up.
   builds, secret scanning
 - [Database Setup & Migrations](../infrastructure/database-setup.md) — the `dotnet ef` reference
 - [Troubleshooting](./troubleshooting.md) — compile errors, port shadowing, container traps
+- [Bruno collection](../../bruno/) — every public endpoint, runnable and tested
 - [Microservices Design](../architecture/microservices-design.md) — topology, ownership, how the
   services run
 - [`CLAUDE.md`](../../CLAUDE.md) — the operational detail, and the traps this codebase has already

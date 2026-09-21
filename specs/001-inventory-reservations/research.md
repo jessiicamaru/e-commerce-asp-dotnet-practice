@@ -26,7 +26,7 @@ contain the same two products in opposite order — an easy bug to ship without 
   extra code that has to be correct. It remains a reasonable fallback if lock waits ever show up in
   profiling.
 - **Unit-row pool with `FOR UPDATE SKIP LOCKED`**, as described in
-  [shopify-inventory-skip-locked-pattern.md](../../docs/architecture/shopify-inventory-skip-locked-pattern.md).
+  [shopify-inventory-skip-locked-pattern.md](../../docs/concepts/shopify-inventory-skip-locked-pattern.md).
   Rejected **for now**, deliberately. It is the right answer for flash sales — thousands of buyers
   contending for one product — because writers never queue behind each other. The cost is one
   database row per physical unit, a replenishment worker to keep the pool stocked, and a much

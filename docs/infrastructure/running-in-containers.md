@@ -11,7 +11,7 @@ There are two ways to run this system, and both are supported.
 | **Containers** | `docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build` | Everything in containers |
 | **Host** (the original) | `docker compose up -d` then `./start-dev.sh` | Infrastructure in containers, services on your machine |
 
-`docker compose up -d` on its own still brings up **infrastructure only** — six PostgreSQL
+`docker compose up -d` on its own still brings up **infrastructure only** — seven PostgreSQL
 containers, RabbitMQ and pgAdmin. That is deliberate: the services live in an *overlay* file so that
 `start-dev.sh` keeps working untouched. Merging the two would force every contributor down the
 container path.
@@ -28,7 +28,8 @@ cd server
 docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 
-Ports are unchanged from the host path: gateway on `5000`, services on `5056`–`5061`. Inside their
+Ports are unchanged from the host path: gateway on `5000`, services on `5056`–`5062`, and gRPC on
+`6057` (Catalog) and `6062` (Cart). Inside their
 containers every service binds `8080`; compose maps it.
 
 ```bash
@@ -95,8 +96,8 @@ behaved identically everywhere no matter what it was told.
 
 | Setting | In containers | Why it bites |
 | :--- | :--- | :--- |
-| `*_DB_PORT` | **`5432`** | The 5433–5438 in `.env` are *host* publications. Inside the container network every PostgreSQL listens on 5432. Getting this wrong looks exactly like a dead database |
-| `JWT_SECRET` | identical for all seven | Identity signs with it, everyone else validates with it. A mismatch is a **401 that looks like a permissions bug** |
+| `*_DB_PORT` | **`5432`** | The 5433–5439 in `.env` are *host* publications. Inside the container network every PostgreSQL listens on 5432. Getting this wrong looks exactly like a dead database |
+| `JWT_SECRET` | identical for every service | Identity signs with it, everyone else validates with it. A mismatch is a **401 that looks like a permissions bug** |
 | `RABBITMQ_PASS` **and** `RABBITMQ_PASSWORD` | both, same value | The services read the first; `docker-compose.yml` and `.env.example` use the second. A non-default password needs both |
 
 ---
@@ -110,7 +111,7 @@ In the container path each service applies its own migrations at startup, becaus
 to alter its own schema forever, and "started successfully" and "was allowed to change the schema"
 should not be the same event in a real deployment.
 
-The host path is unchanged: `start-dev.sh` runs `dotnet ef database update` six times before
+The host path is unchanged: `start-dev.sh` runs `dotnet ef database update` once per database before
 launching anything. A runtime image has neither the SDK nor the source, so that route does not exist
 inside a container — which is why this setting had to exist at all. Before 2026-09-17 **nothing**
 called `Database.Migrate()`, so a container stack would have come up healthy and empty.
@@ -119,7 +120,7 @@ called `Database.Migrate()`, so a container stack would have come up healthy and
 
 ## 5. Images
 
-One [Dockerfile](../../server/Dockerfile) builds all seven services, selected by a `PROJECT` build
+One [Dockerfile](../../server/Dockerfile) builds every service, selected by a `PROJECT` build
 argument:
 
 ```bash
@@ -127,8 +128,9 @@ cd server
 docker build --build-arg PROJECT=src/Services/Catalog/Ecommerce.Catalog.WebApi -t ecommerce-catalog .
 ```
 
-Seven near-identical files would drift — a fix applied to six of them is invisible and nothing
-fails.
+One file per service would drift — a fix applied to all but one is invisible and nothing fails. The
+Dockerfile copies each `.csproj` by name before restoring, so **a new project needs a line there**,
+or the build fails at publish with a message about the project rather than about the list.
 
 ### `.dockerignore` is not optional
 
@@ -196,8 +198,8 @@ docker pull ghcr.io/jessiicamaru/ecommerce-catalog:sha-<short-sha>
 ```
 
 Each is built, **scanned for credentials, and only then pushed** — in that order, because once an
-image is published the scanned bytes and the shipped bytes have to be the same artifact. All seven
-are built and scanned before any is pushed; a partial release is not a release.
+image is published the scanned bytes and the shipped bytes have to be the same artifact. Every image
+is built and scanned before any is pushed; a partial release is not a release.
 
 `:main` also exists and **moves**, so it can never name "the version from before". Only `sha-` tags
 may name something deployable.

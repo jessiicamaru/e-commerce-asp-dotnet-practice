@@ -80,7 +80,7 @@ nothing needed justifying — where a simpler option existed it was taken (resea
 
 One deviation from a repository document, recorded here because it is a decision rather than a
 violation: research D1 declines the unit-row pool design in
-[shopify-inventory-skip-locked-pattern.md](../../docs/architecture/shopify-inventory-skip-locked-pattern.md)
+[shopify-inventory-skip-locked-pattern.md](../../docs/concepts/shopify-inventory-skip-locked-pattern.md)
 in favour of an aggregated counter with a row lock. The constitution requires such a decision to
 carry its rejected alternative and rationale, which D1 does, along with the condition that would
 reverse it.

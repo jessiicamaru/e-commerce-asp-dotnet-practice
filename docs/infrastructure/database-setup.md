@@ -16,12 +16,13 @@ Each microservice in our architecture owns a dedicated, isolated PostgreSQL data
 | **Orchestrator Service** | `ecommerce-orchestrator-db` | `5436` | `ecommerce_saga_db` | Order Saga State Machine Persistence |
 | **Inventory Service** | `ecommerce-inventory-db` | `5437` | `ecommerce_inventory_db` | Stock Items, Reservations, Outbox and Inbox |
 | **Payment Service** | `ecommerce-payment-db` | `5438` | `ecommerce_payment_db` | Payments, Outbox and Inbox |
+| **Cart Service** | `ecommerce-cart-db` | `5439` | `ecommerce_cart_db` | Carts, Cart Lines, Checkout Outcomes |
 
 ---
 
 ## 2. Docker Compose Configuration
 
-We use [`docker-compose.yml`](file:///d:/Code/CSharp/e-commerce/server/docker-compose.yml) to orchestrate all four database containers, RabbitMQ, and pgAdmin:
+We use [`docker-compose.yml`](../../server/docker-compose.yml) to run every database container, RabbitMQ and pgAdmin. The excerpt below shows the pattern; the file itself is the full list:
 
 ```yaml
 services:
@@ -86,7 +87,7 @@ docker compose ps
 
 ### Ports: host vs container
 
-The `*_DB_PORT` values in `.env` — 5433 to 5438 — are **host publications**. Inside the container
+The `*_DB_PORT` values in `.env` — 5433 to 5439 — are **host publications**. Inside the container
 network every PostgreSQL listens on **5432**, so the compose overlay sets each service's
 `*_DB_PORT` to `5432`.
 
@@ -142,12 +143,18 @@ dotnet ef migrations add <MigrationName> --project src/Services/Orchestrator/Eco
 dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
+### 4.7 Cart Microservice Migrations
+```bash
+dotnet ef migrations add <MigrationName> --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
+dotnet ef database update --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
+```
+
 ---
 
 ## 5. Accessing pgAdmin (GUI Manager)
 
 1. Open your browser and navigate to `http://localhost:5050`.
-2. Log in with credentials: `admin@admin.com` / `123456`.
+2. Log in with `PGADMIN_EMAIL` / `PGADMIN_PASSWORD` from `server/.env`.
 3. Add servers (Connect using Container Name and internal port `5432`):
    - **Identity DB Connection**: Host `ecommerce-identity-db`, Port `5432`, DB `ecommerce_identity_db`
 
@@ -158,3 +165,6 @@ dotnet ef database update --project src/Services/Orchestrator/Ecommerce.Orchestr
    - **Catalog DB Connection**: Host `ecommerce-catalog-db`, Port `5432`, DB `ecommerce_catalog_db`
    - **Order DB Connection**: Host `ecommerce-order-db`, Port `5432`, DB `ecommerce_order_db`
    - **Orchestrator Saga DB Connection**: Host `ecommerce-orchestrator-db`, Port `5432`, DB `ecommerce_saga_db`
+   - **Inventory DB Connection**: Host `ecommerce-inventory-db`, Port `5432`, DB `ecommerce_inventory_db`
+   - **Payment DB Connection**: Host `ecommerce-payment-db`, Port `5432`, DB `ecommerce_payment_db`
+   - **Cart DB Connection**: Host `ecommerce-cart-db`, Port `5432`, DB `ecommerce_cart_db`

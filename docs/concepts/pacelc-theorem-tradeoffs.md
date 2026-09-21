@@ -1,5 +1,9 @@
 # Architecture Guide: PACELC Theorem & Domain-Driven Trade-offs
 
+> **Study note.** This applies PACELC to the system as it was *intended*. The Redis caching, read
+> replicas and sub-50ms targets mentioned below were never built, and one classification has changed
+> since — see [§4](#4-where-the-running-system-departs-from-this-note).
+
 This document describes the application of the **PACELC Theorem** to analyze system trade-offs between **Availability (A)**, **Latency (L)**, and **Consistency (C)** across our Monorepo Microservices.
 
 ---
@@ -56,6 +60,19 @@ Rather than enforcing a uniform PACELC configuration across all microservices, w
 | Microservice / Component | PACELC Classification | Architectural Trade-off |
 | :--- | :--- | :--- |
 | **Catalog Read APIs** | **PA / EL** | Optimized for 24/7 uptime and sub-50ms HTTP responses using Redis caching. |
-| **Transactional Outbox & RabbitMQ** | **PC / EC** | Enforces *At-Least-Once Delivery* and strict message ordering over raw throughput. |
+| **Transactional Outbox & RabbitMQ** | **PC / EC** | Enforces *at-least-once delivery* over raw throughput. It does **not** order messages of different types — consumers must tolerate any order (issue #15). |
 | **Saga Orchestrator Service** | **PC / EC** | Persists state transitions to `ecommerce_saga_db` to guarantee financial & stock integrity. |
 | **Ordering & Inventory Services** | **PC / EC** | Blocks illegal inventory deductions, prioritizing correctness over raw latency. |
+
+---
+
+## 4. Where the Running System Departs from This Note
+
+- **Catalog is no longer purely PA.** Since [feature 009](../../specs/009-catalog-owns-price/),
+  checkout asks Catalog for prices synchronously. If Catalog is unreachable, checkout is **refused
+  with 503** rather than priced from anything stale or anything the client claimed — pricing chose
+  consistency over availability. Browsing remains best-effort.
+- **Cart chooses availability for display, consistency for checkout.** When Catalog does not answer,
+  the cart still renders its lines with prices marked unavailable, and checkout is disabled.
+- **No cache, no replicas.** Every read goes to the service's own PostgreSQL. The latency figures
+  above are targets from the original design, never measured.

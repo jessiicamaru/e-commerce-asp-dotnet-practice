@@ -50,7 +50,8 @@ Ecommerce.Shared/
 │   └── ValidationBehavior.cs      # MediatR pipeline behavior for automatic DTO validation
 ├── Exceptions/
 │   ├── NotFoundException.cs       # Thrown when a requested entity does not exist (HTTP 404)
-│   └── ConflictException.cs       # Thrown when a unique constraint fails (HTTP 409)
+│   ├── ConflictException.cs       # Thrown when a unique constraint fails (HTTP 409)
+│   └── DependencyUnavailableException.cs  # A service checkout needs did not answer (HTTP 503)
 └── Middlewares/
     └── GlobalExceptionHandler.cs  # ASP.NET Core 10 IExceptionHandler returning RFC 7807 JSON
 ```
@@ -117,7 +118,12 @@ answered by ASP.NET Core with a bare `401` plus a `WWW-Authenticate` header.
 | `UnauthorizedAccessException` | 401 | Unauthorized |
 | `NotFoundException` | 404 | Resource Not Found |
 | `ConflictException` | 409 | Resource Conflict |
+| `DependencyUnavailableException` | 503 | Service Unavailable — Catalog or Cart did not answer at checkout |
 | anything else | 500 | Internal Server Error |
+
+**"Anything else" includes a bare `System.Exception`.** Throwing one for a client mistake reports it
+as a server fault. Identity still does this when an email is already registered (500 instead of
+409) — see §6.
 
 ---
 
@@ -134,7 +140,7 @@ The `GlobalExceptionHandler` enforces strict security boundaries based on the ru
 
 ## 5. How Microservices Register `Ecommerce.Shared`
 
-Every microservice (`Catalog`, `Identity`, `Order`, `Inventory`) enables shared error handling with just 2 steps:
+Every service with HTTP endpoints enables shared error handling with just 2 steps:
 
 ### Step 1: Application Layer Registration (`DependencyInjection.cs`)
 ```csharp
@@ -175,6 +181,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 ```
 
-> The Catalog service still contains unused copies of `ValidationBehavior`, `GlobalExceptionHandler`
-> and its own exception types under `Ecommerce.Catalog.*`. The `Ecommerce.Shared` versions are the
-> live ones — `Program.cs` and `DependencyInjection.cs` reference those. Do not extend the copies.
+---
+
+## 6. Lessons recorded
+
+- **One copy only.** Catalog once carried its own `ValidationBehavior`, `GlobalExceptionHandler` and
+  exception types; they were deleted in `763b77a`. Do not reintroduce a per-service copy: two
+  exception types with the same name in two namespaces compile, review clean, and fall through the
+  shared handler to a 500, because it pattern-matches on `Ecommerce.Shared.Exceptions`.
+- **`ValidationBehavior` is constrained `where TRequest : notnull`, on purpose.** It used to be
+  `where TRequest : IRequest<TResponse>`. In MediatR 12 a command that returns nothing implements
+  `IRequest`, a *different* interface, so the constraint could not be met and MediatR dropped the
+  behavior without a word — every such command's validator was dead code. Found in feature 010 when
+  the cart accepted a quantity of `-1`; `Ecommerce.Cart.Tests/ValidationTests` fails if it returns.
+- **Known gap:** Identity's register and refresh handlers throw bare `Exception`s. Register returns
+  500 for a duplicate email; the Bruno check `security-checks/duplicate registration is 409` stays
+  red until it throws `ConflictException`.

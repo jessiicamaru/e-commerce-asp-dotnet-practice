@@ -122,21 +122,26 @@ When this new entity is added to a tracked parent's collection without explicitl
 3. Since this Guid only exists in RAM and not in the database, the `UPDATE` affects 0 rows, triggering the concurrency exception.
 
 ### Solution
-Remove inline default initializers (`= Guid.NewGuid()`) from primary key properties of your domain entities. Let them default to `Guid.Empty` so EF Core's Change Tracker can correctly infer that they are new and mark them as `Added` (generating an `INSERT` statement).
+The root cause is a convention: EF Core treats a `Guid` key as **generated on add**, so a key that
+already has a value must belong to a row that exists. There are two ways out, and this project uses
+the first:
 
-```csharp
-// BAD - Confuses EF Core Change Tracker on navigation inserts
-public class RefreshToken
-{
-    public Guid Id { get; set; } = Guid.NewGuid();
-}
+1. **Keep generating the id in the application — as [ADR-001](../architecture/adr-001-uuidv7-primary-keys.md)
+   requires (`Guid.CreateVersion7()`) — and tell EF so:**
 
-// GOOD - Defaults to Guid.Empty, letting EF Core detect it as new
-public class RefreshToken
-{
-    public Guid Id { get; set; }
-}
-```
+   ```csharp
+   builder.Property(l => l.Id).ValueGeneratedNever();
+   ```
+
+   EF then treats an entity found through a navigation as new, and issues an `INSERT`. This is what
+   Cart does for `Cart.Id` and `CartLine.Id`; before it did, all eight of its consumer tests failed
+   with exactly this exception. It changes the model, not the schema — no migration.
+2. **Leave the key empty** (`Guid.Empty`) and let EF generate it. This works, but EF's generated
+   values are **not UUID v7**, so it contradicts ADR-001. Identity's `RefreshToken` and self-registered
+   users work this way today.
+
+Adding the child through its own `DbSet.Add(...)` instead of the parent's collection also avoids the
+exception, but is easy to forget at the next call site.
 
 ---
 
@@ -216,8 +221,8 @@ PostgreSQL.
 
 **PostgreSQL — already handled.** The Identity database publishes on **`5435`**, not `5432`, so it
 no longer collides with a local PostgreSQL install. `server/.env` sets `IDENTITY_DB_PORT=5435` to
-match. Keep those two in sync if you change either. Catalog (`5433`), Order (`5434`) and
-Orchestrator (`5436`) never collided.
+match. Keep those two in sync if you change either. The other databases (`5433`, `5434`, `5436`–`5439`)
+never collided.
 
 **RabbitMQ — stop the local install.** The services call `cfg.Host(rabbitHost, "/", ...)` and pass
 no port, so the broker must be on the default `5672`; you cannot move the container out of the way
@@ -279,14 +284,14 @@ Added 2026-09-17 with [Running in Containers](../infrastructure/running-in-conta
 
 ### 7.2 A service times out reaching a database that is clearly healthy
 
-`*_DB_PORT` is almost certainly 5433–5438. Those are **host publications**; inside the container
+`*_DB_PORT` is almost certainly 5433–5439. Those are **host publications**; inside the container
 network every PostgreSQL listens on **5432**. This looks like a dead database and is not one.
 
 ### 7.3 Every authenticated request returns 401 across services
 
 `JWT_SECRET` differs between containers. Identity signs with it and everyone else validates with it,
 so a mismatch presents as an authorization failure rather than a configuration one. Check it is
-supplied from a single source to all seven.
+supplied from a single source to every service.
 
 ### 7.4 A configuration override in an environment variable is ignored
 

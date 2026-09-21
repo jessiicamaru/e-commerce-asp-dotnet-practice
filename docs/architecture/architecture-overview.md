@@ -19,6 +19,9 @@ graph TD
 
 ### Module Breakdown
 
+This table is the **target scope**. What exists today is in the phases below and, in detail, in the
+[saga roadmap](./saga-orchestration-roadmap.md).
+
 | Module | Core Features | Key Entities |
 | :--- | :--- | :--- |
 | **User & Auth** | Registration, login, role-based access, JWT validation, refresh tokens. | `User`, `Role`, `RefreshToken` |
@@ -35,6 +38,9 @@ graph TD
 - **Database**: PostgreSQL (relational database suited for transaction consistency)
 - **Messaging**: RabbitMQ via MassTransit, with a transactional outbox and inbox
 - **Gateway**: YARP, fronting all services on port 5000
+- **Service-to-service calls**: asynchronous messages everywhere except checkout, which makes two
+  synchronous reads over **gRPC** (h2c, on a second port) — the cart from Cart and the prices from
+  Catalog. See [How Services Talk to Each Other](./service-to-service-communication.md)
 - **Packaging**: one container image per service, configured entirely from the environment. Since
   2026-09-17 the system runs either fully in containers or, as before, with the services on the
   developer's machine and infrastructure in Docker — see
@@ -45,7 +51,7 @@ graph TD
   - **CQRS (Command Query Responsibility Segregation)**: Separating write operations (Commands) from read operations (Queries) using **MediatR**.
   - **Repository Pattern**: Abstracting data access.
   - **Fluent Validation**: For request validation in the Application layer.
-  - **Mapster or AutoMapper**: For mapping between Entities and DTOs.
+  - **Mapping by hand**: handlers build response records directly; no mapping library is used.
 
 ---
 
@@ -64,14 +70,23 @@ We will build the system iteratively using a feature-first approach within each 
 - [x] Implement User Registration and Login flow ([Auth Design Guide](../features/auth/db-design.md)).
 
 ### Phase 2: Product & Catalog
-- [ ] Database schema for Products and Categories.
-- [ ] CRUD endpoints for managing catalog (Admin).
-- [ ] Search and filter endpoints (Customer).
+- [x] Database schema for Products and Categories.
+- [x] Create endpoints for the catalog (Admin).
+- [ ] Update and delete endpoints — **not built**; a product or category cannot be edited after
+  creation.
+- [x] Search and filter endpoints (Customer): paging, category, search term, sort.
 
 ### Phase 3: Cart & Checkout
-- [ ] Redis or Database backed Shopping Cart.
-- [ ] Order creation logic, calculating totals, state machine for Order Status (Pending, Paid, Shipped, Cancelled).
+- [x] Database-backed shopping cart, as its own service
+  ([specs/010](../../specs/010-customer-cart/)).
+- [x] Order creation priced by Catalog, not by the client
+  ([specs/009](../../specs/009-catalog-owns-price/)).
+- [x] Order status driven by the saga: `Submitted` → `Completed` or `Failed`.
+- [ ] Totals broken down into subtotal, shipping and tax —
+  [#21](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/21).
+- [ ] Delivery address and shipping —
+  [#20](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/20).
 
 ### Phase 4: Payments & External Integrations
-- [ ] Integrating Stripe API.
-- [ ] Processing webhooks to update order statuses.
+- [x] Payment service in the saga, with a **stub** gateway that approves without moving money.
+- [ ] A real payment provider and its webhooks — deliberately deferred.

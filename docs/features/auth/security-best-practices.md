@@ -62,7 +62,7 @@ For a secure balance between convenience and high security, follow this hybrid a
 We keep `AuthResponse` containing both tokens in the Application layer, but we filter out `RefreshToken` at the Controller layer.
 
 ### 3.2 Step 2: Setting the HttpOnly Cookie in the Controller
-In [`AuthController.cs`](file:///d:/Code/CSharp/e-commerce/server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we intercept the Command result, extract the Refresh Token, set it as a cookie, and return only the `AuthResponse` details with `RefreshToken` cleared.
+In [`AuthController.cs`](../../../server/src/Services/Identity/Ecommerce.Identity.WebApi/Controllers/AuthController.cs), we intercept the Command result, extract the Refresh Token, set it as a cookie, and return only the `AuthResponse` details with `RefreshToken` cleared.
 
 ```csharp
 using Ecommerce.Application.Auth.Commands.Login;
@@ -77,7 +77,7 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
         var result = await Mediator.Send(command);
-        
+
         SetRefreshTokenCookie(result.RefreshToken);
 
         // Hide refresh token from HTTP response body using C# "with" expression
@@ -88,9 +88,9 @@ public class AuthController : ApiControllerBase
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
         var result = await Mediator.Send(command);
-        
+
         SetRefreshTokenCookie(result.RefreshToken);
-        
+
         return Ok(result with { RefreshToken = "" });
     }
 
@@ -228,3 +228,20 @@ Add the refresh endpoint to `AuthController.cs` in the WebApi project:
         }
     }
 ```
+
+---
+
+## 5. Known weaknesses in the current implementation
+
+The code in §4 is what runs today, and three things about it are worth knowing before building on it:
+
+1. **Every exception becomes "logged out".** `Refresh()` catches `Exception` and returns
+   `Unauthorized(ex.Message)`. A database outage during refresh therefore looks to the client like an
+   expired session, and whatever the exception says is sent to the client verbatim. The better shape
+   is a dedicated exception that `GlobalExceptionHandler` maps to 401, and no catch-all.
+2. **The handler throws bare `Exception`s** for an invalid or expired session — the same pattern that
+   makes duplicate registration return 500 (see the [CQRS guide](./cqrs-guide.md)).
+3. **Rotation deletes the old token instead of revoking it.** `RevokedAt` and `ReplacedByToken` exist
+   in the schema but nothing writes them, so a stolen refresh token that is replayed after the real
+   owner rotated it is simply "not found" — the reuse cannot be detected, and the whole token family
+   cannot be revoked.
