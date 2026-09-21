@@ -164,6 +164,23 @@ services:
       retries: 12
     restart: unless-stopped
 
+  # Logs and traces from every service, in one searchable place (feature 013). The services ship to it
+  # over OTLP when OTLP_ENDPOINT is set; the UI is on http://localhost:5380.
+  # The admin password comes from .env and is REQUIRED - Seq refuses to start with an empty one, and
+  # running it without authentication is not an option this file offers.
+  seq:
+    image: datalust/seq:2024.3
+    container_name: e-commerce-seq
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_ADMIN_PASSWORD:?Set SEQ_ADMIN_PASSWORD in server/.env - see .env.example}
+    ports:
+      - "5341:5341"   # ingestion (OTLP at /ingest/otlp)
+      - "5380:80"     # UI
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+
 volumes:
   postgres_identity_data:
   postgres_catalog_data:
@@ -173,3 +190,4 @@ volumes:
   postgres_payment_data:
   postgres_cart_data:
   rabbitmq_data:
+  seq_data:

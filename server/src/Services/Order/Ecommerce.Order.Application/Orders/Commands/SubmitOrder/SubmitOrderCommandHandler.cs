@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Ecommerce.Contracts.Order;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
@@ -18,7 +20,8 @@ public class SubmitOrderCommandHandler(
     ICartReader cartReader,
     IAddressReader addressReader,
     IShippingOptions shippingOptions,
-    ITaxRates taxRates
+    ITaxRates taxRates,
+    ILogger<SubmitOrderCommandHandler> logger
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
@@ -29,6 +32,7 @@ public class SubmitOrderCommandHandler(
     private readonly IAddressReader _addressReader = addressReader;
     private readonly IShippingOptions _shippingOptions = shippingOptions;
     private readonly ITaxRates _taxRates = taxRates;
+    private readonly ILogger<SubmitOrderCommandHandler> _logger = logger;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
     {
@@ -170,6 +174,13 @@ public class SubmitOrderCommandHandler(
 
         // 3. Save BOTH Order entity and OutboxMessage in 1 single atomic DB transaction
         await _orderRepository.SaveChangesAsync(cancellationToken);
+
+        // Where a checkout's trace begins to carry the order id (feature 013). Everything downstream -
+        // every consumer and the saga - adds it through OrderIdLogScopeFilter.
+        Activity.Current?.SetTag("order.id", order.Id.ToString());
+        _logger.LogInformation(
+            "Order {OrderId} submitted: {LineCount} line(s), total {TotalAmount} to {Country} by {ShippingOption}",
+            order.Id, orderItems.Count, order.TotalAmount, address.Country, shipping.Code);
 
         var itemResponses = orderItems.Select(x => new OrderItemResponse(
             x.ProductId,
