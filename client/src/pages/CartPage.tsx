@@ -117,7 +117,13 @@ export function CartPage() {
       <p className="muted small">
         An estimate from today's prices, before shipping and tax. The final amount is fixed at checkout.
       </p>
-      {!cart.canCheckOut && <p className="error">Remove or fix the items marked above before checking out.</p>}
+      {cart.canCheckOut ? (
+        <Link to="/checkout" className="button">
+          Check out
+        </Link>
+      ) : (
+        <p className="error">Remove or fix the items marked above before checking out.</p>
+      )}
     </section>
   )
 }

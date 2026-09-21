@@ -5,13 +5,16 @@ import { RequireAuth } from './auth/RequireAuth'
 import { AddressesPage } from './pages/AddressesPage'
 import { CartPage } from './pages/CartPage'
 import { CatalogPage } from './pages/CatalogPage'
+import { CheckoutPage } from './pages/CheckoutPage'
+import { OrderPage } from './pages/OrderPage'
+import { OrdersPage } from './pages/OrdersPage'
 import { ProductPage } from './pages/ProductPage'
 import { SignInPage } from './pages/SignInPage'
 import { SignUpPage } from './pages/SignUpPage'
 import { StatusPage } from './pages/StatusPage'
 
 // A deliberately thin storefront (issue #23): its job is to exercise the API the way a person would,
-// and to surface what the backend lacks - not to be polished. Pages arrive with #35-#39.
+// and to surface what the backend lacks - not to be polished.
 export default function App() {
   return (
     <AuthProvider>
@@ -26,6 +29,9 @@ export default function App() {
             <Route path="/account" element={<RequireAuth><Account /></RequireAuth>} />
             <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
             <Route path="/addresses" element={<RequireAuth><AddressesPage /></RequireAuth>} />
+            <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+            <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
+            <Route path="/orders/:id" element={<RequireAuth><OrderPage /></RequireAuth>} />
             <Route path="/status" element={<StatusPage />} />
             <Route path="*" element={<p>Not found.</p>} />
           </Routes>
@@ -47,6 +53,7 @@ function TopBar() {
         {restoring ? null : user ? (
           <>
             <NavLink to="/cart">Cart</NavLink>
+            <NavLink to="/orders" end>Orders</NavLink>
             <NavLink to="/account">{user.firstName}</NavLink>
             <button className="link" onClick={() => void signOut()}>
               Sign out
@@ -73,7 +80,7 @@ function Account() {
       </p>
       <p className="muted">Signed in. Reload the page: you stay signed in, and no token is stored anywhere a script can read.</p>
       <p>
-        <Link to="/addresses">Delivery addresses</Link> · <Link to="/cart">Cart</Link>
+        <Link to="/addresses">Delivery addresses</Link> · <Link to="/cart">Cart</Link> · <Link to="/orders">Orders</Link>
       </p>
     </section>
   )

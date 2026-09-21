@@ -38,7 +38,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (41 tests,
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (46 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (16 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -202,6 +202,11 @@ line and on delivery, at the destination country's configured rate (`Tax:Rates`,
 rounded half **away from zero** — not .NET's default banker's rounding. The saga charges
 `TotalAmount`, so none of this changed a contract. Someone else's address id is a 404, indistinguishable from a
 missing one.
+
+**The quote and the order are priced by the same code.** `GET /api/orders/quote` returns what
+checkout would charge for the same choices, in the same parts, and places nothing. It and
+`SubmitOrderCommandHandler` both call `CheckoutPricing`, so what the storefront shows is what is
+charged. Price a checkout anywhere else and the two can disagree; `CheckoutQuoteTests` fails if they do.
 
 **The cart removes what was ordered on `OrderCompletedEvent`, not on submission** — `Failed` is
 terminal, and removing at submission would leave a customer whose card was declined with an empty

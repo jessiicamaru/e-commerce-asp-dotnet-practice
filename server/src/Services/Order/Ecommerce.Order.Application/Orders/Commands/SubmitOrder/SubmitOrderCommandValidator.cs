@@ -1,4 +1,5 @@
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Orders.Common;
 using FluentValidation;
 
 namespace Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
@@ -12,11 +13,6 @@ public class SubmitOrderCommandValidator : AbstractValidator<SubmitOrderCommand>
 {
     public SubmitOrderCommandValidator(IShippingOptions shippingOptions)
     {
-        RuleFor(x => x.ShippingOption)
-            .NotEmpty()
-            .WithMessage("Choose a delivery option.")
-            .Must(code => shippingOptions.Find(code) is not null)
-            .WithMessage(x => $"'{x.ShippingOption}' is not a delivery option. Offered: "
-                + string.Join(", ", shippingOptions.All.Select(o => o.Code)) + ".");
+        RuleFor(x => x.ShippingOption).MustBeADeliveryOption(shippingOptions);
     }
 }

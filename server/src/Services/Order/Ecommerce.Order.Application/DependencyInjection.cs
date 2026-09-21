@@ -1,3 +1,4 @@
+using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Shared.Behaviors;
 using FluentValidation;
 using MediatR;
@@ -18,6 +19,9 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(assembly);
+
+        // Prices a checkout for both the quote and the order, so the two cannot disagree (#38).
+        services.AddScoped<CheckoutPricing>();
 
         return services;
     }
