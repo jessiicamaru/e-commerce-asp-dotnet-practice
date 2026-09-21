@@ -226,9 +226,11 @@ be rediscovered.
 > while its stock stayed held, and all fifteen Order tests were green throughout. Seq makes such a
 > failure easier to *diagnose*; this makes it *detected*, which has to come first.
 
-> ⚠️ **Open, unexplained.** On its first run against a freshly built stack, an order stalled in
-> `Submitted` and never settled — with `InventoryReservedEvent` published and routed, the saga's
-> queue showing `deliver=2 ack=2` with no fault, and the saga never transitioning. Seven later runs
-> passed. The orchestrator's database holds stranded sagas from **2026-09-03, 09-16 and 09-17**, so
-> this predates the check and nobody had noticed. The mechanism is **not established** — deliberately
-> not guessed at. This is the first thing Seq and correlation IDs would help with.
+> ✅ **Found and fixed on its first run.** The check stalled on the first order after a cold start —
+> deterministic, 2 of 2 in CI and 2 of 2 locally. With MassTransit at `Debug` the cause was visible:
+> `InventoryReservedEvent` finished in 0.29s while `OrderSubmittedEvent` was still 5.4s from
+> committing, so the reply found no saga instance and was discarded silently. The orchestrator was
+> the one service publishing **outside** the transactional outbox, which Principle III makes
+> non-negotiable. Fixed in `20260921104437_AddTransactionalOutbox`; cold starts now settle in 2–3s,
+> 4 of 4. Four sagas stranded between **2026-09-03 and 09-17** show how long it had been happening
+> without anyone noticing — the second order of any session always worked.

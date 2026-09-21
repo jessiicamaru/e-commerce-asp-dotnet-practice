@@ -120,6 +120,8 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 
 **The saga now runs end to end.** Submit → reserve → pay → complete, with stock permanently deducted, and no message published by hand. Both branches are reachable: setting `PAYMENT_OUTCOME=Reject` exercises the compensation path, which releases the held stock.
 
+**The orchestrator publishes through the transactional outbox, like everything else** (`AddEntityFrameworkOutbox<OrchestratorDbContext>` + `UseBusOutbox()`, with `AddTransactionalOutboxEntities()` in its `OnModelCreating`). It did not until `20260921104437_AddTransactionalOutbox`, and the consequence was that the first order after a cold start never settled — see the gotcha below. Principle III applies to the state machine exactly as it applies to a command handler.
+
 ⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
 
 Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf.
@@ -170,6 +172,17 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))`. Check
   `docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers` — a queue with
   **2 consumers** that should have one subscriber per service is the symptom.
+- **A saga's `.Publish(...)` needs the outbox as much as a handler's does.** Without
+  `UseBusOutbox()`, a state machine activity's publish reaches the broker *during* the consume,
+  before the instance that caused it is committed — and the reply can arrive first, find no
+  instance to correlate to, and be **discarded with no fault, no error queue and no log line**.
+  Measured on a cold start with MassTransit at `Debug`: `InventoryReservedEvent` finished in 0.29s
+  while `OrderSubmittedEvent` was still 5.4s from committing, because the first message a process
+  handles pays for JIT, the EF model build and the first connection. The order stayed `Submitted`
+  forever and its stock stayed held; four sagas were stranded that way between 2026-09-03 and
+  09-17 and nobody noticed, because the second order of any session works. Fixed in
+  [#15](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/15); the symptom is
+  what `verify-saga.sh` reports as a **stall**.
 - **The Orchestrator has no `/health` endpoint** — it has no controllers, so `GET :5058/health` is a
   404, and `docker-compose.app.yml` disables its health check for that reason. It is therefore the
   one service nothing can wait for or probe, which is why an order that never leaves `Submitted`
