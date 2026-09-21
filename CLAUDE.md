@@ -56,9 +56,31 @@ cd server
 ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
 ```
 
-CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then an `auth-smoke` job
-that spins up PostgreSQL service containers, migrates, starts Identity and Catalog, and runs that
-script. If adding unit tests there is no existing convention to follow — pick one and say so.
+There is also an **end-to-end check of the checkout saga**,
+[.github/scripts/verify-saga.sh](.github/scripts/verify-saga.sh) — the only check in this repository
+that can see *between* services. It places a real order over HTTP with a real signed customer token,
+follows it to a terminal state, and asserts the stock moved by exactly the amount ordered with
+nothing left held. It needs **all six** services; without them it reports **skipped** rather than
+passing quietly, unless `SAGA_E2E_REQUIRE_ALL=1` (which CI sets) makes a skip fatal.
+
+```bash
+cd server
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-saga.sh
+```
+
+It asserts on `QuantityOnHand` **and** `QuantityReserved`, never on the derived `QuantityAvailable`
+alone — during the queue-collision bug `Available` was correct while the units stayed held, so a
+check reading only that number would have passed. Payment resolves its outcome once at startup, so
+one running Payment gives you one of the two branches; the script runs whichever one Payment reports
+and exercising both means running it twice with Payment restarted between. `SAGA_E2E_SCENARIO`
+forces a branch and exists for the negative control. Background in
+[specs/007-saga-e2e-verification](specs/007-saga-e2e-verification/).
+
+CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then **two smoke jobs side
+by side** — `auth-smoke` (three services) and `saga-e2e` (six services plus RabbitMQ, both branches,
+Payment restarted in between). They depend only on `build`, so they run concurrently, and `publish`
+is gated on both. If adding unit tests there is no existing convention to follow — pick one and say
+so.
 
 ## Service map
 
@@ -97,6 +119,8 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 [OrderStateMachine.cs](server/src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/StateMachines/OrderStateMachine.cs) drives `OrderSubmitted → ReserveInventory → ProcessPayment → OrderCompleted`, with `ReleaseInventoryCommand` compensation on payment failure. All events correlate on `OrderId`; the instance is `OrderStateData` persisted through `SagaDbContext` with `ConcurrencyMode.Optimistic`.
 
 **The saga now runs end to end.** Submit → reserve → pay → complete, with stock permanently deducted, and no message published by hand. Both branches are reachable: setting `PAYMENT_OUTCOME=Reject` exercises the compensation path, which releases the held stock.
+
+**The orchestrator publishes through the transactional outbox, like everything else** (`AddEntityFrameworkOutbox<OrchestratorDbContext>` + `UseBusOutbox()`, with `AddTransactionalOutboxEntities()` in its `OnModelCreating`). It did not until `20260921104437_AddTransactionalOutbox`, and the consequence was that the first order after a cold start never settled — see the gotcha below. Principle III applies to the state machine exactly as it applies to a command handler.
 
 ⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
 
@@ -148,6 +172,23 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   `SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "OrderSvc", ...))`. Check
   `docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers` — a queue with
   **2 consumers** that should have one subscriber per service is the symptom.
+- **A saga's `.Publish(...)` needs the outbox as much as a handler's does.** Without
+  `UseBusOutbox()`, a state machine activity's publish reaches the broker *during* the consume,
+  before the instance that caused it is committed — and the reply can arrive first, find no
+  instance to correlate to, and be **discarded with no fault, no error queue and no log line**.
+  Measured on a cold start with MassTransit at `Debug`: `InventoryReservedEvent` finished in 0.29s
+  while `OrderSubmittedEvent` was still 5.4s from committing, because the first message a process
+  handles pays for JIT, the EF model build and the first connection. The order stayed `Submitted`
+  forever and its stock stayed held; four sagas were stranded that way between 2026-09-03 and
+  09-17 and nobody noticed, because the second order of any session works. Fixed in
+  [#15](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/15); the symptom is
+  what `verify-saga.sh` reports as a **stall**.
+- **The Orchestrator has no `/health` endpoint** — it has no controllers, so `GET :5058/health` is a
+  404, and `docker-compose.app.yml` disables its health check for that reason. It is therefore the
+  one service nothing can wait for or probe, which is why an order that never leaves `Submitted`
+  usually means the Orchestrator rather than anything the check could test. The constitution says
+  every service exposes `/health`; this one does not, and that disagreement is recorded but not yet
+  resolved.
 - **A failed `SaveChangesAsync` does not untrack what it tried to write.** The rows stay `Added`, so
   the next save on that same context re-attempts them. Catching a unique violation and then saving
   again therefore raises the *same* violation, outside the catch — which is how Payment's

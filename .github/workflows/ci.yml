@@ -199,7 +199,7 @@ jobs:
     # because the artifact exists and carries the implication that it passed. Without
     # the event guard every pull request would publish: this workflow triggers on
     # push AND pull_request to main.
-    needs: [build, auth-smoke]
+    needs: [build, auth-smoke, saga-e2e]
     if: github.event_name == 'push'
 
     permissions:
@@ -477,6 +477,291 @@ jobs:
         if: failure()
         run: |
           for service in identity catalog order; do
+            echo "::group::$service (first 60 lines)"
+            head -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
+            echo "::endgroup::"
+            echo "::group::$service (last 60 lines)"
+            tail -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
+            echo "::endgroup::"
+          done
+
+  # The only check that can see the gaps BETWEEN services. Every other test in
+  # this repository is confined to one service, which is why Inventory and Order
+  # could both declare a consumer class named OrderCompletedConsumer - binding to
+  # one queue and competing for the event - while all fifteen Order tests stayed
+  # green and the order settled with its stock still held.
+  #
+  # Its own job rather than part of auth-smoke, deliberately: that job needs three
+  # services and this one needs six, so merging them would turn a Payment startup
+  # problem into a red AUTHENTICATION check. Both depend only on `build`, so they
+  # run concurrently and the wall-clock cost is max(), not sum().
+  saga-e2e:
+    name: Saga end-to-end
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres-identity:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_identity_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      postgres-catalog:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_catalog_db
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      postgres-order:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_order_db
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      postgres-saga:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_saga_db
+        ports: ['5436:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      postgres-inventory:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_inventory_db
+        ports: ['5437:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      postgres-payment:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_payment_db
+        ports: ['5438:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      # The saga is the thing under test, so a real broker is not optional here:
+      # the queue-name collision this check exists to catch is invisible without
+      # one. The built-in 'guest' account only accepts connections from inside
+      # the container, so CI gets its own user.
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: ci
+          RABBITMQ_DEFAULT_PASS: ci-password
+        ports: ['5672:5672']
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      IDENTITY_DB_NAME: ecommerce_identity_db
+      IDENTITY_DB_PORT: '5432'
+      CATALOG_DB_NAME: ecommerce_catalog_db
+      CATALOG_DB_PORT: '5433'
+      ORDER_DB_NAME: ecommerce_order_db
+      ORDER_DB_PORT: '5434'
+      # The orchestrator is the one service whose two variables disagree with
+      # each other: the database is named by SAGA_DB_NAME and the port by
+      # ORCHESTRATOR_DB_PORT. Setting ORCHESTRATOR_DB_NAME instead looks right
+      # and does nothing.
+      SAGA_DB_NAME: ecommerce_saga_db
+      ORCHESTRATOR_DB_PORT: '5436'
+      INVENTORY_DB_NAME: ecommerce_inventory_db
+      INVENTORY_DB_PORT: '5437'
+      PAYMENT_DB_NAME: ecommerce_payment_db
+      PAYMENT_DB_PORT: '5438'
+      # CI-only values. Real secrets belong in repository secrets, never here.
+      JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
+      ADMIN_EMAIL: admin@ci.local
+      ADMIN_PASSWORD: ci-admin-password
+      RABBITMQ_HOST: localhost
+      RABBITMQ_USER: ci
+      RABBITMQ_PASS: ci-password
+      # The job started every service, so "not listening" is this job's failure
+      # rather than a reason to excuse itself. Locally the same script skips and
+      # says so, which is correct there and would be a hole here.
+      SAGA_E2E_REQUIRE_ALL: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('server/**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Install EF Core tools
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.11
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Build
+        run: dotnet build Ecommerce.slnx --configuration Release
+
+      - name: Apply migrations
+        run: |
+          set -euo pipefail
+          # The orchestrator is the one service where --project and
+          # --startup-project are the same: its DbContext lives in the WebApi
+          # project rather than in an Infrastructure one.
+          dotnet ef database update \
+            --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ \
+            --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
+          dotnet ef database update \
+            --project src/Services/Catalog/Ecommerce.Catalog.Infrastructure/ \
+            --startup-project src/Services/Catalog/Ecommerce.Catalog.WebApi/
+          dotnet ef database update \
+            --project src/Services/Order/Ecommerce.Order.Infrastructure/ \
+            --startup-project src/Services/Order/Ecommerce.Order.WebApi/
+          dotnet ef database update \
+            --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/ \
+            --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
+          dotnet ef database update \
+            --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ \
+            --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
+          dotnet ef database update \
+            --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ \
+            --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+
+      - name: Start services
+        run: |
+          set -euo pipefail
+          start() {
+            dotnet run --project "src/Services/$1/Ecommerce.$1.WebApi/" \
+              --configuration Release --no-build --no-launch-profile \
+              > "/tmp/$2.log" 2>&1 &
+          }
+
+          start Identity identity
+          start Catalog catalog
+          start Order order
+          start Orchestrator orchestrator
+          start Inventory inventory
+          start Payment payment
+
+          # 000 means nothing is listening; anything else means the service
+          # answered, so a non-2xx tells us it is up but reporting unhealthy.
+          probe() { curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$1" || true; }
+
+          # The orchestrator has NO /health endpoint - it has no controllers -
+          # so it is deliberately absent here. Nothing can wait for it, which is
+          # why verify-saga.sh names it first when an order stalls.
+          ready=0
+          for _ in $(seq 1 120); do
+            ok=1
+            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061; do
+              [ "$(probe "http://localhost:${pair##*:}/health")" = "200" ] || ok=0
+            done
+            if [ "$ok" = "1" ]; then ready=1; break; fi
+            sleep 1
+          done
+
+          if [ "$ready" != "1" ]; then
+            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061; do
+              echo "::error::${pair%%:*} did not become healthy (last code: $(probe "http://localhost:${pair##*:}/health"); 000 = not listening)."
+            done
+            exit 1
+          fi
+          echo "Five probed services are healthy; the orchestrator has no /health to probe."
+
+      # Payment resolves its outcome ONCE, in StubPaymentGateway's constructor,
+      # so one running instance produces one of the two scenarios. Two instances
+      # at the same time would both host a ProcessPaymentCommand consumer of the
+      # same class name, bind to the same queue, and COMPETE - which is the very
+      # failure this job exists to detect.
+      - name: Scenario 1 - payment approves
+        run: ../.github/scripts/verify-saga.sh
+
+      - name: Restart Payment, refusing
+        run: |
+          set -euo pipefail
+          pkill -f 'Ecommerce.Payment.WebApi' || true
+          for _ in $(seq 1 30); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://localhost:5061/health || true)" = "000" ] && break
+            sleep 1
+          done
+
+          PAYMENT_OUTCOME=Reject dotnet run \
+            --project src/Services/Payment/Ecommerce.Payment.WebApi/ \
+            --configuration Release --no-build --no-launch-profile \
+            > /tmp/payment-reject.log 2>&1 &
+
+          for _ in $(seq 1 60); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://localhost:5061/health || true)" = "200" ] && break
+            sleep 1
+          done
+
+          # Assert the restart actually took. Without this, a Payment that came
+          # back approving would make scenario 2 run the SAME scenario as
+          # scenario 1 and report a pass for a branch nobody exercised.
+          outcome="$(curl -s --max-time 5 http://localhost:5061/health \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("configuredOutcome",""))')"
+          [ "$outcome" = "Rejected" ] || { echo "::error::Payment restarted reporting '$outcome', expected 'Rejected'."; exit 1; }
+          echo "Payment is now refusing."
+
+      - name: Scenario 2 - payment refuses
+        run: ../.github/scripts/verify-saga.sh
+
+      # Startup lines matter most, and a retrying transport can push them far out
+      # of a plain tail, so show both ends of each log.
+      - name: Dump service logs on failure
+        if: failure()
+        run: |
+          for service in identity catalog order orchestrator inventory payment payment-reject; do
             echo "::group::$service (first 60 lines)"
             head -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
             echo "::endgroup::"

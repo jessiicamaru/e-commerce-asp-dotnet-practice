@@ -209,9 +209,28 @@ be rediscovered.
 
 ---
 
-### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (Next)
+### 🟡 Phase 7: Observability, Centralized Audit Logging (Seq) & E2E Verification (In progress)
 * **Goal**: Operational visibility, centralized logging, and end-to-end system testing.
 * **Deliverables**:
-  1. Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
-  2. Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
-  3. Replace the stub payment gateway with a real provider integration.
+  1. ⬜ Add **Seq** container (`datalust/seq` on Port `5341`) to `docker-compose.yml`.
+  2. ⬜ Stream structured Serilog JSON logs & Correlation IDs from all 5 services to Seq.
+  3. ⬜ Replace the stub payment gateway with a real provider integration.
+  4. ✅ **End-to-end verification in CI** — [`verify-saga.sh`](../../.github/scripts/verify-saga.sh)
+     places a real order over HTTP and follows it through all six services, asserting that the stock
+     moved by exactly the amount ordered and that nothing is left held. Both branches on every
+     change: payment approving, and payment refusing so compensation is exercised. Design and
+     evidence in [specs/007-saga-e2e-verification](../../specs/007-saga-e2e-verification/).
+
+> **Why this one came first.** Every other test here is confined to a single service, and the saga's
+> characteristic failures are not. The queue-name collision recorded under Phase 6.5 settled an order
+> while its stock stayed held, and all fifteen Order tests were green throughout. Seq makes such a
+> failure easier to *diagnose*; this makes it *detected*, which has to come first.
+
+> ✅ **Found and fixed on its first run.** The check stalled on the first order after a cold start —
+> deterministic, 2 of 2 in CI and 2 of 2 locally. With MassTransit at `Debug` the cause was visible:
+> `InventoryReservedEvent` finished in 0.29s while `OrderSubmittedEvent` was still 5.4s from
+> committing, so the reply found no saga instance and was discarded silently. The orchestrator was
+> the one service publishing **outside** the transactional outbox, which Principle III makes
+> non-negotiable. Fixed in `20260921104437_AddTransactionalOutbox`; cold starts now settle in 2–3s,
+> 4 of 4. Four sagas stranded between **2026-09-03 and 09-17** show how long it had been happening
+> without anyone noticing — the second order of any session always worked.

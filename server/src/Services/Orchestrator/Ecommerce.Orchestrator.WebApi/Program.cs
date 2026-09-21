@@ -83,6 +83,37 @@ builder.Services.AddMassTransit(x =>
             r.ExistingDbContext<OrchestratorDbContext>();
         });
 
+    // The saga's messages and the saga's own state commit together, or not at all.
+    //
+    // Without this, `.Publish(...)` inside a state machine activity reaches the broker DURING the
+    // consume - before the instance that caused it has been committed. The other services reply in
+    // milliseconds, so the reply can arrive while the instance still does not exist, find nothing
+    // to correlate to, and be discarded with no fault, no error queue and no log line.
+    //
+    // That is exactly what happened. Measured on a cold start, with MassTransit at Debug:
+    //
+    //     RECEIVE ... InventoryReservedEvent  (00:00:00.2936838)
+    //     RECEIVE ... OrderSubmittedEvent     (00:00:05.4012902)
+    //     SAGA:...:<id> Created  OrderSubmittedEvent
+    //     SAGA:...:<id> Added    OrderSubmittedEvent      <- and nothing for InventoryReserved
+    //
+    // The first message this process handles pays for JIT, the EF model build and the first
+    // database connection, so OrderSubmitted took 5.4s to commit while Inventory answered in 0.3s.
+    // The order stayed 'Submitted' forever and its stock stayed held. Warm, the window never opens,
+    // which is why every hand-check has passed and four sagas were stranded since 2026-09-03.
+    //
+    // Constitution III is not a style preference: an entity change and the events it causes commit
+    // as one unit. Catalog, Inventory, Order and Payment have always done this; the orchestrator,
+    // which causes more events than any of them, did not. See issue #15.
+    x.AddConfigureEndpointsCallback((context, _, cfg) =>
+        cfg.UseEntityFrameworkOutbox<OrchestratorDbContext>(context));
+
+    x.AddEntityFrameworkOutbox<OrchestratorDbContext>(o =>
+    {
+        o.UsePostgres();
+        o.UseBusOutbox();
+    });
+
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
