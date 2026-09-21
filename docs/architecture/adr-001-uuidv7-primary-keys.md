@@ -1,7 +1,7 @@
 # ADR 001: Primary Key Strategy for Microservices (UUID v7 vs. Auto-Increment)
 
 * **Status**: Accepted
-* **Deciders**: Architecture Team
+* **Deciders**: project maintainer
 * **Date**: 2026-09-02
 
 ---

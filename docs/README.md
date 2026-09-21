@@ -1,57 +1,63 @@
-# E-Commerce Project Documentation Index
+# E-Commerce Documentation
 
-Welcome to the documentation for the E-Commerce Clean Architecture ASP.NET Core project. This directory contains detailed guides, designs, and architectural roadmaps for building the backend services.
+Documentation for the .NET 10 microservices backend: seven services behind a YARP gateway, one
+PostgreSQL database each, RabbitMQ between them, and a saga orchestrating checkout.
+
+Everything under `architecture/`, `features/`, `infrastructure/` and `guides/` describes the system
+**as it runs** — where it once described a plan instead, the page now says what was built. Study
+notes about designs that were *not* adopted live separately, under `concepts/`. Feature-by-feature
+design records (why each decision was taken, and what it was measured against) are in
+[`specs/`](../specs/).
 
 ---
 
 ## 🗺️ Documentation Map
 
-### 🏛️ Architecture & Roadmap
-* [**Roadmap & Overview**](./architecture/architecture-overview.md): High-level system modules, technology stack, and iterative development phases.
-* [**Microservices Design**](./architecture/microservices-design.md): Brainstorming architecture, boundaries, and communication patterns for other modules.
-* **Cart** ([specs/010-customer-cart](../specs/010-customer-cart/)): the eighth service. One cart per signed-in customer that outlives a session, **storing no price** — it asks Catalog when read, and checkout charges Catalog's price regardless. Checkout reads the cart over gRPC with the customer's own token forwarded, and the ordered lines leave the cart when the order **completes**, so a declined payment leaves it intact. Because `OrderCompletedEvent` carries only an order id, the cart also listens to `OrderSubmittedEvent`, and whichever arrives second applies the removal — nothing orders delivery across message types, which is what issue #15 was.
-* [**How Services Talk to Each Other**](./architecture/service-to-service-communication.md): What was true before feature 009 — **zero** synchronous cross-service calls, verified — and the decision that changed it: Order now asks Catalog for the price over gRPC (h2c, Catalog's second port 6057), because the price used to come from the customer's own request. Why fixing [#18](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/18) needs the first one, what REST and gRPC each cost here (with a measurement showing the current endpoints serve HTTP/1.1 only, so gRPC would not connect), what real systems actually do about HTTP/2 and TLS, and why none of it touches messaging.
-* [**Reliable Messaging & Outbox Pattern**](./architecture/reliable-messaging-and-outbox-pattern.md): Deep-dive guide on Transactional Outbox, Publisher/Consumer ACK protocol, RabbitMQ queue durability, and Saga Compensation.
-* [**Global Cross-Cutting Error Handling & Shared Building Blocks**](./architecture/error-handling-and-shared-building-block.md): Architectural guide on RFC 7807 ProblemDetails error handling, MediatR pipeline validation, and the Ecommerce.Shared building block.
-* [**Saga Orchestration & System Roadmap**](./architecture/saga-orchestration-roadmap.md): Comprehensive guide on the Saga Pattern (Orchestration vs Choreography), Standalone Saga Orchestrator Service architecture, and 5-phase master roadmap.
-* [**ADR-001: Primary Key Strategy (UUID v7 vs Auto-Increment)**](./architecture/adr-001-uuidv7-primary-keys.md): Architecture Decision Record comparing UUID v4, Auto-Increment IDs, and sequential UUID v7.
+### 🛠️ Start here
+* [**Getting Started**](./guides/getting-started.md): run the system — all in containers, or infrastructure in Docker with the services on your machine — check it is really up, place an order end to end, and run the tests.
+* [**Bruno collection**](../bruno/): every public endpoint, runnable and tested, through the gateway. Open the folder in Bruno, pick the `local` environment, fill the two secret admin variables, run it top to bottom.
+* [**Troubleshooting**](./guides/troubleshooting.md): compile errors, EF Core key generation, a local install or a stray process shadowing a container, and the container-specific traps.
 
-### 📚 Concepts — study notes, not the running system
-Each of these opens with what was actually built instead. Read them for the idea, not for a description of the code.
-* [**`FOR UPDATE SKIP LOCKED` unit pools**](./concepts/shopify-inventory-skip-locked-pattern.md): Shopify's flash-sale reservation design. **Studied and deliberately not adopted** — Inventory locks one aggregated row per product ([specs/001 research D1](../specs/001-inventory-reservations/research.md)).
-* [**PACELC trade-offs**](./concepts/pacelc-theorem-tradeoffs.md): which parts of the system should prefer availability and which consistency — and where the running system already departs from the note.
+### 🏛️ Architecture
+* [**Microservices Design**](./architecture/microservices-design.md): each service as built — responsibility, database, entities — the topology, the three synchronous calls, who owns stock, and what was proposed but never built.
+* [**How Services Talk to Each Other**](./architecture/service-to-service-communication.md): why the system went from zero synchronous calls to three, why gRPC runs on a second port (h2c), what that costs checkout, and why none of it touches messaging.
+* [**Saga Orchestration & Roadmap**](./architecture/saga-orchestration-roadmap.md): the checkout saga, its compensation, and the phases that built the system — including what each phase found wrong with the one before.
+* [**Reliable Messaging & Outbox**](./architecture/reliable-messaging-and-outbox-pattern.md): the transactional outbox, how every consumer survives duplicates *and* out-of-order delivery, and what failure handling is — and is not yet — configured.
+* [**Error Handling & `Ecommerce.Shared`**](./architecture/error-handling-and-shared-building-block.md): RFC 7807 responses, the exception-to-status map, request validation, and the lessons recorded against them.
+* [**Overview & Scope**](./architecture/architecture-overview.md): target modules, technology stack, and which parts of that scope are done.
+* [**ADR-001: UUID v7 primary keys**](./architecture/adr-001-uuidv7-primary-keys.md): why time-ordered UUIDs, what they reveal, and how far the code has caught up.
 
-### 🔌 Infrastructure & Docker
-* [**Database Setup**](./infrastructure/database-setup.md): Guide on running local PostgreSQL and pgAdmin containers, and working with EF Core migrations.
-* [**RabbitMQ Setup**](./infrastructure/rabbitmq-setup.md): Guide on running RabbitMQ via Docker Compose and using the Web Management Console to monitor queues.
-* [**Running in Containers**](./infrastructure/running-in-containers.md): The two supported ways to run the system — `docker compose` for everything, or infrastructure plus `start-dev.sh` as before. Covers the configuration surface, the three settings that are easy to get wrong, why migrations run at startup only in containers, and how an image is checked for secrets.
+### 🔑 Authentication (Identity)
+* [**JWT Setup**](./features/auth/jwt-setup.md): who signs and who validates, the three settings that break silently, and who may call which endpoint.
+* [**Token Storage & Refresh**](./features/auth/security-best-practices.md): access token in the body, refresh token in an HttpOnly cookie, rotation — and three known weaknesses of the current code.
+* [**CQRS & MediatR Guide**](./features/auth/cqrs-guide.md): how the register and login commands are built.
+* [**Database Schema**](./features/auth/db-design.md): users, roles and refresh tokens, how the administrator is bootstrapped, and where the real schema differs from the logical one.
 
-### 🔑 Authentication Feature Module
-* [**Database Schema Design**](./features/auth/db-design.md): SQL schemas, entities mapping, and data dictionary for users, roles, and refresh tokens.
-* [**CQRS & MediatR Guide**](./features/auth/cqrs-guide.md): Details on command handlers, MediatR registration, and presentation mapping.
-* [**JWT Middleware Configuration**](./features/auth/jwt-setup.md): Package checklist and middleware registration details to validate access tokens.
-* [**Security & Token Storage Best Practices**](./features/auth/security-best-practices.md): Deep dive into XSS/CSRF token vulnerabilities and implementing the HttpOnly cookie hybrid flow.
+### 🔌 Infrastructure
+* [**Running in Containers**](./infrastructure/running-in-containers.md): the container path — configuration precedence, the three settings that are easy to get wrong, migrations at startup, images and secret scanning, published images.
+* [**Database Setup**](./infrastructure/database-setup.md): one PostgreSQL per service, host versus container ports, EF Core migration commands, pgAdmin.
+* [**RabbitMQ Setup**](./infrastructure/rabbitmq-setup.md): the broker, its management console, and the two password variable names.
 
 ### ⚙️ Continuous Integration
-* **[`.github/workflows/ci.yml`](../.github/workflows/ci.yml)**: Builds the solution on every push and pull request to `main`, then runs **two** smoke jobs side by side against real PostgreSQL service containers and a real RabbitMQ — `Saga end-to-end`, which places an order through the cart and follows it through every service it touches, and `Auth smoke test`, which logs in as the seeded administrator and asserts that anonymous callers get `401`, a `Customer` gets `403` on Admin-only endpoints, and an `Admin` gets through.
-* **Releases**: a merge to `main` whose checks pass publishes one image per service to GHCR as `ghcr.io/jessiicamaru/ecommerce-<service>:sha-<short-sha>`. That name is **enforced** to mean one thing forever — the release asks the registry before pushing and skips a name that already resolves, so re-running a publish can never rewrite an existing release and is therefore the correct way to finish one that stopped partway. The job ends by asking the registry whether every name exists, so a green publish means the release is whole rather than that the steps ran. `:main` moves by design and may never name anything deployable. Guarantees, non-guarantees and the one remaining hole are in [specs/008-immutable-release-tags/contracts/publish-behaviour.md](../specs/008-immutable-release-tags/contracts/publish-behaviour.md).
-* **[`.github/scripts/check-schema-compatibility.sh`](../.github/scripts/check-schema-compatibility.sh)**: On every pull request, reads the migrations it adds and comments when one drops, renames or narrows part of the schema — because an image built before that change cannot run against it, so redeploying an earlier version would take the service down rather than restore it. It never fails the build: nothing is deployed yet, and a guard people learn to override is worse than none.
-* **[`.github/scripts/verify-image-has-no-secrets.sh`](../.github/scripts/verify-image-has-no-secrets.sh)**: Builds one service image and asserts that no credential appears in **any layer** — not merely in the final filesystem, because a file deleted in a later layer is still readable in the earlier one. CI runs it on every push. This is the only automated check in the container work, because a credential that reaches a published image cannot be un-published, only rotated.
-* **[`.github/scripts/verify-saga.sh`](../.github/scripts/verify-saga.sh)**: The only check that can see **between** services. It places a real order over HTTP with a real signed customer token, follows it to a terminal state, and asserts that the stock actually moved — on-hand **and** reserved, never the derived `available` alone. Every other test in this repository is confined to one service, which is why Inventory and Order could once both declare a consumer class named `OrderCompletedConsumer`, bind to the same queue, and compete for the event: the order settled, the stock stayed held, and all fifteen Order tests were green. Runs both branches — payment approving, and payment refusing so the compensation path returns the held units and leaves the cart untouched. Needs every service on the checkout path; when it does not have them it reports **skipped** rather than passing quietly.
+* **[`.github/workflows/ci.yml`](../.github/workflows/ci.yml)**: builds and tests on every push and pull request to `main`, then runs **two** smoke jobs side by side against real PostgreSQL and RabbitMQ — `Saga end-to-end` (an order placed through the cart, followed through every service it touches) and `Auth smoke test` (anonymous → `401`, `Customer` on an Admin endpoint → `403`, `Admin` → through).
+* **Releases**: a merge to `main` whose checks pass publishes one image per service to GHCR as `ghcr.io/jessiicamaru/ecommerce-<service>:sha-<short-sha>`. That name is **enforced** to mean one thing forever: the release skips a name that already resolves, so re-running a publish finishes a partial release instead of rewriting a complete one, and the job ends by checking every name exists. `:main` moves and may never name anything deployable. Guarantees and the one remaining hole: [publish-behaviour.md](../specs/008-immutable-release-tags/contracts/publish-behaviour.md).
+* **[`check-schema-compatibility.sh`](../.github/scripts/check-schema-compatibility.sh)**: comments on a pull request whose migration drops, renames or narrows the schema — an earlier image cannot run against it, so rolling back would take the service down. It never blocks.
+* **[`verify-image-has-no-secrets.sh`](../.github/scripts/verify-image-has-no-secrets.sh)**: asserts no credential is in **any layer** of an image, not merely its final filesystem — a file deleted in a later layer is still readable in an earlier one. A leaked credential in a published image can only be rotated, never un-published.
+* **[`verify-saga.sh`](../.github/scripts/verify-saga.sh)**: the only check that sees **between** services. It places a real order with a real customer token, follows it to a terminal state, and asserts stock on-hand **and** reserved, and the cart afterwards — on both branches, payment approving and refusing. It exists because every other test is confined to one service: two services once shared a queue by accident, the order settled, the stock stayed held, and every unit test was green. Without every service on the checkout path it reports **skipped**, never a quiet pass.
   ```bash
   cd server
   ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-saga.sh
   ```
-* **[`.github/scripts/verify-auth.sh`](../.github/scripts/verify-auth.sh)**: The assertions CI runs. Runnable locally too, against services started with `start-dev`:
+* **[`verify-auth.sh`](../.github/scripts/verify-auth.sh)**: the auth assertions CI runs, runnable locally against started services:
   ```bash
   cd server
   ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
   ```
 
-### 🛠️ Developer Guides
-* [**Getting Started**](./guides/getting-started.md): **Start here.** The two supported ways to run the project — everything in containers, or infrastructure in Docker with the services on your machine — plus configuring `.env`, checking the system is really up, placing an order end to end, and running the tests.
-* [**Bruno collection**](../bruno/): every public endpoint as a runnable [Bruno](https://www.usebruno.com/) collection, through the gateway, with tests on each request and scripts that carry tokens and ids from one request to the next. Open the folder in Bruno, choose the `local` environment, fill the two secret admin variables, and run it top to bottom. Updated in the same change as any endpoint.
-* [**Troubleshooting Guide**](./guides/troubleshooting.md): Diagnosis and solutions for common C# compiler warnings, NuGet extension methods, EF Core concurrency exceptions, a locally installed service shadowing a container, and the container-specific traps.
+### 📚 Concepts — study notes, not the running system
+Each opens with what was built instead. Read them for the idea, not as a description of the code.
+* [**`FOR UPDATE SKIP LOCKED` unit pools**](./concepts/shopify-inventory-skip-locked-pattern.md): Shopify's flash-sale reservation design — **studied and not adopted**; Inventory locks one aggregated row per product, and the note says when to revisit.
+* [**PACELC trade-offs**](./concepts/pacelc-theorem-tradeoffs.md): which parts should prefer availability and which consistency — and where the running system has already moved.
 
 ---
 
