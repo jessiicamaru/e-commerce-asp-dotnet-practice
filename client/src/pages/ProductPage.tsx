@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { ApiError } from '../api/http'
 import { getProduct, money, type Product } from '../api/catalog'
+import { addToCart } from '../api/cart'
+import { useAuth } from '../auth/useAuth'
 import { Availability } from './CatalogPage'
 
 export function ProductPage() {
@@ -42,10 +44,66 @@ export function ProductPage() {
           <p className="price large">{money(product.price)}</p>
           <p className="muted small">Price excludes tax, which is added at checkout for your delivery country.</p>
           <Availability value={product.availability} />
+          <AddToCart productId={product.id} />
           {product.description && <p>{product.description}</p>}
           <p className="muted small">SKU {product.sku}</p>
         </div>
       </div>
     </section>
+  )
+}
+
+// Adding needs an account: the cart is kept per customer by the Cart service, not in the browser.
+function AddToCart({ productId }: { productId: string }) {
+  const { user, restoring } = useAuth()
+  const location = useLocation()
+  const [quantity, setQuantity] = useState(1)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  if (restoring) return null
+  if (!user) {
+    return (
+      <p>
+        <Link to="/sign-in" state={{ from: location.pathname }}>
+          Sign in
+        </Link>{' '}
+        to add this to your cart.
+      </p>
+    )
+  }
+
+  async function add() {
+    setBusy(true)
+    setMessage(null)
+    try {
+      await addToCart(productId, quantity)
+      setMessage({ ok: true, text: `Added ${quantity} to your cart.` })
+    } catch (e) {
+      setMessage({ ok: false, text: e instanceof ApiError ? e.message : 'It could not be added. Try again.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="add-to-cart">
+      <input
+        type="number"
+        min={1}
+        className="qty"
+        aria-label="Quantity"
+        value={quantity}
+        onChange={(e) => setQuantity(Math.max(1, Math.floor(Number(e.target.value)) || 1))}
+      />
+      <button disabled={busy} onClick={() => void add()}>
+        {busy ? 'Adding…' : 'Add to cart'}
+      </button>
+      {message && (
+        <span className={message.ok ? 'in-stock' : 'error'}>
+          {message.text} {message.ok && <Link to="/cart">View cart</Link>}
+        </span>
+      )}
+    </div>
   )
 }

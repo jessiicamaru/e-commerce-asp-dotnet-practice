@@ -70,3 +70,10 @@ button.link { background: none; color: var(--accent); padding: 0; }
 .out-of-stock { color: var(--bad); font-size: 0.9rem; }
 .pager { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.25rem; }
 .product-layout { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); align-items: start; }
+table.lines { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+table.lines th, table.lines td { text-align: left; padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+input.qty { width: 5rem; }
+.add-to-cart { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0.75rem 0; }
+.addresses { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.75rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+.badge { font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 999px; background: var(--accent); color: #fff; margin-left: 0.4rem; }
