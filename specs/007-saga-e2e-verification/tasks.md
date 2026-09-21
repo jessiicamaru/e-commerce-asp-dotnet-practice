@@ -172,3 +172,53 @@ asked), Phase 7 (proof it catches the real thing), Phase 8 (docs).
 **The three tasks most likely to be skipped, and the reason not to**: T024 and T025 because the
 script will already appear to work, and T035 because it means deliberately breaking something that
 is currently fine. Those three are the entire difference between this feature and a green tick.
+
+
+---
+
+## What actually happened, against what this list assumed
+
+- **The check found a real defect on its first run, and that defect now blocks its own CI job.**
+  The first order after a cold start never settles — deterministic in CI (2 of 2 runs, including a
+  re-run), reproduced locally once against a freshly built stack, and invisible on a warm system
+  (0 failures in 8 runs). The orchestrator's database holds stranded sagas from **2026-09-03,
+  09-16 and 09-17**, so it predates this feature by weeks. Filed as
+  [#15](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/15) with the measured
+  evidence and a reasoned — **not proven** — mechanism: `ConcurrencyMode.Optimistic` is configured
+  with no concurrency token on `OrderStateData`.
+
+- **T035 cannot be done yet, and the honest consequence is that one assertion remains unfalsified.**
+  The forced-mismatch control (T024) turns three of the four assertions red, but **not**
+  `reserved unchanged` — both scenarios legitimately end with it unchanged, so it passes there for
+  the right reason. That assertion is the one that catches the motivating bug, and only restoring
+  the queue-name collision falsifies it. Until T035 runs, this check is proven able to fail in three
+  of four ways.
+
+- **Two defects in the script were found by the negative controls, not by reading it.** Assertions
+  were fail-fast, so the status assertion always fired first and the stock assertions could never be
+  *seen* to work — they now collect and report together. And `|| echo 000` after `curl` appended a
+  second `000`, so an absent service was reported as `unhealthy, HTTP 000000` rather than
+  `not listening`; `verify-auth.sh` uses `|| true` and its comment says exactly why. This is what
+  T024 and T025 are for, and both would have shipped without them.
+
+- **T025's expectation was wrong, and the script's behaviour is better than the task assumed.**
+  Stopping Inventory does not produce a stall: the reachability probe catches it first and reports a
+  skip, which is more useful. The stall path was falsified by stopping the **Orchestrator** instead —
+  the one service with no `/health` endpoint and therefore the only one the probe cannot see. That
+  is also why the stall message now names it first.
+
+- **A fourth code/constitution disagreement turned up.** The constitution says every service
+  "exposes `/health`". The Orchestrator does not — it has no controllers, `GET :5058/health` is a
+  404, and `docker-compose.app.yml` already disables its health check for that reason. Recorded in
+  `CLAUDE.md` and in [research.md](./research.md); not resolved here, because amending the
+  constitution has its own procedure.
+
+- **Fifteen minutes were spent on a CI failure that was not one.** No workflow run appeared for the
+  pull request, and the workflow file was searched for tabs, duplicate keys, CRLF, Actions
+  permissions and billing before a throwaway probe PR showed the cause was GitHub scheduling
+  latency. The file was never wrong. Recorded because the next person will suspect the same things.
+
+- **SC-008 is measurable now.** `build` 1m34s, then `auth-smoke` (1m41s) and `saga-e2e` (3m04s)
+  side by side, so the new job is the critical path and adds roughly 1m20s of wall clock over the
+  old arrangement rather than its whole length — which is what [research D2](./research.md)
+  predicted.

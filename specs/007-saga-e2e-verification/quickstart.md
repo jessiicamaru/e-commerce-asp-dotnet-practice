@@ -159,7 +159,7 @@ Record the pipeline duration before and after, from a real run of each:
 | :-- | :-- | :-- |
 | `4fbfe28` on `main` (2026-09-17) | build + auth-smoke | **3m22s** |
 | `2cee71a` on `main` (2026-09-21) | build + auth-smoke + publish | 9m37s, **contaminated** - the run failed on publish and was re-run, so this is two publish jobs plus a gap, not one pipeline |
-| after this feature | build + (auth-smoke &#124;&#124; saga-e2e) + publish | _fill from the first green run_ |
+| after this feature (PR #13) | build 1m34s, then auth-smoke 1m41s and saga-e2e 3m04s **in parallel** | **4m38s** to the end of the smoke jobs |
 
 The honest baseline is the first row: 3m22s for build plus one smoke job. The second is unusable as
 a comparison and saying so is better than quoting it. What this feature adds is a second smoke job
