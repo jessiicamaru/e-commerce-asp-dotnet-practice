@@ -3,6 +3,13 @@ export interface User {
   email: string
   firstName: string
   lastName: string
+  /**
+   * What the server says this person holds (specs/028) - used to decide what to **draw**, never
+   * what to allow. Every refusal that matters is the server's; hiding a button is not a check.
+   *
+   * Order is not guaranteed. Ask with `includes`, never by position.
+   */
+  roles: string[]
 }
 
 export interface AuthResponse extends User {

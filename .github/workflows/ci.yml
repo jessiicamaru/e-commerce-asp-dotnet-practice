@@ -232,9 +232,14 @@ jobs:
       - name: This check never blocks
         run: echo "Informational only - see specs/006-release-and-rollback/research.md D5"
 
-  # The storefront (client/, feature 014): type-check, lint and build on every change. It publishes
-  # nothing yet - there is nowhere to deploy it - so the proof is that it builds against the API it
-  # was written for. Independent of the backend jobs, so it runs alongside them.
+  # The storefront (client/, feature 014): lint, TEST, type-check and build on every change. It
+  # publishes nothing yet - there is nowhere to deploy it - so the proof is that it is exercised and
+  # that it builds against the API it was written for. Independent of the backend jobs, so it runs
+  # alongside them.
+  #
+  # The tests arrived with specs/028. Before that this job only linted and built, which means the
+  # storefront could render nothing at all and still go green - the backend had 278 tests and the
+  # client had none.
   client:
     name: Storefront build
     runs-on: ubuntu-latest
@@ -255,6 +260,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Test
+        run: npm test
 
       - name: Type-check and build
         run: npm run build

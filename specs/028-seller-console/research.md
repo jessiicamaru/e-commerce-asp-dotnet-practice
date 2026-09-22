@@ -36,10 +36,18 @@ translations, then an image - and it would also mean a seller cannot finish list
 without completing five steps. The form creates something sellable; US3 corrects it afterwards.
 
 **Consequence recorded**: the product is created with text in ONE language and a price in ONE
-currency - whichever the seller was reading and paying in. It therefore falls back to that language
-for the other (specs/021 per-field fallback) and has **no price at all** in the other currency, so
-it comes back `sellable: false` there (specs/022, and deliberately so). The form says this rather
-than hiding it.
+currency. It therefore falls back to that language for the other (specs/021 per-field fallback) and
+has **no price at all** in the other currency, so it comes back `sellable: false` there (specs/022,
+and deliberately so). The form says this rather than hiding it.
+
+**And the currency is NOT the one the seller is browsing in.** `CreateProductCommand.Price` sets
+`product_variants.Price`, which specs/022 defines as the *default* currency's amount, and its
+validator enforces exactly that - `MustFitTheCurrency(money.Value, _ => money.Value.DefaultCurrency)`.
+A seller reading the shop in USD who types 1999 into a field labelled with the active currency would
+be listing a 1,999-dong camera and would be told nothing. The field is therefore labelled with the
+**default** currency, whatever the seller is browsing in, and the second price is set afterwards
+through the per-currency endpoint. Checked in the handler and the validator, not assumed from the
+field name.
 
 ## D3 - Where do the seller pages live?
 

@@ -1,0 +1,54 @@
+{
+  "nav": "Gian hàng",
+  "title": "Gian hàng của tôi",
+  "subtitle": "Những sản phẩm bạn đăng. Không phải của ai khác, và ở đây cũng không ai thấy của bạn.",
+  "shopName": "Tên gian hàng",
+  "rename": "Đổi tên",
+  "renamed": "Gian hàng của bạn giờ tên là “{{name}}”.",
+  "renameHint": "Đổi ở đây là đổi tên dưới tất cả sản phẩm bạn đang bán, cùng một lúc.",
+  "empty": {
+    "title": "Bạn chưa đăng sản phẩm nào.",
+    "body": "Sản phẩm bạn đăng ở đây xuất hiện ngay trong danh mục, kèm tên gian hàng của bạn bên dưới.",
+    "action": "Đăng sản phẩm đầu tiên"
+  },
+  "listing": {
+    "count_one": "{{count}} sản phẩm",
+    "count_other": "{{count}} sản phẩm",
+    "new": "Đăng sản phẩm",
+    "loadFailed": "Không tải được danh sách sản phẩm của bạn.",
+    "noPrice": "Chưa có giá ở đơn vị tiền này",
+    "outOfStock": "Chưa có hàng"
+  },
+  "create": {
+    "title": "Đăng sản phẩm",
+    "name": "Tên sản phẩm",
+    "description": "Mô tả",
+    "category": "Danh mục",
+    "sku": "Mã SKU",
+    "skuHint": "Mã riêng của bạn cho sản phẩm. Mã này phải không trùng với bất kỳ sản phẩm nào trong shop.",
+    "price": "Giá theo {{currency}}",
+    "submit": "Đăng bán",
+    "submitting": "Đang đăng…",
+    "created": "Đã đăng “{{name}}”.",
+    "consequences": {
+      "title": "Ba điều sẽ xảy ra, nói trước để sau không bất ngờ",
+      "language": "Chữ bạn nhập được lưu bằng {{language}}. Người xem bằng ngôn ngữ kia sẽ thấy đúng đoạn chữ này cho tới khi bạn dịch.",
+      "currency": "Giá này chỉ áp cho {{currency}}. Người trả bằng đơn vị tiền kia vẫn thấy sản phẩm nhưng chưa mua được, cho tới khi nó có giá ở đó.",
+      "stock": "Sản phẩm mới đăng chưa có tồn kho nên sẽ hiện “hết hàng” cho tới khi được nhập kho. Người bán hiện chưa tự đặt tồn kho được."
+    }
+  },
+  "edit": {
+    "title": "Sản phẩm của bạn",
+    "price": "Giá",
+    "savePrice": "Lưu giá",
+    "priceSaved": "Đã cập nhật giá.",
+    "image": "Ảnh sản phẩm",
+    "upload": "Tải lên",
+    "uploading": "Đang tải…",
+    "imageSaved": "Đã cập nhật ảnh.",
+    "withdraw": "Gỡ sản phẩm này",
+    "withdrawConfirm": "Gỡ “{{name}}”? Sản phẩm sẽ rời khỏi danh mục và không khôi phục lại được.",
+    "withdrawn": "Đã gỡ “{{name}}”.",
+    "view": "Xem như người mua nhìn thấy"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "nav": "My shop",
+  "title": "My shop",
+  "subtitle": "The products you list. Nobody else's, and nobody else sees yours here.",
+  "shopName": "Shop name",
+  "rename": "Rename",
+  "renamed": "Your shop is now called “{{name}}”.",
+  "renameHint": "Changing this changes the name under every one of your listings at once.",
+  "empty": {
+    "title": "You have not listed anything yet.",
+    "body": "A product you list here appears in the catalogue straight away, with your shop name under it.",
+    "action": "List your first product"
+  },
+  "listing": {
+    "count_one": "{{count}} listing",
+    "count_other": "{{count}} listings",
+    "new": "List a product",
+    "loadFailed": "Your listings could not be loaded.",
+    "noPrice": "No price in this currency",
+    "outOfStock": "No stock yet"
+  },
+  "create": {
+    "title": "List a product",
+    "name": "Name",
+    "description": "Description",
+    "category": "Category",
+    "sku": "SKU",
+    "skuHint": "Your own code for it. It has to be unique across the whole shop.",
+    "price": "Price in {{currency}}",
+    "submit": "List it",
+    "submitting": "Listing…",
+    "created": "“{{name}}” is listed.",
+    "consequences": {
+      "title": "Three things this does, so nothing surprises you later",
+      "language": "The text you type is stored in {{language}}. Shoppers reading the other language see this text until you translate it.",
+      "currency": "The price is in {{currency}} only. Shoppers paying in the other currency will see the product but cannot buy it until it has a price there.",
+      "stock": "A new listing has no stock, so it reads “out of stock” until it is stocked. Sellers cannot set stock yet."
+    }
+  },
+  "edit": {
+    "title": "Your listing",
+    "price": "Price",
+    "savePrice": "Save price",
+    "priceSaved": "Price updated.",
+    "image": "Photograph",
+    "upload": "Upload",
+    "uploading": "Uploading…",
+    "imageSaved": "Photograph updated.",
+    "withdraw": "Withdraw this listing",
+    "withdrawConfirm": "Withdraw “{{name}}”? It leaves the catalogue and cannot be undone.",
+    "withdrawn": "“{{name}}” has been withdrawn.",
+    "view": "See it as a shopper does"
+  }
+}
