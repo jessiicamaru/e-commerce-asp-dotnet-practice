@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
+using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 using Ecommerce.Catalog.Application.Products.Prices;
 using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
 using Ecommerce.Catalog.Application.Products.Variants.UpdateProductVariant;
@@ -128,6 +129,22 @@ public class ProductsController : ApiControllerBase
     public async Task<IActionResult> RemoveVariantPrice(Guid id, Guid variantId, string currency)
     {
         await Mediator.Send(new RemoveVariantPriceCommand(id, variantId, currency));
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Removes a product and every shape of it from the catalogue, for good (specs/024).
+    /// </summary>
+    /// <remarks>
+    /// <b>Not the way to stop selling something</b> - that is deactivation, which leaves the row
+    /// where a cart and a report can still find it. This is for rows that should never have existed.
+    /// Orders are unaffected: each one froze what it bought, which is what freezing is for.
+    /// </remarks>
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await Mediator.Send(new DeleteProductCommand(id));
         return NoContent();
     }
 

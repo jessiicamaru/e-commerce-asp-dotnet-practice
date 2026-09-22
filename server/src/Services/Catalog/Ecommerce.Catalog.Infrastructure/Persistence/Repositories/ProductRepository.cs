@@ -211,6 +211,15 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         await _context.Products.AddAsync(product, cancellationToken);
     }
 
+    public void Remove(Product product)
+    {
+        // Variants explicitly, because their foreign key is RESTRICT: the schema refuses to let a
+        // product quietly take its variants with it, and this says it on purpose. Their options,
+        // prices and translations cascade from them, and the product's translations from it.
+        _context.ProductVariants.RemoveRange(product.Variants);
+        _context.Products.Remove(product);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

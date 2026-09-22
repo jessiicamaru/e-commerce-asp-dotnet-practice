@@ -47,6 +47,19 @@ cd server
 ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-catalogue.py
 ```
 
+and cleaned out when the test scripts have filled it with debris:
+
+```bash
+ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py        # says what it would do
+ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py --yes  # does it
+```
+
+`verify-saga.sh`, `verify-auth.sh` and Bruno each create a real product on every run and none of them
+clean up; there were 97 of them against 14 cameras. The cleaner **keeps what `cameras.json` names and
+deletes the rest**, which is the safe way round - a keep list cannot miss a new kind of debris, a
+delete-pattern list can. It goes through `DELETE /api/products/{id}` (Admin, specs/024), which
+announces `ProductDeletedEvent` so Inventory drops the stock rows too.
+
 It posts through the gateway as an administrator rather than writing SQL, so every row goes down the
 path a person uses — which is how it found that `VariantOptionResponse` carried no id and the
 translation endpoint from specs/021 was therefore unreachable. Idempotent by SKU, and it never
@@ -63,9 +76,9 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (26 tests, PostgreSQL on 5437),
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (31 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (76 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (82 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:

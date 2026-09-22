@@ -1,0 +1,31 @@
+info:
+  name: customer cannot delete a product (403)
+  type: http
+  seq: 14
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Deleting a product is the most destructive thing this API can do, and it is Admin only. Aimed at
+  the collection's REAL product on purpose: a 403 here is the authorization check refusing before
+  anything is read, and if it ever returned 204 the rest of the run would collapse - which is the
+  loudest possible way to find out.

@@ -108,6 +108,12 @@ builder.Services.AddMassTransit(x =>
     // A later shape of a product is a new sellable unit, and it needs somewhere to count (specs/020).
     x.AddConsumer<ProductVariantCreatedConsumer>();
 
+    // ...and when the catalogue forgets a product, there is nothing left to count (specs/024).
+    // ⚠️ A consumer that is written and not registered here NEVER RUNS AND NEVER COMPLAINS. This one
+    // was, and the stock rows for ninety-seven deleted products stayed on the shelf until somebody
+    // counted them against the variants that still existed.
+    x.AddConsumer<ProductDeletedConsumer>();
+
     // Transport-level duplicate suppression, applied to every receive endpoint. The unique
     // (OrderId, ProductId) constraint is the actual guarantee; this keeps the common case from
     // having to reach it.
