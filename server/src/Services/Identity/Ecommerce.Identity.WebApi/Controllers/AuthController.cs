@@ -1,6 +1,7 @@
 using Ecommerce.Application.Auth.Commands.Login;
 using Ecommerce.Application.Auth.Commands.Logout;
 using Ecommerce.Application.Auth.Commands.Register;
+using Ecommerce.Application.Auth.Commands.RegisterSeller;
 using Ecommerce.Application.Auth.Commands.Refresh;
 using Ecommerce.Application.Common.Constants;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,23 @@ public class AuthController : ApiControllerBase
         SetRefreshTokenCookie(result.RefreshToken);
 
         // Hide refresh token from HTTP response body
+        return Ok(result with { RefreshToken = "" });
+    }
+
+    /// <summary>
+    /// Registers somebody who sells, with the name their shop trades under (specs/027).
+    /// </summary>
+    /// <remarks>
+    /// A separate endpoint rather than a flag on <c>register</c>: a boolean in a body that changes
+    /// what an account <b>is</b> has the shape of the two defects this project has already fixed.
+    /// </remarks>
+    [HttpPost("register-seller")]
+    public async Task<IActionResult> RegisterSeller([FromBody] RegisterSellerCommand command)
+    {
+        var result = await Mediator.Send(command);
+
+        SetRefreshTokenCookie(result.RefreshToken);
+
         return Ok(result with { RefreshToken = "" });
     }
 

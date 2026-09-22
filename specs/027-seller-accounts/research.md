@@ -84,3 +84,27 @@ A dashboard for managing one's own listings is the obvious next feature and is a
 finishing touch: forms for every field a product has, image upload, variant and price editing, in two
 languages and two currencies. Bolting a half-version onto this PR would make it unreviewable.
 Recorded in the spec as out of scope, and named here so it is a decision rather than an omission.
+
+## D6 - Identity has no broker, and now needs one (found while building)
+
+D1 settled that the shop name crosses as an event. It did not check whether Identity can publish one.
+**It cannot**: Identity is the one service in this system with no MassTransit at all - the service map
+in CLAUDE.md says so in as many words, and its `.csproj` has no MassTransit package.
+
+So D1's decision costs more than it looked like it did: Identity gains MassTransit, the transactional
+outbox, outbox tables and a migration for them, and a dependency on RabbitMQ it did not have.
+
+**Decision**: pay it, and pay it the way the constitution requires - `AddEntityFrameworkOutbox` with
+`UseBusOutbox()`, exactly as the other five publishers do. Principle III is non-negotiable: staging
+the profile and publishing the event must be one transaction, or a registered seller exists whom
+Catalog is never told about.
+
+**What it does not cost**: Identity does not start needing a broker to work. The publish goes into
+the outbox table inside the request's transaction, so registration succeeds with RabbitMQ down and
+the delivery service drains the backlog when it returns. The CI job `auth-smoke` runs three services
+without a broker, and must keep passing - that is the check on this claim, not the claim itself.
+
+**Rejected again, for the record**: putting the shop name in the JWT as a claim and having Catalog
+read it off any write. It needs no broker at all and is genuinely tempting - but a seller who renames
+their shop and never writes another product would keep the old name in the catalogue forever, which
+is FR-008 failing silently.

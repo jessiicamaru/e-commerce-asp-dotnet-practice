@@ -10,6 +10,7 @@ using Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
 using Ecommerce.Catalog.Application.Products.Translations;
 using FluentValidation;
 using FluentValidation.Results;
+using Ecommerce.Catalog.Application.Products.Queries.GetMyProducts;
 using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
 using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,14 @@ namespace Ecommerce.Catalog.WebApi.Controllers;
 
 public class ProductsController : ApiControllerBase
 {
+    // Every write below is Seller-or-Admin. The attribute decides who may TRY; SellerOwnership in the
+    // handler decides whose product they may try it on, and an attribute cannot do the second because
+    // it runs before any row has been read (specs/027).
+    //
+    // ⚠️ Leaving these as Admin-only made the ownership checks UNREACHABLE for sellers: a seller was
+    // refused at the door, so the code deciding whether the listing was hers never ran. Every unit
+    // test still passed, because they send commands straight to the handlers. The running stack is
+    // what showed it - a seller got 403 on her own product.
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] GetProductsQuery query)
@@ -39,7 +48,19 @@ public class ProductsController : ApiControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Admin")]
+    /// <summary>The caller's own listings, and only theirs (specs/027). Takes no seller id.</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("mine")]
+    public async Task<IActionResult> GetMine([FromQuery] GetMyProductsQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
+    /// <summary>
+    /// Lists a product. <b>A seller's product is theirs; an administrator's belongs to the shop
+    /// itself</b> (specs/027) - who it belongs to comes from the token, never from the body.
+    /// </summary>
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateProductCommand command)
     {
@@ -51,7 +72,7 @@ public class ProductsController : ApiControllerBase
     /// Another shape of the product: a kit, a colour, a size (specs/020). The variant carries the sku
     /// and the price, and it is what a customer actually buys.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPost("{id:guid}/variants")]
     public async Task<IActionResult> AddVariant(Guid id, [FromBody] VariantRequest request)
     {
@@ -65,7 +86,7 @@ public class ProductsController : ApiControllerBase
     /// Re-prices a variant or takes it off sale. The sku and the options never change: an order froze
     /// them, and it has to keep describing what was bought.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPut("{id:guid}/variants/{variantId:guid}")]
     public async Task<IActionResult> UpdateVariant(Guid id, Guid variantId, [FromBody] UpdateVariantRequest request)
     {
@@ -76,7 +97,7 @@ public class ProductsController : ApiControllerBase
     /// This product's name and description in one language (specs/021). An upsert: writing it twice
     /// leaves the second text, not a conflict.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPut("{id:guid}/translations/{language}")]
     public async Task<IActionResult> SetTranslation(Guid id, string language, [FromBody] TranslationRequest request)
     {
@@ -84,7 +105,7 @@ public class ProductsController : ApiControllerBase
     }
 
     /// <summary>Takes a language away; the product falls back to its default text.</summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpDelete("{id:guid}/translations/{language}")]
     public async Task<IActionResult> RemoveTranslation(Guid id, string language)
     {
@@ -96,7 +117,7 @@ public class ProductsController : ApiControllerBase
     /// One option in one language - <c>Kit: Body only</c> → <c>Bộ: Chỉ thân máy</c>. Option values are
     /// read by customers as much as names are.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPut("{id:guid}/options/{optionId:guid}/translations/{language}")]
     public async Task<IActionResult> SetOptionTranslation(
         Guid id, Guid optionId, string language, [FromBody] OptionTranslationRequest request)
@@ -112,7 +133,7 @@ public class ProductsController : ApiControllerBase
     /// The amount is stored exactly as given and <b>nothing converts it</b>. Setting the shop's
     /// default currency writes the variant's own price, which is where that one number lives.
     /// </remarks>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPut("{id:guid}/variants/{variantId:guid}/prices/{currency}")]
     public async Task<IActionResult> SetVariantPrice(
         Guid id, Guid variantId, string currency, [FromBody] VariantPriceRequest request)
@@ -124,7 +145,7 @@ public class ProductsController : ApiControllerBase
     /// Stops selling this variant in this currency. It is then reported with no price rather than
     /// with a converted one. Refused for the default currency, which has no row to remove.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpDelete("{id:guid}/variants/{variantId:guid}/prices/{currency}")]
     public async Task<IActionResult> RemoveVariantPrice(Guid id, Guid variantId, string currency)
     {
@@ -140,7 +161,7 @@ public class ProductsController : ApiControllerBase
     /// where a cart and a report can still find it. This is for rows that should never have existed.
     /// Orders are unaffected: each one froze what it bought, which is what freezing is for.
     /// </remarks>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -167,7 +188,7 @@ public class ProductsController : ApiControllerBase
     /// large", because MVC reports a failed form read as model state; the validator refuses anything
     /// over exactly 2 MB with a message about the image. Both are 400.
     /// </remarks>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpPut("{id:guid}/image")]
     [RequestSizeLimit(ProductImageKey.MaxBytes + 64 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = ProductImageKey.MaxBytes + 64 * 1024)]
@@ -182,7 +203,7 @@ public class ProductsController : ApiControllerBase
         return Ok(await Mediator.Send(new UploadProductImageCommand(id, content, file.Length)));
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Seller,Admin")]
     [HttpDelete("{id:guid}/image")]
     public async Task<IActionResult> DeleteImage(Guid id)
     {

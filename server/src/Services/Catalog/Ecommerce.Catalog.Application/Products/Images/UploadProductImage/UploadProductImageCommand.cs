@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Shared.Exceptions;
@@ -38,17 +40,23 @@ public class UploadProductImageCommandValidator : AbstractValidator<UploadProduc
 public class UploadProductImageCommandHandler(
     IProductRepository products,
     IProductImageStore store,
+    ICurrentUser currentUser,
     ILogger<UploadProductImageCommandHandler> logger)
     : IRequestHandler<UploadProductImageCommand, ProductResponse>
 {
     private readonly IProductRepository _products = products;
     private readonly IProductImageStore _store = store;
+    private readonly ICurrentUser _currentUser = currentUser;
     private readonly ILogger<UploadProductImageCommandHandler> _logger = logger;
 
     public async Task<ProductResponse> Handle(UploadProductImageCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException("Product not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         var bytes = await ReadAtMostAsync(request.Content, ProductImageKey.MaxBytes, cancellationToken);
 

@@ -49,7 +49,7 @@ export function ProductPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-balance">{product.name}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              {t('product.soldBy', { seller: t('product.theShop') })}
+              {t('product.soldBy', { seller: product.sellerName ?? t('product.theShop') })}
             </p>
           </div>
 

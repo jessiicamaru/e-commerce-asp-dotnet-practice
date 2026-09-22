@@ -44,7 +44,7 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
         <h3 className="leading-snug font-semibold group-hover:underline">{product.name}</h3>
 
         <span className="text-muted-foreground text-xs">
-          {t('product.soldBy', { seller: t('product.theShop') })}
+          {t('product.soldBy', { seller: product.sellerName ?? t('product.theShop') })}
         </span>
 
         <div className="mt-auto flex items-baseline gap-1.5 pt-2">

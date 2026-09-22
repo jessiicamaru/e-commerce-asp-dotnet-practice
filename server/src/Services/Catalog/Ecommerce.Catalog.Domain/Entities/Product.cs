@@ -55,6 +55,15 @@ public class Product
     /// <see cref="Description"/> hold the default-language text and are the fallback.
     /// </summary>
     public List<ProductTranslation> Translations { get; set; } = [];
+    /// <summary>
+    /// Who sells this, or <c>null</c> for <b>the shop itself</b> (specs/027) - which is every product
+    /// listed before sellers existed, and anything an administrator lists.
+    /// </summary>
+    /// <remarks>
+    /// An Identity user id, and a foreign key to nothing: it names a row in another database.
+    /// </remarks>
+    public Guid? SellerId { get; set; }
+
     public Guid CategoryId { get; set; }
     public Category? Category { get; set; }
     public bool IsActive { get; set; } = true;

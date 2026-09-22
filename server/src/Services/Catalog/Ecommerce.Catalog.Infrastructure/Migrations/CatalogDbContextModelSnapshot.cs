@@ -136,6 +136,9 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<Guid?>("SellerId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Sku")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -237,6 +240,24 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("product_variants", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.Seller", b =>
+                {
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ShopName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("SellerId");
+
+                    b.ToTable("sellers", (string)null);
                 });
 
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantOption", b =>

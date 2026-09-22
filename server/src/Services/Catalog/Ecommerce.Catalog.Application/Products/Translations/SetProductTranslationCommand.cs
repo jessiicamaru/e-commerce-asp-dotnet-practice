@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Domain.Entities;
@@ -76,16 +78,22 @@ public static class LanguageRules
 
 public class SetProductTranslationCommandHandler(
     IProductRepository products,
-    IOptions<LanguageOptions> localization)
+    IOptions<LanguageOptions> localization,
+    ICurrentUser currentUser)
     : IRequestHandler<SetProductTranslationCommand, ProductResponse>
 {
     private readonly IProductRepository _products = products;
     private readonly LanguageOptions _localization = localization.Value;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<ProductResponse> Handle(SetProductTranslationCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         var language = request.Language.ToLowerInvariant();
         var translation = product.Translations.FirstOrDefault(t => t.Language == language);
@@ -114,15 +122,20 @@ public class SetProductTranslationCommandHandler(
     }
 }
 
-public class RemoveProductTranslationCommandHandler(IProductRepository products)
+public class RemoveProductTranslationCommandHandler(IProductRepository products, ICurrentUser currentUser)
     : IRequestHandler<RemoveProductTranslationCommand>
 {
     private readonly IProductRepository _products = products;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task Handle(RemoveProductTranslationCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         var language = request.Language.ToLowerInvariant();
         var translation = product.Translations.FirstOrDefault(t => t.Language == language);
@@ -139,15 +152,20 @@ public class RemoveProductTranslationCommandHandler(IProductRepository products)
     }
 }
 
-public class SetOptionTranslationCommandHandler(IProductRepository products)
+public class SetOptionTranslationCommandHandler(IProductRepository products, ICurrentUser currentUser)
     : IRequestHandler<SetOptionTranslationCommand>
 {
     private readonly IProductRepository _products = products;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task Handle(SetOptionTranslationCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         // An option of somebody else's product is as good as missing, like a variant of one (specs/020).
         var option = product.Variants

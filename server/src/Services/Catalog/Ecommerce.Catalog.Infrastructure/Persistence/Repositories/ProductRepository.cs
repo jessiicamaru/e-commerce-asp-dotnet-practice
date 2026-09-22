@@ -137,7 +137,8 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         CancellationToken cancellationToken = default,
         string language = "",
         string currency = "",
-        string defaultCurrency = "")
+        string defaultCurrency = "",
+        Guid? sellerId = null)
     {
         // Variants come with the page: the card shows a "from" price and whether the prices differ.
         // Translations too, or every card would fall back to the default language (specs/021), and
@@ -148,6 +149,12 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Prices)
             .AsQueryable();
+
+        if (sellerId.HasValue)
+        {
+            // "My listings" (specs/027). Indexed, because every seller wants their own page.
+            query = query.Where(p => p.SellerId == sellerId.Value);
+        }
 
         if (categoryId.HasValue)
         {

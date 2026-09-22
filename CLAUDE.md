@@ -78,7 +78,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (31 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (93 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (109 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -150,7 +150,7 @@ so.
 | Service | HTTP port | DB port / name | Notes |
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
-| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; no MassTransit |
+| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads |
@@ -285,6 +285,21 @@ An order freezes its `Currency` with its words, and the currency travels on `Ord
 through the saga into `ProcessPaymentCommand`, so `payments.Currency` finally says what its `Amount`
 is. Delivery has a price per currency in `Shipping:Options[].Prices`; an option not priced in the
 checkout's currency is not offered.
+
+**The shop is a marketplace** (specs/027). A **seller** registers through
+`POST /api/auth/register-seller` with a shop name, holds `Seller` **and** `Customer`, and lists
+products that are theirs: `products.SellerId`, null meaning **the shop itself** - every product from
+before this, and anything an administrator lists. ⚠️ **A seller writing to a product that is not
+theirs gets 404, never 403**, because a 403 confirms the id is real and belongs to somebody; the one
+check is `SellerOwnership`, called by all nine write handlers, and **an administrator passes every
+one of them** because moderation is the job. Catalog keeps a **read model of shop names**
+(`sellers`), fed by `SellerRegisteredEvent`/`SellerRenamedEvent`, so a page of products costs no call
+to Identity and an anonymous catalogue read still works with Identity down; renaming a shop changes
+every listing and **writes no product**. ⚠️ **Opening a write to sellers means the controller
+attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks
+unreachable - a seller was refused at the door and the code deciding whether the listing was hers
+never ran, while every unit test still passed. And `/api/sellers` needed a **gateway route**, without
+which the rename endpoint was a 404 that looked like a missing feature.
 
 **The quote and the order are priced by the same code.** `GET /api/orders/quote` returns what
 checkout would charge for the same choices, in the same parts, and places nothing. It and

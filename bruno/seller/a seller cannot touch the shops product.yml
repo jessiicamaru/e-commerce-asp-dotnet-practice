@@ -1,0 +1,50 @@
+info:
+  name: a seller cannot touch the shops product (404)
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/translations/en"
+  body:
+    type: json
+    data: |-
+          {
+            "name": "Taken over",
+            "description": null
+          }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404, and NOT 403", function() {
+          expect(res.status).to.equal(404);
+        });
+        test("the refusal is worded as the product not existing", function() {
+          expect(String(res.body.title)).to.equal("Resource Not Found");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  `productId` is the collection's own product, listed by an administrator and therefore the SHOP's -
+  not this seller's. The seller is refused.
+
+  **404, not 403, and that is the assertion.** A 403 would confirm the id is real and belongs to
+  somebody, which turns a listing endpoint into an enumeration tool. The system already answers this
+  way for another customer's address and another customer's order.
+
+  A 403 here would also be the RIGHT OUTCOME FOR THE WRONG REASON - it is what came back while every
+  write was still Admin-only at the controller, when a seller could not reach the ownership check at
+  all. Asserting the exact status is what tells those two apart.
+
+  It lives in this folder rather than in security-checks because the seller token is created here;
+  security-checks runs before this folder and would only ever see a 401.

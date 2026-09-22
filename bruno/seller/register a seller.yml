@@ -1,0 +1,54 @@
+info:
+  name: register a seller
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register-seller"
+  body:
+    type: json
+    data: |-
+        {
+          "email": "{{sellerEmail}}",
+          "password": "Passw0rd!bruno",
+          "firstName": "Bruno",
+          "lastName": "Seller",
+          "shopName": "Bruno Cameras"
+        }
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("sellerEmail", "bruno-seller-" + Date.now() + "@local.test");
+    - type: after-response
+      code: |-
+        if (res.body && res.body.token) bru.setVar("sellerToken", res.body.token);
+        if (res.body && res.body.accessToken) bru.setVar("sellerToken", res.body.accessToken);
+        if (res.body && res.body.id) bru.setVar("sellerId", res.body.id);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the token carries BOTH Seller and Customer", function() {
+          var token = res.body.token || res.body.accessToken;
+          var part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+          var claims = JSON.parse(atob(part + "===".slice((part.length + 3) % 4)));
+          var roles = [].concat(claims.role);
+          expect(roles).to.include("Seller");
+          expect(roles).to.include("Customer");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A separate endpoint rather than a flag on `register` (specs/027): a boolean in a body that changes
+  what an account **is** has the shape of the two defects this project has already fixed.
+
+  A seller is also a Customer, because a seller who cannot buy is a strange kind of account.

@@ -25,6 +25,7 @@ public static class DependencyInjection
 
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<ISellerRepository, SellerRepository>();
 
         // Product images (specs/019): a directory, which assumes one Catalog instance. In containers
         // it is the catalog_images volume; unset, a folder beside the process.
