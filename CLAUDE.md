@@ -40,7 +40,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (46 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (46 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
+(10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -230,6 +230,12 @@ and [specs/009-catalog-owns-price](specs/009-catalog-owns-price/).
 Roles (`Admin`, `Customer`) and the first administrator are seeded at Identity startup by
 `DataInitializer`, from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. The bootstrap path closes as soon as any
 admin exists. Self-registration always grants `Customer`.
+
+**Emails are compared case-insensitively and stored as typed** (#49). Every lookup goes through
+`EmailKey.For` (trim, lower-case), and a unique index on `lower("Email")` enforces one account per
+mailbox. The migration that added it **stops** if accounts differing only by case already exist,
+rather than choosing which one survives; how to resolve that is in
+[troubleshooting §8](docs/guides/troubleshooting.md).
 
 ### Shared building blocks
 **Inventory owns stock; Catalog reports a read model of it.** `Product.Availability` is fed by `StockAvailabilityChangedEvent` and surfaces as `"InStock"` / `"OutOfStock"` — never a count. **Nothing may sell against it**: checkout reserves under `FOR UPDATE` against Inventory's row, and a read model fed by messages is seconds behind by design. A real number comes from `GET /api/stock/{productId}` on Inventory, which is public. Six handlers move stock and every one must announce — if you add a seventh, it must call `StockAvailabilityAnnouncer` too, and `Ecommerce.Inventory.Tests/AnnouncementTests.cs` is what catches the omission. Background in [specs/004-stock-single-source](specs/004-stock-single-source/).

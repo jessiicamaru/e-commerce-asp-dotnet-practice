@@ -42,7 +42,7 @@ IJwtTokenGenerator jwtTokenGenerator
 
         var user = new User
         {
-            Email = request.Email,
+            Email = request.Email.Trim(),   // stored as typed; compared through EmailKey (#49)
             PasswordHash = passwordHash,
             FirstName = request.FirstName,
             LastName = request.LastName,

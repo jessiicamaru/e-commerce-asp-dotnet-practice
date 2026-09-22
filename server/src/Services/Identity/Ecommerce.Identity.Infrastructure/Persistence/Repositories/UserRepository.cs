@@ -1,3 +1,4 @@
+using Ecommerce.Application.Common;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,13 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
 {
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
+        // Case-insensitive (#49): lower("Email") = @key, served by IX_users_Email_lower.
+        var key = EmailKey.For(email);
+
         return await _context.Users
             .Include(u => u.Roles)
             .Include(u => u.RefreshTokens)
-            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == key, cancellationToken);
     }
 
     public async Task<User?> GetByUserRefreshTokenAsync(string token, CancellationToken cancellationToken = default)
