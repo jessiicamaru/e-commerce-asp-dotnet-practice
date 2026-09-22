@@ -1,6 +1,6 @@
 # Feature Specification: Two Price Lists, Not One Price Converted
 
-**Feature Branch**: `022-multi-currency-prices` · **Created**: 2026-09-22 · **Status**: Draft
+**Feature Branch**: `022-multi-currency-prices` · **Created**: 2026-09-22 · **Status**: Implemented (see [tasks.md](tasks.md) for what building it found)
 
 **Input**: the owner asked for two kinds of price, dollars and dong.
 

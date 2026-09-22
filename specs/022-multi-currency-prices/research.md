@@ -165,3 +165,36 @@ This is not cosmetic. Until now, every order ever placed added a forty-million-d
 five-dollar delivery charge and charged the sum. Nothing was wrong in any row, because no row claimed
 a currency - which is the whole argument of this feature, and it is sitting in the repository's own
 configuration file rather than in a hypothetical.
+
+## D8 - Rounding what is computed is not enough (found while building)
+
+An order placed in dong came back with tax of a whole **3,003** and a subtotal of **29.97**. The
+rounding in D5 was working exactly as designed and was beside the point: a subtotal is a unit price
+times an integer, so there is nothing in it to round. The fractional dong came from the *stored
+price*, which had been entered as `9.99` when nothing in the system had an opinion about currencies.
+
+**Decision**: every command that sets a price refuses an amount the currency cannot hold.
+`Currency.Fits` is the one rule; `SetVariantPrice`, `CreateProduct`, `AddProductVariant` and
+`UpdateProductVariant` all apply it. 9.99 is a price in dollars and is not one in dong.
+
+**The cost, recorded**: rows written before this keep their amounts - validation is on writes, not on
+reads, and rewriting somebody's stored prices to satisfy a new rule would be inventing data. The
+seeded test products are the visible example: several are priced in fractional dong and will stay
+that way until an administrator re-prices them.
+
+**Why this was not in the plan**: it looked like D5 had covered it. Rounding the *computation* and
+constraining the *input* are two different jobs, and only one of them was written down.
+
+## D9 - The configuration binder appends to a defaulted array (found while building)
+
+`AddRequestCurrency` refused to start with "Currency 'VND' is configured twice." The options class
+declared `Supported = [VND, USD]` as a default and the configuration supplied the same two, and
+.NET's binder **appends to a non-empty array rather than replacing it**.
+
+`LanguageOptions` had the identical shape and had been running as `["vi", "en", "vi", "en"]` since
+specs/021 - harmless there, because every read of that list is a `Contains` or a `FirstOrDefault`,
+which is exactly why nobody noticed.
+
+**Decision**: neither options type has a default any more. A service that wants languages or
+currencies configures them; one that does not, does not start. The duplicate check stays, because it
+is what found this.

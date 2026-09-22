@@ -50,8 +50,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (26 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (52 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (48 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (76 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -241,6 +241,22 @@ thing to fix at scale. ⚠️ **An order freezes its words in the language it wa
 (`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an
 order is a record of a purchase, not a view of the catalogue.
 
+**The shop has two price lists, and it converts nothing** (specs/022). A price per currency lives on
+the **variant** (`variant_prices`), with `product_variants.Price` holding the default currency's
+amount; a request asks with `?currency=` then `X-Currency`, read through `IRequestCurrency` beside
+`IRequestLanguage`, and responses carry `X-Currency` **and `Vary: X-Currency`**.
+⚠️ **A missing price does NOT fall back the way a missing translation does.** A variant nobody priced
+in the currency being asked about comes back with a **null price** and `sellable: false`, and checkout
+refuses it with a 409 naming the currency. Falling back would sell a 40,000,000₫ camera for 1,600₫ or
+charge $40,000,000 for it; the two designs look alike and the difference is the whole feature.
+**Currency is chosen separately from language** - most of this shop's customers read English and pay
+in dong. Amounts are rounded to the currency's minor unit (**dong has none**), and every command that
+sets a price refuses one the currency cannot hold: 9.99 is a price in dollars and is not one in dong.
+An order freezes its `Currency` with its words, and the currency travels on `OrderSubmittedEvent`
+through the saga into `ProcessPaymentCommand`, so `payments.Currency` finally says what its `Amount`
+is. Delivery has a price per currency in `Shipping:Options[].Prices`; an option not priced in the
+checkout's currency is not offered.
+
 **The quote and the order are priced by the same code.** `GET /api/orders/quote` returns what
 checkout would charge for the same choices, in the same parts, and places nothing. It and
 `SubmitOrderCommandHandler` both call `CheckoutPricing`, so what the storefront shows is what is
@@ -332,6 +348,13 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   dropped without a word — the cart accepted a quantity of `-1` with 204 despite a `GreaterThan(0)`
   rule. Now `where TRequest : notnull`. `Ecommerce.Cart.Tests/ValidationTests` is what fails if it
   regresses.
+- **The configuration binder APPENDS to an array that already has contents.** An options class with
+  `Supported { get; init; } = ["vi", "en"]` plus a configured `["vi", "en"]` binds to
+  `["vi", "en", "vi", "en"]`, not to the configured list. `LanguageOptions` had been doing exactly
+  that since specs/021 and nobody noticed, because every read of it is a `Contains` or a
+  `FirstOrDefault`; the duplicate check in `AddRequestCurrency` is what found it. Neither options
+  type has a default any more - a service that wants languages or currencies configures them, and
+  one that does not, does not start.
 - **A new service needs its own `appsettings.json` with `JwtSettings`.** Without it `Issuer` and
   `Audience` are empty. That used to start cleanly, report healthy, and reject **every** token with
   401 (`IDX10208: Unable to validate audience`). Since #30, `AddJwtAuthentication` refuses to start
