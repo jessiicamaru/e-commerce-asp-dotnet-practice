@@ -17,6 +17,8 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .Include(p => p.Variants.OrderBy(v => v.CreatedAt))
                 .ThenInclude(v => v.Options)
                     .ThenInclude(o => o.Translations)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.Prices)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -51,6 +53,7 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         _context.ProductVariants
             .Include(v => v.Options)
                 .ThenInclude(o => o.Translations)
+            .Include(v => v.Prices)
             .Include(v => v.Product)
             .FirstOrDefaultAsync(v => v.Id == variantId, cancellationToken);
 
@@ -65,6 +68,7 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .AsNoTracking()
             .Include(v => v.Options)
                 .ThenInclude(o => o.Translations)
+            .Include(v => v.Prices)
             .Include(v => v.Product)
                 .ThenInclude(p => p!.Translations)
             .Where(v => wanted.Contains(v.Id))
@@ -131,14 +135,18 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         string? searchTerm,
         string? sortBy,
         CancellationToken cancellationToken = default,
-        string language = "")
+        string language = "",
+        string currency = "",
+        string defaultCurrency = "")
     {
         // Variants come with the page: the card shows a "from" price and whether the prices differ.
-        // Translations too, or every card would fall back to the default language (specs/021).
+        // Translations too, or every card would fall back to the default language (specs/021), and
+        // the price rows, or every card would fall back to the default currency (specs/022).
         var query = _context.Products
             .Include(p => p.Category)
             .Include(p => p.Translations)
             .Include(p => p.Variants)
+                .ThenInclude(v => v.Prices)
             .AsQueryable();
 
         if (categoryId.HasValue)
@@ -165,10 +173,26 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                     && EF.Functions.Unaccent(t.Name.ToLower()).Contains(EF.Functions.Unaccent(term))));
         }
 
+        // Sorting by price sorts by the price in the currency being ASKED FOR. Sorting by the
+        // default currency and labelling the result "cheapest first" would be visibly wrong the moment
+        // the two lists are not proportional - which they are not, because an administrator sets each
+        // one (specs/022). A product not priced in this currency sorts last: SQL puts NULL last
+        // ascending, and `NULLS LAST` is asked for explicitly on the descending sort.
+        var inDefaultCurrency = string.IsNullOrEmpty(currency)
+            || string.Equals(currency, defaultCurrency, StringComparison.OrdinalIgnoreCase);
+
+        System.Linq.Expressions.Expression<Func<Product, decimal?>> byPrice = inDefaultCurrency
+            ? p => p.Price
+            : p => p.Variants
+                .Where(v => v.IsActive)
+                .SelectMany(v => v.Prices)
+                .Where(price => price.Currency == currency)
+                .Min(price => (decimal?)price.Amount);
+
         query = sortBy?.ToLower() switch
         {
-            "price_asc" => query.OrderBy(p => p.Price),
-            "price_desc" => query.OrderByDescending(p => p.Price),
+            "price_asc" => query.OrderBy(byPrice),
+            "price_desc" => query.OrderByDescending(byPrice),
             "name_desc" => query.OrderByDescending(p => p.Name),
             _ => query.OrderBy(p => p.Name)
         };

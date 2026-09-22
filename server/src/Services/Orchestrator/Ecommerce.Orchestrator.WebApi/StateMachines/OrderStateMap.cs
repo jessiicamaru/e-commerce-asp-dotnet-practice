@@ -25,6 +25,11 @@ public class OrderStateMap : SagaClassMap<OrderStateData>
         entity.Property(x => x.FailureReason)
             .HasMaxLength(512);
 
+        // What TotalAmount is denominated in (specs/022). Nullable: a saga instance already in
+        // flight when this deployed carries none, and reads as the shop's default.
+        entity.Property(x => x.Currency)
+            .HasMaxLength(3);
+
         entity.Property(x => x.CreatedAt)
             .IsRequired();
 

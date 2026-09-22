@@ -26,7 +26,7 @@ public interface IProductRepository
     /// Which language's translations to search as well as the default text (specs/021). Empty searches
     /// the default text only, which is what a caller with no request does.
     /// </param>
-    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "");
+    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "", string currency = "", string defaultCurrency = "");
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 

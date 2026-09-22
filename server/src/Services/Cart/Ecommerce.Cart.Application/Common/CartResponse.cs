@@ -8,11 +8,16 @@ namespace Ecommerce.Cart.Application.Common;
 /// False while any line cannot be bought, so a client can say why before the customer tries.
 /// </param>
 /// <param name="PricesAvailable">False when Catalog could not be reached. The lines are still here.</param>
+/// <param name="Currency">
+/// The currency the amounts here are in (specs/022) - what the shopper is browsing in, not anything
+/// frozen: a cart is not a purchase.
+/// </param>
 public record CartResponse(
     List<CartLineResponse> Lines,
     decimal? EstimatedTotal,
     bool CanCheckOut,
-    bool PricesAvailable);
+    bool PricesAvailable,
+    string Currency = "");
 
 /// <param name="VariantId">Which shape of the product this line is (specs/020).</param>
 /// <param name="OptionSummary">That shape in words - empty for a product sold one way.</param>
@@ -39,4 +44,11 @@ public static class CartLineStatus
     public const string NoLongerAvailable = "NoLongerAvailable";
 
     public const string PriceUnavailable = "PriceUnavailable";
+
+    /// <summary>
+    /// Nobody has priced this variant in the currency the shopper is browsing in (specs/022). The
+    /// line is kept and marked, like a withdrawn one - and it is deliberately a DIFFERENT status,
+    /// because switching currency makes it buyable again and "no longer available" would not say so.
+    /// </summary>
+    public const string NotSoldInCurrency = "NotSoldInCurrency";
 }

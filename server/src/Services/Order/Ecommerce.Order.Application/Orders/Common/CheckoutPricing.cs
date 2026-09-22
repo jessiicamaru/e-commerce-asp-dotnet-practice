@@ -1,6 +1,7 @@
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 
 namespace Ecommerce.Order.Application.Orders.Common;
 
@@ -20,6 +21,7 @@ namespace Ecommerce.Order.Application.Orders.Common;
 /// </remarks>
 public class CheckoutPricing(
     IRequestLanguage requestLanguage,
+    IRequestCurrency requestCurrency,
     ICartReader cartReader,
     IAddressReader addressReader,
     IShippingOptions shippingOptions,
@@ -27,6 +29,7 @@ public class CheckoutPricing(
     ITaxRates taxRates)
 {
     private readonly IRequestLanguage _requestLanguage = requestLanguage;
+    private readonly IRequestCurrency _requestCurrency = requestCurrency;
     private readonly ICartReader _cartReader = cartReader;
     private readonly IAddressReader _addressReader = addressReader;
     private readonly IShippingOptions _shippingOptions = shippingOptions;
@@ -59,9 +62,19 @@ public class CheckoutPricing(
                 "No delivery address was chosen and there is no default. Save an address first.");
         }
 
+        // Everything from here on is in ONE currency, and it is the one the request asked for
+        // (specs/022). Nothing below converts: an amount that is not available in this currency makes
+        // the checkout refuse rather than become an amount in another one.
+        var currency = _requestCurrency.Current;
+
         // The validators have already refused an unknown code; this is the same lookup, for the price.
         var shipping = _shippingOptions.Find(shippingOption)
             ?? throw new FluentValidation.ValidationException($"'{shippingOption}' is not a delivery option.");
+
+        var deliveryPrice = shipping.PriceIn(currency.Code)
+            ?? throw new FluentValidation.ValidationException(
+                $"'{shipping.Code}' is not offered in {currency.Code}. Offered: "
+                + string.Join(", ", _shippingOptions.Offered(currency.Code).Select(o => o.Code)) + ".");
 
         // The price and the name come from Catalog, never from the request (issue #18) - and what is
         // priced is the VARIANT the customer chose (specs/020).
@@ -72,9 +85,21 @@ public class CheckoutPricing(
         var priced = await _catalogPrices.GetPricesAsync(
             cartItems.Select(i => i.SellableId).Distinct().ToList(),
             cancellationToken,
-            language);
+            language,
+            currency.Code);
 
         var byVariant = priced.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
+
+        // "Nobody has priced this in dollars" is a different fact from "this is withdrawn", and a
+        // customer told the second goes looking for a product that is on sale in dong. Both refuse the
+        // checkout; only one of them is something an administrator fixes by setting a price.
+        var unpriced = priced.Where(p => p.Price is null).Select(p => p.Name).ToList();
+
+        if (unpriced.Count > 0)
+        {
+            throw new ConflictException(
+                $"Not sold in {currency.Code}: {string.Join(", ", unpriced)}.");
+        }
 
         // "Exists but cannot be sold" is an answer, not a failure, and it is the caller's to act on.
         // 409 rather than 404, so it stays distinguishable from a product that is not there.
@@ -88,9 +113,14 @@ public class CheckoutPricing(
 
         // The total, in named parts (feature 012): goods + delivery + tax - discount. Tax follows the
         // destination, is computed per line and on delivery and rounded half away from zero (ADR-002).
+        // Rounded to the currency's minor unit - no fractional dong (specs/022 research D5). The null
+        // prices were refused above, so the `!` here is the check having already happened.
         var taxRate = _taxRates.RateFor(address.Country);
         var totals = OrderTotals.Compute(
-            cartItems.Select(i => (byVariant[i.SellableId].Price, i.Quantity)).ToList(), shipping.Price, taxRate);
+            cartItems.Select(i => (byVariant[i.SellableId].Price!.Value, i.Quantity)).ToList(),
+            deliveryPrice,
+            taxRate,
+            currency.Decimals);
 
         var lines = cartItems.Select((item, i) =>
         {
@@ -101,14 +131,15 @@ public class CheckoutPricing(
                 variant.ProductId == default ? item.ProductId : variant.ProductId,
                 variant.Name,
                 item.Quantity,
-                variant.Price,
+                variant.Price!.Value,
                 totals.LineTaxes[i],
                 item.SellableId,
                 variant.Sku,
                 variant.OptionSummary);
         }).ToList();
 
-        return new PricedCheckout(address, shipping, lines, totals, taxRate, language);
+        return new PricedCheckout(
+            address, shipping, lines, totals, taxRate, language, currency.Code, deliveryPrice);
     }
 }
 
@@ -129,10 +160,20 @@ public record PricedLine(
 }
 
 /// <param name="Language">The language the words on these lines are in (specs/021).</param>
+/// <param name="Currency">
+/// The currency every amount here is in (specs/022). The order freezes it, because an order is a
+/// record of what was charged rather than a view of today's prices.
+/// </param>
+/// <param name="DeliveryPrice">
+/// What delivery costs in <paramref name="Currency"/> - resolved here rather than read off
+/// <paramref name="Shipping"/> again, so nothing downstream can pick the wrong currency's amount.
+/// </param>
 public record PricedCheckout(
     AddressCopy Address,
     ShippingOption Shipping,
     IReadOnlyList<PricedLine> Lines,
     OrderTotals.Result Totals,
     decimal TaxRate,
-    string Language = "");
+    string Language = "",
+    string Currency = "",
+    decimal DeliveryPrice = 0);

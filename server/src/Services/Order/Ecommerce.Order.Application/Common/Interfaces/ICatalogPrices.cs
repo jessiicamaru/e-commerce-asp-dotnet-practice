@@ -42,10 +42,17 @@ public interface ICatalogPrices
     /// Which language to answer in (specs/021). The name and options that come back are FROZEN onto
     /// the order, so this decides the words the order keeps. Empty means the shop's default.
     /// </param>
+    /// <param name="currency">
+    /// Which currency to price in (specs/022). The amount that comes back is FROZEN onto the order,
+    /// so this decides the money the order records. Empty means the shop's default.
+    /// <b>A variant with no price in it comes back with a null price and <c>Sellable = false</c></b> -
+    /// never converted, and never the default currency's amount relabelled.
+    /// </param>
     Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
         IReadOnlyCollection<Guid> variantIds,
         CancellationToken cancellationToken = default,
-        string language = "");
+        string language = "",
+        string currency = "");
 }
 
 /// <summary>
@@ -56,11 +63,18 @@ public interface ICatalogPrices
 /// </param>
 /// <param name="ProductId">What the variant is a shape of - copied onto the line for links and reports.</param>
 /// <param name="VariantId">The sellable unit. For a product that existed before variants, the same id.</param>
+/// <param name="Price">
+/// What it costs in <paramref name="Currency"/>, or <b>null when it is not sold in that currency</b>
+/// (specs/022). A null price always comes with <c>Sellable = false</c>, so a caller that reads only
+/// the flag cannot charge a blank.
+/// </param>
+/// <param name="Currency">Which currency <paramref name="Price"/> is in, as Catalog echoed it back.</param>
 public record CatalogPrice(
     Guid ProductId,
     string Name,
-    decimal Price,
+    decimal? Price,
     bool Sellable,
     Guid VariantId = default,
     string Sku = "",
-    string OptionSummary = "");
+    string OptionSummary = "",
+    string Currency = "");

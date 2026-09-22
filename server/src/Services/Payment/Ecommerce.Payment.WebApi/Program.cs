@@ -131,6 +131,12 @@ builder.Services.AddHealthChecks()
 // Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
 builder.AddObservability("payment");
 
+// What an amount with no stated currency means (specs/022). Payment has no request to negotiate
+// from: it records the currency the saga handed it, and falls back to this when that is empty -
+// which is what an in-flight message from an Order built before this feature carries.
+builder.Services.Configure<Ecommerce.Shared.Money.CurrencyOptions>(
+    builder.Configuration.GetSection(Ecommerce.Shared.Money.CurrencyOptions.SectionName));
+
 var app = builder.Build();
 
 // One of three independent signals that this service is a stand-in. A stub mistaken for the real

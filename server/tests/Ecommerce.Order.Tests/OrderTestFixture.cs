@@ -7,6 +7,7 @@ using Ecommerce.Order.Infrastructure.Tax;
 using Ecommerce.Order.WebApi.Consumers;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,18 @@ public class OrderTestFixture : IAsyncLifetime
     public FakeCheckoutDependencies Checkout { get; } = new();
 
     private TestLanguage LanguageHolder { get; } = new();
+
+    private TestCurrency CurrencyHolder { get; } = new();
+
+    /// <summary>
+    /// The currency checkout runs in. Dong by default, like the shop. Settable per test, for the same
+    /// reason as the language: the provider is built once for the whole collection.
+    /// </summary>
+    public Currency Currency
+    {
+        get => CurrencyHolder.Current;
+        set => CurrencyHolder.Current = value;
+    }
 
     /// <summary>
     /// The language checkout runs in. Vietnamese by default, like the shop. Settable per test - the
@@ -91,12 +104,27 @@ public class OrderTestFixture : IAsyncLifetime
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                // A price per currency (specs/022). The two lists are deliberately NOT a
+                // conversion of each other - 5 USD is not 5,000 VND at any rate - so a test that
+                // asserted on a converted number would be asserting on a coincidence.
                 ["Shipping:Options:0:Code"] = "standard",
                 ["Shipping:Options:0:Name"] = "Standard delivery",
-                ["Shipping:Options:0:Price"] = "5.00",
+                ["Shipping:Options:0:Prices:VND"] = "30000",
+                ["Shipping:Options:0:Prices:USD"] = "5.00",
                 ["Shipping:Options:1:Code"] = "express",
                 ["Shipping:Options:1:Name"] = "Express delivery",
-                ["Shipping:Options:1:Price"] = "15.00",
+                ["Shipping:Options:1:Prices:VND"] = "60000",
+                ["Shipping:Options:1:Prices:USD"] = "15.00",
+                // Offered in dong ONLY, on purpose: FR-008 needs something to refuse, and a refusal
+                // proved by an option nobody uses is worth more than one that breaks other tests.
+                ["Shipping:Options:2:Code"] = "overnight",
+                ["Shipping:Options:2:Name"] = "Overnight delivery",
+                ["Shipping:Options:2:Prices:VND"] = "120000",
+                ["Money:DefaultCurrency"] = "VND",
+                ["Money:Supported:0:Code"] = "VND",
+                ["Money:Supported:0:Decimals"] = "0",
+                ["Money:Supported:1:Code"] = "USD",
+                ["Money:Supported:1:Decimals"] = "2",
                 ["Tax:DefaultRate"] = "0.10",
                 ["Tax:Rates:VN"] = "0.10",
                 ["Tax:Rates:GB"] = "0.20",
@@ -122,6 +150,10 @@ public class OrderTestFixture : IAsyncLifetime
         // No HTTP request in these tests, so the language is handed in rather than negotiated
         // (specs/021). Tests that care set Language.
         services.AddSingleton<IRequestLanguage>(_ => LanguageHolder);
+
+        // ...and the currency, for the same reason (specs/022). Tests that care set Currency.
+        services.AddSingleton<IRequestCurrency>(_ => CurrencyHolder);
+        services.Configure<CurrencyOptions>(configuration.GetSection(CurrencyOptions.SectionName));
 
         // Checkout's three synchronous reads, faked - they are other services, and what the checkout
         // tests are about is what Order does with the answers. The real gRPC path is exercised end to
@@ -195,10 +227,17 @@ public class FakeCheckoutDependencies : ICartReader, ICatalogPrices, IAddressRea
     /// <summary>What language checkout asked Catalog to answer in (specs/021).</summary>
     public string? LastLanguageAsked { get; private set; }
 
+    /// <summary>What currency checkout asked Catalog to price in (specs/022).</summary>
+    public string? LastCurrencyAsked { get; private set; }
+
     public Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
-        IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default, string language = "")
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default,
+        string language = "",
+        string currency = "")
     {
         LastLanguageAsked = language;
+        LastCurrencyAsked = currency;
         return Task.FromResult<IReadOnlyList<CatalogPrice>>(productIds.Select(id => Prices[id]).ToList());
     }
 
@@ -216,4 +255,10 @@ public class OrderTestCollection : ICollectionFixture<OrderTestFixture>;
 public class TestLanguage : IRequestLanguage
 {
     public string Current { get; set; } = "vi";
+}
+
+/// <summary>A settable <see cref="IRequestCurrency"/>, for the same reason.</summary>
+public class TestCurrency : IRequestCurrency
+{
+    public Currency Current { get; set; } = new("VND", 0);
 }

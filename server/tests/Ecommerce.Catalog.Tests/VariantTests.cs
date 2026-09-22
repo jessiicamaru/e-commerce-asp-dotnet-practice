@@ -72,7 +72,8 @@ public class VariantTests(CatalogTestFixture fixture)
         await SendAsync(new AddProductVariantCommand(
             product.Id, $"{product.Sku}-KIT", 1400m, [new VariantOptionInput("Kit", "With 24-105mm")]));
 
-        await SendAsync(new UpdateProductVariantCommand(product.Id, cheapest.Id, cheapest.Price, IsActive: false));
+        await SendAsync(new UpdateProductVariantCommand(
+            product.Id, cheapest.Id, cheapest.Price!.Value, IsActive: false));
 
         var detail = await SendAsync(new GetProductByIdQuery(product.Id));
         Assert.Equal(1400m, detail!.Price);

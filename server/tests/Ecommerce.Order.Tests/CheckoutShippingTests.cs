@@ -30,6 +30,9 @@ public class CheckoutShippingTests(OrderTestFixture fixture)
 
     private void ArrangeCart(AddressCopy? address)
     {
+        // Dollars: 9.99 a unit and 5.00/15.00 delivery are what these amounts always were, unstated
+        // until specs/022 (dong has no decimal places, so the same cart rounds differently in it).
+        _fixture.Currency = new Ecommerce.Shared.Money.Currency("USD", 2);
         _fixture.CurrentUser.Id = Guid.CreateVersion7();
         _fixture.Checkout.Cart = [new CartItem(_product, 3)];
         _fixture.Checkout.Prices[_product] = new CatalogPrice(_product, "Widget", 9.99m, Sellable: true);

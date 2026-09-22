@@ -36,5 +36,17 @@ public class Order
     /// </summary>
     public string? Language { get; set; }
 
+    /// <summary>
+    /// The currency this order was placed in, and therefore the currency of <b>every</b> amount on it -
+    /// the total, the parts, and each line (specs/022). Null on orders placed before that, which read
+    /// as the shop's default.
+    /// </summary>
+    /// <remarks>
+    /// Nullable rather than defaulted, deliberately. An order written last week recorded amounts whose
+    /// currency nobody stated, and writing <c>VND</c> into it now would be inventing a fact rather than
+    /// recording one. Reads present null as the default and say which that is.
+    /// </remarks>
+    public string? Currency { get; set; }
+
     public List<OrderItem> Items { get; set; } = new();
 }

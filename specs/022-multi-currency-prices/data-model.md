@@ -19,9 +19,15 @@ absence is the meaning, which is why the column is not nullable.
 `product_variants.Price` and `products.Price`. They are the `VND` amount, the fallback for the default
 currency, and what an image built before this feature reads (research D2).
 
-**The migration seeds the dollar list** from the dong list at 25,000 VND = 1 USD, rounded to whole
-dollars, on 2026-09-22. That rate is recorded in the migration and nowhere else, because nothing reads
-it at runtime: the rows it produced are ordinary rows an administrator is expected to edit.
+**The migration seeds the dollar list** from the dong list at 25,000 VND = 1 USD, rounded to two
+decimals and floored at `0.01`, on 2026-09-22. That rate is recorded in the migration and nowhere
+else, because nothing reads it at runtime: the rows it produced are ordinary rows an administrator is
+expected to edit. The floor is there because `0.00` passes the `>= 0` constraint and is a free camera.
+
+**No `VND` rows are seeded**, and none are ever written: `product_variants.Price` *is* the default
+currency's price. Writing it twice would create two sources for one number, which is the defect this
+table exists to avoid rather than to spread. `PUT .../prices/VND` therefore updates the variant's own
+`Price`, and `DELETE .../prices/VND` is refused.
 
 ## Order
 

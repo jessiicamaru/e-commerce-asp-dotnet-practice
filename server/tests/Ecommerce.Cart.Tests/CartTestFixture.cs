@@ -4,6 +4,7 @@ using Ecommerce.Cart.Infrastructure.Persistence;
 using Ecommerce.Cart.Infrastructure.Persistence.Repositories;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -55,8 +56,11 @@ public class CartTestFixture : IAsyncLifetime
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICatalogProducts, NoCatalog>();
 
-        // No HTTP request here, so the language is the shop's default (specs/021).
+        // No HTTP request here, so the language and currency are the shop's defaults
+        // (specs/021, specs/022).
         services.AddSingleton<IRequestLanguage>(new FixedLanguage("vi"));
+        services.AddSingleton<IRequestCurrency>(
+            new FixedCurrency(new Ecommerce.Shared.Money.Currency("VND", 0)));
         services.AddSingleton<ICurrentUser>(new FixedUser(userId));
         return services.BuildServiceProvider(validateScopes: true);
     }
@@ -83,7 +87,10 @@ public class CartTestFixture : IAsyncLifetime
     private sealed class NoCatalog : ICatalogProducts
     {
         public Task<CatalogDescription> DescribeAsync(
-            IReadOnlyCollection<Guid> productIds, CancellationToken ct = default, string language = "")
+            IReadOnlyCollection<Guid> productIds,
+            CancellationToken ct = default,
+            string language = "",
+            string currency = "")
             => Task.FromResult(CatalogDescription.Unreachable());
     }
 }

@@ -104,6 +104,14 @@ message PriceVariantsRequest {
   // FREEZES them onto the line - so this decides the words an order keeps for good. Empty means the
   // shop's default, which is what an Order built before this feature sends.
   string language = 2;
+
+  // Which currency to price in (specs/022). Empty means the shop's default, which is what an Order
+  // built before that feature sends.
+  //
+  // A variant with no price in this currency is answered as NOT SELLABLE with an empty price. It is
+  // NEVER converted, and never the default currency's amount relabelled: the two ways that goes wrong
+  // are selling a 40,000,000 VND camera for 1,600 VND and charging 40,000,000 USD for it.
+  string currency = 3;
 }
 
 message PriceVariantsResponse {
@@ -115,6 +123,9 @@ message DescribeVariantsRequest {
 
   // Which language to describe them in (specs/021). Empty means the shop's default.
   string language = 2;
+
+  // Which currency to price them in (specs/022). Empty means the shop's default.
+  string currency = 3;
 }
 
 message DescribeVariantsResponse {
@@ -141,7 +152,13 @@ message PricedVariant {
   string option_summary = 5;
 
   // A decimal, as a STRING, for the same reason as PricedProduct.price above.
+  //
+  // EMPTY when the variant has no price in the requested currency (specs/022). An empty price always
+  // comes with sellable = false, so a caller that only reads `sellable` cannot act on a blank.
   string price = 6;
 
   bool sellable = 7;
+
+  // Which currency `price` is in, echoed so a caller never has to assume it got what it asked for.
+  string currency = 8;
 }

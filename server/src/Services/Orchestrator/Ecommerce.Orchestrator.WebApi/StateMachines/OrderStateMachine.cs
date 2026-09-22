@@ -38,6 +38,10 @@ public class OrderStateMachine : MassTransitStateMachine<OrderStateData>
                 {
                     context.Saga.UserId = context.Message.UserId;
                     context.Saga.TotalAmount = context.Message.TotalAmount;
+                    // The money AND what it is denominated in (specs/022). Stored on the instance
+                    // because the payment command is published from a later transition, by which time
+                    // the submitted event is gone.
+                    context.Saga.Currency = context.Message.Currency;
                     context.Saga.CreatedAt = DateTime.UtcNow;
                     context.Saga.UpdatedAt = DateTime.UtcNow;
                     Transition(context.Message.OrderId, "submitted; reserving inventory");
@@ -59,7 +63,10 @@ public class OrderStateMachine : MassTransitStateMachine<OrderStateData>
                 .Publish(context => new ProcessPaymentCommand(
                     context.Message.OrderId,
                     context.Saga.UserId,
-                    context.Saga.TotalAmount
+                    context.Saga.TotalAmount,
+                    // An amount without its currency is what specs/022 exists to end. Relayed, never
+                    // re-derived: this service is not entitled to an opinion about what was charged.
+                    context.Saga.Currency ?? string.Empty
                 ))
                 .TransitionTo(InventoryReservedState),
 

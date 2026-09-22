@@ -1,12 +1,18 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 using MediatR;
 using Microsoft.Extensions.Options;
 
 namespace Ecommerce.Catalog.Application.Products.Queries.GetProductById;
 
-public class GetProductByIdQueryHandler(IProductRepository productRepository, IRequestLanguage language, IOptions<LanguageOptions> localization)
+public class GetProductByIdQueryHandler(
+    IProductRepository productRepository,
+    IRequestLanguage language,
+    IOptions<LanguageOptions> localization,
+    IRequestCurrency currency,
+    IOptions<CurrencyOptions> money)
     : IRequestHandler<GetProductByIdQuery, ProductResponse?>
 {
     private readonly IProductRepository _productRepository = productRepository;
@@ -19,6 +25,11 @@ public class GetProductByIdQueryHandler(IProductRepository productRepository, IR
             return null;
         }
 
-        return ProductResponse.WithVariants(product, language.Current, localization.Value.DefaultLanguage);
+        return ProductResponse.WithVariants(
+            product,
+            language.Current,
+            localization.Value.DefaultLanguage,
+            currency.Current.Code,
+            money.Value.DefaultCurrency);
     }
 }

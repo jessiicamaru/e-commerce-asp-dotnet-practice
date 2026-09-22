@@ -2,6 +2,7 @@ using Ecommerce.Cart.Application.Common;
 using Ecommerce.Cart.Application.Common.Interfaces;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 using MediatR;
 
 namespace Ecommerce.Cart.Application.Carts.Queries.GetMyCart;
@@ -16,7 +17,9 @@ namespace Ecommerce.Cart.Application.Carts.Queries.GetMyCart;
 public class GetMyCartQueryHandler(
     ICartRepository carts,
     ICatalogProducts catalog,
-    ICurrentUser currentUser, IRequestLanguage language) : IRequestHandler<GetMyCartQuery, CartResponse>
+    ICurrentUser currentUser,
+    IRequestLanguage language,
+    IRequestCurrency currency) : IRequestHandler<GetMyCartQuery, CartResponse>
 {
     private readonly ICartRepository _carts = carts;
     private readonly ICatalogProducts _catalog = catalog;
@@ -32,13 +35,20 @@ public class GetMyCartQueryHandler(
         // A customer who has never added anything has an empty cart, not a missing one.
         if (cart is null || cart.Lines.Count == 0)
         {
-            return new CartResponse([], 0m, CanCheckOut: false, PricesAvailable: true);
+            return new CartResponse(
+                [], 0m, CanCheckOut: false, PricesAvailable: true, currency.Current.Code);
         }
 
         var lines = cart.Lines.OrderBy(l => l.AddedAt).ToList();
         // Described by the SELLABLE unit: a variant carries the price and the words for what it is.
+        // In the language AND the currency this request is in. Sending one and not the other is
+        // exactly the bug specs/021 shipped with: the product page read Vietnamese while the cart
+        // read English, because Cart never passed a language.
         var described = await _catalog.DescribeAsync(
-            lines.Select(l => l.SellableId).Distinct().ToList(), cancellationToken, language.Current);
+            lines.Select(l => l.SellableId).Distinct().ToList(),
+            cancellationToken,
+            language.Current,
+            currency.Current.Code);
 
         var byId = described.Products.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
         var missing = described.Missing.ToHashSet();
@@ -60,6 +70,14 @@ public class GetMyCartQueryHandler(
                     line.ProductId, null, line.Quantity, null, null, CartLineStatus.NoLongerAvailable,
                     line.SellableId));
             }
+            else if (product.Price is null)
+            {
+                // Not withdrawn - just not priced in the currency being browsed in. Switching
+                // currency brings it back, which "not for sale" would not lead anyone to try.
+                result.Add(new CartLineResponse(
+                    product.ProductId, product.Name, line.Quantity, null, null,
+                    CartLineStatus.NotSoldInCurrency, line.SellableId, product.OptionSummary));
+            }
             else if (!product.Sellable)
             {
                 result.Add(new CartLineResponse(
@@ -70,7 +88,7 @@ public class GetMyCartQueryHandler(
             {
                 result.Add(new CartLineResponse(
                     product.ProductId, product.Name, line.Quantity, product.Price,
-                    product.Price * line.Quantity, CartLineStatus.Available,
+                    product.Price.Value * line.Quantity, CartLineStatus.Available,
                     line.SellableId, product.OptionSummary));
             }
         }
@@ -82,6 +100,7 @@ public class GetMyCartQueryHandler(
             ? result.Where(l => l.LineTotal.HasValue).Sum(l => l.LineTotal!.Value)
             : (decimal?)null;
 
-        return new CartResponse(result, estimate, canCheckOut, described.Reachable);
+        return new CartResponse(
+            result, estimate, canCheckOut, described.Reachable, currency.Current.Code);
     }
 }

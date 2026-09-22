@@ -28,6 +28,9 @@ public class CheckoutQuoteTests(OrderTestFixture fixture)
 
     private void ArrangeCart()
     {
+        // Cents in the prices below, so this cart is priced in dollars (specs/022). A 0.05 line in
+        // dong would be nothing at all.
+        _fixture.Currency = new Ecommerce.Shared.Money.Currency("USD", 2);
         _fixture.CurrentUser.Id = Guid.CreateVersion7();
         _fixture.Checkout.Cart = [new CartItem(_widget, 3), new CartItem(_gadget, 1)];
         _fixture.Checkout.Prices[_widget] = new CatalogPrice(_widget, "Widget", 9.99m, Sellable: true);

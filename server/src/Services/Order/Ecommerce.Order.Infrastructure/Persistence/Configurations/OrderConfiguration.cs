@@ -56,6 +56,13 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
         builder.Property(x => x.DiscountTotal).HasPrecision(18, 2);
         builder.Property(x => x.TaxRate).HasPrecision(5, 4);
 
+        // Feature 022 - the currency every amount above is in. Nullable, because an order placed
+        // before this feature recorded amounts whose currency nobody stated, and writing one in now
+        // would be inventing a fact. The money columns stay decimal(18,2) even though dong has no
+        // decimals: narrowing them would be a contracting migration that strands an earlier image
+        // (research D5).
+        builder.Property(x => x.Currency).HasMaxLength(3);
+
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("CK_orders_parts_sum_to_total",

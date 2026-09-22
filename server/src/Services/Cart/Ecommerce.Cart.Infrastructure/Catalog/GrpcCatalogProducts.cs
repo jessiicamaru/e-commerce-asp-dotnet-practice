@@ -26,14 +26,15 @@ public class GrpcCatalogProducts(
     public async Task<CatalogDescription> DescribeAsync(
         IReadOnlyCollection<Guid> productIds,   // sellable ids: variants (specs/020)
         CancellationToken cancellationToken = default,
-        string language = "")
+        string language = "",
+        string currency = "")
     {
         if (productIds.Count == 0)
         {
             return new CatalogDescription(true, [], []);
         }
 
-        var request = new DescribeVariantsRequest { Language = language };
+        var request = new DescribeVariantsRequest { Language = language, Currency = currency };
         request.VariantIds.AddRange(productIds.Select(id => id.ToString()));
 
         try
@@ -48,7 +49,10 @@ public class GrpcCatalogProducts(
                 response.Variants.Select(v => new CatalogProduct(
                     Guid.Parse(v.ProductId),
                     v.Name,
-                    decimal.Parse(v.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
+                    // Empty means Catalog does not sell this in the currency asked for (specs/022).
+                    string.IsNullOrEmpty(v.Price)
+                        ? null
+                        : decimal.Parse(v.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
                     v.Sellable,
                     Guid.Parse(v.VariantId),
                     v.OptionSummary)).ToList(),

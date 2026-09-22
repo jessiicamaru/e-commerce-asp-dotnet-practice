@@ -26,7 +26,15 @@ public class LanguageOptions
     public string DefaultLanguage { get; init; } = "vi";
 
     /// <summary>BCP 47 tags. A third language is a row here and a translation file - never a migration.</summary>
-    public string[] Supported { get; init; } = ["vi", "en"];
+    /// <remarks>
+    /// ⚠️ <b>No default value.</b> It used to be <c>["vi", "en"]</c>, and the configuration binder
+    /// <i>appends</i> to a non-empty array rather than replacing it - so every configured service was
+    /// actually running with <c>["vi", "en", "vi", "en"]</c> and building its
+    /// <c>SupportedCultures</c> list from the duplicates. Harmless here, because every read is a
+    /// <c>Contains</c> or a <c>FirstOrDefault</c>; found while adding the same shape for currencies
+    /// (specs/022), where a duplicate check caught it at startup.
+    /// </remarks>
+    public string[] Supported { get; init; } = [];
 }
 
 /// <summary>

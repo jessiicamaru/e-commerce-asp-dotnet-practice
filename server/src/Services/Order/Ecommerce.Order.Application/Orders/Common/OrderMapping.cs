@@ -35,11 +35,21 @@ public static class OrderMapping
         ToResponse(order.ShipTo),
         order.ShippingOptionCode is null
             ? null
-            : new ShippingOptionResponse(order.ShippingOptionCode, order.ShippingOptionName ?? order.ShippingOptionCode),
+            : new ShippingOptionResponse(
+                order.ShippingOptionCode,
+                order.ShippingOptionName ?? order.ShippingOptionCode,
+                // What delivery cost on THIS order, not what it costs today, and in the order's own
+                // currency. Reading it back from configuration would re-price a finished purchase.
+                order.ShippingPrice,
+                order.Currency ?? string.Empty),
         order.ShippingPrice,
         order.TrackingReference,
         order.Subtotal,
         order.TaxTotal,
         order.DiscountTotal,
-        order.TaxRate);
+        order.TaxRate,
+        // Frozen at checkout. An order placed in dong still reads in dong when it is opened by
+        // somebody browsing in dollars, because an order is a record of a purchase (specs/022).
+        order.Currency ?? string.Empty,
+        order.Language ?? string.Empty);
 }

@@ -14,12 +14,24 @@ public record OrderItemDto(
     Guid VariantId = default
 );
 
+/// <param name="Currency">
+/// What <paramref name="TotalAmount"/> and the lines are denominated in (specs/022). <b>Additive</b>:
+/// an empty string is what an Order built before this feature sends, and every consumer reads that as
+/// the shop's default currency - which on the day of the deploy is the truth, not a guess.
+///
+/// ⚠️ The Orchestrator RELAYS this into <c>ProcessPaymentCommand</c>. An Orchestrator image built
+/// before this change deserialises the event into its older record, drops this field, and charges the
+/// right number in the wrong money - and nothing downstream can detect it, because 899 is a valid
+/// amount in both currencies. This is the same omission that moved the wrong variant's stock in
+/// specs/020. Rebuild every image together.
+/// </param>
 public record OrderSubmittedEvent(
     Guid OrderId,
     Guid UserId,
     decimal TotalAmount,
     List<OrderItemDto> Items,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string Currency = ""
 );
 
 public record OrderCompletedEvent(
