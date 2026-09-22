@@ -41,7 +41,8 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             user.FirstName,
             user.LastName,
             accessToken,
-            refreshTokenString
+            refreshTokenString,
+            user.Roles.Select(role => role.Name).ToList()
         );
     }
 }

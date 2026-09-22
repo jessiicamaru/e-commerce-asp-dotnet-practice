@@ -94,7 +94,8 @@ public class RefreshTokenCommandHandler(
             user.FirstName,
             user.LastName,
             _jwtTokenGenerator.GenerateAccessToken(user),
-            replacement.Token
+            replacement.Token,
+            user.Roles.Select(role => role.Name).ToList()
         );
     }
 }

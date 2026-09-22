@@ -72,7 +72,8 @@ IJwtTokenGenerator jwtTokenGenerator
             user.FirstName,
             user.LastName,
             accessToken,
-            refreshTokenString
+            refreshTokenString,
+            user.Roles.Select(role => role.Name).ToList()
         );
     }
 }
