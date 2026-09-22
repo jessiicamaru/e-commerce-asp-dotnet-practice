@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Infrastructure.Images;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,11 @@ public static class DependencyInjection
 
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+
+        // Product images (specs/019): a directory, which assumes one Catalog instance. In containers
+        // it is the catalog_images volume; unset, a folder beside the process.
+        var imageRoot = configuration["ProductImages:Root"] is { Length: > 0 } root ? root : "data/product-images";
+        services.AddSingleton<IProductImageStore>(_ => new FileSystemProductImageStore(imageRoot));
 
         return services;
     }

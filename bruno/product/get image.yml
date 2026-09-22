@@ -1,0 +1,36 @@
+info:
+  name: get image
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}{{imageUrl}}"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("served as the type its bytes said, and never sniffed", function() {
+          expect(res.headers["content-type"]).to.equal("image/png");
+          expect(res.headers["x-content-type-options"]).to.equal("nosniff");
+        });
+        test("the versioned address may be cached for good", function() {
+          expect(res.headers["cache-control"]).to.contain("immutable");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Anonymous, like the rest of browsing. With the `v` from `imageUrl` the response is cacheable for a
+  year (`immutable`), which is safe because the address changes with the image. Without `v`, or with a
+  stale one, it is the current image with `no-cache`.

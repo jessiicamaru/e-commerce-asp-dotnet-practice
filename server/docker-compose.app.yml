@@ -84,6 +84,14 @@ services:
       # gRPC, on its own port. One plaintext port cannot serve HTTP/1.1 and HTTP/2:
       # telling them apart needs ALPN, which is part of TLS. Verified on .NET 10.
       CATALOG_GRPC_PORT: "8081"
+      # Product images live on a volume, not in the image or the database (specs/019). A directory
+      # assumes ONE Catalog instance; object storage behind IProductImageStore is what scales.
+      ProductImages__Root: /app/data/product-images
+    volumes:
+      # Mounted on /app/data, which the image creates and gives to the app user - NOT on the
+      # subdirectory: a mount point the image lacks is created root-owned, and the non-root service
+      # then fails its startup write check (verified). The store creates the subdirectory itself.
+      - catalog_images:/app/data
     ports:
       - "5057:8080"
       # The health check below deliberately keeps probing REST on 8080 - curl cannot
@@ -263,3 +271,7 @@ services:
         condition: service_healthy
       payment:
         condition: service_healthy
+
+volumes:
+  # Catalog product images (specs/019). Survives rebuilds and restarts, like the databases.
+  catalog_images:

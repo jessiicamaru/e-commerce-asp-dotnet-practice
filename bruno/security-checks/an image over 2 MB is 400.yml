@@ -1,0 +1,37 @@
+info:
+  name: an image over 2 MB is 400
+  type: http
+  seq: 12
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/image"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/too-big.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  2 MB + 10 KB: under the request-size ceiling (so it reaches the validator and gets a message), over
+  the image limit. A body far over the ceiling is refused before it is read, also as 400.

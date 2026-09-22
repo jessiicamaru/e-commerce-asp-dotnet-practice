@@ -1,0 +1,44 @@
+info:
+  name: upload image
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/image"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/pixel.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.imageUrl) bru.setVar("imageUrl", res.body.imageUrl);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the product now carries a versioned image address", function() {
+          expect(res.body.imageUrl).to.match(/^\/api\/products\/[0-9a-f-]+\/image\?v=\d+$/);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Admin only. One multipart part named `file`: JPEG, PNG or WebP **by content**, at most 2 MB.
+  The type is read from the file's bytes, never from its Content-Type or name (specs/019).
+  Replacing an image changes `imageUrl`, so a cached copy of the old one is never shown.

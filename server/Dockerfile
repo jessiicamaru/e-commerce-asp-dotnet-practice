@@ -88,6 +88,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Somewhere a service may write, owned by the user it runs as. A named volume mounted on a path the
+# image lacks is created root-owned, and the non-root user below could not write to it; Docker seeds a
+# NEW named volume from the image's directory, ownership included. Catalog keeps product images under
+# it (specs/019); for the other services it is an empty directory.
+RUN mkdir -p /app/data && chown "$APP_UID" /app/data
+
 # Not root. A service that serves HTTP and talks to Postgres needs no privilege
 # beyond that, and the aspnet image ships this user for the purpose.
 USER $APP_UID

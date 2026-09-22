@@ -1,5 +1,6 @@
 using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Infrastructure.Images;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
 using Ecommerce.Catalog.WebApi.Consumers;
@@ -33,6 +34,9 @@ public class CatalogTestFixture : IAsyncLifetime
     public ServiceProvider Services { get; private set; } = null!;
 
     public ITestHarness Harness => Services.GetRequiredService<ITestHarness>();
+
+    /// <summary>The real file store, in a temporary directory, with switches to make it fail.</summary>
+    public TestImageStore Images { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {
@@ -84,6 +88,11 @@ public class CatalogTestFixture : IAsyncLifetime
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
 
+        // Product images (specs/019): the REAL filesystem store, in a directory of its own.
+        Images = new TestImageStore(new FileSystemProductImageStore(
+            Path.Combine(Path.GetTempPath(), $"catalog_images_{Guid.NewGuid():N}")));
+        services.AddSingleton<IProductImageStore>(Images);
+
         // The real consumer, so at least one test proves the wiring and not only the handler.
         services.AddMassTransitTestHarness(x => x.AddConsumer<StockAvailabilityChangedConsumer>());
 
@@ -93,6 +102,11 @@ public class CatalogTestFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await Services.DisposeAsync();
+
+        if (Directory.Exists(Images.Inner.Root))
+        {
+            Directory.Delete(Images.Inner.Root, recursive: true);
+        }
 
         var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
 
@@ -109,3 +123,44 @@ public class CatalogTestFixture : IAsyncLifetime
 
 [CollectionDefinition(nameof(CatalogTestCollection))]
 public class CatalogTestCollection : ICollectionFixture<CatalogTestFixture>;
+
+/// <summary>
+/// The real store, plus the failures a test needs to be able to cause: a write that fails, and a
+/// delete that fails.
+/// </summary>
+public sealed class TestImageStore(FileSystemProductImageStore inner) : IProductImageStore
+{
+    public FileSystemProductImageStore Inner { get; } = inner;
+
+    public bool FailWrites { get; set; }
+
+    public bool FailDeletes { get; set; }
+
+    /// <summary>Runs after the bytes are written and before the handler switches the row - where a concurrent writer would land.</summary>
+    public Func<Task>? AfterSave { get; set; }
+
+    public IReadOnlyList<string> Files() =>
+        Directory.GetFiles(Inner.Root).Select(Path.GetFileName).Where(f => !f!.StartsWith('.')).ToList()!;
+
+    public async Task SaveAsync(string key, ReadOnlyMemory<byte> content, CancellationToken cancellationToken = default)
+    {
+        if (FailWrites)
+        {
+            throw new IOException("Simulated storage failure.");
+        }
+
+        await Inner.SaveAsync(key, content, cancellationToken);
+
+        if (AfterSave is { } hook)
+        {
+            AfterSave = null;
+            await hook();
+        }
+    }
+
+    public Task<Stream?> OpenReadAsync(string key, CancellationToken cancellationToken = default) =>
+        Inner.OpenReadAsync(key, cancellationToken);
+
+    public Task DeleteAsync(string key, CancellationToken cancellationToken = default) =>
+        FailDeletes ? throw new IOException("Simulated storage failure.") : Inner.DeleteAsync(key, cancellationToken);
+}

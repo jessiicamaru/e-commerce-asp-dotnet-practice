@@ -55,5 +55,21 @@ public interface IProductRepository
     /// product that exists was already current, one that does not is an announcement for somebody
     /// else's database. The two deserve different log levels.
     /// </summary>
+    /// <summary>
+    /// Points the product at a new image - or at none, with both values <c>null</c> - but only if its
+    /// image is still the one the caller saw (<paramref name="expectedUpdatedAt"/>). Returns the rows
+    /// changed: <c>0</c> means someone else changed it first (specs/019 research D3).
+    /// </summary>
+    /// <remarks>
+    /// One statement, so the comparison and the write cannot be separated by another writer. Without
+    /// the guard two concurrent replacements could each delete the file the other had just installed.
+    /// </remarks>
+    Task<int> TrySetImageAsync(
+        Guid productId,
+        DateTime? expectedUpdatedAt,
+        string? contentType,
+        DateTime? updatedAt,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsAsync(Guid productId, CancellationToken cancellationToken = default);
 }

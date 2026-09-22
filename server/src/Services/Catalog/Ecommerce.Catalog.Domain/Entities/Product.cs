@@ -40,6 +40,19 @@ public class Product
     public Guid CategoryId { get; set; }
     public Category? Category { get; set; }
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// The stored image's type (<c>image/jpeg</c>, <c>image/png</c> or <c>image/webp</c>), decided from
+    /// its bytes at upload; <c>null</c> when the product has no image (specs/019).
+    /// </summary>
+    public string? ImageContentType { get; set; }
+
+    /// <summary>
+    /// When the current image was set - also its version, in its address and in its store key, so a
+    /// replaced image is never served from a stale cache. Set together with
+    /// <see cref="ImageContentType"/> or not at all; the database enforces it.
+    /// </summary>
+    public DateTime? ImageUpdatedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
