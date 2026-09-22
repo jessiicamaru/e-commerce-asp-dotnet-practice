@@ -16,6 +16,7 @@ public class CatalogDbContext : DbContext
     public DbSet<VariantOption> VariantOptions => Set<VariantOption>();
     public DbSet<VariantPrice> VariantPrices => Set<VariantPrice>();
     public DbSet<ProductTranslation> ProductTranslations => Set<ProductTranslation>();
+    public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
     public DbSet<VariantOptionTranslation> VariantOptionTranslations => Set<VariantOptionTranslation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

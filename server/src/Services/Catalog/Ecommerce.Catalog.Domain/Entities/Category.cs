@@ -10,4 +10,7 @@ public class Category
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>This category in other languages (specs/026); the columns above are the fallback.</summary>
+    public List<CategoryTranslation> Translations { get; set; } = [];
 }

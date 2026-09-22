@@ -1,0 +1,41 @@
+info:
+  name: translate category
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/categories/{{categoryId}}/translations/en"
+  body:
+    type: json
+    data: |-
+          {
+            "name": "Bruno category in English",
+            "description": "English description"
+          }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the category now reads in English, and says so", function() {
+          expect(res.body.language).to.equal("en");
+          expect(res.body.name).to.equal("Bruno category in English");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Category names went untranslated until specs/026 - specs/021 called them out of scope twice, and
+  the storefront redesign made an English page full of Vietnamese category names impossible to keep
+  calling that. An upsert, like a product's.
