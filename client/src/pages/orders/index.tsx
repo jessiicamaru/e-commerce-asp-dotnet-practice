@@ -1,0 +1,74 @@
+import { Link, useSearchParams } from 'react-router-dom'
+import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { Pager } from '@/components/shared/pager'
+import { Card, CardContent } from '@/components/ui/card'
+import { ORDERS_PER_PAGE } from '@/constants/shared'
+import { useMyOrders } from '@/hooks/order'
+import { describeOrderStatus } from '@/utils/order'
+import { money } from '@/utils/shared'
+
+/**
+ * The customer's orders, newest first (#39). Order scopes the list to the caller's token; there is no
+ * user id anywhere in the request.
+ */
+export function OrdersPage() {
+  const [params, setParams] = useSearchParams()
+  const page = Number(params.get('page') ?? '1') || 1
+  const { data: result, isPending, isError } = useMyOrders(page, ORDERS_PER_PAGE)
+
+  if (isError) {
+    return <ErrorMessage>Your orders could not be loaded.</ErrorMessage>
+  }
+
+  if (isPending || !result) {
+    return <LoadingRows />
+  }
+
+  if (result.totalCount === 0) {
+    return (
+      <section>
+        <h1 className="mb-4 text-2xl font-bold">Your orders</h1>
+        <p>
+          You have not ordered anything yet.{' '}
+          <Link to="/" className="underline">
+            Browse the shop
+          </Link>
+          .
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section>
+      <h1 className="mb-4 text-2xl font-bold">Your orders</h1>
+      <ul className="grid gap-3">
+        {result.items.map((order) => (
+          <li key={order.orderId}>
+            <Card>
+              <CardContent className="flex flex-col gap-1 p-4">
+                <Link to={`/orders/${order.orderId}`} className="font-medium hover:underline">
+                  {new Date(order.createdAt).toLocaleString()}
+                </Link>
+                <span className="text-sm">
+                  {order.itemCount} item{order.itemCount === 1 ? '' : 's'} ·{' '}
+                  <span className="font-semibold">{money(order.totalAmount)}</span>
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {describeOrderStatus(order.status, order.failureReason)}
+                </span>
+              </CardContent>
+            </Card>
+          </li>
+        ))}
+      </ul>
+      <Pager
+        page={page}
+        totalPages={Math.max(1, Math.ceil(result.totalCount / ORDERS_PER_PAGE))}
+        onChange={(next) => setParams({ page: String(next) })}
+        previousLabel="Newer"
+        nextLabel="Older"
+      />
+    </section>
+  )
+}
