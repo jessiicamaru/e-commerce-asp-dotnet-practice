@@ -16,6 +16,10 @@ export interface Product {
   isActive: boolean
   /** Null when there is none. Versioned, so it changes whenever the image does (specs/019). */
   imageUrl: string | null
+  /** Who sells it; null means the shop itself (specs/027). */
+  sellerId: string | null
+  /** Their shop's name. Null when it is the shop itself - the storefront words that, not the server. */
+  sellerName: string | null
   /** True when the shapes do not all cost the same, so the price is shown as "from" (specs/020). */
   priceVaries: boolean
   variantCount: number

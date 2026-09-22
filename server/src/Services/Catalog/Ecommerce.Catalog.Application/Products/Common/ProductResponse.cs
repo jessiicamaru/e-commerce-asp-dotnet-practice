@@ -60,7 +60,9 @@ public record ProductResponse(
     int VariantCount = 1,
     List<VariantResponse>? Variants = null,
     string Language = "",
-    string Currency = ""
+    string Currency = "",
+    Guid? SellerId = null,
+    string? SellerName = null
 )
 {
     /// <summary>
@@ -72,8 +74,9 @@ public record ProductResponse(
         string language = "",
         string defaultLanguage = "",
         string currency = "",
-        string defaultCurrency = "")
-        => Build(p, withVariants: false, language, defaultLanguage, currency, defaultCurrency);
+        string defaultCurrency = "",
+        string? sellerName = null)
+        => Build(p, withVariants: false, language, defaultLanguage, currency, defaultCurrency, sellerName);
 
     /// <summary>The product with every shape it is sold in - what the product page needs (specs/020).</summary>
     public static ProductResponse WithVariants(
@@ -81,8 +84,9 @@ public record ProductResponse(
         string language = "",
         string defaultLanguage = "",
         string currency = "",
-        string defaultCurrency = "")
-        => Build(p, withVariants: true, language, defaultLanguage, currency, defaultCurrency);
+        string defaultCurrency = "",
+        string? sellerName = null)
+        => Build(p, withVariants: true, language, defaultLanguage, currency, defaultCurrency, sellerName);
 
     private static ProductResponse Build(
         Domain.Entities.Product p,
@@ -90,7 +94,8 @@ public record ProductResponse(
         string language,
         string defaultLanguage,
         string currency,
-        string defaultCurrency)
+        string defaultCurrency,
+        string? sellerName = null)
     {
         // An empty language means "whatever is stored" - the shape every caller had before specs/021,
         // and what a consumer with no request uses. An empty currency means the same for the price.
@@ -124,6 +129,11 @@ public record ProductResponse(
                 ? p.Variants.Select(v => VariantResponse.From(v, language, currency, defaultCurrency)).ToList()
                 : null,
             localise ? Localized.LanguageOf(p, language, defaultLanguage) : string.Empty,
-            currency);
+            currency,
+            p.SellerId,
+            // Null means the shop itself - which is every product listed before sellers existed, and
+            // anything an administrator lists. The storefront words that; Catalog does not invent a
+            // name for it (specs/027).
+            sellerName);
     }
 }

@@ -1,7 +1,9 @@
+using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Contracts.Catalog;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MassTransit;
 using MediatR;
@@ -11,12 +13,14 @@ namespace Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 public class CreateProductCommandHandler(
     IProductRepository productRepository,
     ICategoryRepository categoryRepository,
-    IPublishEndpoint publishEndpoint
+    IPublishEndpoint publishEndpoint,
+    ICurrentUser currentUser
 ) : IRequestHandler<CreateProductCommand, ProductResponse>
 {
     private readonly IProductRepository _productRepository = productRepository;
     private readonly ICategoryRepository _categoryRepository = categoryRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<ProductResponse> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
@@ -48,7 +52,15 @@ public class CreateProductCommandHandler(
             Description = request.Description,
             Price = request.Price,
             Sku = request.Sku,
-            CategoryId = request.CategoryId
+            CategoryId = request.CategoryId,
+
+            // Whose listing this is, taken from the TOKEN and never from the body (specs/027). A
+            // request that named a seller would let one person list under another's shop, which is
+            // the defect specs/009 and issue #18 both were.
+            //
+            // An administrator's product has no seller and belongs to the SHOP ITSELF - the shape
+            // every product listed before sellers existed already has (research D4).
+            SellerId = _currentUser.IsInRole(RoleNames.Seller) ? _currentUser.Id : null,
         };
 
         // Every product is sold in at least one shape, so creating one creates its first variant -

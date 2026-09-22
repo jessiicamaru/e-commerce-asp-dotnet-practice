@@ -12,7 +12,8 @@ public class GetProductByIdQueryHandler(
     IRequestLanguage language,
     IOptions<LanguageOptions> localization,
     IRequestCurrency currency,
-    IOptions<CurrencyOptions> money)
+    IOptions<CurrencyOptions> money,
+    ISellerRepository sellers)
     : IRequestHandler<GetProductByIdQuery, ProductResponse?>
 {
     private readonly IProductRepository _productRepository = productRepository;
@@ -25,11 +26,18 @@ public class GetProductByIdQueryHandler(
             return null;
         }
 
+        var shopNames = product.SellerId is null
+            ? []
+            : await sellers.GetNamesAsync([product.SellerId.Value], cancellationToken);
+
         return ProductResponse.WithVariants(
             product,
             language.Current,
             localization.Value.DefaultLanguage,
             currency.Current.Code,
-            money.Value.DefaultCurrency);
+            money.Value.DefaultCurrency,
+            product.SellerId is not null && shopNames.TryGetValue(product.SellerId.Value, out var shop)
+                ? shop
+                : null);
     }
 }

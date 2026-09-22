@@ -15,6 +15,7 @@ public class CatalogDbContext : DbContext
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<VariantOption> VariantOptions => Set<VariantOption>();
     public DbSet<VariantPrice> VariantPrices => Set<VariantPrice>();
+    public DbSet<Seller> Sellers => Set<Seller>();
     public DbSet<ProductTranslation> ProductTranslations => Set<ProductTranslation>();
     public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
     public DbSet<VariantOptionTranslation> VariantOptionTranslations => Set<VariantOptionTranslation>();

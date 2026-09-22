@@ -8,6 +8,7 @@ using Ecommerce.Shared.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Ecommerce.WebApi.Grpc;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -136,6 +137,43 @@ builder.Services.AddHealthChecks()
 
 // Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
 builder.AddObservability("identity");
+
+// Identity's first broker connection (specs/027). This service published nothing until sellers
+// existed - it was the one service in the system with no MassTransit at all.
+//
+// ⚠️ It still starts and works with RabbitMQ DOWN. A publish goes into the outbox table inside the
+// request's own transaction, so registering a seller succeeds and the delivery service drains the
+// backlog when the broker returns. The `auth-smoke` CI job runs this service without a broker, and
+// its passing is the check on that claim.
+builder.Services.AddMassTransit(x =>
+{
+    // A consumer class name becomes a queue name, and two services naming one the same thing
+    // compete for a single queue - feature 003 shipped exactly that defect. Identity consumes
+    // nothing today; the prefix is here so that the day it does, the collision is impossible
+    // rather than unlikely.
+    x.SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "IdentitySvc", includeNamespace: false));
+
+    x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+    {
+        o.UsePostgres();
+        o.UseBusOutbox();
+    });
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+        var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
+
+        cfg.Host(rabbitHost, "/", h =>
+        {
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 

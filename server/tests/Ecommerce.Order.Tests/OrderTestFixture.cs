@@ -206,6 +206,11 @@ public class TestCurrentUser : ICurrentUser
     public string? Email { get; set; }
 
     public bool IsAuthenticated => Id is not null;
+
+    /// <summary>Settable: an Order test that needs an administrator says so.</summary>
+    public HashSet<string> Roles { get; } = [];
+
+    public bool IsInRole(string role) => Roles.Contains(role);
 }
 
 /// <summary>

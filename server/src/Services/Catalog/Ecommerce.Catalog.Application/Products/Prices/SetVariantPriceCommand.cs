@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Domain.Entities;
@@ -88,16 +90,22 @@ public class RemoveVariantPriceCommandValidator : AbstractValidator<RemoveVarian
 
 public class SetVariantPriceCommandHandler(
     IProductRepository products,
-    IOptions<CurrencyOptions> money)
+    IOptions<CurrencyOptions> money,
+    ICurrentUser currentUser)
     : IRequestHandler<SetVariantPriceCommand, VariantResponse>
 {
     private readonly IProductRepository _products = products;
     private readonly CurrencyOptions _money = money.Value;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<VariantResponse> Handle(SetVariantPriceCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         // A variant of somebody else's product is as good as missing (specs/020).
         var variant = product.Variants.FirstOrDefault(v => v.Id == request.VariantId)
@@ -147,11 +155,13 @@ public class SetVariantPriceCommandHandler(
 
 public class RemoveVariantPriceCommandHandler(
     IProductRepository products,
-    IOptions<CurrencyOptions> money)
+    IOptions<CurrencyOptions> money,
+    ICurrentUser currentUser)
     : IRequestHandler<RemoveVariantPriceCommand>
 {
     private readonly IProductRepository _products = products;
     private readonly CurrencyOptions _money = money.Value;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task Handle(RemoveVariantPriceCommand request, CancellationToken cancellationToken)
     {
@@ -169,6 +179,10 @@ public class RemoveVariantPriceCommandHandler(
 
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         var variant = product.Variants.FirstOrDefault(v => v.Id == request.VariantId)
             ?? throw new NotFoundException($"Variant with ID '{request.VariantId}' was not found on this product.");

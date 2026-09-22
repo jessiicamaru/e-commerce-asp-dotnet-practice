@@ -21,5 +21,15 @@ public interface IUserRepository
 
     Task AddAsync(User user, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Stages the shop behind a seller's account (specs/027). Saved by the same
+    /// <see cref="SaveChangesAsync"/> as the account and the announcement, so all three commit
+    /// together or none does.
+    /// </summary>
+    Task AddSellerProfileAsync(SellerProfile profile, CancellationToken cancellationToken = default);
+
+    /// <summary>The caller's own shop, or <c>null</c> when they do not sell.</summary>
+    Task<SellerProfile?> GetSellerProfileAsync(Guid userId, CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

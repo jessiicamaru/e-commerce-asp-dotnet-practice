@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Domain.Entities;
@@ -49,16 +51,24 @@ public class AddProductVariantCommandValidator : AbstractValidator<AddProductVar
     }
 }
 
-public class AddProductVariantCommandHandler(IProductRepository products, IPublishEndpoint publishEndpoint)
+public class AddProductVariantCommandHandler(
+    IProductRepository products,
+    IPublishEndpoint publishEndpoint,
+    ICurrentUser currentUser)
     : IRequestHandler<AddProductVariantCommand, VariantResponse>
 {
     private readonly IProductRepository _products = products;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<VariantResponse> Handle(AddProductVariantCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         var sku = request.Sku.Trim();
 

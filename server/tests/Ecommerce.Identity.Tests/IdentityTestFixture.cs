@@ -112,6 +112,9 @@ public class IdentityTestFixture : IAsyncLifetime
         public Guid? Id { get; } = id;
         public string? Email => null;
         public bool IsAuthenticated => true;
+
+        // No handler under test here asks about a role; the seller ones read the profile instead.
+        public bool IsInRole(string role) => false;
     }
 }
 

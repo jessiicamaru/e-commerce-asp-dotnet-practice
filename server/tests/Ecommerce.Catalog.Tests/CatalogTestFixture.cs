@@ -2,6 +2,7 @@ using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Infrastructure.Images;
 using Ecommerce.Catalog.Infrastructure.Persistence;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
 using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
@@ -89,6 +90,13 @@ public class CatalogTestFixture : IAsyncLifetime
         services.AddDbContext<CatalogDbContext>(options => options.UseNpgsql(_connectionString));
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<ISellerRepository, SellerRepository>();
+
+        // Who is writing (specs/027). An ADMINISTRATOR by default, because that is who every one
+        // of these tests was before sellers existed and it keeps them testing what they are about.
+        // A test that cares about ownership sets Caller to a seller and says so.
+        services.AddSingleton<TestCaller>();
+        services.AddSingleton<ICurrentUser>(sp => sp.GetRequiredService<TestCaller>());
 
         // No request to negotiate from: a test says which language it is asking in.
         services.AddSingleton<TestLanguage>();
@@ -219,6 +227,24 @@ public sealed class TestImageStore(FileSystemProductImageStore inner) : IProduct
 public class TestLanguage : IRequestLanguage
 {
     public string Current { get; set; } = "vi";
+}
+
+/// <summary>
+/// Who the tests are acting as (specs/027). An administrator unless a test says otherwise, which is
+/// what every Catalog write required before sellers existed.
+/// </summary>
+public class TestCaller : ICurrentUser
+{
+    public Guid? Id { get; set; } = Guid.CreateVersion7();
+
+    public string? Email => null;
+
+    public bool IsAuthenticated => true;
+
+    /// <summary>Settable: a test about ownership becomes a seller by clearing Admin.</summary>
+    public HashSet<string> Roles { get; } = ["Admin"];
+
+    public bool IsInRole(string role) => Roles.Contains(role);
 }
 
 /// <summary>A settable <see cref="IRequestCurrency"/>: the tests' way of saying "asked in dong".</summary>

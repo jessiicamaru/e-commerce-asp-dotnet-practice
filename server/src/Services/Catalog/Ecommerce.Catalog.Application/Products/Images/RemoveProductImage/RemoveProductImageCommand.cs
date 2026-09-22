@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
@@ -15,17 +17,23 @@ public record RemoveProductImageCommand(Guid ProductId) : IRequest;
 public class RemoveProductImageCommandHandler(
     IProductRepository products,
     IProductImageStore store,
+    ICurrentUser currentUser,
     ILogger<RemoveProductImageCommandHandler> logger)
     : IRequestHandler<RemoveProductImageCommand>
 {
     private readonly IProductRepository _products = products;
     private readonly IProductImageStore _store = store;
+    private readonly ICurrentUser _currentUser = currentUser;
     private readonly ILogger<RemoveProductImageCommandHandler> _logger = logger;
 
     public async Task Handle(RemoveProductImageCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException("Product not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027): a 403 would
+        // confirm the id is real and that it belongs to someone.
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         var key = ProductImageKey.For(product);
         if (key is null)

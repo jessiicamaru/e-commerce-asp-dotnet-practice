@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Contracts.Catalog;
 using Ecommerce.Shared.Exceptions;
@@ -30,16 +32,21 @@ public record DeleteProductCommand(Guid ProductId) : IRequest;
 public class DeleteProductCommandHandler(
     IProductRepository products,
     IPublishEndpoint publishEndpoint,
+    ICurrentUser currentUser,
     ILogger<DeleteProductCommandHandler> logger) : IRequestHandler<DeleteProductCommand>
 {
     private readonly IProductRepository _products = products;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly ICurrentUser _currentUser = currentUser;
     private readonly ILogger<DeleteProductCommandHandler> _logger = logger;
 
     public async Task Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+
+        // Somebody else's listing is NOT FOUND, never forbidden (specs/027).
+        SellerOwnership.RequireCanWrite(product, _currentUser);
 
         // Collected BEFORE the delete: after it there is nothing left to read them from, and
         // Inventory needs them to find the stock rows to drop.

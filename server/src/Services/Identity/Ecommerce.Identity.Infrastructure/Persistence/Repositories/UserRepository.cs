@@ -77,6 +77,14 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
         await _context.Users.AddAsync(user, cancellationToken);
     }
 
+    public async Task AddSellerProfileAsync(SellerProfile profile, CancellationToken cancellationToken = default)
+    {
+        await _context.SellerProfiles.AddAsync(profile, cancellationToken);
+    }
+
+    public Task<SellerProfile?> GetSellerProfileAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        _context.SellerProfiles.FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

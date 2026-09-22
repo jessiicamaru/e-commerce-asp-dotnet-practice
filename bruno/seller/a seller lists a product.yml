@@ -1,0 +1,48 @@
+info:
+  name: a seller lists a product
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products"
+  body:
+    type: json
+    data: |-
+        {
+          "name": "Bruno seller camera {{sellerSku}}",
+          "description": "listed by a seller, not by an administrator",
+          "price": 21000000,
+          "sku": "{{sellerSku}}",
+          "categoryId": "{{categoryId}}"
+        }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("sellerSku", "BRUNO-SELLER-" + Date.now());
+    - type: after-response
+      code: |-
+        if (res.body && res.body.id) bru.setVar("sellerProductId", res.body.id);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the product records who sells it", function() {
+          expect(res.body.sellerId).to.equal(bru.getVar("sellerId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Who the seller is comes from the TOKEN. There is no sellerId in this body and there must never be
+  one - that is the defect specs/009 and issue #18 both were.

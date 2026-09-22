@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Common;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Shared.Exceptions;
@@ -37,10 +39,11 @@ public class UpdateProductVariantCommandValidator : AbstractValidator<UpdateProd
     }
 }
 
-public class UpdateProductVariantCommandHandler(IProductRepository products)
+public class UpdateProductVariantCommandHandler(IProductRepository products, ICurrentUser currentUser)
     : IRequestHandler<UpdateProductVariantCommand, VariantResponse>
 {
     private readonly IProductRepository _products = products;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<VariantResponse> Handle(UpdateProductVariantCommand request, CancellationToken cancellationToken)
     {
@@ -49,6 +52,15 @@ public class UpdateProductVariantCommandHandler(IProductRepository products)
         // A variant of a different product is as good as missing: the caller named a pair that does
         // not exist, and saying which half was wrong tells them about somebody else's catalogue.
         if (variant is null || variant.ProductId != request.ProductId)
+        {
+            throw new NotFoundException($"Variant with ID '{request.VariantId}' was not found.");
+        }
+
+        // This handler loads a VARIANT, so the owner is on the product it belongs to - which
+        // GetVariantAsync includes for exactly this kind of question. Refused as not-found, and
+        // worded as the variant being missing rather than the product, so the two refusals above and
+        // here cannot be told apart (specs/027).
+        if (variant.Product is null || !SellerOwnership.CanWrite(variant.Product, _currentUser))
         {
             throw new NotFoundException($"Variant with ID '{request.VariantId}' was not found.");
         }

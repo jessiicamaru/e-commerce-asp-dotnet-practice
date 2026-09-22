@@ -81,6 +81,9 @@ public class CartTestFixture : IAsyncLifetime
         public Guid? Id { get; } = id;
         public string? Email => null;
         public bool IsAuthenticated => true;
+
+        // These tests are about the cart's own data; no handler in them asks about a role.
+        public bool IsInRole(string role) => false;
     }
 
     /// <summary>These tests are about the cart's own data; Catalog is never consulted.</summary>

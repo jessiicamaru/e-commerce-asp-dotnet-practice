@@ -175,6 +175,12 @@ builder.Services.AddMassTransit(x =>
     // listing carried a stock number nothing could update (issue #4).
     x.AddConsumer<StockAvailabilityChangedConsumer>();
 
+    // Shop names, so a page of products can say who sells each one without a call per card
+    // (specs/027). ⚠️ A consumer written and not registered here NEVER RUNS AND NEVER COMPLAINS -
+    // which is exactly what happened to Inventory's ProductDeletedConsumer in specs/024.
+    x.AddConsumer<SellerRegisteredConsumer>();
+    x.AddConsumer<SellerRenamedConsumer>();
+
     // Queue names are derived from consumer CLASS names, and two services naming a consumer the
     // same thing bind to one queue and COMPETE for it — each message reaches one of them instead of
     // both. Feature 003 shipped exactly that defect between Inventory and Order; it settled the
