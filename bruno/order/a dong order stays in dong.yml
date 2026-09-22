@@ -1,7 +1,7 @@
 info:
   name: a dong order stays in dong
   type: http
-  seq: 11
+  seq: 7
 
 http:
   method: GET

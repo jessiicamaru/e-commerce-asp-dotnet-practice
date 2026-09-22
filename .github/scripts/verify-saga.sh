@@ -223,7 +223,11 @@ CATEGORY_ID="$(post_json "$CATALOG_URL/api/categories" \
 
 # The catalogue price, named once so the order assertion can compare against it
 # rather than against a number repeated in two places.
-PRODUCT_PRICE="9.99"
+#
+# Whole dong: the shop's default currency is VND and dong has no decimal places, so
+# Catalog refuses a price like 9.99 (specs/022). The arithmetic below rounds to the
+# currency's minor unit for the same reason.
+PRODUCT_PRICE="990000"
 
 PRODUCT_BODY="$("$PYTHON" -c '
 import json, sys
@@ -361,17 +365,22 @@ ORDER_TOTAL="$(printf '%s' "$ORDER_RESPONSE" | json_field totalAmount)"
 # Goods at the catalogue's price, PLUS delivery at the option's price (feature 011),
 # PLUS tax at the rate the order stored for its destination (feature 012) - recomputed
 # here with the documented rule, independently of Order: per line and on delivery,
-# rounded to 2 decimals with halves away from zero (ADR-002). Decimal, never float.
+# rounded to the CURRENCY'S minor unit with halves away from zero (ADR-002, specs/022)
+# - dong has none, so there is no such thing as half a dong in this total. Decimal,
+# never float. The order says which currency it was placed in; this reads it rather
+# than assuming, so the check still holds if the default ever changes.
 ORDER_TAX_RATE="$(printf '%s' "$ORDER_RESPONSE" | json_field taxRate)"
+ORDER_CURRENCY="$(printf '%s' "$ORDER_RESPONSE" | json_field currency)"
 EXPECTED_TOTAL="$("$PYTHON" -c '
 import sys
 from decimal import Decimal, ROUND_HALF_UP
-q = Decimal("0.01")
+places = 0 if sys.argv[5] in ("", "VND") else 2
+q = Decimal(1).scaleb(-places)
 price, qty, ship, rate = Decimal(sys.argv[1]), int(sys.argv[2]), Decimal(sys.argv[3]), Decimal(sys.argv[4])
 sub = price * qty
 tax = (sub * rate).quantize(q, ROUND_HALF_UP) + (ship * rate).quantize(q, ROUND_HALF_UP)
 print(sub + ship + tax)
-' "$PRODUCT_PRICE" "$ORDER_QUANTITY" "$SHIPPING_PRICE" "$ORDER_TAX_RATE")"
+' "$PRODUCT_PRICE" "$ORDER_QUANTITY" "$SHIPPING_PRICE" "$ORDER_TAX_RATE" "$ORDER_CURRENCY")"
 ACTUAL_TOTAL="$("$PYTHON" -c 'import sys; print(f"{float(sys.argv[1]):.2f}")' "$ORDER_TOTAL")"
 EXPECTED_TOTAL="$("$PYTHON" -c 'import sys; print(f"{float(sys.argv[1]):.2f}")' "$EXPECTED_TOTAL")"
 

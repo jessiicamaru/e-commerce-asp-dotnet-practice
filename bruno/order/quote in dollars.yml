@@ -1,7 +1,7 @@
 info:
   name: quote in dollars
   type: http
-  seq: 10
+  seq: 4
 
 http:
   method: GET
@@ -47,7 +47,11 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  The same cart, quoted in dollars. **Either answer is correct and both are asserted**: a 200 when
-  every variant in the cart has a dollar price, and a 409 naming the currency when one does not -
-  which is what specs/022 requires instead of converting or falling back. What would be wrong is a
-  200 carrying dong amounts labelled USD, and that is what these assertions rule out.
+  The same cart, quoted in dollars - and placed BEFORE `checkout`, which empties the cart when the
+  order completes. A quote after it refuses because there is nothing to quote, which is honest and
+  proves nothing about currencies.
+
+  **Either answer is correct and both are asserted**: a 200 when every variant in the cart has a
+  dollar price, and a 409 naming the currency when one does not - which is what specs/022 requires
+  instead of converting or falling back. What would be wrong is a 200 carrying dong amounts labelled
+  USD, and that is what these assertions rule out.

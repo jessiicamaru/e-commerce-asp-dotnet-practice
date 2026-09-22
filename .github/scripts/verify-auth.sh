@@ -174,7 +174,9 @@ import json, sys
 print(json.dumps({
     "name": "CI Widget " + sys.argv[1],
     "description": None,
-    "price": 9.99,
+    # Whole dong: the shop prices in VND by default and dong has no decimal
+    # places, so 9.99 is not an amount and Catalog refuses it (specs/022).
+    "price": 990000,
     "sku": "AUTHCI" + sys.argv[1],
     "categoryId": sys.argv[2],
 }))

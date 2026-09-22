@@ -1,7 +1,7 @@
 info:
   name: shipping options in dollars
   type: http
-  seq: 9
+  seq: 2
 
 http:
   method: GET
