@@ -259,4 +259,7 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
     {
         return await _context.Products.AnyAsync(p => p.Id == productId, cancellationToken);
     }
+
+    public Task<int> CountInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
+        _context.Products.CountAsync(p => p.CategoryId == categoryId, cancellationToken);
 }

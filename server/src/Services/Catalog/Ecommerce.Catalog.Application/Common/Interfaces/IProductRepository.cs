@@ -87,6 +87,9 @@ public interface IProductRepository
 
     Task<bool> ExistsAsync(Guid productId, CancellationToken cancellationToken = default);
 
+    /// <summary>How many products are filed under a category - what makes deleting it refusable.</summary>
+    Task<int> CountInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
+
     // ---- Variants (specs/020). The variant is the sellable unit: it carries the sku and the price.
 
     /// <summary>One variant with its options and its product, or <c>null</c>.</summary>

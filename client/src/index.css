@@ -49,72 +49,100 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    /* A camera shop, not a dashboard: warm paper rather than clinical white, one saturated accent,
+       and enough radius that a card reads as an object. The palette is our own - the reference the
+       owner sent was read for its design LANGUAGE (light, bento, round, airy, one accent) and not
+       copied, and none of its branding is here. */
+
+    /* Warm off-white. Pure white behind white cards leaves nothing to separate them. */
+    --background: oklch(0.977 0.008 106);
+    --foreground: oklch(0.18 0.012 106);
+
+    /* Cards are the lightest thing on the page, so they lift off the background without a border. */
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.18 0.012 106);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --popover-foreground: oklch(0.18 0.012 106);
+
+    /* The accent, and the only saturated colour in the interface. Dark text ON it, because a lime
+       this bright cannot carry white text at any accessible contrast. */
+    --primary: oklch(0.885 0.175 124);
+    --primary-foreground: oklch(0.22 0.04 124);
+
+    --secondary: oklch(0.955 0.01 106);
+    --secondary-foreground: oklch(0.24 0.012 106);
+    --muted: oklch(0.955 0.01 106);
+    --muted-foreground: oklch(0.52 0.012 106);
+    --accent: oklch(0.93 0.035 124);
+    --accent-foreground: oklch(0.24 0.04 124);
+
+    --destructive: oklch(0.58 0.21 27);
+
+    --border: oklch(0.915 0.008 106);
+    --input: oklch(0.915 0.008 106);
+    --ring: oklch(0.78 0.12 124);
+
+    --chart-1: oklch(0.885 0.175 124);
+    --chart-2: oklch(0.72 0.1 124);
+    --chart-3: oklch(0.55 0.06 124);
+    --chart-4: oklch(0.42 0.03 106);
+    --chart-5: oklch(0.28 0.012 106);
+
+    /* 1rem, up from 0.625: the difference between a form control and an object you would pick up. */
+    --radius: 1rem;
+
+    --sidebar: oklch(0.977 0.008 106);
+    --sidebar-foreground: oklch(0.18 0.012 106);
+    --sidebar-primary: oklch(0.885 0.175 124);
+    --sidebar-primary-foreground: oklch(0.22 0.04 124);
+    --sidebar-accent: oklch(0.955 0.01 106);
+    --sidebar-accent-foreground: oklch(0.24 0.012 106);
+    --sidebar-border: oklch(0.915 0.008 106);
+    --sidebar-ring: oklch(0.78 0.12 124);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    /* Not the light theme inverted: a warm near-black, cards a step lighter so they still read as
+       objects, and the same lime - which survives a dark background far better than it survives a
+       white one. */
+    --background: oklch(0.17 0.008 106);
+    --foreground: oklch(0.96 0.006 106);
+
+    --card: oklch(0.225 0.008 106);
+    --card-foreground: oklch(0.96 0.006 106);
+    --popover: oklch(0.225 0.008 106);
+    --popover-foreground: oklch(0.96 0.006 106);
+
+    --primary: oklch(0.86 0.175 124);
+    --primary-foreground: oklch(0.2 0.04 124);
+
+    --secondary: oklch(0.28 0.008 106);
+    --secondary-foreground: oklch(0.96 0.006 106);
+    --muted: oklch(0.28 0.008 106);
+    --muted-foreground: oklch(0.72 0.008 106);
+    --accent: oklch(0.32 0.03 124);
+    --accent-foreground: oklch(0.92 0.06 124);
+
+    --destructive: oklch(0.7 0.19 22);
+
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 16%);
+    --ring: oklch(0.6 0.1 124);
+
+    --chart-1: oklch(0.86 0.175 124);
+    --chart-2: oklch(0.7 0.1 124);
+    --chart-3: oklch(0.55 0.06 124);
+    --chart-4: oklch(0.42 0.03 106);
+    --chart-5: oklch(0.32 0.012 106);
+
+    --sidebar: oklch(0.225 0.008 106);
+    --sidebar-foreground: oklch(0.96 0.006 106);
+    --sidebar-primary: oklch(0.86 0.175 124);
+    --sidebar-primary-foreground: oklch(0.2 0.04 124);
+    --sidebar-accent: oklch(0.28 0.008 106);
+    --sidebar-accent-foreground: oklch(0.96 0.006 106);
+    --sidebar-border: oklch(1 0 0 / 12%);
+    --sidebar-ring: oklch(0.6 0.1 124);
 }
 
 @layer base {

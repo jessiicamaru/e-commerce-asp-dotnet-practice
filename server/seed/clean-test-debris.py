@@ -27,6 +27,11 @@ import sys
 import urllib.error
 import urllib.request
 
+# The catalogue is in Vietnamese and a Windows console defaults to a codepage that cannot encode it,
+# so printing a product name crashed the script outright. Say UTF-8 rather than hope for it.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 BASE = os.environ.get("GATEWAY_URL", "http://localhost:5000").rstrip("/")
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -63,7 +68,9 @@ def main():
     confirmed = "--yes" in sys.argv
 
     with open(os.path.join(HERE, "cameras.json"), encoding="utf-8") as handle:
-        keep = {product["sku"] for product in json.load(handle)["products"]}
+        cameras = json.load(handle)
+
+    keep = {product["sku"] for product in cameras["products"]}
 
     email = os.environ.get("ADMIN_EMAIL")
     password = os.environ.get("ADMIN_PASSWORD")
@@ -118,6 +125,22 @@ def main():
             failed += 1
         else:
             deleted += 1
+
+    # ...and the categories nothing is filed under any more. They are worse than the junk products
+    # were: a category shows up in the FILTER a shopper actually uses, and there were 95 of them
+    # against two real ones. Deleting one that still has products is refused by the API, which is
+    # why this needs no cleverness about ordering - it just asks, and a refusal means "keep it".
+    keep_slugs = {category["slug"] for category in cameras["categories"]}
+    listed = call("GET", "/api/categories") or []
+    rows = listed.get("items") if isinstance(listed, dict) else listed
+    stale = [row for row in rows if row["slug"] not in keep_slugs]
+    gone = 0
+
+    for row in stale:
+        if call("DELETE", f"/api/categories/{row['id']}", token=token) is not None:
+            gone += 1
+
+    print(f"  {GREEN}ok{RESET}  {gone} of {len(stale)} unused categor(ies) removed")
 
     remaining = call("GET", "/api/products?pageSize=1") or {}
     print(f"\n  {GREEN}ok{RESET}  {deleted} deleted; {remaining.get('totalCount', '?')} product(s) left")

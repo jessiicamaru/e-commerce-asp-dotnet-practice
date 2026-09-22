@@ -27,6 +27,11 @@ import time
 import urllib.error
 import urllib.request
 
+# The catalogue is in Vietnamese and a Windows console defaults to a codepage that cannot encode it,
+# so printing a product name crashed the script outright. Say UTF-8 rather than hope for it.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 BASE = os.environ.get("GATEWAY_URL", "http://localhost:5000").rstrip("/")
 HERE = os.path.dirname(os.path.abspath(__file__))
 
