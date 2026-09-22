@@ -21,14 +21,27 @@ public record VariantResponse(
     bool IsActive
 )
 {
-    public static VariantResponse From(ProductVariant variant) => new(
-        variant.Id,
-        variant.Sku,
-        variant.Price,
-        variant.OptionSummary,
-        variant.Options.Select(option => new VariantOptionResponse(option.Name, option.Value)).ToList(),
-        ProductAvailability.From(variant.Availability),
-        variant.IsActive);
+    public static VariantResponse From(ProductVariant variant, string language = "")
+    {
+        // Empty language: the stored summary, which is the default language's (specs/021).
+        var localise = !string.IsNullOrEmpty(language);
+
+        return new(
+            variant.Id,
+            variant.Sku,
+            variant.Price,
+            localise ? Localized.OptionSummaryOf(variant, language) : variant.OptionSummary,
+            variant.Options.Select(option =>
+            {
+                var (name, value) = localise
+                    ? Localized.OptionOf(option, language)
+                    : (option.Name, option.Value);
+
+                return new VariantOptionResponse(name, value);
+            }).ToList(),
+            ProductAvailability.From(variant.Availability),
+            variant.IsActive);
+    }
 }
 
 public record VariantOptionResponse(string Name, string Value);

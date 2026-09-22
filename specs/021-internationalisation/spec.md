@@ -1,6 +1,6 @@
 # Feature Specification: Speaking More Than One Language
 
-**Feature Branch**: not opened yet · **Created**: 2026-09-22 · **Status**: Specified, not built
+**Feature Branch**: not opened yet · **Created**: 2026-09-22 · **Status**: Implemented (see [tasks.md](tasks.md) for what building it found)
 
 **Input**: the owner asked for a spec for internationalisation, ahead of building it.
 

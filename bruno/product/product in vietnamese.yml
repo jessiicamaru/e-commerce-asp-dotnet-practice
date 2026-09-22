@@ -1,0 +1,39 @@
+info:
+  name: product in vietnamese
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  headers:
+    - name: Accept-Language
+      value: "vi"
+  auth:
+    auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answered in Vietnamese, and says which language it is in", function() {
+          expect(res.headers["content-language"]).to.equal("vi");
+          expect(res.body.language).to.equal("vi");
+          expect(res.body.name).to.equal("Máy ảnh Bruno");
+        });
+        test("and says the answer depends on the header, so a cache cannot mix them up", function() {
+          expect(String(res.headers["vary"])).to.contain("Accept-Language");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The same URL as `get product by id`, asked in Vietnamese. `Vary: Accept-Language` is what stops a
+  cache handing this answer to somebody reading English.

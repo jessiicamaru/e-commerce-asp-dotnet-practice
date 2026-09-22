@@ -129,6 +129,36 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("product_translations", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductVariant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -203,6 +233,37 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("variant_options", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantOptionTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("OptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OptionId", "Language")
+                        .IsUnique();
+
+                    b.ToTable("variant_option_translations", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -392,6 +453,15 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductTranslation", b =>
+                {
+                    b.HasOne("Ecommerce.Catalog.Domain.Entities.Product", null)
+                        .WithMany("Translations")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductVariant", b =>
                 {
                     b.HasOne("Ecommerce.Catalog.Domain.Entities.Product", "Product")
@@ -412,6 +482,15 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantOptionTranslation", b =>
+                {
+                    b.HasOne("Ecommerce.Catalog.Domain.Entities.VariantOption", null)
+                        .WithMany("Translations")
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
                 {
                     b.HasOne("MassTransit.EntityFrameworkCoreIntegration.OutboxState", null)
@@ -426,12 +505,19 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
 
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.Product", b =>
                 {
+                    b.Navigation("Translations");
+
                     b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductVariant", b =>
                 {
                     b.Navigation("Options");
+                });
+
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantOption", b =>
+                {
+                    b.Navigation("Translations");
                 });
 #pragma warning restore 612, 618
         }

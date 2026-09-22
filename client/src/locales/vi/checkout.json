@@ -1,0 +1,24 @@
+{
+  "title": "Thanh toán",
+  "loadFailed": "Không tải được trang thanh toán.",
+  "needAddress": "Bạn cần có địa chỉ nhận hàng trước.",
+  "addOne": "Thêm địa chỉ",
+  "deliverTo": "Giao tới",
+  "manageAddresses": "Quản lý địa chỉ",
+  "delivery": "Giao hàng",
+  "default": "Mặc định",
+  "pricing": "Đang tính tiền đơn hàng…",
+  "priceFailed": "Không tính được tiền đơn hàng.",
+  "cartRefused": "Giỏ hàng này chưa thể thanh toán.",
+  "dependencyDown": "Một dịch vụ cần cho việc tính tiền đang không sẵn sàng. Thử lại sau giây lát.",
+  "backToCart": "Về giỏ hàng",
+  "placeOrder": "Đặt hàng · {{amount}}",
+  "placing": "Đang đặt hàng…",
+  "totals": {
+    "items": "Hàng hoá",
+    "delivery": "Giao hàng",
+    "tax": "Thuế",
+    "discount": "Giảm giá",
+    "total": "Tổng cộng"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "title": "Giỏ hàng của bạn",
+  "empty": "Giỏ hàng trống.",
+  "browse": "Xem cửa hàng",
+  "loadFailed": "Không tải được giỏ hàng.",
+  "pricesUnavailable": "Tạm thời chưa kiểm tra được giá. Sản phẩm của bạn vẫn còn; thử lại sau giây lát.",
+  "columns": {
+    "product": "Sản phẩm",
+    "price": "Đơn giá",
+    "quantity": "Số lượng",
+    "total": "Thành tiền"
+  },
+  "remove": "Xoá",
+  "unknownProduct": "Sản phẩm không xác định",
+  "estimated": "Tạm tính {{amount}}",
+  "totalUnavailable": "Chưa có tổng tiền",
+  "estimateNote": "Ước tính theo giá hôm nay, chưa gồm phí giao hàng và thuế. Số tiền cuối cùng được chốt khi thanh toán.",
+  "checkout": "Thanh toán",
+  "fixLines": "Hãy xoá hoặc xử lý các dòng được đánh dấu ở trên trước khi thanh toán.",
+  "saveFailed": "Không lưu được thay đổi.",
+  "status": {
+    "notForSale": "Không còn được bán.",
+    "noLongerAvailable": "Sản phẩm này đã bị gỡ khỏi cửa hàng.",
+    "priceUnavailable": "Hiện chưa kiểm tra được giá.",
+    "unavailable": "Hiện không mua được sản phẩm này."
+  }
+}

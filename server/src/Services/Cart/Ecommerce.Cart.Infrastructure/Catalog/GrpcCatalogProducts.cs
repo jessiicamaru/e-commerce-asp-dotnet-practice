@@ -25,14 +25,15 @@ public class GrpcCatalogProducts(
 
     public async Task<CatalogDescription> DescribeAsync(
         IReadOnlyCollection<Guid> productIds,   // sellable ids: variants (specs/020)
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string language = "")
     {
         if (productIds.Count == 0)
         {
             return new CatalogDescription(true, [], []);
         }
 
-        var request = new DescribeVariantsRequest();
+        var request = new DescribeVariantsRequest { Language = language };
         request.VariantIds.AddRange(productIds.Select(id => id.ToString()));
 
         try

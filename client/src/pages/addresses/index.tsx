@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { ApiError } from '@/config/axios'
 import { AddressCard } from '@/components/address/address-card'
@@ -13,6 +14,7 @@ import { emptyAddress } from '@/services/address/types'
  * and shows Identity's own validation messages.
  */
 export function AddressesPage() {
+  const { t } = useTranslation('auth')
   const { data: addresses, isPending, isError } = useAddresses()
   const save = useSaveAddress()
   const remove = useDeleteAddress()
@@ -24,7 +26,7 @@ export function AddressesPage() {
   const failed = (error: unknown) => toast.error(ApiError.from(error).message)
 
   if (isError) {
-    return <ErrorMessage>Your addresses could not be loaded.</ErrorMessage>
+    return <ErrorMessage>{t('addresses.loadFailed')}</ErrorMessage>
   }
 
   if (isPending || !addresses) {
@@ -35,10 +37,10 @@ export function AddressesPage() {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-bold">Delivery addresses</h1>
+      <h1 className="mb-4 text-2xl font-bold">{t('addresses.title')}</h1>
 
       {addresses.length === 0 && editing === null && (
-        <p className="text-muted-foreground mb-4">You have no saved addresses yet.</p>
+        <p className="text-muted-foreground mb-4">{t('addresses.none')}</p>
       )}
 
       <ul className="mb-4 grid gap-3">
@@ -49,7 +51,7 @@ export function AddressesPage() {
               onEdit={() => setEditing(address.id)}
               onMakeDefault={() => makeDefault.mutate(address.id, { onError: failed })}
               onDelete={() => {
-                if (confirm(`Delete the address for ${address.recipientName}?`)) {
+                if (confirm(t('addresses.confirmDelete', { name: address.recipientName }))) {
                   remove.mutate(address.id, { onError: failed })
                 }
               }}
@@ -59,12 +61,12 @@ export function AddressesPage() {
       </ul>
 
       {editing === null ? (
-        <Button onClick={() => setEditing('')}>Add an address</Button>
+        <Button onClick={() => setEditing('')}>{t('addresses.add')}</Button>
       ) : (
         <AddressForm
           key={editing}
           initial={current ?? emptyAddress}
-          title={current ? 'Edit address' : 'New address'}
+          title={current ? t('addresses.edit') : t('addresses.new')}
           onCancel={() => setEditing(null)}
           onSave={async (fields) => {
             await save.mutateAsync({ id: current?.id, fields })

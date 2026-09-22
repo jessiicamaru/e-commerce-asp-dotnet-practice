@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,26 +22,28 @@ export function CartLines({
   onQuantityChange: (productId: string, quantity: number) => void
   onRemove: (productId: string) => void
 }) {
+  const { t } = useTranslation('cart')
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Product</TableHead>
-          <TableHead>Price</TableHead>
-          <TableHead className="w-28">Quantity</TableHead>
-          <TableHead>Total</TableHead>
+          <TableHead>{t('columns.product')}</TableHead>
+          <TableHead>{t('columns.price')}</TableHead>
+          <TableHead className="w-28">{t('columns.quantity')}</TableHead>
+          <TableHead>{t('columns.total')}</TableHead>
           <TableHead />
         </TableRow>
       </TableHeader>
       <TableBody>
         {cart.lines.map((line) => {
-          const problem = lineProblem(line.status)
+          const problem = lineProblem(t, line.status)
 
           return (
             <TableRow key={line.variantId}>
               <TableCell className="align-top">
                 <Link to={`/products/${line.productId}`} className="hover:underline">
-                  {line.name ?? 'Unknown product'}
+                  {line.name ?? t('unknownProduct')}
                 </Link>
                 {line.optionSummary && (
                   <div className="text-muted-foreground text-xs">{line.optionSummary}</div>
@@ -54,7 +57,7 @@ export function CartLines({
                   type="number"
                   min={1}
                   className="w-20"
-                  aria-label={`Quantity of ${line.name ?? 'this product'}`}
+                  aria-label={`${t('columns.quantity')}: ${line.name ?? ''}`}
                   defaultValue={line.quantity}
                   disabled={busy}
                   onBlur={(event) => {
@@ -70,7 +73,7 @@ export function CartLines({
               <TableCell className="align-top">{line.lineTotal === null ? '-' : money(line.lineTotal)}</TableCell>
               <TableCell className="align-top">
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => onRemove(line.variantId)}>
-                  Remove
+                  {t('remove')}
                 </Button>
               </TableCell>
             </TableRow>

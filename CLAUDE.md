@@ -50,8 +50,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (26 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (50 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (29 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (52 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (48 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -227,6 +227,19 @@ held a product id in three other databases - reusing the id made every one of th
 cross-service backfill. Variants added later get fresh ids. **Nothing may assume either way.**
 Inventory's `ProductId` columns hold a *variant* id and were deliberately not renamed; `PUT
 /api/stock/{id}` takes a variant id. Background: [specs/020-product-variants](specs/020-product-variants/).
+
+**The shop speaks Vietnamese and English** (specs/021). Two halves, and they are not the same job:
+the **interface** is `react-i18next` with JSON per language under `client/src/locales/`, and the
+**product text** is rows in Catalog (`product_translations`, `variant_option_translations`) with the
+product's own columns as the default-language text and the per-field fallback. Every request says
+which language it wants - `?lang=`, then `Accept-Language` - negotiated by ASP.NET Core's
+`RequestLocalization` and read by handlers through `IRequestLanguage`, the way `ICurrentUser` is read.
+Responses carry `Content-Language` **and `Vary: Accept-Language`**, without which a cache serves one
+shopper's Vietnamese to the next shopper asking in English. Search is diacritic-insensitive through
+`unaccent` over both the translation and the original, with **no index** - recorded, and the first
+thing to fix at scale. ⚠️ **An order freezes its words in the language it was placed in**
+(`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an
+order is a record of a purchase, not a view of the catalogue.
 
 **The quote and the order are priced by the same code.** `GET /api/orders/quote` returns what
 checkout would charge for the same choices, in the same parts, and places nothing. It and

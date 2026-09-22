@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Order.Application;
@@ -78,6 +79,10 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
+// Which language a request wants to be answered in (specs/021). A service whose responses carry text
+// a customer reads needs this; it refuses to start if the default is not one it supports.
+builder.Services.AddRequestLanguage(builder.Configuration);
+
 builder.Services.AddMassTransit(x =>
 {
     // The first consumers this service has ever had. Until now it published OrderSubmittedEvent and
@@ -156,6 +161,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Says which language the response actually came back in, after the fallback.
+app.UseRequestLanguage();
 
 app.UseAuthentication();
 app.UseAuthorization();

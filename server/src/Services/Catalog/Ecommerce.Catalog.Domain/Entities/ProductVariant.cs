@@ -88,4 +88,7 @@ public class VariantOption
     public string Name { get; set; } = string.Empty;
 
     public string Value { get; set; } = string.Empty;
+
+    /// <summary>This option in other languages (specs/021); the columns above are the fallback.</summary>
+    public List<VariantOptionTranslation> Translations { get; set; } = [];
 }

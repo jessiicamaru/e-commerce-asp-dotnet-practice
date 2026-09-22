@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { CatalogFilters } from '@/components/catalog/catalog-filters'
 import { ProductCard } from '@/components/product/product-card'
@@ -10,6 +11,7 @@ import type { SortBy } from '@/services/product/types'
 
 /** The listing (#36), driven by the URL so a search can be shared, bookmarked and survives a reload. */
 export function CatalogPage() {
+  const { t } = useTranslation('catalog')
   const [params, setParams] = useSearchParams()
   const searchTerm = params.get('q') ?? ''
   const categoryId = params.get('category') ?? ''
@@ -39,7 +41,7 @@ export function CatalogPage() {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-bold">Shop</h1>
+      <h1 className="mb-4 text-2xl font-bold">{t('title')}</h1>
 
       <CatalogFilters
         searchTerm={searchTerm}
@@ -49,15 +51,17 @@ export function CatalogPage() {
         onChange={update}
       />
 
-      {products.isError && <ErrorMessage>The catalogue could not be loaded. Is the backend running?</ErrorMessage>}
+      {products.isError && <ErrorMessage>{t('loadFailed')}</ErrorMessage>}
       {products.isPending && <LoadingRows rows={4} />}
 
       {page && (
         <>
           <p className="text-muted-foreground mb-4 text-sm">
             {page.totalCount === 0
-              ? 'Nothing matches.'
-              : `${page.totalCount} product${page.totalCount === 1 ? '' : 's'}${searchTerm ? ` for “${searchTerm}”` : ''}`}
+              ? t('nothingMatches')
+              : searchTerm
+                ? t('resultCountFor', { count: page.totalCount, term: searchTerm })
+                : t('resultCount', { count: page.totalCount })}
           </p>
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-4">
             {page.items.map((product) => (
@@ -66,7 +70,13 @@ export function CatalogPage() {
               </li>
             ))}
           </ul>
-          <Pager page={page.pageNumber} totalPages={page.totalPages} onChange={(next) => update({ page: String(next) })} />
+          <Pager
+            page={page.pageNumber}
+            totalPages={page.totalPages}
+            onChange={(next) => update({ page: String(next) })}
+            previousLabel={t('pager.previous')}
+            nextLabel={t('pager.next')}
+          />
         </>
       )}
     </section>

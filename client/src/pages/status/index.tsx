@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import { useHealth } from '@/hooks/health'
 import { cn } from '@/utils/shared'
@@ -7,12 +8,13 @@ import { cn } from '@/utils/shared'
  * and still the quickest proof that `/api` reaches the gateway and the gateway reaches everything.
  */
 export function StatusPage() {
+  const { t } = useTranslation('status')
   const services = useHealth()
 
   return (
     <section>
-      <h1 className="mb-2 text-2xl font-bold">Backend status</h1>
-      <p className="text-muted-foreground mb-4 text-sm">Each service's health, checked through the gateway.</p>
+      <h1 className="mb-2 text-2xl font-bold">{t('title')}</h1>
+      <p className="text-muted-foreground mb-4 text-sm">{t('subtitle')}</p>
 
       <Table className="max-w-sm">
         <TableBody>
@@ -26,16 +28,18 @@ export function StatusPage() {
                   health?.up === false && 'text-destructive',
                 )}
               >
-                {pending || !health ? 'checking…' : health.up ? 'up' : `down (${health.detail})`}
+                {pending || !health
+                  ? t('checking')
+                  : health.up
+                    ? t('up')
+                    : t('down', { detail: health.detail })}
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      <p className="text-muted-foreground mt-4 text-sm">
-        The orchestrator has no health endpoint - it has no HTTP surface at all - so it cannot be listed here.
-      </p>
+      <p className="text-muted-foreground mt-4 text-sm">{t('orchestratorNote')}</p>
     </section>
   )
 }

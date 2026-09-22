@@ -5,6 +5,7 @@ using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Products.Images.GetProductImage;
 using Ecommerce.Catalog.Application.Products.Images.RemoveProductImage;
 using Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
+using Ecommerce.Catalog.Application.Products.Translations;
 using FluentValidation;
 using FluentValidation.Results;
 using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
@@ -68,6 +69,43 @@ public class ProductsController : ApiControllerBase
     {
         return Ok(await Mediator.Send(new UpdateProductVariantCommand(id, variantId, request.Price, request.IsActive)));
     }
+
+    /// <summary>
+    /// This product's name and description in one language (specs/021). An upsert: writing it twice
+    /// leaves the second text, not a conflict.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}/translations/{language}")]
+    public async Task<IActionResult> SetTranslation(Guid id, string language, [FromBody] TranslationRequest request)
+    {
+        return Ok(await Mediator.Send(new SetProductTranslationCommand(id, language, request.Name, request.Description)));
+    }
+
+    /// <summary>Takes a language away; the product falls back to its default text.</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:guid}/translations/{language}")]
+    public async Task<IActionResult> RemoveTranslation(Guid id, string language)
+    {
+        await Mediator.Send(new RemoveProductTranslationCommand(id, language));
+        return NoContent();
+    }
+
+    /// <summary>
+    /// One option in one language - <c>Kit: Body only</c> → <c>Bộ: Chỉ thân máy</c>. Option values are
+    /// read by customers as much as names are.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}/options/{optionId:guid}/translations/{language}")]
+    public async Task<IActionResult> SetOptionTranslation(
+        Guid id, Guid optionId, string language, [FromBody] OptionTranslationRequest request)
+    {
+        await Mediator.Send(new SetOptionTranslationCommand(id, optionId, language, request.Name, request.Value));
+        return NoContent();
+    }
+
+    public record TranslationRequest(string Name, string? Description);
+
+    public record OptionTranslationRequest(string Name, string Value);
 
     public record VariantRequest(string Sku, decimal Price, List<VariantOptionInput>? Options);
 

@@ -1,6 +1,7 @@
 using Ecommerce.Cart.Application.Common;
 using Ecommerce.Cart.Application.Common.Interfaces;
 using Ecommerce.Shared.Authentication;
+using Ecommerce.Shared.Localization;
 using MediatR;
 
 namespace Ecommerce.Cart.Application.Carts.Queries.GetMyCart;
@@ -15,7 +16,7 @@ namespace Ecommerce.Cart.Application.Carts.Queries.GetMyCart;
 public class GetMyCartQueryHandler(
     ICartRepository carts,
     ICatalogProducts catalog,
-    ICurrentUser currentUser) : IRequestHandler<GetMyCartQuery, CartResponse>
+    ICurrentUser currentUser, IRequestLanguage language) : IRequestHandler<GetMyCartQuery, CartResponse>
 {
     private readonly ICartRepository _carts = carts;
     private readonly ICatalogProducts _catalog = catalog;
@@ -37,7 +38,7 @@ public class GetMyCartQueryHandler(
         var lines = cart.Lines.OrderBy(l => l.AddedAt).ToList();
         // Described by the SELLABLE unit: a variant carries the price and the words for what it is.
         var described = await _catalog.DescribeAsync(
-            lines.Select(l => l.SellableId).Distinct().ToList(), cancellationToken);
+            lines.Select(l => l.SellableId).Distinct().ToList(), cancellationToken, language.Current);
 
         var byId = described.Products.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
         var missing = described.Missing.ToHashSet();

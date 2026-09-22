@@ -1,5 +1,6 @@
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Shared.Exceptions;
+using Ecommerce.Shared.Localization;
 
 namespace Ecommerce.Order.Application.Orders.Common;
 
@@ -18,12 +19,14 @@ namespace Ecommerce.Order.Application.Orders.Common;
 /// </para>
 /// </remarks>
 public class CheckoutPricing(
+    IRequestLanguage requestLanguage,
     ICartReader cartReader,
     IAddressReader addressReader,
     IShippingOptions shippingOptions,
     ICatalogPrices catalogPrices,
     ITaxRates taxRates)
 {
+    private readonly IRequestLanguage _requestLanguage = requestLanguage;
     private readonly ICartReader _cartReader = cartReader;
     private readonly IAddressReader _addressReader = addressReader;
     private readonly IShippingOptions _shippingOptions = shippingOptions;
@@ -62,9 +65,14 @@ public class CheckoutPricing(
 
         // The price and the name come from Catalog, never from the request (issue #18) - and what is
         // priced is the VARIANT the customer chose (specs/020).
+        // The words come back in the language this request is in, and the order freezes them
+        // (specs/021 research D3). A customer who bought in Vietnamese reads Vietnamese for good.
+        var language = _requestLanguage.Current;
+
         var priced = await _catalogPrices.GetPricesAsync(
             cartItems.Select(i => i.SellableId).Distinct().ToList(),
-            cancellationToken);
+            cancellationToken,
+            language);
 
         var byVariant = priced.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
 
@@ -100,7 +108,7 @@ public class CheckoutPricing(
                 variant.OptionSummary);
         }).ToList();
 
-        return new PricedCheckout(address, shipping, lines, totals, taxRate);
+        return new PricedCheckout(address, shipping, lines, totals, taxRate, language);
     }
 }
 
@@ -120,9 +128,11 @@ public record PricedLine(
     public decimal TotalPrice => UnitPrice * Quantity;
 }
 
+/// <param name="Language">The language the words on these lines are in (specs/021).</param>
 public record PricedCheckout(
     AddressCopy Address,
     ShippingOption Shipping,
     IReadOnlyList<PricedLine> Lines,
     OrderTotals.Result Totals,
-    decimal TaxRate);
+    decimal TaxRate,
+    string Language = "");

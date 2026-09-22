@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ export function AddToCart({
   /** Why the button is disabled, shown next to it - "Choose an option first". */
   disabledReason?: string
 }) {
+  const { t } = useTranslation('catalog')
   const { user, restoring } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -32,10 +34,11 @@ export function AddToCart({
   if (!user) {
     return (
       <p className="text-sm">
-        <Link to="/sign-in" state={{ from: location.pathname }} className="underline">
-          Sign in
-        </Link>{' '}
-        to add this to your cart.
+        <Trans
+          t={t}
+          i18nKey="product.signInToAdd"
+          components={[<Link key="0" to="/sign-in" state={{ from: location.pathname }} className="underline" />]}
+        />
       </p>
     )
   }
@@ -43,11 +46,11 @@ export function AddToCart({
   const add = () =>
     addToCart.mutate([productId, quantity, variantId], {
       onSuccess: () =>
-        toast.success(`Added ${quantity} to your cart.`, {
-          action: { label: 'View cart', onClick: () => navigate('/cart') },
+        toast.success(t('product.added', { count: quantity }), {
+          action: { label: t('product.viewCart'), onClick: () => navigate('/cart') },
         }),
       onError: (error) =>
-        toast.error(error instanceof ApiError ? error.message : 'It could not be added. Try again.'),
+        toast.error(error instanceof ApiError ? error.message : t('product.addFailed')),
     })
 
   return (
@@ -55,13 +58,13 @@ export function AddToCart({
       <Input
         type="number"
         min={1}
-        aria-label="Quantity"
+        aria-label={t('product.quantity')}
         className="w-20"
         value={quantity}
         onChange={(event) => setQuantity(Math.max(1, Math.floor(Number(event.target.value)) || 1))}
       />
       <Button onClick={add} disabled={addToCart.isPending || disabledReason !== undefined}>
-        {addToCart.isPending ? 'Adding…' : 'Add to cart'}
+        {addToCart.isPending ? t('product.adding') : t('product.addToCart')}
       </Button>
       {disabledReason && <span className="text-muted-foreground text-sm">{disabledReason}</span>}
     </div>

@@ -1,0 +1,8 @@
+{
+  "title": "Trạng thái backend",
+  "subtitle": "Tình trạng từng service, kiểm tra qua gateway.",
+  "checking": "đang kiểm tra…",
+  "up": "hoạt động",
+  "down": "lỗi ({{detail}})",
+  "orchestratorNote": "Orchestrator không có endpoint health - nó không có bề mặt HTTP nào - nên không thể liệt kê ở đây."
+}

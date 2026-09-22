@@ -1,0 +1,31 @@
+{
+  "brand": "e-commerce",
+  "nav": {
+    "status": "Status",
+    "cart": "Cart",
+    "orders": "Orders",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "signOut": "Sign out"
+  },
+  "language": {
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "loading": "Loading…",
+  "notFound": "Not found.",
+  "checkingSession": "Checking your session…",
+  "error": {
+    "unreachable": "The server could not be reached. Try again in a moment.",
+    "generic": "Something went wrong. Try again in a moment."
+  },
+  "action": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search"
+  }
+}

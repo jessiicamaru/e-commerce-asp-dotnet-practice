@@ -30,5 +30,11 @@ public class Order
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// The language this order was placed in, and therefore the language of the words frozen on its
+    /// lines (specs/021). Null on orders placed before that, which read as the shop's default.
+    /// </summary>
+    public string? Language { get; set; }
+
     public List<OrderItem> Items { get; set; } = new();
 }

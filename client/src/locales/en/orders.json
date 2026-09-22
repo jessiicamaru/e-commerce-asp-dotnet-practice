@@ -1,0 +1,31 @@
+{
+  "title": "Your orders",
+  "none": "You have not ordered anything yet.",
+  "browse": "Browse the shop",
+  "loadFailed": "Your orders could not be loaded.",
+  "itemCount_one": "{{count}} item",
+  "itemCount_other": "{{count}} items",
+  "newer": "Newer",
+  "older": "Older",
+  "order": {
+    "title": "Order",
+    "thanks": "Thank you for your order",
+    "back": "← Your orders",
+    "placedAt": "{{id}} · placed {{at}}",
+    "notFound": "Order not found.",
+    "loadFailed": "The order could not be loaded.",
+    "backToCart": "Back to your cart",
+    "tracking": "Tracking reference: {{reference}}",
+    "deliveringTo": "Delivering to",
+    "taking": "This is taking longer than usual. Your order is safe; check back in a minute."
+  },
+  "status": {
+    "submitted": "We are reserving your items and taking payment…",
+    "paid": "Paid. We will start preparing it soon.",
+    "preparing": "Being prepared for dispatch.",
+    "shipped": "On its way.",
+    "failedStock": "Not placed: some items ran out of stock. Nothing was charged, and your cart is unchanged.",
+    "failedPayment": "Not placed: the payment was declined. Your cart is unchanged, so you can try again.",
+    "failed": "Not placed. Nothing was charged, and your cart is unchanged."
+  }
+}

@@ -39,11 +39,12 @@ public class GrpcCatalogPrices(
 
     public async Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
         IReadOnlyCollection<Guid> productIds,   // variant ids since specs/020
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string language = "")
     {
         // PriceVariants, not GetPrices: what is bought is a variant (specs/020). GetPrices is still
         // there, unchanged, for an image built before variants.
-        var request = new PriceVariantsRequest();
+        var request = new PriceVariantsRequest { Language = language };
         request.VariantIds.AddRange(productIds.Select(id => id.ToString()));
 
         for (var attempt = 1; ; attempt++)

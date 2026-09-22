@@ -3,6 +3,7 @@ using Ecommerce.Cart.Application.Common.Interfaces;
 using Ecommerce.Cart.Infrastructure.Persistence;
 using Ecommerce.Cart.Infrastructure.Persistence.Repositories;
 using Ecommerce.Shared.Authentication;
+using Ecommerce.Shared.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -53,6 +54,9 @@ public class CartTestFixture : IAsyncLifetime
         services.AddScoped<ICheckoutOutcomeRepository, CheckoutOutcomeRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<ICatalogProducts, NoCatalog>();
+
+        // No HTTP request here, so the language is the shop's default (specs/021).
+        services.AddSingleton<IRequestLanguage>(new FixedLanguage("vi"));
         services.AddSingleton<ICurrentUser>(new FixedUser(userId));
         return services.BuildServiceProvider(validateScopes: true);
     }
@@ -78,7 +82,8 @@ public class CartTestFixture : IAsyncLifetime
     /// <summary>These tests are about the cart's own data; Catalog is never consulted.</summary>
     private sealed class NoCatalog : ICatalogProducts
     {
-        public Task<CatalogDescription> DescribeAsync(IReadOnlyCollection<Guid> productIds, CancellationToken ct = default)
+        public Task<CatalogDescription> DescribeAsync(
+            IReadOnlyCollection<Guid> productIds, CancellationToken ct = default, string language = "")
             => Task.FromResult(CatalogDescription.Unreachable());
     }
 }

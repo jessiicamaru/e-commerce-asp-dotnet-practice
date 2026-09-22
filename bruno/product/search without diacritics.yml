@@ -1,0 +1,34 @@
+info:
+  name: search without diacritics
+  type: http
+  seq: 12
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products?searchTerm=may anh bruno&lang=vi&pageSize=20"
+  auth:
+    auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("\"may anh\" finds \"Máy ảnh\"", function() {
+          expect(res.body.items.map(p => p.id)).to.contain(bru.getVar("productId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  How people actually type. `unaccent` on both sides, over the requested language's translation AND
+  the text the product was entered with - a shop half-translated still finds everything.
+  
+  No index: `unaccent()` is not IMMUTABLE, so this is a sequential scan. Invisible at this size, the
+  first thing to fix at a hundred thousand products (specs/021 research D5).

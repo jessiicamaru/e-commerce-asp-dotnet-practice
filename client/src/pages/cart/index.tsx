@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ApiError } from '@/config/axios'
@@ -12,6 +13,7 @@ import { cn, money } from '@/utils/shared'
  * signing out and back in and follows the customer between devices.
  */
 export function CartPage() {
+  const { t } = useTranslation('cart')
   const { data: cart, isPending, isError } = useCart()
   const setQuantity = useSetCartQuantity()
   const removeLine = useRemoveCartLine()
@@ -20,7 +22,7 @@ export function CartPage() {
   const failed = (error: unknown) => toast.error(ApiError.from(error).message)
 
   if (isError) {
-    return <ErrorMessage>The cart could not be loaded.</ErrorMessage>
+    return <ErrorMessage>{t('loadFailed')}</ErrorMessage>
   }
 
   if (isPending || !cart) {
@@ -30,11 +32,11 @@ export function CartPage() {
   if (cart.lines.length === 0) {
     return (
       <section>
-        <h1 className="mb-4 text-2xl font-bold">Your cart</h1>
+        <h1 className="mb-4 text-2xl font-bold">{t('title')}</h1>
         <p>
-          Your cart is empty.{' '}
+          {t('empty')}{' '}
           <Link to="/" className="underline">
-            Browse the shop
+            {t('browse')}
           </Link>
           .
         </p>
@@ -44,10 +46,10 @@ export function CartPage() {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-bold">Your cart</h1>
+      <h1 className="mb-4 text-2xl font-bold">{t('title')}</h1>
 
       {!cart.pricesAvailable && (
-        <ErrorMessage>Prices could not be checked just now. Your items are safe; try again in a moment.</ErrorMessage>
+        <ErrorMessage>{t('pricesUnavailable')}</ErrorMessage>
       )}
 
       <CartLines
@@ -60,18 +62,18 @@ export function CartPage() {
       />
 
       <p className="mt-4 text-xl font-semibold">
-        {cart.estimatedTotal === null ? 'Total unavailable' : `Estimated ${money(cart.estimatedTotal)}`}
+        {cart.estimatedTotal === null
+          ? t('totalUnavailable')
+          : t('estimated', { amount: money(cart.estimatedTotal) })}
       </p>
-      <p className="text-muted-foreground text-xs">
-        An estimate from today's prices, before shipping and tax. The final amount is fixed at checkout.
-      </p>
+      <p className="text-muted-foreground text-xs">{t('estimateNote')}</p>
 
       {cart.canCheckOut ? (
         <Link to="/checkout" className={cn(buttonVariants(), 'mt-4')}>
-          Check out
+          {t('checkout')}
         </Link>
       ) : (
-        <p className="text-destructive mt-4 text-sm">Remove or fix the items marked above before checking out.</p>
+        <p className="text-destructive mt-4 text-sm">{t('fixLines')}</p>
       )}
     </section>
   )

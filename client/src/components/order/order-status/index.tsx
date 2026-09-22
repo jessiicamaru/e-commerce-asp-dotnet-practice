@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/utils/shared'
 import { describeOrderStatus, orderStatusTone } from '@/utils/order'
@@ -20,10 +21,12 @@ export function OrderStatus({
   showSpinner?: boolean
   overrideMessage?: string
 }) {
+  const { t } = useTranslation('orders')
+
   return (
     <p role="status" className={cn('bg-muted flex items-center gap-2 rounded-md px-3 py-2', TONES[orderStatusTone(status)])}>
       {showSpinner && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
-      {overrideMessage ?? describeOrderStatus(status, failureReason)}
+      {overrideMessage ?? describeOrderStatus(t, status, failureReason)}
     </p>
   )
 }

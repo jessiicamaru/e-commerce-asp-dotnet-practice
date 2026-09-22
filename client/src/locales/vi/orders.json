@@ -1,0 +1,31 @@
+{
+  "title": "Đơn hàng của bạn",
+  "none": "Bạn chưa đặt đơn hàng nào.",
+  "browse": "Xem cửa hàng",
+  "loadFailed": "Không tải được đơn hàng của bạn.",
+  "itemCount_one": "{{count}} sản phẩm",
+  "itemCount_other": "{{count}} sản phẩm",
+  "newer": "Mới hơn",
+  "older": "Cũ hơn",
+  "order": {
+    "title": "Đơn hàng",
+    "thanks": "Cảm ơn bạn đã đặt hàng",
+    "back": "← Đơn hàng của bạn",
+    "placedAt": "{{id}} · đặt lúc {{at}}",
+    "notFound": "Không tìm thấy đơn hàng.",
+    "loadFailed": "Không tải được đơn hàng.",
+    "backToCart": "Về giỏ hàng",
+    "tracking": "Mã vận đơn: {{reference}}",
+    "deliveringTo": "Giao tới",
+    "taking": "Việc này lâu hơn bình thường. Đơn hàng của bạn vẫn an toàn; xem lại sau một phút."
+  },
+  "status": {
+    "submitted": "Chúng tôi đang giữ hàng và thu tiền…",
+    "paid": "Đã thanh toán. Chúng tôi sẽ sớm chuẩn bị hàng.",
+    "preparing": "Đang được chuẩn bị để gửi đi.",
+    "shipped": "Đang trên đường giao.",
+    "failedStock": "Chưa đặt được: một số sản phẩm đã hết hàng. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên.",
+    "failedPayment": "Chưa đặt được: thanh toán bị từ chối. Giỏ hàng vẫn còn nguyên, bạn có thể thử lại.",
+    "failed": "Chưa đặt được. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên."
+  }
+}

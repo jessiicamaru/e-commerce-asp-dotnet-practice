@@ -1,5 +1,6 @@
 using System.Globalization;
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Contracts.Grpc;
 using Grpc.Core;
@@ -192,7 +193,7 @@ public class CatalogPricingService(
 
         foreach (var variant in found)
         {
-            response.Variants.Add(Describe(variant));
+            response.Variants.Add(Describe(variant, request.Language));
         }
 
         return response;
@@ -234,7 +235,7 @@ public class CatalogPricingService(
 
         foreach (var variant in found)
         {
-            response.Variants.Add(Describe(variant));
+            response.Variants.Add(Describe(variant, request.Language));
         }
 
         foreach (var id in requested.Where(id => found.All(v => v.Id != id)))
@@ -245,7 +246,10 @@ public class CatalogPricingService(
         return response;
     }
 
-    private static PricedVariant Describe(ProductVariant variant) => new()
+    /// <param name="language">
+    /// Empty means the stored, default-language text - what a caller built before specs/021 gets.
+    /// </param>
+    private static PricedVariant Describe(ProductVariant variant, string language) => new()
     {
         VariantId = variant.Id.ToString(),
         ProductId = variant.ProductId.ToString(),
@@ -253,8 +257,12 @@ public class CatalogPricingService(
 
         // The PRODUCT's name: a variant is a shape of it, not a different thing. Copied onto the order
         // line, with the options, so the order still describes itself afterwards.
-        Name = variant.Product?.Name ?? string.Empty,
-        OptionSummary = variant.OptionSummary,
+        Name = variant.Product is null
+            ? string.Empty
+            : string.IsNullOrEmpty(language) ? variant.Product.Name : Localized.NameOf(variant.Product, language),
+        OptionSummary = string.IsNullOrEmpty(language)
+            ? variant.OptionSummary
+            : Localized.OptionSummaryOf(variant, language),
 
         // Invariant culture, deliberately: a server whose locale writes "9,99" would send a price the
         // caller parses as nine hundred and ninety-nine.

@@ -1,4 +1,5 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { currentLanguage } from '@/config/i18n'
 import { ApiError } from './api-error'
 
 export * from './api-error'
@@ -45,6 +46,10 @@ export function configureAuth(provider: () => string | null, refresh: () => Prom
 
 http.interceptors.request.use((config) => {
   const request = config as Config
+
+  // The interface and the product text have to agree, so every call says which language this is
+  // (specs/021). The server negotiates it the standard way and answers with Content-Language.
+  request.headers['Accept-Language'] = currentLanguage()
   const token = request.anonymous ? null : tokenProvider()
   if (token) {
     request.headers.Authorization = `Bearer ${token}`

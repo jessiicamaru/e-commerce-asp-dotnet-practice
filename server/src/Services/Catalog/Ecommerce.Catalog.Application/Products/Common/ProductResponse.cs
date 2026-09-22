@@ -53,26 +53,32 @@ public record ProductResponse(
     string? ImageUrl = null,
     bool PriceVaries = false,
     int VariantCount = 1,
-    List<VariantResponse>? Variants = null
+    List<VariantResponse>? Variants = null,
+    string Language = ""
 )
 {
     /// <summary>
     /// The one place a product becomes a response, so the image address is never forgotten by one of
     /// the three handlers that build it.
     /// </summary>
-    public static ProductResponse From(Domain.Entities.Product p) => Build(p, withVariants: false);
+    public static ProductResponse From(Domain.Entities.Product p, string language = "", string defaultLanguage = "")
+        => Build(p, withVariants: false, language, defaultLanguage);
 
     /// <summary>The product with every shape it is sold in - what the product page needs (specs/020).</summary>
-    public static ProductResponse WithVariants(Domain.Entities.Product p) => Build(p, withVariants: true);
+    public static ProductResponse WithVariants(Domain.Entities.Product p, string language = "", string defaultLanguage = "")
+        => Build(p, withVariants: true, language, defaultLanguage);
 
-    private static ProductResponse Build(Domain.Entities.Product p, bool withVariants)
+    private static ProductResponse Build(Domain.Entities.Product p, bool withVariants, string language, string defaultLanguage)
     {
+        // An empty language means "whatever is stored" - the shape every caller had before specs/021,
+        // and what a consumer with no request uses.
+        var localise = !string.IsNullOrEmpty(language);
         var active = p.Variants.Where(v => v.IsActive).ToList();
 
         return new(
             p.Id,
-            p.Name,
-            p.Description,
+            localise ? Localized.NameOf(p, language) : p.Name,
+            localise ? Localized.DescriptionOf(p, language) : p.Description,
             // The "from" price: the cheapest active variant. Falls back to the product's own column so
             // a product read without its variants loaded still reports the number it always did.
             active.Count > 0 ? active.Min(v => v.Price) : p.Price,
@@ -83,6 +89,7 @@ public record ProductResponse(
             Images.ProductImageKey.UrlFor(p),
             active.Select(v => v.Price).Distinct().Count() > 1,
             active.Count,
-            withVariants ? p.Variants.Select(VariantResponse.From).ToList() : null);
+            withVariants ? p.Variants.Select(v => VariantResponse.From(v, language)).ToList() : null,
+            localise ? Localized.LanguageOf(p, language, defaultLanguage) : string.Empty);
     }
 }
