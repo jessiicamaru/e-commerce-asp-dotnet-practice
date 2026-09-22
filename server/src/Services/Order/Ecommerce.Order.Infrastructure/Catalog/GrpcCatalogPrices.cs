@@ -38,11 +38,13 @@ public class GrpcCatalogPrices(
     private static readonly TimeSpan[] Backoff = [TimeSpan.FromMilliseconds(200), TimeSpan.FromSeconds(1)];
 
     public async Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
-        IReadOnlyCollection<Guid> productIds,
+        IReadOnlyCollection<Guid> productIds,   // variant ids since specs/020
         CancellationToken cancellationToken = default)
     {
-        var request = new GetPricesRequest();
-        request.ProductIds.AddRange(productIds.Select(id => id.ToString()));
+        // PriceVariants, not GetPrices: what is bought is a variant (specs/020). GetPrices is still
+        // there, unchanged, for an image built before variants.
+        var request = new PriceVariantsRequest();
+        request.VariantIds.AddRange(productIds.Select(id => id.ToString()));
 
         for (var attempt = 1; ; attempt++)
         {
@@ -50,7 +52,7 @@ public class GrpcCatalogPrices(
             {
                 var started = DateTime.UtcNow;
 
-                var response = await _client.GetPricesAsync(
+                var response = await _client.PriceVariantsAsync(
                     request,
                     deadline: DateTime.UtcNow.Add(Deadline),
                     cancellationToken: cancellationToken);
@@ -58,17 +60,20 @@ public class GrpcCatalogPrices(
                 // Printed so the real distribution stays visible as the system changes, rather than
                 // being guessed at the day somebody wonders whether checkout got slower.
                 _logger.LogInformation(
-                    "Priced {Count} product(s) in {Elapsed}ms.",
-                    response.Products.Count,
+                    "Priced {Count} variant(s) in {Elapsed}ms.",
+                    response.Variants.Count,
                     (int)(DateTime.UtcNow - started).TotalMilliseconds);
 
-                return response.Products.Select(p => new CatalogPrice(
-                    Guid.Parse(p.ProductId),
-                    p.Name,
+                return response.Variants.Select(v => new CatalogPrice(
+                    Guid.Parse(v.ProductId),
+                    v.Name,
                     // InvariantCulture both ends. A server whose locale writes "9,99" would
                     // otherwise be read as nine hundred and ninety-nine.
-                    decimal.Parse(p.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
-                    p.Sellable)).ToList();
+                    decimal.Parse(v.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
+                    v.Sellable,
+                    Guid.Parse(v.VariantId),
+                    v.Sku,
+                    v.OptionSummary)).ToList();
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
             {

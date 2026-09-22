@@ -2,6 +2,10 @@ export type CartLineStatus = 'Available' | 'NotForSale' | 'NoLongerAvailable' | 
 
 export interface CartLine {
   productId: string
+  /** Which shape of the product this line is (specs/020) - and how it is addressed. */
+  variantId: string
+  /** That shape in words; empty for a product sold one way. */
+  optionSummary: string
   name: string | null
   quantity: number
   unitPrice: number | null

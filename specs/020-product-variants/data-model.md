@@ -6,7 +6,7 @@
 
 | Column | Type | Null | Notes |
 | :-- | :-- | :-- | :-- |
-| `Id` | `uuid` | no | **For products that existed before this feature, equals the product's id** (research D2). For later variants it does not. Nothing may assume either. |
+| `Id` | `uuid` | no | **The FIRST variant of a product carries the product's own id** - the migration backfills it that way and `CreateProduct` keeps doing it (research D2). Later variants get fresh ids. Nothing may assume either. |
 | `ProductId` | `uuid` | no | FK → `products`, restrict |
 | `Sku` | `varchar(50)` | no | Unique across the catalogue |
 | `Price` | `decimal(18,2)` | no | What this shape costs |

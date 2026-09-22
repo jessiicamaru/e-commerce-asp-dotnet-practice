@@ -24,7 +24,7 @@ public class GrpcCatalogProducts(
     private static readonly TimeSpan Deadline = TimeSpan.FromSeconds(3);
 
     public async Task<CatalogDescription> DescribeAsync(
-        IReadOnlyCollection<Guid> productIds,
+        IReadOnlyCollection<Guid> productIds,   // sellable ids: variants (specs/020)
         CancellationToken cancellationToken = default)
     {
         if (productIds.Count == 0)
@@ -32,24 +32,26 @@ public class GrpcCatalogProducts(
             return new CatalogDescription(true, [], []);
         }
 
-        var request = new DescribeProductsRequest();
-        request.ProductIds.AddRange(productIds.Select(id => id.ToString()));
+        var request = new DescribeVariantsRequest();
+        request.VariantIds.AddRange(productIds.Select(id => id.ToString()));
 
         try
         {
-            var response = await _client.DescribeProductsAsync(
+            var response = await _client.DescribeVariantsAsync(
                 request,
                 deadline: DateTime.UtcNow.Add(Deadline),
                 cancellationToken: cancellationToken);
 
             return new CatalogDescription(
                 true,
-                response.Products.Select(p => new CatalogProduct(
-                    Guid.Parse(p.ProductId),
-                    p.Name,
-                    decimal.Parse(p.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
-                    p.Sellable)).ToList(),
-                response.MissingProductIds.Select(Guid.Parse).ToList());
+                response.Variants.Select(v => new CatalogProduct(
+                    Guid.Parse(v.ProductId),
+                    v.Name,
+                    decimal.Parse(v.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
+                    v.Sellable,
+                    Guid.Parse(v.VariantId),
+                    v.OptionSummary)).ToList(),
+                response.MissingVariantIds.Select(Guid.Parse).ToList());
         }
         catch (RpcException ex) when (ex.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded)
         {

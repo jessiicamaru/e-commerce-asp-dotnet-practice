@@ -105,6 +105,9 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<OrderCompletedConsumer>();
     x.AddConsumer<ProductCreatedConsumer>();
 
+    // A later shape of a product is a new sellable unit, and it needs somewhere to count (specs/020).
+    x.AddConsumer<ProductVariantCreatedConsumer>();
+
     // Transport-level duplicate suppression, applied to every receive endpoint. The unique
     // (OrderId, ProductId) constraint is the actual guarantee; this keeps the common case from
     // having to reach it.

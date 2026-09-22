@@ -16,6 +16,11 @@ public class StockController : ApiControllerBase
     }
 
     [AllowAnonymous]
+    /// <summary>
+    /// Stock for one sellable unit. Since specs/020 the id is a <b>variant</b> id - what a customer
+    /// actually buys. For every product that existed before variants, its id is also its only
+    /// variant's id, so an old link still works.
+    /// </summary>
     [HttpGet("{productId:guid}")]
     public async Task<IActionResult> GetByProductId(Guid productId)
     {
@@ -25,6 +30,7 @@ public class StockController : ApiControllerBase
     public record SetStockOnHandRequest(int QuantityOnHand);
 
     [Authorize(Roles = "Admin")]
+    /// <summary>Sets stock for one sellable unit; the id is a <b>variant</b> id (specs/020).</summary>
     [HttpPut("{productId:guid}")]
     public async Task<IActionResult> SetOnHand(Guid productId, [FromBody] SetStockOnHandRequest request)
     {

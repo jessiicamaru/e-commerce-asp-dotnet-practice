@@ -12,6 +12,11 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 
         builder.HasKey(x => x.Id);
 
+        // Frozen copies of what was bought (specs/020). Nullable: lines written before variants have
+        // none, and those are the product's only variant.
+        builder.Property(x => x.Sku).HasMaxLength(50);
+        builder.Property(x => x.OptionSummary).HasMaxLength(200);
+
         builder.Property(x => x.ProductName)
             .HasMaxLength(256)
             .IsRequired();

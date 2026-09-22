@@ -9,6 +9,10 @@ export interface ShippingOption {
 export interface OrderLine {
   productId: string
   productName: string
+  /** Frozen at purchase (specs/020): what was bought, in the words used then. */
+  variantId: string | null
+  sku: string | null
+  optionSummary: string | null
   quantity: number
   unitPrice: number
   totalPrice: number

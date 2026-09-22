@@ -37,11 +37,14 @@ export function CartLines({
           const problem = lineProblem(line.status)
 
           return (
-            <TableRow key={line.productId}>
+            <TableRow key={line.variantId}>
               <TableCell className="align-top">
                 <Link to={`/products/${line.productId}`} className="hover:underline">
                   {line.name ?? 'Unknown product'}
                 </Link>
+                {line.optionSummary && (
+                  <div className="text-muted-foreground text-xs">{line.optionSummary}</div>
+                )}
                 {problem && <div className="text-destructive text-xs">{problem}</div>}
               </TableCell>
               <TableCell className="align-top">{line.unitPrice === null ? '-' : money(line.unitPrice)}</TableCell>
@@ -57,7 +60,7 @@ export function CartLines({
                   onBlur={(event) => {
                     const next = Number(event.target.value)
                     if (Number.isInteger(next) && next > 0 && next !== line.quantity) {
-                      onQuantityChange(line.productId, next)
+                      onQuantityChange(line.variantId, next)
                     } else {
                       event.target.value = String(line.quantity)
                     }
@@ -66,7 +69,7 @@ export function CartLines({
               </TableCell>
               <TableCell className="align-top">{line.lineTotal === null ? '-' : money(line.lineTotal)}</TableCell>
               <TableCell className="align-top">
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => onRemove(line.productId)}>
+                <Button variant="ghost" size="sm" disabled={busy} onClick={() => onRemove(line.variantId)}>
                   Remove
                 </Button>
               </TableCell>

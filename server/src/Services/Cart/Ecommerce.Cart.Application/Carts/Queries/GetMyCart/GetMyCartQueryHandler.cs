@@ -35,10 +35,11 @@ public class GetMyCartQueryHandler(
         }
 
         var lines = cart.Lines.OrderBy(l => l.AddedAt).ToList();
+        // Described by the SELLABLE unit: a variant carries the price and the words for what it is.
         var described = await _catalog.DescribeAsync(
-            lines.Select(l => l.ProductId).Distinct().ToList(), cancellationToken);
+            lines.Select(l => l.SellableId).Distinct().ToList(), cancellationToken);
 
-        var byId = described.Products.ToDictionary(p => p.ProductId);
+        var byId = described.Products.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
         var missing = described.Missing.ToHashSet();
 
         var result = new List<CartLineResponse>();
@@ -48,24 +49,28 @@ public class GetMyCartQueryHandler(
             if (!described.Reachable)
             {
                 result.Add(new CartLineResponse(
-                    line.ProductId, null, line.Quantity, null, null, CartLineStatus.PriceUnavailable));
+                    line.ProductId, null, line.Quantity, null, null, CartLineStatus.PriceUnavailable,
+                    line.SellableId));
             }
-            else if (missing.Contains(line.ProductId) || !byId.TryGetValue(line.ProductId, out var product))
+            else if (missing.Contains(line.SellableId) || !byId.TryGetValue(line.SellableId, out var product))
             {
                 // Kept, and marked. Silently dropping it is the worst option.
                 result.Add(new CartLineResponse(
-                    line.ProductId, null, line.Quantity, null, null, CartLineStatus.NoLongerAvailable));
+                    line.ProductId, null, line.Quantity, null, null, CartLineStatus.NoLongerAvailable,
+                    line.SellableId));
             }
             else if (!product.Sellable)
             {
                 result.Add(new CartLineResponse(
-                    line.ProductId, product.Name, line.Quantity, product.Price, null, CartLineStatus.NotForSale));
+                    product.ProductId, product.Name, line.Quantity, product.Price, null, CartLineStatus.NotForSale,
+                    line.SellableId, product.OptionSummary));
             }
             else
             {
                 result.Add(new CartLineResponse(
-                    line.ProductId, product.Name, line.Quantity, product.Price,
-                    product.Price * line.Quantity, CartLineStatus.Available));
+                    product.ProductId, product.Name, line.Quantity, product.Price,
+                    product.Price * line.Quantity, CartLineStatus.Available,
+                    line.SellableId, product.OptionSummary));
             }
         }
 

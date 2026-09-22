@@ -8,7 +8,17 @@ import { useAddToCart } from '@/hooks/cart'
 import { ApiError } from '@/config/axios'
 
 /** Adding needs an account: the cart is kept per customer by the Cart service, not in the browser. */
-export function AddToCart({ productId }: { productId: string }) {
+export function AddToCart({
+  productId,
+  variantId,
+  disabledReason,
+}: {
+  productId: string
+  /** Which shape to add. Undefined only while the customer has not chosen one yet. */
+  variantId?: string
+  /** Why the button is disabled, shown next to it - "Choose an option first". */
+  disabledReason?: string
+}) {
   const { user, restoring } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -31,7 +41,7 @@ export function AddToCart({ productId }: { productId: string }) {
   }
 
   const add = () =>
-    addToCart.mutate([productId, quantity], {
+    addToCart.mutate([productId, quantity, variantId], {
       onSuccess: () =>
         toast.success(`Added ${quantity} to your cart.`, {
           action: { label: 'View cart', onClick: () => navigate('/cart') },
@@ -50,9 +60,10 @@ export function AddToCart({ productId }: { productId: string }) {
         value={quantity}
         onChange={(event) => setQuantity(Math.max(1, Math.floor(Number(event.target.value)) || 1))}
       />
-      <Button onClick={add} disabled={addToCart.isPending}>
+      <Button onClick={add} disabled={addToCart.isPending || disabledReason !== undefined}>
         {addToCart.isPending ? 'Adding…' : 'Add to cart'}
       </Button>
+      {disabledReason && <span className="text-muted-foreground text-sm">{disabledReason}</span>}
     </div>
   )
 }

@@ -25,7 +25,6 @@ namespace Ecommerce.Cart.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Ecommerce.Cart.Domain.Entities.Cart", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -48,7 +47,6 @@ namespace Ecommerce.Cart.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Ecommerce.Cart.Domain.Entities.CartLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("AddedAt")
@@ -63,10 +61,15 @@ namespace Ecommerce.Cart.Infrastructure.Persistence.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("VariantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CartId", "ProductId")
+                    b.HasIndex("CartId", "ProductId", "VariantId")
                         .IsUnique();
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("CartId", "ProductId", "VariantId"), false);
 
                     b.ToTable("cart_lines", null, t =>
                         {

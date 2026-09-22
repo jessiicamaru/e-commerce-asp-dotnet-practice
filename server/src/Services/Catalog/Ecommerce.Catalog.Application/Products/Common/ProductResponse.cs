@@ -33,6 +33,11 @@ public static class ProductAvailability
 /// figure comes from <c>GET /api/stock/{productId}</c> on Inventory, which is already public.
 /// <para>
 /// <c>ImageUrl</c> is null when there is no image, and changes whenever the image does (specs/019).
+/// </para>
+/// <para>
+/// <c>Price</c> is the CHEAPEST active variant's price since specs/020, and <c>PriceVaries</c> says
+/// whether to show it as a "from" price. <c>Variants</c> is filled on the product lookup and null on
+/// the listing, which would otherwise carry every shape of every product on the page.
 /// It is additive, so older clients ignore it.
 /// </para>
 /// </remarks>
@@ -45,21 +50,39 @@ public record ProductResponse(
     string Sku,
     Guid CategoryId,
     bool IsActive,
-    string? ImageUrl = null
+    string? ImageUrl = null,
+    bool PriceVaries = false,
+    int VariantCount = 1,
+    List<VariantResponse>? Variants = null
 )
 {
     /// <summary>
     /// The one place a product becomes a response, so the image address is never forgotten by one of
     /// the three handlers that build it.
     /// </summary>
-    public static ProductResponse From(Domain.Entities.Product p) => new(
-        p.Id,
-        p.Name,
-        p.Description,
-        p.Price,
-        ProductAvailability.From(p.Availability),
-        p.Sku,
-        p.CategoryId,
-        p.IsActive,
-        Images.ProductImageKey.UrlFor(p));
+    public static ProductResponse From(Domain.Entities.Product p) => Build(p, withVariants: false);
+
+    /// <summary>The product with every shape it is sold in - what the product page needs (specs/020).</summary>
+    public static ProductResponse WithVariants(Domain.Entities.Product p) => Build(p, withVariants: true);
+
+    private static ProductResponse Build(Domain.Entities.Product p, bool withVariants)
+    {
+        var active = p.Variants.Where(v => v.IsActive).ToList();
+
+        return new(
+            p.Id,
+            p.Name,
+            p.Description,
+            // The "from" price: the cheapest active variant. Falls back to the product's own column so
+            // a product read without its variants loaded still reports the number it always did.
+            active.Count > 0 ? active.Min(v => v.Price) : p.Price,
+            ProductAvailability.From(p.Availability),
+            p.Sku,
+            p.CategoryId,
+            p.IsActive,
+            Images.ProductImageKey.UrlFor(p),
+            active.Select(v => v.Price).Distinct().Count() > 1,
+            active.Count,
+            withVariants ? p.Variants.Select(VariantResponse.From).ToList() : null);
+    }
 }

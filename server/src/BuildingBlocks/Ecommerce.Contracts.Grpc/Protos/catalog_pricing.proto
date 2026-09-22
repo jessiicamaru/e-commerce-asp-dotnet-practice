@@ -27,6 +27,13 @@ service CatalogPricing {
   //
   // Additive: no existing method or message changes.
   rpc DescribeProducts (DescribeProductsRequest) returns (DescribeProductsResponse);
+
+  // Prices several VARIANTS at once - the sellable unit since specs/020. All-or-nothing, for the
+  // same reason as GetPrices: a sale is decided in full or not at all.
+  rpc PriceVariants (PriceVariantsRequest) returns (PriceVariantsResponse);
+
+  // Describes VARIANTS for display, answering per variant, like DescribeProducts.
+  rpc DescribeVariants (DescribeVariantsRequest) returns (DescribeVariantsResponse);
 }
 
 message DescribeProductsRequest {
@@ -81,3 +88,52 @@ message PricedProduct {
 // own source carries a comment saying nothing may sell against it. Putting it in
 // a payload whose entire purpose is deciding a sale would invite exactly that
 // misuse. Stock is answered by Inventory, under a row lock, at reservation time.
+
+// ---------------------------------------------------------------------------
+// Variants (specs/020). A variant is the sellable unit: it carries the SKU and
+// the price. These are ADDITIVE - GetPrices and DescribeProducts above are
+// unchanged, so an image built before variants keeps working, and for every
+// product that existed then, its id is also its only variant's id.
+// ---------------------------------------------------------------------------
+
+message PriceVariantsRequest {
+  // Variant ids as UUID strings. Duplicates allowed; each distinct one is answered once.
+  repeated string variant_ids = 1;
+}
+
+message PriceVariantsResponse {
+  repeated PricedVariant variants = 1;
+}
+
+message DescribeVariantsRequest {
+  repeated string variant_ids = 1;
+}
+
+message DescribeVariantsResponse {
+  // The ones that exist.
+  repeated PricedVariant variants = 1;
+
+  // The ones that do not. Reported, never an error.
+  repeated string missing_variant_ids = 2;
+}
+
+message PricedVariant {
+  string variant_id = 1;
+
+  // For context and for a link back to the product. Never what is priced.
+  string product_id = 2;
+
+  string sku = 3;
+
+  // The PRODUCT's name: a variant is a shape of it, not a different thing.
+  string name = 4;
+
+  // What the customer chose, in words: "Kit: Body only · Colour: Black". Frozen onto the order line,
+  // so an order still describes itself after the variant is renamed or withdrawn.
+  string option_summary = 5;
+
+  // A decimal, as a STRING, for the same reason as PricedProduct.price above.
+  string price = 6;
+
+  bool sellable = 7;
+}

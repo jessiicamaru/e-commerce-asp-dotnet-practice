@@ -111,3 +111,20 @@ chosen**, rather than silently defaulting to the first.
 
 **Why**: defaulting sells somebody a kit they did not choose. Where a product has exactly one variant,
 that variant is preselected, because there is no choice to make.
+
+## D11 - A service that only RELAYS a contract still has to be rebuilt (found by running it)
+
+**What happened**: with Catalog, Cart, Order and Inventory all rebuilt, a variant was bought, the order
+line correctly froze the kit at 3298 - and the **body's** stock fell instead of the kit's.
+
+The Orchestrator was not rebuilt. It consumes `OrderSubmittedEvent` and republishes its items as
+`ReserveInventoryCommand`, and its image still held the old `OrderItemDto`. Deserialising dropped
+`VariantId`, it relayed items without one, and Inventory's fallback (research D7) did exactly what it
+promises: held stock against the product id.
+
+**The rule**: when a contract gains a field, every service that **passes it along** is part of the
+change, even though its own source did not move. The saga is the relay in this system.
+
+**Why the fallback did not save it**: it cannot. "No variant named" and "a variant was named and lost
+in transit" look identical on arrival. The fallback is right for an older *publisher*; there is no
+answer for a truncating *relay* except deploying it.

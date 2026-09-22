@@ -13,8 +13,9 @@ export class Cart {
     return data
   }
 
-  static async addItem(productId: string, quantity: number): Promise<void> {
-    await http.post('/cart/items', { productId, quantity })
+  /** A variant is what is added: two shapes of one product are two lines (specs/020). */
+  static async addItem(productId: string, quantity: number, variantId?: string): Promise<void> {
+    await http.post('/cart/items', { productId, quantity, variantId })
   }
 
   static async setQuantity(productId: string, quantity: number): Promise<void> {

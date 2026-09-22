@@ -22,6 +22,14 @@ public class CartLineConfiguration : IEntityTypeConfiguration<Domain.Entities.Ca
         builder.Property(l => l.Id).ValueGeneratedNever();
 
         // One line per product per cart - adding again raises the quantity instead of duplicating.
-        builder.HasIndex(l => new { l.CartId, l.ProductId }).IsUnique();
+        // One line per SELLABLE unit (specs/020): two shapes of one product are two lines, and adding
+        // the same shape twice raises its quantity instead.
+        //
+        // NULLS NOT DISTINCT because VariantId is null on a line written before variants, and Postgres
+        // otherwise treats every null as different - which would let one product be added twice by an
+        // older client and break the very guarantee this index exists for.
+        builder.HasIndex(l => new { l.CartId, l.ProductId, l.VariantId })
+            .IsUnique()
+            .AreNullsDistinct(false);
     }
 }

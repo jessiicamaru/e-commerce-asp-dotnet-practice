@@ -30,7 +30,9 @@ public class AddToCartCommandHandler(
             var cart = await _carts.GetOrCreateForUpdateAsync(userId, ct);
             var now = DateTime.UtcNow;
 
-            var line = cart.Lines.FirstOrDefault(l => l.ProductId == request.ProductId);
+            // Lines are matched by the SELLABLE unit: two shapes of one product are two lines.
+            var sellableId = request.VariantId ?? request.ProductId;
+            var line = cart.Lines.FirstOrDefault(l => l.SellableId == sellableId);
 
             if (line is null)
             {
@@ -39,13 +41,14 @@ public class AddToCartCommandHandler(
                     Id = Guid.CreateVersion7(),
                     CartId = cart.Id,
                     ProductId = request.ProductId,
+                    VariantId = request.VariantId,
                     Quantity = request.Quantity,
                     AddedAt = now
                 });
             }
             else
             {
-                // Adding again raises the quantity - one line per product, never two.
+                // Adding again raises the quantity - one line per variant, never two.
                 line.Quantity += request.Quantity;
             }
 

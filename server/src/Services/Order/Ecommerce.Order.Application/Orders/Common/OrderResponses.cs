@@ -31,13 +31,18 @@ public record ShippingAddressResponse(
 
 public record ShippingOptionResponse(string Code, string Name);
 
+/// <param name="VariantId">Which shape of the product was bought; null on lines from before variants.</param>
+/// <param name="OptionSummary">What the customer chose, in words, as frozen at purchase (specs/020).</param>
 public record OrderItemDetailResponse(
     Guid ProductId,
     string ProductName,
     int Quantity,
     decimal UnitPrice,
     decimal TotalPrice,
-    decimal? TaxAmount = null
+    decimal? TaxAmount = null,
+    Guid? VariantId = null,
+    string? Sku = null,
+    string? OptionSummary = null
 );
 
 /// <summary>

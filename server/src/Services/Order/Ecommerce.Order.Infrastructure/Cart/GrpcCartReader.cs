@@ -58,7 +58,11 @@ public class GrpcCartReader(
                     cancellationToken: cancellationToken);
 
                 return response.Items
-                    .Select(i => new CartItem(Guid.Parse(i.ProductId), i.Quantity))
+                    .Select(i => new CartItem(
+                        Guid.Parse(i.ProductId),
+                        i.Quantity,
+                        // Empty from a Cart built before variants; CartItem.SellableId falls back.
+                        string.IsNullOrEmpty(i.VariantId) ? default : Guid.Parse(i.VariantId)))
                     .ToList();
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.Unauthenticated)
