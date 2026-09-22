@@ -36,6 +36,14 @@ export function CatalogFilters({
 }) {
   const [draft, setDraft] = useState(searchTerm)
 
+  // base-ui renders the VALUE in the trigger unless it is told the labels, which is how the two
+  // dropdowns came to read "all" and "name_asc" on screen.
+  const categoryItems: Record<string, string> = {
+    [ALL_CATEGORIES]: 'All categories',
+    ...Object.fromEntries(categories.map((category) => [category.id, category.name])),
+  }
+  const sortItems: Record<string, string> = Object.fromEntries(SORTS.map((sort) => [sort.value, sort.label]))
+
   function search(event: FormEvent) {
     event.preventDefault()
     onChange({ q: draft.trim() })
@@ -51,6 +59,7 @@ export function CatalogFilters({
         onChange={(event) => setDraft(event.target.value)}
       />
       <Select
+        items={categoryItems}
         value={categoryId || ALL_CATEGORIES}
         onValueChange={(value) => onChange({ category: !value || value === ALL_CATEGORIES ? '' : String(value) })}
       >
@@ -66,7 +75,7 @@ export function CatalogFilters({
           ))}
         </SelectContent>
       </Select>
-      <Select value={sortBy} onValueChange={(value) => value && onChange({ sort: String(value) })}>
+      <Select items={sortItems} value={sortBy} onValueChange={(value) => value && onChange({ sort: String(value) })}>
         <SelectTrigger className="w-52" aria-label="Sort">
           <SelectValue />
         </SelectTrigger>
