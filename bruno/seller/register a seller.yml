@@ -40,6 +40,18 @@ runtime:
           expect(roles).to.include("Seller");
           expect(roles).to.include("Customer");
         });
+        test("the RESPONSE says so too, so a client need not decode the token", function() {
+          expect(res.body.roles).to.be.an("array");
+          expect(res.body.roles).to.include("Seller");
+          expect(res.body.roles).to.include("Customer");
+        });
+        test("the response roles agree with the token's", function() {
+          var token = res.body.token || res.body.accessToken;
+          var part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+          var claims = JSON.parse(atob(part + "===".slice((part.length + 3) % 4)));
+          var inToken = [].concat(claims.role).sort().join(",");
+          expect(res.body.roles.slice().sort().join(",")).to.equal(inToken);
+        });
 
 settings:
   encodeUrl: true
@@ -52,3 +64,7 @@ docs: |-
   what an account **is** has the shape of the two defects this project has already fixed.
 
   A seller is also a Customer, because a seller who cannot buy is a strange kind of account.
+
+  The response carries `roles` (specs/028) so a storefront can decide what to DRAW without decoding
+  the access token. It is not a permission: it repeats what the server already put in the token,
+  which is why one test here asserts the two agree.

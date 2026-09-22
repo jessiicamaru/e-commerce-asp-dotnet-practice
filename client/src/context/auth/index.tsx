@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: response.email,
       firstName: response.firstName,
       lastName: response.lastName,
+      roles: response.roles ?? [],
     })
   }, [])
 
@@ -61,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       restoring,
+      // A seller is a customer too (specs/027), so this only ever ADDS a shop to the same session.
+      isSeller: user?.roles.includes('Seller') ?? false,
       async signIn(email, password) {
         accept(await Auth.signIn(email, password))
         // Whoever was signed in before, their cart and orders are not this person's.

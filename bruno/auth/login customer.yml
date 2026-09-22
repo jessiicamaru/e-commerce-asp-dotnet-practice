@@ -22,6 +22,11 @@ runtime:
         if (res.status === 200) bru.setVar("customerToken", res.body.token);
     - type: tests
       code: |-
+        test("the response says which roles the customer holds", function() {
+          expect(res.body.roles).to.be.an("array");
+          expect(res.body.roles).to.include("Customer");
+          expect(res.body.roles).to.not.include("Seller");
+        });
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });

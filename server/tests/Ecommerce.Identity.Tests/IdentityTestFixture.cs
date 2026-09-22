@@ -1,3 +1,4 @@
+using MassTransit;
 using Ecommerce.Application;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Entities;
@@ -45,8 +46,18 @@ public class IdentityTestFixture : IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await db.Database.MigrateAsync();
 
-        // Registration grants Customer; the service seeds it at startup, the tests seed it here.
-        db.Roles.Add(new Role { Id = Guid.CreateVersion7(), Name = RoleNames.Customer, Description = "Shopper" });
+        // EVERY role the system ships with, from the same list DataInitializer seeds from.
+        //
+        // It used to be one hand-written Customer row, and specs/027 added Seller to RoleNames
+        // without the fixture hearing about it: three tests failed with "The 'Seller' role is
+        // missing" and the next role would have done the same. Reading the list means a role added
+        // to the service is a role the tests already have.
+        db.Roles.AddRange(RoleNames.Descriptions.Select(pair => new Role
+        {
+            Id = Guid.CreateVersion7(),
+            Name = pair.Key,
+            Description = pair.Value
+        }));
         await db.SaveChangesAsync();
     }
 
@@ -75,6 +86,11 @@ public class IdentityTestFixture : IAsyncLifetime
             ExpiryMinutes = 15,
             RefreshTokenExpiryDays = 7
         }));
+        // RegisterSellerCommand publishes SellerRegisteredEvent through the outbox (specs/027), so
+        // the fixture needs a bus. In-memory: the assertions here are about what Identity STORES and
+        // returns - that Catalog hears about it is verified where Catalog consumes it.
+        services.AddMassTransitTestHarness();
+
         services.AddSingleton<ICurrentUser>(new FixedUser(userId));
         return services.BuildServiceProvider(validateScopes: true);
     }

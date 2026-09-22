@@ -60,3 +60,17 @@ export interface ProductQuery {
   searchTerm?: string
   sortBy?: SortBy
 }
+
+/**
+ * What listing a product needs (specs/028).
+ *
+ * `price` is in the shop's **default** currency - see `Product.create`. There is no seller field
+ * and there must never be one: the server takes the owner from the token.
+ */
+export interface NewProduct {
+  name: string
+  description: string | null
+  price: number
+  sku: string
+  categoryId: string
+}

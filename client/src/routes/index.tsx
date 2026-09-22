@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/auth/require-auth'
+import { RequireRole } from '@/components/auth/require-role'
 import { MainLayout } from '@/layouts/main-layout'
 import { AccountPage } from '@/pages/account'
 import { AddressesPage } from '@/pages/addresses'
@@ -9,6 +10,9 @@ import { CheckoutPage } from '@/pages/checkout'
 import { OrderPage } from '@/pages/order'
 import { OrdersPage } from '@/pages/orders'
 import { ProductPage } from '@/pages/product'
+import { ShopPage } from '@/pages/shop'
+import { SellerProductPage } from '@/pages/shop-product'
+import { NewProductPage } from '@/pages/shop-product-new'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -70,6 +74,32 @@ export function AppRoutes() {
               <RequireAuth>
                 <OrderPage />
               </RequireAuth>
+            }
+          />
+          {/* The seller's own pages (specs/028). RequireRole decides what to DRAW; the server
+              decides what to allow, and answers the token rather than the route. */}
+          <Route
+            path="/shop"
+            element={
+              <RequireRole role="Seller">
+                <ShopPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/shop/products/new"
+            element={
+              <RequireRole role="Seller">
+                <NewProductPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/shop/products/:id"
+            element={
+              <RequireRole role="Seller">
+                <SellerProductPage />
+              </RequireRole>
             }
           />
           <Route path="*" element={<p>Not found.</p>} />

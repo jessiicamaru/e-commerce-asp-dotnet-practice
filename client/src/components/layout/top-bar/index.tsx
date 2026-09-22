@@ -25,7 +25,7 @@ const link = ({ isActive }: { isActive: boolean }) =>
  */
 export function TopBar() {
   const { t } = useTranslation()
-  const { user, restoring, signOut } = useAuth()
+  const { user, restoring, isSeller, signOut } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
@@ -77,6 +77,13 @@ export function TopBar() {
               <NavLink to="/orders" end className={link}>
                 {t('nav.orders')}
               </NavLink>
+              {/* Offered only to a seller (specs/028). Hiding it is courtesy, not security: the
+                  endpoints behind it refuse anybody else on their own. */}
+              {isSeller && (
+                <NavLink to="/shop" className={link}>
+                  {t('seller:nav')}
+                </NavLink>
+              )}
               <NavLink to="/account" className={link}>
                 {user.firstName}
               </NavLink>
