@@ -28,6 +28,16 @@ public interface IProductRepository
     /// </param>
     Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "", string currency = "", string defaultCurrency = "");
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Stages a product and every shape of it for deletion (specs/024).
+    /// </summary>
+    /// <remarks>
+    /// The variants go first <b>explicitly</b>: the foreign key from a variant to its product is
+    /// <c>RESTRICT</c>, not cascade, precisely so a product cannot take its variants down by
+    /// accident - an order refers to a variant. Deleting them here is saying it on purpose.
+    /// </remarks>
+    void Remove(Product product);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -76,6 +86,9 @@ public interface IProductRepository
         CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>How many products are filed under a category - what makes deleting it refusable.</summary>
+    Task<int> CountInCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
 
     // ---- Variants (specs/020). The variant is the sellable unit: it carries the sku and the price.
 

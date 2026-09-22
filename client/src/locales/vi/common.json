@@ -33,5 +33,6 @@
     "edit": "Sửa",
     "delete": "Xoá",
     "search": "Tìm"
-  }
+  },
+  "searchPlaceholder": "Tìm máy ảnh…"
 }

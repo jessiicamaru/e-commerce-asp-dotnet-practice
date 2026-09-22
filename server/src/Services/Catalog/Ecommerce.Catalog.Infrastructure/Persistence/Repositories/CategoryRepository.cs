@@ -37,6 +37,8 @@ public class CategoryRepository(CatalogDbContext context) : ICategoryRepository
         await _context.Categories.AddAsync(category, cancellationToken);
     }
 
+    public void Remove(Category category) => _context.Categories.Remove(category);
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

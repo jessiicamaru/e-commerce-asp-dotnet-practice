@@ -21,5 +21,11 @@ public interface IStockRepository
 
     Task AddAsync(StockItem stockItem, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Drops the stock rows for sellable units the catalogue has deleted, returning how many went
+    /// (specs/024). Zero is a normal answer: a redelivery finds nothing left.
+    /// </summary>
+    Task<int> ForgetAsync(IEnumerable<Guid> productIds, CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
