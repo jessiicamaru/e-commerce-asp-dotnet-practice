@@ -73,8 +73,17 @@ public class ProductVariant
     /// Flattens options the one way, so the summary shown in a cart and the summary frozen on an order
     /// line cannot drift apart.
     /// </summary>
+    /// <remarks>
+    /// <b>Ordered by name, because nothing else orders them.</b> The rows come back in whatever order
+    /// the database yields, so the same two options could be summarised as <c>Kit: … · Colour: …</c>
+    /// once and <c>Colour: … · Kit: …</c> the next time - which is two different strings for one
+    /// variant, and this method exists precisely to stop that. Seen in the seeded catalogue, where two
+    /// shapes of the same camera listed their options in opposite orders.
+    /// </remarks>
     public static string Summarise(IEnumerable<VariantOption> options) =>
-        string.Join(" · ", options.Select(option => $"{option.Name}: {option.Value}"));
+        string.Join(" · ", options
+            .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(option => $"{option.Name}: {option.Value}"));
 }
 
 /// <summary>

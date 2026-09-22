@@ -54,7 +54,7 @@ public record VariantResponse(
                     ? Localized.OptionOf(option, language)
                     : (option.Name, option.Value);
 
-                return new VariantOptionResponse(name, value);
+                return new VariantOptionResponse(option.Id, name, value);
             }).ToList(),
             ProductAvailability.From(variant.Availability),
             variant.IsActive,
@@ -62,4 +62,10 @@ public record VariantResponse(
     }
 }
 
-public record VariantOptionResponse(string Name, string Value);
+/// <param name="Id">
+/// Which option this is, so it can be addressed. <b>Without it the translation endpoint added in
+/// specs/021 - <c>PUT /api/products/{id}/options/{optionId}/translations/{lang}</c> - cannot be
+/// called by anything outside the database</b>, because no response carried the id it needs. Found
+/// while writing the camera seeder, which is the first API client that ever tried to use it.
+/// </param>
+public record VariantOptionResponse(Guid Id, string Name, string Value);

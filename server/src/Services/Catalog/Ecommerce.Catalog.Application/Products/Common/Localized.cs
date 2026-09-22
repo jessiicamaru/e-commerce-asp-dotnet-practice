@@ -33,14 +33,21 @@ public static class Localized
     /// The variant's options in words, in this language: <c>Bộ: Chỉ thân máy</c>. Built from the option
     /// rows rather than from the stored summary, because the stored one is the default language's.
     /// </summary>
+    /// <remarks>
+    /// Ordered by the option's <b>stored</b> name, matching <see cref="ProductVariant.Summarise"/>, so
+    /// the translated summary and the frozen one list the same things in the same order. Ordering by
+    /// the translated name instead would reshuffle the summary when the language changed.
+    /// </remarks>
     public static string OptionSummaryOf(ProductVariant variant, string language) =>
         variant.Options.Count == 0
             ? string.Empty
-            : string.Join(" · ", variant.Options.Select(option =>
-            {
-                var translated = option.Translations.FirstOrDefault(t => t.Language == language);
-                return $"{translated?.Name ?? option.Name}: {translated?.Value ?? option.Value}";
-            }));
+            : string.Join(" · ", variant.Options
+                .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(option =>
+                {
+                    var translated = option.Translations.FirstOrDefault(t => t.Language == language);
+                    return $"{translated?.Name ?? option.Name}: {translated?.Value ?? option.Value}";
+                }));
 
     public static (string Name, string Value) OptionOf(VariantOption option, string language)
     {
