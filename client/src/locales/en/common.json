@@ -33,5 +33,6 @@
     "edit": "Edit",
     "delete": "Delete",
     "search": "Search"
-  }
+  },
+  "searchPlaceholder": "Search cameras…"
 }

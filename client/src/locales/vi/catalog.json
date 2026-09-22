@@ -34,11 +34,20 @@
     "added_other": "Đã thêm {{count}} vào giỏ.",
     "addFailed": "Không thêm được. Thử lại.",
     "signInToAdd": "<0>Đăng nhập</0> để thêm sản phẩm này vào giỏ.",
-    "viewCart": "Xem giỏ hàng"
+    "viewCart": "Xem giỏ hàng",
+    "soldBy": "Bán bởi {{seller}}",
+    "theShop": "Cửa hàng"
   },
   "pager": {
     "previous": "Trước",
     "next": "Sau",
     "page": "Trang {{page}} / {{total}}"
+  },
+  "hero": {
+    "eyebrow": "Máy ảnh",
+    "heading": "Chụp đúng thứ bạn nhìn thấy.",
+    "browse": "Xem tất cả sản phẩm",
+    "categories": "Danh mục",
+    "featured": "Nổi bật"
   }
 }

@@ -34,11 +34,20 @@
     "added_other": "Added {{count}} to your cart.",
     "addFailed": "It could not be added. Try again.",
     "signInToAdd": "<0>Sign in</0> to add this to your cart.",
-    "viewCart": "View cart"
+    "viewCart": "View cart",
+    "soldBy": "Sold by {{seller}}",
+    "theShop": "The shop"
   },
   "pager": {
     "previous": "Previous",
     "next": "Next",
     "page": "Page {{page}} of {{total}}"
+  },
+  "hero": {
+    "eyebrow": "Cameras",
+    "heading": "Take the picture you are looking at.",
+    "browse": "Browse everything",
+    "categories": "Categories",
+    "featured": "Featured"
   }
 }

@@ -32,34 +32,56 @@ export function ProductPage() {
 
   return (
     <section>
-      <p className="mb-4">
-        <Link to="/" className="text-sm underline">
+      <p className="mb-6">
+        <Link to="/" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
           {t('product.back')}
         </Link>
       </p>
-      <div className="grid gap-8 md:grid-cols-2">
-        <ProductImage product={product} large />
-        <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold">{product.name}</h1>
-          <p className="text-2xl font-semibold">
+
+      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+        {/* The picture gets its own panel rather than floating on the page: an object on a surface
+            reads as a photographed thing, which is most of what this redesign is doing. */}
+        <div className="bg-card ring-border/60 rounded-[2rem] p-4 ring-1">
+          <ProductImage product={product} large />
+        </div>
+
+        <div className="flex flex-col gap-4 lg:pt-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-balance">{product.name}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {t('product.soldBy', { seller: t('product.theShop') })}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-baseline gap-2">
             {!variant && product.priceVaries && (
-              <span className="text-muted-foreground text-base font-normal">{t('product.from')}</span>
+              <span className="text-muted-foreground text-sm">{t('product.from')}</span>
             )}
             <Price
               value={variant ? variant.price : product.price}
               currency={variant?.currency ?? product.currency}
+              className="text-3xl font-bold"
             />
-          </p>
-          <p className="text-muted-foreground text-xs">{t('product.taxNote')}</p>
+            <span className="text-muted-foreground text-xs">{t('product.taxNote')}</span>
+          </div>
+
           <Availability value={variant?.availability ?? product.availability} />
+
           <VariantChooser variants={sellable} selectedId={chosenVariantId} onSelect={setChosenVariantId} />
+
           <AddToCart
             productId={product.id}
             variantId={variant?.id}
             disabledReason={variant ? undefined : t('product.chooseFirst')}
           />
-          {product.description && <p className="text-sm">{product.description}</p>}
-          <p className="text-muted-foreground text-xs">{t('product.sku', { sku: variant?.sku ?? product.sku })}</p>
+
+          {product.description && (
+            <p className="text-muted-foreground text-sm leading-relaxed">{product.description}</p>
+          )}
+
+          <p className="text-muted-foreground border-t pt-4 text-xs">
+            {t('product.sku', { sku: variant?.sku ?? product.sku })}
+          </p>
         </div>
       </div>
     </section>
