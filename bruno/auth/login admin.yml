@@ -22,6 +22,19 @@ runtime:
         if (res.status === 200) bru.setVar("adminToken", res.body.token);
     - type: tests
       code: |-
+        // Said FIRST, because this one failing takes 53 other requests down with it and none of
+        // them say why. The login validator has only NotEmpty on each field (issue #43), so a 400
+        // here means the credentials never reached the request - NOT that the server refused them,
+        // which is a 401. Diagnosed the slow way once; this is so nobody does it twice.
+        test("a 400 here means the credentials never arrived, not that they were wrong", function() {
+          expect(
+            res.status,
+            "400 on login means an EMPTY email or password: the only rules on this endpoint are " +
+            "NotEmpty. adminEmail/adminPassword did not reach the request - pass them with " +
+            "--env-var, or fill them in the local environment inside Bruno. Every admin request " +
+            "after this one will fail for this reason alone."
+          ).to.not.equal(400);
+        });
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });

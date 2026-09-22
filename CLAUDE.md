@@ -140,8 +140,16 @@ and every request has tests. It runs headless too:
 
 ```bash
 cd bruno
+export ADMIN_EMAIL=... ADMIN_PASSWORD=...     # separately: see below
 npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD"
 ```
+
+⚠️ **`ADMIN_EMAIL=... npx ... "$ADMIN_EMAIL"` on one line sends an EMPTY string.** A prefix
+assignment sets the variable in the child's environment, but the shell expands `$ADMIN_EMAIL` on
+that same line *before* the assignment takes effect — so Bruno gets `--env-var "adminEmail="`, the
+login validator's only rule (`NotEmpty`) refuses it with **400**, and **54 of 91 requests go red**
+cascading from that one missing admin token. It looks exactly like a broken API. The `login admin`
+request now carries a test that says so in words when it sees a 400.
 
 **Adding or changing an endpoint means updating `bruno/` in the same change** — a new request file
 with a status test, and the gateway route it goes through. `security-checks/` holds the negative
