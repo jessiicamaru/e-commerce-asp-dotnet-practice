@@ -1,3 +1,5 @@
+import path from 'node:path'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -7,7 +9,16 @@ import { defineConfig } from 'vite'
 const gateway = process.env.GATEWAY_URL ?? 'http://localhost:5000'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  // "@/..." means src/ - the alias shadcn/ui generates imports against.
+  resolve: {
+    alias: {
+      '@': path.resolve(import.meta.dirname, './src'),
+      // shadcn/ui's base-nova components import { cn } from "cn". Mapping it here means a generated
+      // component needs no editing, so `shadcn add` stays usable.
+      cn: path.resolve(import.meta.dirname, './src/utils/shared/cn.ts'),
+    },
+  },
   server: {
     port: 5173,
     proxy: {
