@@ -60,8 +60,10 @@ format that can carry script.
 
 ## D5 - Size limit enforced twice
 
-**Decision**: `[RequestSizeLimit(2 MB + 64 KB)]` on the action, so an enormous body is refused (413)
-before it is buffered. The validator then refuses content over exactly 2 MB with a 400 that says so.
+**Decision**: `[RequestSizeLimit(2 MB + 64 KB)]` on the action, so an enormous body is refused before
+it is buffered. *Planned as 413; measured as **400*** - MVC turns the failed form read into a model
+state error (`"Request body too large. The max request body size is 2162688 bytes."`). The protection
+is what matters and it holds: a 50 MB body is answered in 0.05 s. The validator then refuses content over exactly 2 MB with a 400 that says so.
 
 **Why**: The attribute protects the server; the validator produces the message a client can act on.
 
@@ -80,13 +82,20 @@ declared type.
 
 ## D7 - Named volume needs the directory to exist in the image
 
-**Decision**: the Dockerfile creates `/app/data` owned by `$APP_UID` before switching user. Compose
-mounts a named volume `catalog_images` at `/app/data/product-images`.
+**Decision**: the Dockerfile creates `/app/data`, owned by `$APP_UID`, before switching user. Compose
+mounts the named volume `catalog_images` **at `/app/data` itself**. The store creates
+`product-images/` inside it.
 
-**Why**: the container runs as a non-root user. A named volume mounted on a path that does not exist
-in the image is created root-owned, and the service could not write to it. Docker initialises a new
-named volume from the image's directory, ownership included. Creating an empty directory in the
-shared image costs the other six services nothing.
+**Why**: the container runs as a non-root user. Docker initialises a *new* named volume from the
+image's directory, ownership included. A mount point the image does not have is created root-owned.
+
+**What happened**: the first attempt mounted the volume at `/app/data/product-images`, which is a
+path the image lacks. The volume came up root-owned, and Catalog refused to start:
+`Product images cannot be stored: '/app/data/product-images' is not a writable directory`. That was
+the D8 check doing its job. Mounting on `/app/data` gave `drwxr-xr-x app app /app/data/product-images`.
+A volume that has already been created keeps its ownership, so the empty root-owned one had to be
+removed once. Creating an empty `/app/data` in the shared image costs the other six services
+nothing.
 
 ## D8 - Startup check
 
@@ -114,6 +123,7 @@ against it.
 
 - `bruno/fixtures/`: a real 1x1 PNG;
 - a text file for the wrong-type case;
-- `too-big.png`: a PNG signature followed by 2.1 MB of zeros. Over the limit, and a few KB in git.
+- `too-big.png`: a PNG signature followed by 2 MB + 10 KB of zeros. It is over the image limit but
+  under the request ceiling, so it reaches the validator. It is a few KB in git.
 
 Requests use Bruno's `multipart-form` body with a `type: file` entry.

@@ -4,7 +4,7 @@ import { ApiError } from '../api/http'
 import { getProduct, money, type Product } from '../api/catalog'
 import { addToCart } from '../api/cart'
 import { useAuth } from '../auth/useAuth'
-import { Availability } from './CatalogPage'
+import { Availability, ProductImage } from './CatalogPage'
 
 export function ProductPage() {
   const { id = '' } = useParams()
@@ -36,9 +36,7 @@ export function ProductPage() {
         <Link to="/">← Back to the shop</Link>
       </p>
       <div className="product-layout">
-        <div className="image-placeholder large" aria-hidden="true">
-          {product.name.charAt(0)}
-        </div>
+        <ProductImage product={product} large />
         <div>
           <h1>{product.name}</h1>
           <p className="price large">{money(product.price)}</p>

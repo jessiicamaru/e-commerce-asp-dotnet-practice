@@ -82,10 +82,7 @@ export function CatalogPage() {
             {page.items.map((p) => (
               <li key={p.id} className="card">
                 <Link to={`/products/${p.id}`} className="card-link">
-                  {/* No product has an image yet - see #45. */}
-                  <div className="image-placeholder" aria-hidden="true">
-                    {p.name.charAt(0)}
-                  </div>
+                  <ProductImage product={p} />
                   <strong>{p.name}</strong>
                 </Link>
                 <span className="muted small">{categoryName(p.categoryId) ?? ''}</span>
@@ -110,6 +107,33 @@ export function CatalogPage() {
         </>
       )}
     </section>
+  )
+}
+
+/**
+ * The product's picture, or the letter tile when it has none (specs/019) - or when the picture fails to
+ * load, so a broken image never shows. Served by Catalog through the gateway, like every call.
+ */
+export function ProductImage({ product, large = false }: { product: Product; large?: boolean }) {
+  const [failed, setFailed] = useState<string | null>(null)
+  const className = large ? 'image-placeholder large' : 'image-placeholder'
+
+  if (!product.imageUrl || failed === product.imageUrl) {
+    return (
+      <div className={className} aria-hidden="true">
+        {product.name.charAt(0)}
+      </div>
+    )
+  }
+
+  return (
+    <img
+      className={large ? 'product-image large' : 'product-image'}
+      src={product.imageUrl}
+      alt={product.name}
+      loading="lazy"
+      onError={() => setFailed(product.imageUrl)}
+    />
   )
 }
 

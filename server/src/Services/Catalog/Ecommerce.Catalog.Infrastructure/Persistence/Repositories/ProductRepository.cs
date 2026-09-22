@@ -30,6 +30,19 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<int> TrySetImageAsync(
+        Guid productId,
+        DateTime? expectedUpdatedAt,
+        string? contentType,
+        DateTime? updatedAt,
+        CancellationToken cancellationToken = default) =>
+        _context.Products
+            .Where(p => p.Id == productId && p.ImageUpdatedAt == expectedUpdatedAt)
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(p => p.ImageContentType, contentType)
+                .SetProperty(p => p.ImageUpdatedAt, updatedAt)
+                .SetProperty(p => p.UpdatedAt, DateTime.UtcNow), cancellationToken);
+
     public async Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
     {
         return await _context.Products

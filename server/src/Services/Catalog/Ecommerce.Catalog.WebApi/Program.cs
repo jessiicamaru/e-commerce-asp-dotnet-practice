@@ -229,6 +229,10 @@ builder.AddObservability("catalog");
 
 var app = builder.Build();
 
+// Resolved now, not on the first upload: an image root that cannot be written stops the service here,
+// as the constitution asks of anything required, instead of answering 500 later (specs/019 D8).
+app.Services.GetRequiredService<Ecommerce.Catalog.Application.Common.Interfaces.IProductImageStore>();
+
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())

@@ -33,5 +33,5 @@ no image --PUT--> image(v1) --PUT--> image(v2) --DELETE--> no image
     +------------------- DELETE (no-op) ----------------------+
 ```
 
-Every arrow is one guarded `UPDATE` on the row. The file for a new version is written before its arrow
+Every arrow is one guarded `UPDATE` on the row (the switch). The file for a new version is written before its arrow
 is taken, and the file for the old version is deleted only after.

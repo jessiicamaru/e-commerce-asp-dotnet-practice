@@ -8,7 +8,17 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
     {
-        builder.ToTable("products").HasKey(p => p.Id);
+        builder.ToTable("products", t =>
+        {
+            // An image is a type AND a version, or neither (specs/019). Half of one would give a
+            // product an address that serves nothing.
+            t.HasCheckConstraint("CK_products_image_complete",
+                "(\"ImageContentType\" IS NULL) = (\"ImageUpdatedAt\" IS NULL)");
+
+            // Only what ImageFormat recognises by its bytes - never anything a client merely claimed.
+            t.HasCheckConstraint("CK_products_image_type",
+                "\"ImageContentType\" IS NULL OR \"ImageContentType\" IN ('image/jpeg', 'image/png', 'image/webp')");
+        }).HasKey(p => p.Id);
         builder.Property(p => p.Name).HasMaxLength(200).IsRequired();
         builder.Property(p => p.Description).HasMaxLength(2000);
         builder.Property(p => p.Sku).HasMaxLength(50).IsRequired();
@@ -25,6 +35,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         // Nullable on purpose - "never told" has to be distinguishable from "told a long time ago",
         // because the consumer's guard compares against it.
         builder.Property(p => p.AvailabilityObservedAt);
+
+        // Nullable, no default: existing rows read as "no image", and an earlier image never selects
+        // these columns - additive, as the constitution requires.
+        builder.Property(p => p.ImageContentType).HasMaxLength(20);
+        builder.Property(p => p.ImageUpdatedAt);
 
         builder.HasOne(p => p.Category)
             .WithMany()

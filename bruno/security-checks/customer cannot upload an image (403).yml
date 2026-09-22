@@ -1,0 +1,33 @@
+info:
+  name: customer cannot upload an image (403)
+  type: http
+  seq: 13
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/image"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/pixel.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

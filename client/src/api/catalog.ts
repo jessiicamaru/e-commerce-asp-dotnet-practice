@@ -12,6 +12,8 @@ export interface Product {
   sku: string
   categoryId: string
   isActive: boolean
+  /** Null when there is none. Versioned: it changes whenever the image does, so it is safe to cache (specs/019). */
+  imageUrl: string | null
 }
 
 export interface Category {

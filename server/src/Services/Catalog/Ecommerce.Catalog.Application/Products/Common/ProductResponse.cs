@@ -31,6 +31,10 @@ public static class ProductAvailability
 /// stand behind a number. Issue #4 was a <c>StockQuantity</c> on this record, assigned once at
 /// creation and never written again, shown to anonymous shoppers deciding whether to buy. A real
 /// figure comes from <c>GET /api/stock/{productId}</c> on Inventory, which is already public.
+/// <para>
+/// <c>ImageUrl</c> is null when there is no image, and changes whenever the image does (specs/019).
+/// It is additive, so older clients ignore it.
+/// </para>
 /// </remarks>
 public record ProductResponse(
     Guid Id,
@@ -40,5 +44,22 @@ public record ProductResponse(
     string Availability,
     string Sku,
     Guid CategoryId,
-    bool IsActive
-);
+    bool IsActive,
+    string? ImageUrl = null
+)
+{
+    /// <summary>
+    /// The one place a product becomes a response, so the image address is never forgotten by one of
+    /// the three handlers that build it.
+    /// </summary>
+    public static ProductResponse From(Domain.Entities.Product p) => new(
+        p.Id,
+        p.Name,
+        p.Description,
+        p.Price,
+        ProductAvailability.From(p.Availability),
+        p.Sku,
+        p.CategoryId,
+        p.IsActive,
+        Images.ProductImageKey.UrlFor(p));
+}

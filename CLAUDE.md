@@ -39,7 +39,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (46 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (8 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (21 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -112,7 +112,7 @@ so.
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
 | Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; no MassTransit |
-| Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c** |
+| Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
@@ -351,6 +351,15 @@ Three traps, each of which cost time to find:
   earlier session answered on 5061 while the Payment container sat behind it, and the symptom was an
   order failing for no visible reason. Before trusting any container result:
   `Get-Process | Where-Object { $_.ProcessName -like 'Ecommerce.*' }` must be empty.
+
+**Product images live on a volume, not in the image or the database** (specs/019). Catalog stores
+them behind `IProductImageStore`. The first implementation is a directory, `ProductImages:Root`,
+which is the `catalog_images` volume in containers. That **assumes one Catalog instance**; object
+storage is what the seam is for. The volume is mounted on `/app/data`, **not** on the subdirectory: a
+mount point the image lacks is created root-owned, and the non-root service then refuses to start
+(its startup write check). Replacing an image writes the new file, switches the row with a guarded
+`UPDATE`, and only then deletes the old one, so the row never names a missing file. The type comes
+from the file's bytes, never from its `Content-Type`, and SVG is refused.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)

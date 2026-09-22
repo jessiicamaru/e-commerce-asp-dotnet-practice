@@ -11,7 +11,7 @@ All through the gateway. The existing route `/api/products/{**catch-all}` alread
 | Stored | 200 | `ProductResponse` with the new `imageUrl` |
 | Not JPEG/PNG/WebP by content | 400 | ProblemDetails, `errors.File` |
 | Empty, or over 2 MB | 400 | ProblemDetails, `errors.File` |
-| Body far over the limit | 413 | refused before buffering |
+| Body far over the limit | 400 | `errors[""]`: "Request body too large…" - refused before buffering (a 50 MB body is answered in 0.05 s). Not 413: MVC reports a failed form read as model state, verified |
 | No `file` part | 400 | |
 | Unknown product | 404 | |
 | Changed by someone else meanwhile | 409 | |

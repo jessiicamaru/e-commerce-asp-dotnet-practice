@@ -17,15 +17,6 @@ public class GetProductByIdQueryHandler(IProductRepository productRepository)
             return null;
         }
 
-        return new ProductResponse(
-            product.Id,
-            product.Name,
-            product.Description,
-            product.Price,
-            ProductAvailability.From(product.Availability),
-            product.Sku,
-            product.CategoryId,
-            product.IsActive
-        );
+        return ProductResponse.From(product);
     }
 }

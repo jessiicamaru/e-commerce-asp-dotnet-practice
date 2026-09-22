@@ -21,16 +21,7 @@ public class GetProductsQueryHandler(IProductRepository productRepository)
             cancellationToken
         );
 
-        var dtos = items.Select(p => new ProductResponse(
-            p.Id,
-            p.Name,
-            p.Description,
-            p.Price,
-            ProductAvailability.From(p.Availability),
-            p.Sku,
-            p.CategoryId,
-            p.IsActive
-        )).ToList();
+        var dtos = items.Select(ProductResponse.From).ToList();
 
         return new PaginatedList<ProductResponse>(dtos, totalCount, request.PageNumber, request.PageSize);
     }

@@ -1,0 +1,39 @@
+info:
+  name: an upload that is not an image is 400
+  type: http
+  seq: 11
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/image"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/not-an-image.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("says which field", function() {
+          expect(res.body.errors).to.have.property("File");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  HTML with a `.png` name and an `image/png` header. The bytes decide, and they are not an image.

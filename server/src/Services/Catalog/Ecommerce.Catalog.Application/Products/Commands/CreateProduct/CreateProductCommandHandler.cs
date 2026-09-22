@@ -58,15 +58,6 @@ public class CreateProductCommandHandler(
         // Save BOTH Product entity and OutboxMessage in 1 single atomic DB transaction
         await _productRepository.SaveChangesAsync(cancellationToken);
 
-        return new ProductResponse(
-            product.Id,
-            product.Name,
-            product.Description,
-            product.Price,
-            ProductAvailability.From(product.Availability),
-            product.Sku,
-            product.CategoryId,
-            product.IsActive
-        );
+        return ProductResponse.From(product);
     }
 }
