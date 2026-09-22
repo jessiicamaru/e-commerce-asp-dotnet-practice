@@ -25,6 +25,27 @@ public class ProductTranslationConfiguration : IEntityTypeConfiguration<ProductT
     }
 }
 
+public class CategoryTranslationConfiguration : IEntityTypeConfiguration<CategoryTranslation>
+{
+    public void Configure(EntityTypeBuilder<CategoryTranslation> builder)
+    {
+        builder.ToTable("category_translations").HasKey(t => t.Id);
+        builder.Property(t => t.Id).ValueGeneratedNever();
+        builder.Property(t => t.Language).HasMaxLength(10).IsRequired();
+        builder.Property(t => t.Name).HasMaxLength(100).IsRequired();
+        builder.Property(t => t.Description).HasMaxLength(500);
+
+        // One text per language per category, for the same reason products have one: two Vietnamese
+        // names would make the answer depend on which row the query read first.
+        builder.HasIndex(t => new { t.CategoryId, t.Language }).IsUnique();
+
+        builder.HasOne<Category>()
+            .WithMany(c => c.Translations)
+            .HasForeignKey(t => t.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
 public class VariantOptionTranslationConfiguration : IEntityTypeConfiguration<VariantOptionTranslation>
 {
     public void Configure(EntityTypeBuilder<VariantOptionTranslation> builder)

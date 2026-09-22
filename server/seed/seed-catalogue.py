@@ -165,6 +165,15 @@ def seed_categories(data, token):
         categories[category["slug"]] = created["id"]
         ok(f"category {category['slug']}")
 
+    # The English names, written whether the category is new or not - an upsert, and cheap. Category
+    # text went untranslated until specs/026, and a shop reading English showed Vietnamese category
+    # names under every product card.
+    for category in data["categories"]:
+        call("PUT", f"/api/categories/{categories[category['slug']]}/translations/en", {
+            "name": category["en"]["name"],
+            "description": category["en"].get("description"),
+        }, token)
+
     return categories
 
 
