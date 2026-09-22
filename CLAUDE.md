@@ -10,8 +10,17 @@ The backend lives under [server/](server/). A deliberately thin storefront lives
 [client/](client/) (**React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui + axios + TanStack
 Query**, issue #23): it talks **only to the gateway**, through Vite's dev proxy (`/api` → `:5000`, one
 origin, no CORS), keeps the access token in memory and relies on Identity's HttpOnly refresh cookie.
-CI job `client` lints, type-checks and builds it. Its purpose is to exercise the API as a person would
-and to file what the backend lacks — not polish.
+CI job `client` lints, **tests**, type-checks and builds it. Its purpose is to exercise the API as a
+person would and to file what the backend lacks — not polish.
+
+**The storefront has unit tests since specs/028** — Vitest with jsdom and Testing Library,
+`npm test` in `client/`. Before that the client had *none*, so it could render nothing at all and
+still go green. `src/test/setup.ts` makes any test that reaches the network fail, so a suite cannot
+quietly start depending on whatever happens to be running on somebody's machine, and each test
+**pins its language** rather than inheriting `navigator.language`, which would assert English on one
+machine and Vietnamese on another. Test the logic that can be wrong — what a hook asks for, what a
+guard lets through, what a form sends, how a server refusal is shown — not that a div rendered. A
+change under `client/` ships with tests, the same as one under `server/`.
 
 **The front end has its own conventions, and they are not the backend's** — the full table is in
 [client/README.md](client/README.md). In short: a folder per thing with an `index.tsx` entry imported
@@ -79,7 +88,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (31 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (109 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
+(14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -295,7 +304,21 @@ check is `SellerOwnership`, called by all nine write handlers, and **an administ
 one of them** because moderation is the job. Catalog keeps a **read model of shop names**
 (`sellers`), fed by `SellerRegisteredEvent`/`SellerRenamedEvent`, so a page of products costs no call
 to Identity and an anonymous catalogue read still works with Identity down; renaming a shop changes
-every listing and **writes no product**. ⚠️ **Opening a write to sellers means the controller
+every listing and **writes no product**.
+
+**A seller has somewhere to click** since specs/028: `/shop` lists their own products, `/shop/products/new`
+lists a new one, and `/shop/products/:id` sets prices, uploads a photograph and withdraws it. The
+storefront learns who holds what from `roles` on the authentication response - **not** by decoding the
+access token, because a decode looks authoritative and the next rule gets written against it. ⚠️ **A
+role on the response is for DRAWING, never for deciding**: `RequireRole` hides a page, and everything
+behind it is refused by the server on its own. Two traps that page found: the create form's price is
+the **default** currency's amount whatever the seller is browsing in (`CreateProductCommand.Price`
+sets `product_variants.Price`), and a product response carries **one** currency's prices - so the
+price editor reads the product once per currency, or a seller browsing in dollars sees an empty box
+where their dong price is. A newly listed product has **no stock** (`RegisterProductCommandHandler`
+writes `QuantityOnHand = 0`) and the form says so.
+
+⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks
 unreachable - a seller was refused at the door and the code deciding whether the listing was hers
 never ran, while every unit test still passed. And `/api/sellers` needed a **gateway route**, without

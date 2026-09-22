@@ -70,3 +70,32 @@ Two rules that come out of the structure:
 - **Server state belongs to TanStack Query.** A mutation invalidates what it affected rather than
   editing a local copy, because prices, availability and totals are the server's to decide. Signing
   out clears the cache: whose cart is held has to change with who is signed in.
+
+## Tests
+
+```bash
+npm test          # once
+npm run test:watch
+```
+
+Vitest, jsdom, Testing Library. They arrived with specs/028; before that this folder had **no tests
+at all**, and CI only linted and built it — so the storefront could render nothing and still go
+green.
+
+Three rules, each of which exists because of a way a front-end suite rots:
+
+- **Nothing reaches the network.** `src/test/setup.ts` replaces `fetch` with one that throws, so a
+  test that forgot to stub a service call fails loudly instead of passing slowly against whatever
+  happens to be running on the machine. Stub the **service class** (`vi.spyOn(Product, 'mine')`),
+  not axios: the service is the seam, and a test written against axios asserts the shape of a
+  library rather than the shape of a request.
+- **Pin the language.** i18next's detector reads `navigator.language`, so a suite that does not set
+  one asserts English on one machine and Vietnamese on another. `await i18n.changeLanguage('en')` in
+  `beforeEach`, and test the Vietnamese page deliberately rather than by accident.
+- **Test what can be wrong.** What a hook asks for, what a guard lets through, what a form sends,
+  how a server refusal reaches a person. Not that a `div` rendered. The tests worth having here are
+  the ones naming a defect: *the price field must say VND while the shop is being read in USD*.
+
+A layout fault is not unit-testable and should not be faked — two of this feature's defects (an
+image drawn over the price editor, a price box empty when a price existed) were found in a
+screenshot, and that is the honest tool for them.
