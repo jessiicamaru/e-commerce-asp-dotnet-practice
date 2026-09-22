@@ -21,6 +21,10 @@ public class TotalsPersistenceTests(OrderTestFixture fixture)
 
     private async Task<OrderResponse> CheckoutToAsync(string country)
     {
+        // These amounts - 9.99 a unit, 5.00 delivery - were always dollars; nothing said so until
+        // specs/022 gave the shop currencies. Saying it here is what keeps the arithmetic below
+        // right: dong has no decimal places, so the same cart priced in dong rounds differently.
+        _fixture.Currency = new Ecommerce.Shared.Money.Currency("USD", 2);
         _fixture.CurrentUser.Id = Guid.CreateVersion7();
         _fixture.Checkout.Cart = [new CartItem(_product, 3)];
         _fixture.Checkout.Prices[_product] = new CatalogPrice(_product, "Widget", 9.99m, Sellable: true);

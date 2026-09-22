@@ -54,7 +54,7 @@ export function OrdersPage() {
                 </Link>
                 <span className="text-sm">
                   {t('itemCount', { count: order.itemCount })} ·{' '}
-                  <span className="font-semibold">{money(order.totalAmount)}</span>
+                  <span className="font-semibold">{money(order.totalAmount, order.currency)}</span>
                 </span>
                 <span className="text-muted-foreground text-xs">
                   {describeOrderStatus(t, order.status, order.failureReason)}

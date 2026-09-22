@@ -23,6 +23,10 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Domain.Entities.Pay
 
         builder.Property(x => x.FailureReason).HasMaxLength(512);
 
+        // What Amount is denominated in (specs/022). Nullable for the rows written before it, which
+        // are not given an invented currency.
+        builder.Property(x => x.Currency).HasMaxLength(3);
+
         builder.Property(x => x.Provider)
             .HasMaxLength(32)
             .HasDefaultValue(Domain.Entities.Payment.StubProvider)

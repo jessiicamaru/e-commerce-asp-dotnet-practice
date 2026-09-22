@@ -64,7 +64,7 @@ export function CartPage() {
       <p className="mt-4 text-xl font-semibold">
         {cart.estimatedTotal === null
           ? t('totalUnavailable')
-          : t('estimated', { amount: money(cart.estimatedTotal) })}
+          : t('estimated', { amount: money(cart.estimatedTotal, cart.currency) })}
       </p>
       <p className="text-muted-foreground text-xs">{t('estimateNote')}</p>
 

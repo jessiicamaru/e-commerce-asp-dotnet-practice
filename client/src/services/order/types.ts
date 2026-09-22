@@ -3,7 +3,9 @@ import type { AddressFields } from '@/services/address/types'
 export interface ShippingOption {
   code: string
   name: string
-  price: number
+  /** In `currency`. Only options priced in the request's currency are offered (specs/022). */
+  price: number | null
+  currency: string
 }
 
 export interface OrderLine {
@@ -21,6 +23,12 @@ export interface OrderLine {
 
 /** The named parts of a total (specs/012): subtotal + shipping + tax - discount = total. */
 export interface Totals {
+  /**
+   * The currency every amount here is in (specs/022). On an order it is FROZEN - an order placed in
+   * dong still reads in dong to somebody browsing in dollars, because an order is a record of a
+   * purchase. Empty on orders placed before the feature, which were in the shop's default.
+   */
+  currency: string
   subtotal: number | null
   shippingPrice: number | null
   taxTotal: number | null
@@ -55,6 +63,10 @@ export interface OrderSummary {
   itemCount: number
   createdAt: string
   updatedAt: string
+  /** Frozen at checkout (specs/022): the currency this order was charged in, not today's choice. */
+  currency: string
+  /** Frozen too (specs/021): the language its lines were worded in. */
+  language: string
 }
 
 export interface OrderPage {

@@ -40,6 +40,12 @@ public class ProductVariant
 
     public List<VariantOption> Options { get; set; } = [];
 
+    /// <summary>
+    /// What this shape costs in each currency (specs/022). A currency with no row here is one this
+    /// variant is <b>not sold in</b> - never one to convert into.
+    /// </summary>
+    public List<VariantPrice> Prices { get; set; } = [];
+
     public bool IsActive { get; set; } = true;
 
     /// <summary>

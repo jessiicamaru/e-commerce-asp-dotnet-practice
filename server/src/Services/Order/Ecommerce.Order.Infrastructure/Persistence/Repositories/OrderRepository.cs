@@ -116,12 +116,17 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.FailureReason,
                 ItemCount = x.Items.Count,
                 x.CreatedAt,
-                x.UpdatedAt
+                x.UpdatedAt,
+                // Frozen at checkout: a list of orders must label each amount with the money it was
+                // charged in, not with whatever the reader is browsing in (specs/022).
+                x.Currency,
+                x.Language
             })
             .ToListAsync(cancellationToken);
 
         var orders = rows.Select(x => new OrderSummaryResponse(
-            x.Id, x.TotalAmount, OrderMapping.Describe(x.Status), x.FailureReason, x.ItemCount, x.CreatedAt, x.UpdatedAt))
+            x.Id, x.TotalAmount, OrderMapping.Describe(x.Status), x.FailureReason, x.ItemCount, x.CreatedAt,
+            x.UpdatedAt, x.Currency ?? string.Empty, x.Language ?? string.Empty))
             .ToList();
 
         return (orders, totalCount);
@@ -165,7 +170,11 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.FailureReason,
                 ItemCount = x.Items.Count,
                 x.CreatedAt,
-                x.UpdatedAt
+                x.UpdatedAt,
+                // Frozen at checkout: a list of orders must label each amount with the money it was
+                // charged in, not with whatever the reader is browsing in (specs/022).
+                x.Currency,
+                x.Language
             })
             .ToListAsync(cancellationToken);
 
@@ -176,7 +185,9 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             x.FailureReason,
             x.ItemCount,
             x.CreatedAt,
-            x.UpdatedAt)).ToList();
+            x.UpdatedAt,
+            x.Currency ?? string.Empty,
+            x.Language ?? string.Empty)).ToList();
 
         return (orders, totalCount);
     }

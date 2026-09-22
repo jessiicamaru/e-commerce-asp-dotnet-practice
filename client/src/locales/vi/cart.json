@@ -22,6 +22,7 @@
     "notForSale": "Không còn được bán.",
     "noLongerAvailable": "Sản phẩm này đã bị gỡ khỏi cửa hàng.",
     "priceUnavailable": "Hiện chưa kiểm tra được giá.",
-    "unavailable": "Hiện không mua được sản phẩm này."
+    "unavailable": "Hiện không mua được sản phẩm này.",
+    "notSoldInCurrency": "Chưa có giá bằng tiền tệ đang chọn. Đổi tiền tệ để mua món này."
   }
 }

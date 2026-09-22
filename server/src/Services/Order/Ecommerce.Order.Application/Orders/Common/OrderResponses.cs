@@ -15,7 +15,9 @@ public record OrderSummaryResponse(
     string? FailureReason,
     int ItemCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt
+    DateTime UpdatedAt,
+    string Currency = "",
+    string Language = ""
 );
 
 public record ShippingAddressResponse(
@@ -29,7 +31,11 @@ public record ShippingAddressResponse(
     string? Phone
 );
 
-public record ShippingOptionResponse(string Code, string Name);
+/// <param name="Price">
+/// What it costs in <paramref name="Currency"/>. Only options priced in the request's currency are
+/// offered at all (specs/022 FR-008), so this is never null on an offered option.
+/// </param>
+public record ShippingOptionResponse(string Code, string Name, decimal? Price = null, string Currency = "");
 
 /// <param name="VariantId">Which shape of the product was bought; null on lines from before variants.</param>
 /// <param name="OptionSummary">What the customer chose, in words, as frozen at purchase (specs/020).</param>
@@ -49,6 +55,14 @@ public record OrderItemDetailResponse(
 /// One order in full. <paramref name="UserId"/> is echoed because it is always the caller's own, so
 /// it identifies nobody they do not already know about.
 /// </summary>
+/// <param name="Currency">
+/// The currency every amount here is in (specs/022). Empty on orders placed before that feature,
+/// which are in the shop's default - stated as empty rather than guessed at, so a reader can tell
+/// "placed in dong" from "nobody recorded it".
+/// </param>
+/// <param name="Language">
+/// The language the frozen words on the lines are in (specs/021). Empty for the same reason.
+/// </param>
 public record OrderDetailResponse(
     Guid OrderId,
     Guid UserId,
@@ -65,7 +79,9 @@ public record OrderDetailResponse(
     decimal? Subtotal = null,
     decimal? TaxTotal = null,
     decimal? DiscountTotal = null,
-    decimal? TaxRate = null
+    decimal? TaxRate = null,
+    string Currency = "",
+    string Language = ""
 );
 
 /// <summary>

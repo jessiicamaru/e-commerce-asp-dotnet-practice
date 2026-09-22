@@ -13,6 +13,12 @@
     "vi": "Tiếng Việt",
     "en": "English"
   },
+  "currency": {
+    "label": "Currency",
+    "VND": "₫ VND",
+    "USD": "$ USD",
+    "notSoldIn": "Not sold in {{currency}}"
+  },
   "loading": "Loading…",
   "notFound": "Not found.",
   "checkingSession": "Checking your session…",

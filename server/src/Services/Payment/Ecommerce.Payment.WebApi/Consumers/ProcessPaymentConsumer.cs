@@ -16,14 +16,14 @@ public class ProcessPaymentConsumer(ISender mediator, ILogger<ProcessPaymentCons
         var message = context.Message;
 
         var result = await _mediator.Send(
-            new ChargeOrderCommand(message.OrderId, message.UserId, message.Amount),
+            new ChargeOrderCommand(message.OrderId, message.UserId, message.Amount, message.Currency),
             context.CancellationToken);
 
         if (result.Approved)
         {
             _logger.LogInformation(
-                "Approved payment {PaymentId} for order {OrderId} — no money was moved.",
-                result.PaymentId, message.OrderId);
+                "Approved payment {PaymentId} for order {OrderId} of {Amount} {Currency} — no money was moved.",
+                result.PaymentId, message.OrderId, message.Amount, message.Currency);
         }
         else
         {

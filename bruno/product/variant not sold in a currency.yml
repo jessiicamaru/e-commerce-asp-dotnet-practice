@@ -1,0 +1,29 @@
+info:
+  name: variant not sold in a currency
+  type: http
+  seq: 15
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/{{productId}}/variants/{{variantId}}/prices/USD"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 204", function() {
+          expect(res.status).to.equal(204);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Taking the dollar price away stops the variant being sold in dollars. The next request checks what
+  it then looks like: no price at all, rather than the dong amount relabelled (specs/022).

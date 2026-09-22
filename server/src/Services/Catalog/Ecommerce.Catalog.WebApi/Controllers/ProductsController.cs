@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
+using Ecommerce.Catalog.Application.Products.Prices;
 using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
 using Ecommerce.Catalog.Application.Products.Variants.UpdateProductVariant;
 using Ecommerce.Catalog.Application.Products.Images;
@@ -103,9 +104,38 @@ public class ProductsController : ApiControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// What this variant costs in one currency (specs/022). An upsert, like a translation.
+    /// </summary>
+    /// <remarks>
+    /// The amount is stored exactly as given and <b>nothing converts it</b>. Setting the shop's
+    /// default currency writes the variant's own price, which is where that one number lives.
+    /// </remarks>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}/variants/{variantId:guid}/prices/{currency}")]
+    public async Task<IActionResult> SetVariantPrice(
+        Guid id, Guid variantId, string currency, [FromBody] VariantPriceRequest request)
+    {
+        return Ok(await Mediator.Send(new SetVariantPriceCommand(id, variantId, currency, request.Amount)));
+    }
+
+    /// <summary>
+    /// Stops selling this variant in this currency. It is then reported with no price rather than
+    /// with a converted one. Refused for the default currency, which has no row to remove.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id:guid}/variants/{variantId:guid}/prices/{currency}")]
+    public async Task<IActionResult> RemoveVariantPrice(Guid id, Guid variantId, string currency)
+    {
+        await Mediator.Send(new RemoveVariantPriceCommand(id, variantId, currency));
+        return NoContent();
+    }
+
     public record TranslationRequest(string Name, string? Description);
 
     public record OptionTranslationRequest(string Name, string Value);
+
+    public record VariantPriceRequest(decimal Amount);
 
     public record VariantRequest(string Sku, decimal Price, List<VariantOptionInput>? Options);
 

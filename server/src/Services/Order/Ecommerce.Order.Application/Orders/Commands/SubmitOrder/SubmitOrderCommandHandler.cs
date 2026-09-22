@@ -98,9 +98,11 @@ public class SubmitOrderCommandHandler(
             },
             // Which language the frozen words above are in (specs/021).
             Language = priced.Language,
+            // ...and which currency every amount on this order is in (specs/022).
+            Currency = priced.Currency,
             ShippingOptionCode = shipping.Code,
             ShippingOptionName = shipping.Name,
-            ShippingPrice = shipping.Price,
+            ShippingPrice = priced.DeliveryPrice,
             Subtotal = totals.Subtotal,
             TaxTotal = totals.Tax,
             DiscountTotal = totals.Discount,
@@ -121,7 +123,11 @@ public class SubmitOrderCommandHandler(
             order.UserId,
             order.TotalAmount,
             contractItems,
-            order.CreatedAt
+            order.CreatedAt,
+            // The currency travels WITH the amount, all the way to the row that records the charge
+            // (specs/022 research D4). An amount with no currency is what this feature exists to end,
+            // and the saga relays both into ProcessPaymentCommand.
+            order.Currency ?? string.Empty
         ), cancellationToken);
 
         // 3. Save BOTH Order entity and OutboxMessage in 1 single atomic DB transaction
@@ -155,11 +161,12 @@ public class SubmitOrderCommandHandler(
             itemResponses,
             OrderMapping.ToResponse(order.ShipTo),
             new ShippingOptionResponse(shipping.Code, shipping.Name),
-            shipping.Price,
+            priced.DeliveryPrice,
             totals.Subtotal,
             totals.Tax,
             totals.Discount,
-            taxRate
+            taxRate,
+            order.Currency ?? string.Empty
         );
     }
 }

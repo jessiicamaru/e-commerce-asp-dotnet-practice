@@ -40,11 +40,12 @@ public class GrpcCatalogPrices(
     public async Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
         IReadOnlyCollection<Guid> productIds,   // variant ids since specs/020
         CancellationToken cancellationToken = default,
-        string language = "")
+        string language = "",
+        string currency = "")
     {
         // PriceVariants, not GetPrices: what is bought is a variant (specs/020). GetPrices is still
         // there, unchanged, for an image built before variants.
-        var request = new PriceVariantsRequest { Language = language };
+        var request = new PriceVariantsRequest { Language = language, Currency = currency };
         request.VariantIds.AddRange(productIds.Select(id => id.ToString()));
 
         for (var attempt = 1; ; attempt++)
@@ -68,13 +69,20 @@ public class GrpcCatalogPrices(
                 return response.Variants.Select(v => new CatalogPrice(
                     Guid.Parse(v.ProductId),
                     v.Name,
-                    // InvariantCulture both ends. A server whose locale writes "9,99" would
-                    // otherwise be read as nine hundred and ninety-nine.
-                    decimal.Parse(v.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
+                    // An EMPTY price means Catalog does not sell this variant in the currency asked
+                    // for (specs/022). It is carried through as null rather than parsed as zero,
+                    // which would be a free camera, or defaulted to some other currency's amount,
+                    // which would be the wrong money.
+                    string.IsNullOrEmpty(v.Price)
+                        ? null
+                        // InvariantCulture both ends. A server whose locale writes "9,99" would
+                        // otherwise be read as nine hundred and ninety-nine.
+                        : decimal.Parse(v.Price, NumberStyles.Number, CultureInfo.InvariantCulture),
                     v.Sellable,
                     Guid.Parse(v.VariantId),
                     v.Sku,
-                    v.OptionSummary)).ToList();
+                    v.OptionSummary,
+                    v.Currency)).ToList();
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
             {

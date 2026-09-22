@@ -18,6 +18,17 @@ public class Payment
 
     public decimal Amount { get; set; }
 
+    /// <summary>
+    /// What <see cref="Amount"/> is denominated in (specs/022).
+    /// </summary>
+    /// <remarks>
+    /// Null on rows written before this column existed - deliberately, rather than backfilled with
+    /// the shop's default. Those rows recorded an amount whose currency nobody stated, and writing
+    /// one in now would turn a gap in the record into a claim about it. Reads present null as the
+    /// default and say so.
+    /// </remarks>
+    public string? Currency { get; set; }
+
     public PaymentStatus Status { get; set; }
 
     public string? FailureReason { get; set; }

@@ -1,4 +1,5 @@
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Order.Application;
@@ -83,6 +84,10 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 // a customer reads needs this; it refuses to start if the default is not one it supports.
 builder.Services.AddRequestLanguage(builder.Configuration);
 
+// Which currency the amounts in a response are in (specs/022). Separate from the language on
+// purpose: a Vietnamese person reading English still pays in dong.
+builder.Services.AddRequestCurrency(builder.Configuration);
+
 builder.Services.AddMassTransit(x =>
 {
     // The first consumers this service has ever had. Until now it published OrderSubmittedEvent and
@@ -164,6 +169,7 @@ app.UseHttpsRedirection();
 
 // Says which language the response actually came back in, after the fallback.
 app.UseRequestLanguage();
+app.UseRequestCurrency();
 
 app.UseAuthentication();
 app.UseAuthorization();

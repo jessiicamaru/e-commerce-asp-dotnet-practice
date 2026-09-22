@@ -13,6 +13,12 @@
     "vi": "Tiếng Việt",
     "en": "English"
   },
+  "currency": {
+    "label": "Tiền tệ",
+    "VND": "₫ VND",
+    "USD": "$ USD",
+    "notSoldIn": "Không bán bằng {{currency}}"
+  },
   "loading": "Đang tải…",
   "notFound": "Không tìm thấy trang.",
   "checkingSession": "Đang kiểm tra phiên đăng nhập…",

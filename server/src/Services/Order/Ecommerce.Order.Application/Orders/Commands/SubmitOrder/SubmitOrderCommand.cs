@@ -46,7 +46,8 @@ public record OrderResponse(
     decimal? Subtotal = null,
     decimal? TaxTotal = null,
     decimal? DiscountTotal = null,
-    decimal? TaxRate = null
+    decimal? TaxRate = null,
+    string Currency = ""
 );
 
 /// <summary>

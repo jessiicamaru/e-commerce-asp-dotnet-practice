@@ -1,9 +1,11 @@
 using Ecommerce.Contracts.Payment;
 using Ecommerce.Payment.Application.Common.Interfaces;
 using Ecommerce.Payment.Domain.Enums;
+using Ecommerce.Shared.Money;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Ecommerce.Payment.Application.Payments.ChargeOrder;
 
@@ -12,6 +14,7 @@ public class ChargeOrderCommandHandler(
     IPaymentRepository paymentRepository,
     IPaymentGateway gateway,
     IPublishEndpoint publishEndpoint,
+    IOptions<CurrencyOptions> money,
     ILogger<ChargeOrderCommandHandler> logger
 ) : IRequestHandler<ChargeOrderCommand, ChargeOrderResult>
 {
@@ -19,6 +22,7 @@ public class ChargeOrderCommandHandler(
     private readonly IPaymentRepository _paymentRepository = paymentRepository;
     private readonly IPaymentGateway _gateway = gateway;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly CurrencyOptions _money = money.Value;
     private readonly ILogger<ChargeOrderCommandHandler> _logger = logger;
 
     public async Task<ChargeOrderResult> Handle(ChargeOrderCommand request, CancellationToken cancellationToken)
@@ -78,6 +82,11 @@ public class ChargeOrderCommandHandler(
             OrderId = request.OrderId,
             UserId = request.UserId,
             Amount = request.Amount,
+
+            // The currency the saga handed down, resolved here and written with the amount. An empty
+            // one means the shop's default, which on the day this deploys is the truth rather than a
+            // guess: every order placed until now was priced in it (specs/022 research D4).
+            Currency = string.IsNullOrEmpty(request.Currency) ? _money.DefaultCurrency : request.Currency,
             Status = status,
             FailureReason = failureReason,
             Provider = _gateway.ProviderName,

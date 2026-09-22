@@ -2,7 +2,13 @@ export interface Product {
   id: string
   name: string
   description: string | null
-  price: number
+  /**
+   * The cheapest shape's price, in `currency` - and **null when no shape of it is sold in that
+   * currency** (specs/022). Null rather than 0, because 0 is a price and reads as a free camera.
+   */
+  price: number | null
+  /** Which currency `price` is in, as the server echoed it back. */
+  currency: string
   /** "InStock" / "OutOfStock" - a read model fed by Inventory, never a count (specs/004). */
   availability: 'InStock' | 'OutOfStock' | string
   sku: string
@@ -21,7 +27,9 @@ export interface Product {
 export interface Variant {
   id: string
   sku: string
-  price: number
+  /** Null when this shape is not sold in the currency being browsed in (specs/022). */
+  price: number | null
+  currency: string
   /** The options in words: "Kit: Body only · Colour: Black". Empty for a product sold one way. */
   optionSummary: string
   options: { name: string; value: string }[]

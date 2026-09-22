@@ -31,6 +31,10 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
                     b.Property<decimal?>("DiscountTotal")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");

@@ -3,6 +3,7 @@ using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Infrastructure.Images;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Shared.Localization;
+using Ecommerce.Shared.Money;
 using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
 using Ecommerce.Catalog.WebApi.Consumers;
 using MassTransit;
@@ -92,7 +93,31 @@ public class CatalogTestFixture : IAsyncLifetime
         // No request to negotiate from: a test says which language it is asking in.
         services.AddSingleton<TestLanguage>();
         services.AddSingleton<IRequestLanguage>(sp => sp.GetRequiredService<TestLanguage>());
-        services.Configure<LanguageOptions>(o => { });
+
+        // Stated rather than left to a default: neither options type has one any more, because the
+        // configuration binder APPENDS to a non-empty array instead of replacing it - found while
+        // adding currencies (specs/022). The translation and price validators read these lists.
+        services.AddSingleton<Microsoft.Extensions.Options.IOptions<LanguageOptions>>(
+            Microsoft.Extensions.Options.Options.Create(new LanguageOptions
+            {
+                DefaultLanguage = "vi",
+                Supported = ["vi", "en"],
+            }));
+
+        services.AddSingleton<Microsoft.Extensions.Options.IOptions<CurrencyOptions>>(
+            Microsoft.Extensions.Options.Options.Create(new CurrencyOptions
+            {
+                DefaultCurrency = "VND",
+                Supported =
+                [
+                    new() { Code = "VND", Decimals = 0 },
+                    new() { Code = "USD", Decimals = 2 },
+                ],
+            }));
+
+        // ...and a test says which currency it is asking in.
+        services.AddSingleton<TestCurrency>();
+        services.AddSingleton<IRequestCurrency>(sp => sp.GetRequiredService<TestCurrency>());
 
         // Product images (specs/019): the REAL filesystem store, in a directory of its own.
         Images = new TestImageStore(new FileSystemProductImageStore(
@@ -128,13 +153,18 @@ public class CatalogTestFixture : IAsyncLifetime
     /// A scope, optionally answering in a given language (specs/021). There is no HTTP request here,
     /// so the language is handed in rather than negotiated.
     /// </summary>
-    public AsyncServiceScope NewScope(string? language = null)
+    public AsyncServiceScope NewScope(string? language = null, Currency? currency = null)
     {
         var scope = Services.CreateAsyncScope();
 
         if (language is not null)
         {
             scope.ServiceProvider.GetRequiredService<TestLanguage>().Current = language;
+        }
+
+        if (currency is not null)
+        {
+            scope.ServiceProvider.GetRequiredService<TestCurrency>().Current = currency;
         }
 
         return scope;
@@ -189,4 +219,10 @@ public sealed class TestImageStore(FileSystemProductImageStore inner) : IProduct
 public class TestLanguage : IRequestLanguage
 {
     public string Current { get; set; } = "vi";
+}
+
+/// <summary>A settable <see cref="IRequestCurrency"/>: the tests' way of saying "asked in dong".</summary>
+public class TestCurrency : IRequestCurrency
+{
+    public Currency Current { get; set; } = new("VND", 0);
 }

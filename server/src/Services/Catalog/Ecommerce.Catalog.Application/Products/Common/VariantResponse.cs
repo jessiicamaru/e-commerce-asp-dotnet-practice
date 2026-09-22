@@ -11,25 +11,42 @@ namespace Ecommerce.Catalog.Application.Products.Common;
 /// <c>"InStock"</c> / <c>"OutOfStock"</c> for THIS variant, never a count: a read model fed by
 /// Inventory, which nothing may sell against.
 /// </param>
+/// <param name="Price">
+/// What it costs in <paramref name="Currency"/> - and <b>null when it is not sold in that
+/// currency</b> (specs/022). Null rather than <c>0</c> on purpose: zero is a price, and a shop that
+/// shows a free camera is worse than one that shows a blank.
+/// </param>
+/// <param name="Currency">Which currency <paramref name="Price"/> is in; empty when none was asked for.</param>
 public record VariantResponse(
     Guid Id,
     string Sku,
-    decimal Price,
+    decimal? Price,
     string OptionSummary,
     List<VariantOptionResponse> Options,
     string Availability,
-    bool IsActive
+    bool IsActive,
+    string Currency = ""
 )
 {
-    public static VariantResponse From(ProductVariant variant, string language = "")
+    public static VariantResponse From(
+        ProductVariant variant,
+        string language = "",
+        string currency = "",
+        string defaultCurrency = "")
     {
         // Empty language: the stored summary, which is the default language's (specs/021).
         var localise = !string.IsNullOrEmpty(language);
 
+        // Empty currency: the stored price, which is the default currency's - the shape every caller
+        // had before specs/022.
+        var price = string.IsNullOrEmpty(currency)
+            ? variant.Price
+            : Priced.Of(variant, currency, defaultCurrency);
+
         return new(
             variant.Id,
             variant.Sku,
-            variant.Price,
+            price,
             localise ? Localized.OptionSummaryOf(variant, language) : variant.OptionSummary,
             variant.Options.Select(option =>
             {
@@ -40,7 +57,8 @@ public record VariantResponse(
                 return new VariantOptionResponse(name, value);
             }).ToList(),
             ProductAvailability.From(variant.Availability),
-            variant.IsActive);
+            variant.IsActive,
+            currency);
     }
 }
 

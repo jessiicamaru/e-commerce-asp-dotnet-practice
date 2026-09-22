@@ -25,10 +25,15 @@ public interface ICatalogProducts
     /// <param name="language">
     /// Which language to describe them in (specs/021). Empty means the shop's default.
     /// </param>
+    /// <param name="currency">
+    /// Which currency to price them in (specs/022). Empty means the shop's default. A variant not
+    /// sold in it comes back with a <b>null price</b> - never a converted one.
+    /// </param>
     Task<CatalogDescription> DescribeAsync(
         IReadOnlyCollection<Guid> variantIds,
         CancellationToken cancellationToken = default,
-        string language = "");
+        string language = "",
+        string currency = "");
 }
 
 /// <param name="Reachable">
@@ -45,10 +50,11 @@ public record CatalogDescription(
 
 /// <param name="ProductId">What the line links to; a variant is a shape OF a product.</param>
 /// <param name="OptionSummary">What the customer chose, in words: <c>Kit: Body only</c>. Empty for a product sold one way.</param>
+/// <param name="Price">Null when it is not sold in the currency asked for (specs/022).</param>
 public record CatalogProduct(
     Guid ProductId,
     string Name,
-    decimal Price,
+    decimal? Price,
     bool Sellable,
     Guid VariantId = default,
     string OptionSummary = "");

@@ -95,11 +95,11 @@ export function CheckoutPage() {
 
       {quote.data && (
         <>
-          <OrderLines items={quote.data.items} />
+          <OrderLines items={quote.data.items} currency={quote.data.currency} />
           <OrderTotals totals={quote.data} shippingName={quote.data.shippingOption.name} />
           {placeOrder.isError && <ErrorMessage>{ApiError.from(placeOrder.error).message}</ErrorMessage>}
           <Button className="self-start" disabled={placeOrder.isPending} onClick={place}>
-            {placeOrder.isPending ? t('placing') : t('placeOrder', { amount: money(quote.data.totalAmount) })}
+            {placeOrder.isPending ? t('placing') : t('placeOrder', { amount: money(quote.data.totalAmount, quote.data.currency) })}
           </Button>
         </>
       )}

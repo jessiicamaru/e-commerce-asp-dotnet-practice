@@ -22,6 +22,7 @@
     "notForSale": "No longer for sale.",
     "noLongerAvailable": "This product has been removed from the shop.",
     "priceUnavailable": "The price could not be checked right now.",
-    "unavailable": "This item cannot be bought right now."
+    "unavailable": "This item cannot be bought right now.",
+    "notSoldInCurrency": "Not priced in the currency you are browsing in. Switch currency to buy it."
   }
 }

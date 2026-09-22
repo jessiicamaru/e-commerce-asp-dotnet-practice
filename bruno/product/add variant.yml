@@ -11,7 +11,7 @@ http:
     data: |-
           {
             "sku": "{{variantSku}}",
-            "price": 129.99,
+            "price": 129000,
             "options": [{ "name": "Colour", "value": "Graphite" }]
           }
   auth:
@@ -33,7 +33,7 @@ runtime:
         });
         test("the variant carries its own sku, price and options", function() {
           expect(res.body.sku).to.equal(bru.getVar("variantSku"));
-          expect(res.body.price).to.equal(129.99);
+          expect(res.body.price).to.equal(129000);
           expect(res.body.optionSummary).to.equal("Colour: Graphite");
         });
 

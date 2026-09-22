@@ -1,11 +1,14 @@
 import { useTranslation } from 'react-i18next'
+import { Price } from '@/components/shared/price'
 import type { Totals } from '@/services/order/types'
-import { money } from '@/utils/shared'
 
 /**
  * The named parts of a total, as stored on the order or quoted for it (specs/012).
  *
  * Prices exclude tax (ADR-002), which is why tax is a line of its own with the rate that produced it.
+ *
+ * Shown in the **order's own** currency (specs/022), which on a finished order is the one it was
+ * placed in - not whatever the reader happens to be browsing in now.
  */
 export function OrderTotals({ totals, shippingName }: { totals: Totals; shippingName?: string }) {
   const { t } = useTranslation('checkout')
@@ -16,7 +19,9 @@ export function OrderTotals({ totals, shippingName }: { totals: Totals; shipping
       {totals.subtotal !== null && (
         <>
           <dt>{t('totals.items')}</dt>
-          <dd className="text-right">{money(totals.subtotal)}</dd>
+          <dd className="text-right">
+            <Price value={totals.subtotal} currency={totals.currency} />
+          </dd>
         </>
       )}
       {totals.shippingPrice !== null && (
@@ -25,7 +30,9 @@ export function OrderTotals({ totals, shippingName }: { totals: Totals; shipping
             {t('totals.delivery')}
             {shippingName ? ` · ${shippingName}` : ''}
           </dt>
-          <dd className="text-right">{money(totals.shippingPrice)}</dd>
+          <dd className="text-right">
+            <Price value={totals.shippingPrice} currency={totals.currency} />
+          </dd>
         </>
       )}
       {totals.taxTotal !== null && (
@@ -34,17 +41,23 @@ export function OrderTotals({ totals, shippingName }: { totals: Totals; shipping
             {t('totals.tax')}
             {rate}
           </dt>
-          <dd className="text-right">{money(totals.taxTotal)}</dd>
+          <dd className="text-right">
+            <Price value={totals.taxTotal} currency={totals.currency} />
+          </dd>
         </>
       )}
       {!!totals.discountTotal && (
         <>
           <dt>{t('totals.discount')}</dt>
-          <dd className="text-right">-{money(totals.discountTotal)}</dd>
+          <dd className="text-right">
+            -<Price value={totals.discountTotal} currency={totals.currency} />
+          </dd>
         </>
       )}
       <dt className="border-t pt-1 font-semibold">{t('totals.total')}</dt>
-      <dd className="border-t pt-1 text-right font-semibold">{money(totals.totalAmount)}</dd>
+      <dd className="border-t pt-1 text-right font-semibold">
+        <Price value={totals.totalAmount} currency={totals.currency} />
+      </dd>
     </dl>
   )
 }

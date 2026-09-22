@@ -1,0 +1,57 @@
+info:
+  name: quote in dollars
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/quote?addressId={{addressId}}&shippingOption=standard&currency=USD"
+  params:
+    - name: addressId
+      value: "{{addressId}}"
+      type: query
+    - name: shippingOption
+      value: standard
+      type: query
+    - name: currency
+      value: USD
+      type: query
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200 or 409", function() {
+          expect([200, 409]).to.include(res.status);
+        });
+        test("a 200 is priced in dollars, and its parts still add up", function() {
+          if (res.status !== 200) return;
+          const b = res.body;
+          const cents = v => Math.round(v * 100);
+          expect(b.currency).to.equal("USD");
+          expect(b.shippingPrice).to.equal(2);
+          expect(cents(b.subtotal) + cents(b.shippingPrice) + cents(b.taxTotal) - cents(b.discountTotal)).to.equal(cents(b.totalAmount));
+        });
+        test("a 409 names the currency rather than claiming the product is withdrawn", function() {
+          if (res.status !== 409) return;
+          expect(String(res.body.detail || res.body.title)).to.contain("USD");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The same cart, quoted in dollars - and placed BEFORE `checkout`, which empties the cart when the
+  order completes. A quote after it refuses because there is nothing to quote, which is honest and
+  proves nothing about currencies.
+
+  **Either answer is correct and both are asserted**: a 200 when every variant in the cart has a
+  dollar price, and a 409 naming the currency when one does not - which is what specs/022 requires
+  instead of converting or falling back. What would be wrong is a 200 carrying dong amounts labelled
+  USD, and that is what these assertions rule out.

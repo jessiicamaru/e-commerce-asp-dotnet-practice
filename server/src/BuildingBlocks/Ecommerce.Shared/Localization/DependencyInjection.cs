@@ -34,6 +34,12 @@ public static class DependencyInjection
 
         var options = configuration.GetSection(LanguageOptions.SectionName).Get<LanguageOptions>() ?? new LanguageOptions();
 
+        if (options.Supported.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"'{LanguageOptions.SectionName}:Supported' is empty. This service could not answer in any language.");
+        }
+
         // A default that is not in the supported list would make every request fall back to a language
         // nothing can serve - worth refusing at startup rather than on every read.
         if (!options.Supported.Contains(options.DefaultLanguage, StringComparer.OrdinalIgnoreCase))

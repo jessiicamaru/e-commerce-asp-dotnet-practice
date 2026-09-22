@@ -1,0 +1,36 @@
+info:
+  name: a dong order stays in dong
+  type: http
+  seq: 7
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/{{orderId}}?currency=USD"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the order reports the currency it was PLACED in, not the one being asked in", function() {
+          expect(res.body.currency).to.equal("VND");
+        });
+        test("and the total is the one that was charged", function() {
+          expect(res.body.totalAmount).to.equal(Number(bru.getVar("orderTotal")));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  An order freezes its currency (specs/022), exactly as it freezes its prices, its words and its
+  address. Asking for it in dollars does not restate it: an order is a record of a purchase, not a
+  view of today's catalogue.

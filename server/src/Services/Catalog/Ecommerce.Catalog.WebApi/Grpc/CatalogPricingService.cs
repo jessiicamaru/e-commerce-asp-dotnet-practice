@@ -3,6 +3,8 @@ using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Contracts.Grpc;
+using Ecommerce.Shared.Money;
+using Microsoft.Extensions.Options;
 using Grpc.Core;
 
 namespace Ecommerce.Catalog.WebApi.Grpc;
@@ -25,9 +27,11 @@ namespace Ecommerce.Catalog.WebApi.Grpc;
 /// </remarks>
 public class CatalogPricingService(
     IProductRepository products,
+    IOptions<CurrencyOptions> money,
     ILogger<CatalogPricingService> logger) : CatalogPricing.CatalogPricingBase
 {
     private readonly IProductRepository _products = products;
+    private readonly CurrencyOptions _money = money.Value;
     private readonly ILogger<CatalogPricingService> _logger = logger;
 
     public override async Task<GetPricesResponse> GetPrices(
@@ -193,7 +197,7 @@ public class CatalogPricingService(
 
         foreach (var variant in found)
         {
-            response.Variants.Add(Describe(variant, request.Language));
+            response.Variants.Add(Describe(variant, request.Language, request.Currency));
         }
 
         return response;
@@ -235,7 +239,7 @@ public class CatalogPricingService(
 
         foreach (var variant in found)
         {
-            response.Variants.Add(Describe(variant, request.Language));
+            response.Variants.Add(Describe(variant, request.Language, request.Currency));
         }
 
         foreach (var id in requested.Where(id => found.All(v => v.Id != id)))
@@ -249,28 +253,43 @@ public class CatalogPricingService(
     /// <param name="language">
     /// Empty means the stored, default-language text - what a caller built before specs/021 gets.
     /// </param>
-    private static PricedVariant Describe(ProductVariant variant, string language) => new()
+    /// <param name="currency">
+    /// Empty means the shop's default currency - what a caller built before specs/022 gets.
+    /// </param>
+    private PricedVariant Describe(ProductVariant variant, string language, string currency)
     {
-        VariantId = variant.Id.ToString(),
-        ProductId = variant.ProductId.ToString(),
-        Sku = variant.Sku,
+        var wanted = string.IsNullOrEmpty(currency) ? _money.DefaultCurrency : currency;
 
-        // The PRODUCT's name: a variant is a shape of it, not a different thing. Copied onto the order
-        // line, with the options, so the order still describes itself afterwards.
-        Name = variant.Product is null
-            ? string.Empty
-            : string.IsNullOrEmpty(language) ? variant.Product.Name : Localized.NameOf(variant.Product, language),
-        OptionSummary = string.IsNullOrEmpty(language)
-            ? variant.OptionSummary
-            : Localized.OptionSummaryOf(variant, language),
+        // Null means "not sold in this currency", and it is the answer, not a gap to fill. Nothing
+        // here converts; the empty string on the wire is what null looks like in protobuf.
+        var price = Priced.Of(variant, wanted, _money.DefaultCurrency);
 
-        // Invariant culture, deliberately: a server whose locale writes "9,99" would send a price the
-        // caller parses as nine hundred and ninety-nine.
-        Price = variant.Price.ToString(CultureInfo.InvariantCulture),
+        return new()
+        {
+            VariantId = variant.Id.ToString(),
+            ProductId = variant.ProductId.ToString(),
+            Sku = variant.Sku,
 
-        // Both halves of "can this be bought": the variant and its product.
-        Sellable = variant.Sellable,
-    };
+            // The PRODUCT's name: a variant is a shape of it, not a different thing. Copied onto the
+            // order line, with the options, so the order still describes itself afterwards.
+            Name = variant.Product is null
+                ? string.Empty
+                : string.IsNullOrEmpty(language) ? variant.Product.Name : Localized.NameOf(variant.Product, language),
+            OptionSummary = string.IsNullOrEmpty(language)
+                ? variant.OptionSummary
+                : Localized.OptionSummaryOf(variant, language),
+
+            // Invariant culture, deliberately: a server whose locale writes "9,99" would send a price
+            // the caller parses as nine hundred and ninety-nine.
+            Price = price?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+
+            // All three halves of "can this be bought": the variant, its product, and whether anybody
+            // has said what it costs in the currency being asked about.
+            Sellable = variant.Sellable && price is not null,
+
+            Currency = wanted,
+        };
+    }
 
     private static List<Guid> ParseOrThrow(IEnumerable<string> raw)
     {

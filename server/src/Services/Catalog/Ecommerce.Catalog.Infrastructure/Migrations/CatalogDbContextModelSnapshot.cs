@@ -266,6 +266,33 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.ToTable("variant_option_translations", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantPrice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VariantId", "Currency")
+                        .IsUnique();
+
+                    b.ToTable("variant_prices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_variant_prices_amount", "\"Amount\" >= 0");
+                        });
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
                 {
                     b.Property<long>("Id")
@@ -491,6 +518,15 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantPrice", b =>
+                {
+                    b.HasOne("Ecommerce.Catalog.Domain.Entities.ProductVariant", null)
+                        .WithMany("Prices")
+                        .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
                 {
                     b.HasOne("MassTransit.EntityFrameworkCoreIntegration.OutboxState", null)
@@ -513,6 +549,8 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductVariant", b =>
                 {
                     b.Navigation("Options");
+
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.VariantOption", b =>

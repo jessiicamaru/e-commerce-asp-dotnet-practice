@@ -1,0 +1,42 @@
+info:
+  name: shipping options in dollars
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/shipping-options?currency=USD"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("every option offered has a price, in the currency asked for", function() {
+          expect(res.body.length).to.be.above(0);
+          res.body.forEach(function(option) {
+            expect(option.currency).to.equal("USD");
+            expect(option.price).to.not.equal(null);
+          });
+        });
+        test("and the dollar price is not the dong one relabelled", function() {
+          var standard = res.body.find(function(o) { return o.code === "standard"; });
+          expect(standard.price).to.equal(2);
+          expect(standard.price).to.not.equal(30000);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A delivery option with no price in the request's currency is NOT OFFERED (specs/022 FR-008).
+  Listing it would either show an amount in the wrong currency or none at all, and both are worse
+  than a shorter list.

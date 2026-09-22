@@ -26,7 +26,8 @@ public record CheckoutQuoteResponse(
     decimal TaxTotal,
     decimal DiscountTotal,
     decimal TaxRate,
-    decimal TotalAmount);
+    decimal TotalAmount,
+    string Currency = "");
 
 public class GetCheckoutQuoteQueryValidator : AbstractValidator<GetCheckoutQuoteQuery>
 {
@@ -53,12 +54,14 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
                 string.IsNullOrEmpty(l.Sku) ? null : l.Sku,
                 string.IsNullOrEmpty(l.OptionSummary) ? null : l.OptionSummary)).ToList(),
             new ShippingAddressResponse(a.RecipientName, a.Line1, a.Line2, a.City, a.Region, a.PostalCode, a.Country, a.Phone),
-            new ShippingOptionResponse(priced.Shipping.Code, priced.Shipping.Name),
-            priced.Shipping.Price,
+            new ShippingOptionResponse(
+                priced.Shipping.Code, priced.Shipping.Name, priced.DeliveryPrice, priced.Currency),
+            priced.DeliveryPrice,
             priced.Totals.Subtotal,
             priced.Totals.Tax,
             priced.Totals.Discount,
             priced.TaxRate,
-            priced.Totals.Total);
+            priced.Totals.Total,
+            priced.Currency);
     }
 }

@@ -66,7 +66,18 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
         {
             Status = statusCode,
             Title = title,
-            Detail = _env.IsDevelopment() ? exception.Message : "An error occurred while processing your request.",
+            // A DOMAIN refusal is written for the customer, so it is shown to the customer -
+            // "Not sold in USD: Sony A7 IV", "The cart is empty", "Delivery address not found".
+            // Hiding those behind "An error occurred" was making every carefully worded refusal in
+            // this system invisible the moment it ran outside Development, and FR-003 of specs/022
+            // (the refusal must NAME what it refused) was therefore not met in any deployed image.
+            //
+            // Anything NOT in the list above keeps its message hidden: an unmapped exception is an
+            // internal one, and its text can carry a connection string, a file path or a row that
+            // nobody outside should see.
+            Detail = ShowMessage(exception) || _env.IsDevelopment()
+                ? exception.Message
+                : "An error occurred while processing your request.",
             Instance = httpContext.Request.Path
         };
 
@@ -82,4 +93,17 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
 
         return true;
     }
+
+    /// <summary>
+    /// Whether this exception's message was written to be read by whoever made the request.
+    /// </summary>
+    /// <remarks>
+    /// Only the types this handler maps deliberately. They are thrown by handlers with a sentence a
+    /// customer can act on; everything else is internal and keeps its message to itself.
+    /// </remarks>
+    private static bool ShowMessage(Exception exception) => exception
+        is ValidationException
+        or NotFoundException
+        or ConflictException
+        or DependencyUnavailableException;
 }
