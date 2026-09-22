@@ -14,16 +14,26 @@ public class RecordStockAvailabilityCommandHandler(
 
     public async Task<bool> Handle(RecordStockAvailabilityCommand request, CancellationToken cancellationToken)
     {
-        var rowsAffected = await _productRepository.TryRecordAvailabilityAsync(
-            request.ProductId,
+        // The VARIANT is what has stock (specs/020). The product's own flag is then recomputed from
+        // its variants - it is a rollup, not a second source.
+        var rowsAffected = await _productRepository.TryRecordVariantAvailabilityAsync(
+            request.VariantId,
             request.IsAvailable,
             request.ObservedAt,
             cancellationToken);
 
         if (rowsAffected > 0)
         {
+            var variant = await _productRepository.GetVariantAsync(request.VariantId, cancellationToken);
+
+            if (variant is not null)
+            {
+                await _productRepository.RecomputeProductRollupAsync(variant.ProductId, cancellationToken);
+            }
+
             _logger.LogInformation(
-                "Product {ProductId} recorded as {Availability} (observed {ObservedAt:o}).",
+                "Variant {VariantId} of product {ProductId} recorded as {Availability} (observed {ObservedAt:o}).",
+                request.VariantId,
                 request.ProductId,
                 request.IsAvailable ? "available" : "unavailable",
                 request.ObservedAt);
@@ -33,7 +43,7 @@ public class RecordStockAvailabilityCommandHandler(
 
         // Zero rows has two causes that look identical from here and mean different things to
         // whoever reads the log. One extra read, only on this path, tells them apart.
-        var exists = await _productRepository.ExistsAsync(request.ProductId, cancellationToken);
+        var exists = await _productRepository.GetVariantAsync(request.VariantId, cancellationToken) is not null;
 
         if (exists)
         {

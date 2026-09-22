@@ -35,7 +35,15 @@ public class CartReadingService(
         // An empty cart is an answer, not an error. Order decides that checking it out is refused.
         foreach (var line in cart?.Lines.OrderBy(l => l.AddedAt) ?? Enumerable.Empty<Domain.Entities.CartLine>())
         {
-            response.Items.Add(new CartItem { ProductId = line.ProductId.ToString(), Quantity = line.Quantity });
+            response.Items.Add(new CartItem
+            {
+                ProductId = line.ProductId.ToString(),
+                Quantity = line.Quantity,
+
+                // The sellable unit, which is what Order prices and freezes (specs/020). For a line
+                // written before variants this is the product's id, which is also its only variant's.
+                VariantId = line.SellableId.ToString(),
+            });
         }
 
         return response;

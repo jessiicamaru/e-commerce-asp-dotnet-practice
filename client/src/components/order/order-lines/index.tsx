@@ -8,8 +8,14 @@ export function OrderLines({ items }: { items: OrderLine[] }) {
     <Table>
       <TableBody>
         {items.map((item) => (
-          <TableRow key={item.productId}>
-            <TableCell>{item.productName}</TableCell>
+          <TableRow key={item.variantId ?? item.productId}>
+            <TableCell>
+              {item.productName}
+              {item.optionSummary && (
+                <div className="text-muted-foreground text-xs">{item.optionSummary}</div>
+              )}
+              {item.sku && <div className="text-muted-foreground text-xs">SKU {item.sku}</div>}
+            </TableCell>
             <TableCell className="text-muted-foreground">
               {item.quantity} × {money(item.unitPrice)}
             </TableCell>

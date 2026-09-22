@@ -20,7 +20,9 @@ function useCartMutation<TArgs extends unknown[]>(action: (...args: TArgs) => Pr
 }
 
 export const useAddToCart = () =>
-  useCartMutation((productId: string, quantity: number) => Cart.addItem(productId, quantity))
+  useCartMutation((productId: string, quantity: number, variantId?: string) =>
+    Cart.addItem(productId, quantity, variantId),
+  )
 
 export const useSetCartQuantity = () =>
   useCartMutation((productId: string, quantity: number) => Cart.setQuantity(productId, quantity))

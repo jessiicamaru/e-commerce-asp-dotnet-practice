@@ -14,13 +14,17 @@ public record CartResponse(
     bool CanCheckOut,
     bool PricesAvailable);
 
+/// <param name="VariantId">Which shape of the product this line is (specs/020).</param>
+/// <param name="OptionSummary">That shape in words - empty for a product sold one way.</param>
 public record CartLineResponse(
     Guid ProductId,
     string? Name,
     int Quantity,
     decimal? UnitPrice,
     decimal? LineTotal,
-    string Status);
+    string Status,
+    Guid VariantId = default,
+    string OptionSummary = "");
 
 /// <summary>Why a line can or cannot be bought.</summary>
 public static class CartLineStatus

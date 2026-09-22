@@ -61,7 +61,13 @@ public class SubmitOrderCommandHandler(
             ProductName = line.Name,
             Quantity = line.Quantity,
             UnitPrice = line.UnitPrice,
-            TaxAmount = line.TaxAmount
+            TaxAmount = line.TaxAmount,
+
+            // Frozen with the name and the price, and for the same reason: a renamed, re-priced or
+            // withdrawn variant must not change what this order says was bought (specs/020).
+            VariantId = line.VariantId == default ? null : line.VariantId,
+            Sku = string.IsNullOrEmpty(line.Sku) ? null : line.Sku,
+            OptionSummary = string.IsNullOrEmpty(line.OptionSummary) ? null : line.OptionSummary
         }).ToList();
 
         // The grand total travels in OrderSubmittedEvent and the saga charges exactly that, so no contract
@@ -103,7 +109,10 @@ public class SubmitOrderCommandHandler(
         await _orderRepository.AddAsync(order, cancellationToken);
 
         // 2. Publish Domain Event via MassTransit Outbox (staged in DbContext ChangeTracker)
-        var contractItems = orderItems.Select(x => new OrderItemDto(x.ProductId, x.Quantity, x.UnitPrice)).ToList();
+        // The variant travels with the event: Inventory holds stock per variant (specs/020).
+        var contractItems = orderItems
+            .Select(x => new OrderItemDto(x.ProductId, x.Quantity, x.UnitPrice, x.VariantId ?? x.ProductId))
+            .ToList();
 
         await _publishEndpoint.Publish(new OrderSubmittedEvent(
             order.Id,
@@ -129,7 +138,10 @@ public class SubmitOrderCommandHandler(
             x.Quantity,
             x.UnitPrice,
             x.TotalPrice,
-            x.TaxAmount
+            x.TaxAmount,
+            x.VariantId,
+            x.Sku,
+            x.OptionSummary
         )).ToList();
 
         return new OrderResponse(

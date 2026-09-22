@@ -13,6 +13,8 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
     {
         return await _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Variants.OrderBy(v => v.CreatedAt))
+                .ThenInclude(v => v.Options)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -43,6 +45,66 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                 .SetProperty(p => p.ImageUpdatedAt, updatedAt)
                 .SetProperty(p => p.UpdatedAt, DateTime.UtcNow), cancellationToken);
 
+    public Task<ProductVariant?> GetVariantAsync(Guid variantId, CancellationToken cancellationToken = default) =>
+        _context.ProductVariants
+            .Include(v => v.Options)
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Id == variantId, cancellationToken);
+
+    public async Task<List<ProductVariant>> GetVariantsByIdsAsync(
+        IEnumerable<Guid> variantIds,
+        CancellationToken cancellationToken = default)
+    {
+        var wanted = variantIds.Distinct().ToList();
+
+        // AsNoTracking: a read that answers a question and changes nothing, on checkout's critical path.
+        return await _context.ProductVariants
+            .AsNoTracking()
+            .Include(v => v.Options)
+            .Include(v => v.Product)
+            .Where(v => wanted.Contains(v.Id))
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> VariantSkuExistsAsync(string sku, CancellationToken cancellationToken = default) =>
+        _context.ProductVariants.AnyAsync(v => v.Sku == sku, cancellationToken);
+
+    public async Task AddVariantAsync(ProductVariant variant, CancellationToken cancellationToken = default) =>
+        await _context.ProductVariants.AddAsync(variant, cancellationToken);
+
+    public Task<int> TryRecordVariantAvailabilityAsync(
+        Guid variantId,
+        bool isAvailable,
+        DateTime observedAt,
+        CancellationToken cancellationToken = default) =>
+        _context.ProductVariants
+            .Where(v => v.Id == variantId
+                && (v.AvailabilityObservedAt == null || v.AvailabilityObservedAt < observedAt)
+                && (v.Availability != isAvailable || v.AvailabilityObservedAt == null))
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(v => v.Availability, isAvailable)
+                .SetProperty(v => v.AvailabilityObservedAt, observedAt)
+                .SetProperty(v => v.UpdatedAt, DateTime.UtcNow), cancellationToken);
+
+    public async Task RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        // One statement: the product's "from" price and its availability are DERIVED, so they are
+        // computed where the variants are rather than read into memory and written back.
+        await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE products p SET
+                "Price" = COALESCE((SELECT MIN(v."Price") FROM product_variants v
+                                    WHERE v."ProductId" = p."Id" AND v."IsActive"), p."Price"),
+                "Availability" = COALESCE((SELECT BOOL_OR(v."Availability") FROM product_variants v
+                                           WHERE v."ProductId" = p."Id" AND v."IsActive"), false),
+                -- The latest thing Inventory said about any of its variants. The column stays useful
+                -- for an earlier image, and for anyone asking when this was last true.
+                "AvailabilityObservedAt" = (SELECT MAX(v."AvailabilityObservedAt") FROM product_variants v
+                                            WHERE v."ProductId" = p."Id" AND v."IsActive"),
+                "UpdatedAt" = now()
+            WHERE p."Id" = {productId}
+            """, cancellationToken);
+    }
+
     public async Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
     {
         return await _context.Products
@@ -65,7 +127,11 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         string? sortBy,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.Products.Include(p => p.Category).AsQueryable();
+        // Variants come with the page: the card shows a "from" price and whether the prices differ.
+        var query = _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Variants)
+            .AsQueryable();
 
         if (categoryId.HasValue)
         {

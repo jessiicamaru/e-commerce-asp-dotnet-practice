@@ -41,7 +41,12 @@ public static class StockAvailabilityAnnouncer
                 stock.ProductId,
                 stock.QuantityAvailable,
                 stock.QuantityAvailable > 0,
-                DateTime.UtcNow),
+                DateTime.UtcNow,
+                // The same id, said twice on purpose (specs/020). What this service counts is a
+                // SELLABLE UNIT, which since variants is a variant - and the column that holds it is
+                // still called ProductId, because renaming it would break an earlier image (research
+                // D9). Catalog needs to know which variant, so it is named as one.
+                stock.ProductId),
             cancellationToken);
     }
 

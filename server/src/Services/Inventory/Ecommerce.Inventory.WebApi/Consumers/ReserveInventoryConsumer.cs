@@ -20,7 +20,9 @@ public class ReserveInventoryConsumer(ISender mediator, ILogger<ReserveInventory
         var message = context.Message;
 
         var items = (message.Items ?? [])
-            .Select(x => new ReserveStockItem(x.ProductId, x.Quantity))
+            // What is held is the SELLABLE unit - a variant since specs/020. An event from an Order
+            // built before variants carries none, and then the product id is its only variant's id.
+            .Select(x => new ReserveStockItem(x.VariantId == Guid.Empty ? x.ProductId : x.VariantId, x.Quantity))
             .ToList();
 
         var result = await _mediator.Send(

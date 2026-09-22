@@ -1,5 +1,6 @@
 using System.Globalization;
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Contracts.Grpc;
 using Grpc.Core;
 
@@ -151,5 +152,137 @@ public class CatalogPricingService(
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Prices VARIANTS - the sellable unit since specs/020. All-or-nothing, like <see cref="GetPrices"/>.
+    /// </summary>
+    /// <remarks>
+    /// A new method rather than a changed message: an older Order image calls <c>GetPrices</c> with
+    /// product ids, and for every product that existed then that id is also its only variant's id, so
+    /// the old call keeps working untouched (research D6).
+    /// </remarks>
+    public override async Task<PriceVariantsResponse> PriceVariants(
+        PriceVariantsRequest request,
+        ServerCallContext context)
+    {
+        var requested = ParseOrThrow(request.VariantIds);
+
+        if (requested.Count == 0)
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "No variant ids were supplied."));
+        }
+
+        var found = await _products.GetVariantsByIdsAsync(requested, context.CancellationToken);
+
+        // Every requested id must resolve, or the caller gets nothing: answering for four of five
+        // would let a caller build a partial order out of a successful response.
+        if (found.Count != requested.Count)
+        {
+            var missing = requested.Where(id => found.All(v => v.Id != id)).ToList();
+
+            _logger.LogInformation(
+                "Pricing request referenced unknown variants: {Missing}", string.Join(", ", missing));
+
+            throw new RpcException(new Status(
+                StatusCode.NotFound, $"No such variant: {string.Join(", ", missing)}"));
+        }
+
+        var response = new PriceVariantsResponse();
+
+        foreach (var variant in found)
+        {
+            response.Variants.Add(Describe(variant));
+        }
+
+        return response;
+    }
+
+    /// <summary>
+    /// Describes variants for display, answering for each rather than refusing the lot - the cart's
+    /// question, as <see cref="DescribeProducts"/> is for products.
+    /// </summary>
+    public override async Task<DescribeVariantsResponse> DescribeVariants(
+        DescribeVariantsRequest request,
+        ServerCallContext context)
+    {
+        var response = new DescribeVariantsResponse();
+        var requested = new List<Guid>();
+
+        foreach (var raw in request.VariantIds)
+        {
+            if (Guid.TryParse(raw, out var id))
+            {
+                if (!requested.Contains(id))
+                {
+                    requested.Add(id);
+                }
+            }
+            else
+            {
+                // Not an id at all - it cannot exist, so it is reported as missing, not as an error.
+                response.MissingVariantIds.Add(raw);
+            }
+        }
+
+        if (requested.Count == 0)
+        {
+            return response;
+        }
+
+        var found = await _products.GetVariantsByIdsAsync(requested, context.CancellationToken);
+
+        foreach (var variant in found)
+        {
+            response.Variants.Add(Describe(variant));
+        }
+
+        foreach (var id in requested.Where(id => found.All(v => v.Id != id)))
+        {
+            response.MissingVariantIds.Add(id.ToString());
+        }
+
+        return response;
+    }
+
+    private static PricedVariant Describe(ProductVariant variant) => new()
+    {
+        VariantId = variant.Id.ToString(),
+        ProductId = variant.ProductId.ToString(),
+        Sku = variant.Sku,
+
+        // The PRODUCT's name: a variant is a shape of it, not a different thing. Copied onto the order
+        // line, with the options, so the order still describes itself afterwards.
+        Name = variant.Product?.Name ?? string.Empty,
+        OptionSummary = variant.OptionSummary,
+
+        // Invariant culture, deliberately: a server whose locale writes "9,99" would send a price the
+        // caller parses as nine hundred and ninety-nine.
+        Price = variant.Price.ToString(CultureInfo.InvariantCulture),
+
+        // Both halves of "can this be bought": the variant and its product.
+        Sellable = variant.Sellable,
+    };
+
+    private static List<Guid> ParseOrThrow(IEnumerable<string> raw)
+    {
+        var ids = new List<Guid>();
+
+        foreach (var value in raw)
+        {
+            if (!Guid.TryParse(value, out var id))
+            {
+                // A malformed id is the caller's mistake, not a missing variant. Saying so keeps
+                // NOT_FOUND meaning exactly one thing.
+                throw new RpcException(new Status(StatusCode.InvalidArgument, $"'{value}' is not a variant id."));
+            }
+
+            if (!ids.Contains(id))
+            {
+                ids.Add(id);
+            }
+        }
+
+        return ids;
     }
 }

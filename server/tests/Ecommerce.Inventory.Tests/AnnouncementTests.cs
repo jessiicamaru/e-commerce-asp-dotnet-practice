@@ -34,6 +34,22 @@ public class AnnouncementTests(InventoryTestFixture fixture)
     private readonly InventoryTestFixture _fixture = fixture;
 
     [Fact]
+    public async Task An_announcement_names_the_variant_it_is_about()
+    {
+        // What this service counts is a sellable unit, which since specs/020 is a VARIANT. The column
+        // is still called ProductId (research D9), so the announcement says the same id twice - once
+        // as the product it belongs to, once as the variant Catalog must record it against.
+        var variantId = Guid.CreateVersion7();
+
+        await SendAsync(new RegisterProductCommand(variantId, $"SKU-{variantId:N}"[..20]));
+
+        var announcement = await LastAnnouncementForAsync(variantId);
+
+        Assert.Equal(variantId, announcement.VariantId);
+        Assert.Equal(announcement.ProductId, announcement.VariantId);
+    }
+
+    [Fact]
     public async Task RegisterProduct_announces_that_the_product_is_not_yet_buyable()
     {
         var productId = Guid.CreateVersion7();

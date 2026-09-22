@@ -28,7 +28,9 @@ public static class OrderMapping
         order.CreatedAt,
         order.UpdatedAt,
         order.Items
-            .Select(x => new OrderItemDetailResponse(x.ProductId, x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, x.TaxAmount))
+            .Select(x => new OrderItemDetailResponse(
+                x.ProductId, x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, x.TaxAmount,
+                x.VariantId, x.Sku, x.OptionSummary))
             .ToList(),
         ToResponse(order.ShipTo),
         order.ShippingOptionCode is null

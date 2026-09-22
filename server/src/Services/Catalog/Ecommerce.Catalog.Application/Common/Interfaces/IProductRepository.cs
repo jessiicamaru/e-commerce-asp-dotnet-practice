@@ -72,4 +72,37 @@ public interface IProductRepository
         CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    // ---- Variants (specs/020). The variant is the sellable unit: it carries the sku and the price.
+
+    /// <summary>One variant with its options and its product, or <c>null</c>.</summary>
+    Task<ProductVariant?> GetVariantAsync(Guid variantId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Several variants at once, with their options and products - the pricing call answers a whole
+    /// order in one query. Returns only those that exist, so the caller compares counts and decides.
+    /// </summary>
+    Task<List<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<Guid> variantIds, CancellationToken cancellationToken = default);
+
+    /// <summary>Whether any variant already uses this sku. Skus are unique across the catalogue.</summary>
+    Task<bool> VariantSkuExistsAsync(string sku, CancellationToken cancellationToken = default);
+
+    Task AddVariantAsync(ProductVariant variant, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records what Inventory last said about a VARIANT, guarded exactly as the product-level version
+    /// is: a duplicate or an overtaken announcement changes zero rows, and that is a normal answer.
+    /// </summary>
+    Task<int> TryRecordVariantAvailabilityAsync(
+        Guid variantId,
+        bool isAvailable,
+        DateTime observedAt,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Brings a product's own columns back in line with its variants: <c>Price</c> becomes the cheapest
+    /// active variant's, and <c>Availability</c> becomes "any active variant is available". Both columns
+    /// stay because an earlier image reads them (specs/020 research D3).
+    /// </summary>
+    Task RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default);
 }

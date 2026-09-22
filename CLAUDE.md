@@ -49,10 +49,10 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (25 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (46 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (21 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(10 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (26 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (50 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (29 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+(14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -215,6 +215,19 @@ rounded half **away from zero** — not .NET's default banker's rounding. The sa
 `TotalAmount`, so none of this changed a contract. Someone else's address id is a 404, indistinguishable from a
 missing one.
 
+**A product is sold in VARIANTS, and the variant is what is bought** (specs/020). It carries the SKU,
+the price, the options (`Kit: Body only · Colour: Black`), its own stock and its own availability;
+the product carries the name, description, category and image, plus a "from" price that is the
+cheapest active variant. Checkout prices variants (`PriceVariants` over gRPC), the cart holds them,
+and the order line freezes the variant id, SKU, product name and option summary.
+
+⚠️ **The first variant of a product REUSES the product's id.** The migration backfilled it that way,
+and `CreateProduct` keeps doing it, because Inventory's stock rows, Cart's lines and Order's lines all
+held a product id in three other databases - reusing the id made every one of them correct with no
+cross-service backfill. Variants added later get fresh ids. **Nothing may assume either way.**
+Inventory's `ProductId` columns hold a *variant* id and were deliberately not renamed; `PUT
+/api/stock/{id}` takes a variant id. Background: [specs/020-product-variants](specs/020-product-variants/).
+
 **The quote and the order are priced by the same code.** `GET /api/orders/quote` returns what
 checkout would charge for the same choices, in the same parts, and places nothing. It and
 `SubmitOrderCommandHandler` both call `CheckoutPricing`, so what the storefront shows is what is
@@ -269,6 +282,12 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
 - The services read **`RABBITMQ_PASS`**, but `.env.example` and compose use **`RABBITMQ_PASSWORD`** — a non-default RabbitMQ password requires both names set.
 - `DB_PORT` variables (`CATALOG_DB_PORT` etc.) aren't in `.env.example`; the per-service defaults in `Program.cs` are the real source of truth.
 - Hosts are hardcoded to `localhost` in connection strings, so the services are not container-ready as written.
+- **A service that only RELAYS a contract must be rebuilt when that contract grows.** The saga
+  consumes `OrderSubmittedEvent` and republishes its items as `ReserveInventoryCommand`. When
+  `OrderItemDto` gained `VariantId` (specs/020), Catalog, Cart, Order and Inventory were rebuilt and
+  the Orchestrator was not: it deserialised the event into its older record, dropped the field, and
+  relayed items with no variant. The order froze the right variant and **the wrong variant's stock
+  moved**. No fallback can cover this - "not named" and "lost in transit" look identical on arrival.
 - **A consumer's class name becomes its queue name.** Two services with a consumer class of the same
   name bind to the *same* queue and compete for it, so a published event reaches one of them instead
   of both. This happened: Inventory and Order both had `OrderCompletedConsumer`, the order settled

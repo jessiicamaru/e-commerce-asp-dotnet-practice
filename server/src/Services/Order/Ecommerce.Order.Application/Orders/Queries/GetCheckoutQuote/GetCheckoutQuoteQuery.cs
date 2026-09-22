@@ -48,7 +48,10 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
 
         return new CheckoutQuoteResponse(
             priced.Lines.Select(l => new OrderItemResponse(
-                l.ProductId, l.Name, l.Quantity, l.UnitPrice, l.TotalPrice, l.TaxAmount)).ToList(),
+                l.ProductId, l.Name, l.Quantity, l.UnitPrice, l.TotalPrice, l.TaxAmount,
+                l.VariantId == default ? null : l.VariantId,
+                string.IsNullOrEmpty(l.Sku) ? null : l.Sku,
+                string.IsNullOrEmpty(l.OptionSummary) ? null : l.OptionSummary)).ToList(),
             new ShippingAddressResponse(a.RecipientName, a.Line1, a.Line2, a.City, a.Region, a.PostalCode, a.Country, a.Phone),
             new ShippingOptionResponse(priced.Shipping.Code, priced.Shipping.Name),
             priced.Shipping.Price,

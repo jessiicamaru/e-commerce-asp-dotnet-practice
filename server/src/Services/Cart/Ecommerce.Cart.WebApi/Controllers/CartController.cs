@@ -18,12 +18,16 @@ public class CartController : ApiControllerBase
     public async Task<IActionResult> Get()
         => Ok(await Mediator.Send(new GetMyCartQuery()));
 
-    public record AddItemRequest(Guid ProductId, int Quantity);
+    /// <param name="VariantId">
+    /// Which shape of the product (specs/020). Omitted means "the product's only variant" - what a
+    /// client built before variants sends.
+    /// </param>
+    public record AddItemRequest(Guid ProductId, int Quantity, Guid? VariantId = null);
 
     [HttpPost("items")]
     public async Task<IActionResult> Add([FromBody] AddItemRequest request)
     {
-        await Mediator.Send(new AddToCartCommand(request.ProductId, request.Quantity));
+        await Mediator.Send(new AddToCartCommand(request.ProductId, request.Quantity, request.VariantId));
         return NoContent();
     }
 

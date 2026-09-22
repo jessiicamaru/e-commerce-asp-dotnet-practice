@@ -60,12 +60,13 @@ public class CheckoutPricing(
         var shipping = _shippingOptions.Find(shippingOption)
             ?? throw new FluentValidation.ValidationException($"'{shippingOption}' is not a delivery option.");
 
-        // The price and the name come from Catalog, never from the request (issue #18).
+        // The price and the name come from Catalog, never from the request (issue #18) - and what is
+        // priced is the VARIANT the customer chose (specs/020).
         var priced = await _catalogPrices.GetPricesAsync(
-            cartItems.Select(i => i.ProductId).Distinct().ToList(),
+            cartItems.Select(i => i.SellableId).Distinct().ToList(),
             cancellationToken);
 
-        var byProduct = priced.ToDictionary(p => p.ProductId);
+        var byVariant = priced.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
 
         // "Exists but cannot be sold" is an answer, not a failure, and it is the caller's to act on.
         // 409 rather than 404, so it stays distinguishable from a product that is not there.
@@ -81,20 +82,40 @@ public class CheckoutPricing(
         // destination, is computed per line and on delivery and rounded half away from zero (ADR-002).
         var taxRate = _taxRates.RateFor(address.Country);
         var totals = OrderTotals.Compute(
-            cartItems.Select(i => (byProduct[i.ProductId].Price, i.Quantity)).ToList(), shipping.Price, taxRate);
+            cartItems.Select(i => (byVariant[i.SellableId].Price, i.Quantity)).ToList(), shipping.Price, taxRate);
 
-        var lines = cartItems.Select((item, i) => new PricedLine(
-            item.ProductId,
-            byProduct[item.ProductId].Name,
-            item.Quantity,
-            byProduct[item.ProductId].Price,
-            totals.LineTaxes[i])).ToList();
+        var lines = cartItems.Select((item, i) =>
+        {
+            var variant = byVariant[item.SellableId];
+
+            return new PricedLine(
+                // The product Catalog says it belongs to, not what the cart line happened to hold.
+                variant.ProductId == default ? item.ProductId : variant.ProductId,
+                variant.Name,
+                item.Quantity,
+                variant.Price,
+                totals.LineTaxes[i],
+                item.SellableId,
+                variant.Sku,
+                variant.OptionSummary);
+        }).ToList();
 
         return new PricedCheckout(address, shipping, lines, totals, taxRate);
     }
 }
 
-public record PricedLine(Guid ProductId, string Name, int Quantity, decimal UnitPrice, decimal TaxAmount)
+/// <param name="VariantId">The sellable unit bought (specs/020).</param>
+/// <param name="Sku">Frozen onto the order line: what the warehouse picks.</param>
+/// <param name="OptionSummary">What the customer chose, in words. Frozen too.</param>
+public record PricedLine(
+    Guid ProductId,
+    string Name,
+    int Quantity,
+    decimal UnitPrice,
+    decimal TaxAmount,
+    Guid VariantId = default,
+    string Sku = "",
+    string OptionSummary = "")
 {
     public decimal TotalPrice => UnitPrice * Quantity;
 }

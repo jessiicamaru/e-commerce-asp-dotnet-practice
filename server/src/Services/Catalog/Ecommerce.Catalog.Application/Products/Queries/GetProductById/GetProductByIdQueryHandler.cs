@@ -17,6 +17,6 @@ public class GetProductByIdQueryHandler(IProductRepository productRepository)
             return null;
         }
 
-        return ProductResponse.From(product);
+        return ProductResponse.WithVariants(product);
     }
 }

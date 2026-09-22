@@ -23,5 +23,10 @@ public record CreateProductCommand(
     string? Description,
     decimal Price,
     string Sku,
-    Guid CategoryId
+    Guid CategoryId,
+    /// <summary>
+    /// Options for the product's FIRST variant (specs/020) - a kit, a colour, a size. Omitted for a
+    /// product sold in one shape, which is what every product created before variants was.
+    /// </summary>
+    List<Variants.AddProductVariant.VariantOptionInput>? Options = null
 ) : IRequest<ProductResponse>;

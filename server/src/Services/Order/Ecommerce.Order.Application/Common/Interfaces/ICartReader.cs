@@ -20,4 +20,12 @@ public interface ICartReader
     Task<IReadOnlyList<CartItem>> GetMyCartAsync(CancellationToken cancellationToken = default);
 }
 
-public record CartItem(Guid ProductId, int Quantity);
+/// <param name="VariantId">
+/// Which shape of the product is in the cart (specs/020). A Cart built before variants sends nothing,
+/// and then the product id is the variant id.
+/// </param>
+public record CartItem(Guid ProductId, int Quantity, Guid VariantId = default)
+{
+    /// <summary>What is actually being bought.</summary>
+    public Guid SellableId => VariantId == default ? ProductId : VariantId;
+}

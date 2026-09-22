@@ -1,0 +1,35 @@
+info:
+  name: product with variants
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  auth:
+    auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("every shape is listed, and the price shown is the cheapest", function() {
+          expect(res.body.variantCount).to.be.at.least(2);
+          expect(res.body.variants.length).to.equal(res.body.variantCount);
+          const cheapest = Math.min(...res.body.variants.filter(v => v.isActive).map(v => v.price));
+          expect(res.body.price).to.equal(cheapest);
+          expect(res.body.priceVaries).to.equal(true);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  `price` is a "from" price when `priceVaries` is true. The listing carries the same two fields without
+  the variants themselves, which would otherwise put every shape of every product on the page.

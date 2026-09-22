@@ -61,7 +61,7 @@ public class AvailabilityTests(CatalogTestFixture fixture)
 
         for (var i = 0; i < 10; i++)
         {
-            if (await SendAsync(new RecordStockAvailabilityCommand(productId, true, observedAt)))
+            if (await SendAsync(new RecordStockAvailabilityCommand(productId, true, observedAt, productId)))
             {
                 recordedCount++;
             }
@@ -83,11 +83,11 @@ public class AvailabilityTests(CatalogTestFixture fixture)
         var older = new DateTime(2026, 9, 17, 10, 0, 5, DateTimeKind.Utc);
 
         // The newer observation says the product is gone.
-        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, false, newer)));
+        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, false, newer, productId)));
 
         // An older one, overtaken in flight, says it is available. It must lose — otherwise the
         // listing offers goods that are gone, which is the expensive direction of this bug.
-        Assert.False(await SendAsync(new RecordStockAvailabilityCommand(productId, true, older)));
+        Assert.False(await SendAsync(new RecordStockAvailabilityCommand(productId, true, older, productId)));
 
         var product = await ReadAsync(productId);
 
@@ -104,8 +104,8 @@ public class AvailabilityTests(CatalogTestFixture fixture)
         var first = new DateTime(2026, 9, 17, 11, 0, 0, DateTimeKind.Utc);
         var second = first.AddSeconds(3);
 
-        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, true, first)));
-        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, false, second)));
+        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, true, first, productId)));
+        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, false, second, productId)));
 
         var product = await ReadAsync(productId);
 
@@ -118,8 +118,10 @@ public class AvailabilityTests(CatalogTestFixture fixture)
     {
         // No exception, and no claim to have recorded anything. Throwing would make the broker
         // redeliver a message about a product that is never going to appear.
+        var nobody = Guid.CreateVersion7();
+
         Assert.False(await SendAsync(
-            new RecordStockAvailabilityCommand(Guid.CreateVersion7(), true, DateTime.UtcNow)));
+            new RecordStockAvailabilityCommand(nobody, true, DateTime.UtcNow, nobody)));
     }
 
     [Fact]
@@ -179,13 +181,28 @@ public class AvailabilityTests(CatalogTestFixture fixture)
         await using var scope = _fixture.NewScope();
         var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
 
+        var sku = $"SKU{productId:N}"[..20];
+
         context.Products.Add(new Product
         {
             Id = productId,
             Name = $"Product {productId:N}"[..20],
             Price = 19.99m,
-            Sku = $"SKU{productId:N}"[..20],
-            CategoryId = categoryId
+            Sku = sku,
+            CategoryId = categoryId,
+
+            // One variant, carrying the product's own id - what the migration backfills for every
+            // product that existed before variants (specs/020 research D2). Availability lives here
+            // now; the product's flag is a rollup of it.
+            Variants =
+            [
+                new ProductVariant
+                {
+                    Id = productId,
+                    Sku = sku,
+                    Price = 19.99m,
+                }
+            ]
         });
 
         await context.SaveChangesAsync();

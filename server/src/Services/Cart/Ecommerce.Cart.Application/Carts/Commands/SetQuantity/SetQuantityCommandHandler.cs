@@ -22,7 +22,7 @@ public class SetQuantityCommandHandler(
         await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
             var cart = await _carts.GetForUpdateAsync(userId, ct);
-            var line = cart?.Lines.FirstOrDefault(l => l.ProductId == request.ProductId);
+            var line = cart?.Lines.FirstOrDefault(l => l.SellableId == request.ProductId);
 
             if (line is null)
             {

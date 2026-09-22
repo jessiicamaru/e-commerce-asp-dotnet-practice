@@ -25,11 +25,19 @@ public class StockAvailabilityChangedConsumer(
 
     public async Task Consume(ConsumeContext<StockAvailabilityChangedEvent> context)
     {
+        // An announcement from an Inventory built before variants carries no VariantId. For every
+        // product that existed then, its id IS its only variant's id, so the product id is the right
+        // fallback rather than a guess (specs/020 research D2, D7).
+        var variantId = context.Message.VariantId == Guid.Empty
+            ? context.Message.ProductId
+            : context.Message.VariantId;
+
         var recorded = await _mediator.Send(
             new RecordStockAvailabilityCommand(
                 context.Message.ProductId,
                 context.Message.IsAvailable,
-                context.Message.ObservedAt),
+                context.Message.ObservedAt,
+                variantId),
             context.CancellationToken);
 
         if (!recorded)

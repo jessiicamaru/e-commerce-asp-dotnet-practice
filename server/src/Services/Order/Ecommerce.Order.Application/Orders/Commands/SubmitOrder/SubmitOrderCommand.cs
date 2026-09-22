@@ -27,7 +27,10 @@ public record OrderItemResponse(
     int Quantity,
     decimal UnitPrice,
     decimal TotalPrice,
-    decimal? TaxAmount = null
+    decimal? TaxAmount = null,
+    Guid? VariantId = null,
+    string? Sku = null,
+    string? OptionSummary = null
 );
 
 public record OrderResponse(

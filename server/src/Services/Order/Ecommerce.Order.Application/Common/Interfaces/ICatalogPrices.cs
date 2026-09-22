@@ -34,8 +34,12 @@ public interface ICatalogPrices
     /// does not exist" and "I could not find out whether it exists" are different facts, and a
     /// customer told the first when the second is true goes and checks a catalogue that is fine.
     /// </exception>
+    /// <summary>
+    /// Prices the SELLABLE units being bought - variants since specs/020. All-or-nothing: an unknown
+    /// one refuses the whole order rather than pricing the rest.
+    /// </summary>
     Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
-        IReadOnlyCollection<Guid> productIds,
+        IReadOnlyCollection<Guid> variantIds,
         CancellationToken cancellationToken = default);
 }
 
@@ -45,4 +49,13 @@ public interface ICatalogPrices
 /// <param name="Sellable">
 /// Whether it can be bought at all. Not a failure — an answer. The caller decides.
 /// </param>
-public record CatalogPrice(Guid ProductId, string Name, decimal Price, bool Sellable);
+/// <param name="ProductId">What the variant is a shape of - copied onto the line for links and reports.</param>
+/// <param name="VariantId">The sellable unit. For a product that existed before variants, the same id.</param>
+public record CatalogPrice(
+    Guid ProductId,
+    string Name,
+    decimal Price,
+    bool Sellable,
+    Guid VariantId = default,
+    string Sku = "",
+    string OptionSummary = "");

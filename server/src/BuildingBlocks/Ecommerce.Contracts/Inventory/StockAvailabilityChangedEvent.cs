@@ -20,9 +20,16 @@ namespace Ecommerce.Contracts.Inventory;
 /// consumer discard an announcement that a newer one has overtaken: the broker preserves order only
 /// in the absence of redelivery, and redelivery is normal operation.
 /// </param>
+/// <param name="VariantId">
+/// The sellable unit this is about (specs/020). Stock is counted per variant, so availability is too:
+/// a black body can be in stock while a silver kit is not. <b>Additive</b> - an older publisher sends
+/// nothing and the consumer falls back to <paramref name="ProductId"/>, which for every product that
+/// existed before variants IS its only variant's id (specs/020 research D2).
+/// </param>
 public record StockAvailabilityChangedEvent(
     Guid ProductId,
     int QuantityAvailable,
     bool IsAvailable,
-    DateTime ObservedAt
+    DateTime ObservedAt,
+    Guid VariantId = default
 );

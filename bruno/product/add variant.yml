@@ -1,0 +1,48 @@
+info:
+  name: add variant
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products/{{productId}}/variants"
+  body:
+    type: json
+    data: |-
+          {
+            "sku": "{{variantSku}}",
+            "price": 129.99,
+            "options": [{ "name": "Colour", "value": "Graphite" }]
+          }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("variantSku", "BRUNO-VAR-" + Date.now());
+    - type: after-response
+      code: |-
+        if (res.body && res.body.id) bru.setVar("variantId", res.body.id);
+    - type: tests
+      code: |-
+        test("status 201", function() {
+          expect(res.status).to.equal(201);
+        });
+        test("the variant carries its own sku, price and options", function() {
+          expect(res.body.sku).to.equal(bru.getVar("variantSku"));
+          expect(res.body.price).to.equal(129.99);
+          expect(res.body.optionSummary).to.equal("Colour: Graphite");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Another shape of the product: its own sku, its own price, its own stock (specs/020). The variant is
+  what a customer actually buys - the product carries the name and the pictures.

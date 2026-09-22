@@ -5,6 +5,10 @@ public class Product
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
+    /// <summary>
+    /// The CHEAPEST active variant's price - a "from" price (specs/020). Maintained by Catalog whenever
+    /// a variant is added, re-priced or deactivated. The column stays because an earlier image reads it.
+    /// </summary>
     public decimal Price { get; set; }
 
     /// <summary>
@@ -36,7 +40,15 @@ public class Product
     /// </summary>
     public DateTime? AvailabilityObservedAt { get; set; }
 
+    /// <summary>
+    /// Kept after variants (specs/020): it holds the FIRST variant's sku. An earlier Catalog image
+    /// selects this column on every query, so dropping it would take that image down rather than
+    /// restore it. The sku that matters is the variant's.
+    /// </summary>
     public string Sku { get; set; } = string.Empty;
+
+    /// <summary>The shapes this product is sold in. At least one; the variant is what is bought.</summary>
+    public List<ProductVariant> Variants { get; set; } = [];
     public Guid CategoryId { get; set; }
     public Category? Category { get; set; }
     public bool IsActive { get; set; } = true;

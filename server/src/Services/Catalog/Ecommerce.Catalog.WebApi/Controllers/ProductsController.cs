@@ -1,4 +1,6 @@
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
+using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
+using Ecommerce.Catalog.Application.Products.Variants.UpdateProductVariant;
 using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Products.Images.GetProductImage;
 using Ecommerce.Catalog.Application.Products.Images.RemoveProductImage;
@@ -41,6 +43,35 @@ public class ProductsController : ApiControllerBase
         var result = await Mediator.Send(command);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Another shape of the product: a kit, a colour, a size (specs/020). The variant carries the sku
+    /// and the price, and it is what a customer actually buys.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{id:guid}/variants")]
+    public async Task<IActionResult> AddVariant(Guid id, [FromBody] VariantRequest request)
+    {
+        var variant = await Mediator.Send(new AddProductVariantCommand(
+            id, request.Sku, request.Price, request.Options ?? []));
+
+        return CreatedAtAction(nameof(GetById), new { id }, variant);
+    }
+
+    /// <summary>
+    /// Re-prices a variant or takes it off sale. The sku and the options never change: an order froze
+    /// them, and it has to keep describing what was bought.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}/variants/{variantId:guid}")]
+    public async Task<IActionResult> UpdateVariant(Guid id, Guid variantId, [FromBody] UpdateVariantRequest request)
+    {
+        return Ok(await Mediator.Send(new UpdateProductVariantCommand(id, variantId, request.Price, request.IsActive)));
+    }
+
+    public record VariantRequest(string Sku, decimal Price, List<VariantOptionInput>? Options);
+
+    public record UpdateVariantRequest(decimal Price, bool IsActive = true);
 
     /// <summary>
     /// Give a product its image, or replace it (specs/019). One multipart part named <c>file</c>;

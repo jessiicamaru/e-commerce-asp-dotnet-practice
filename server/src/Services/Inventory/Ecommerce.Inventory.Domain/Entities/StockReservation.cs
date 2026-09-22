@@ -12,6 +12,10 @@ public class StockReservation
 
     public Guid OrderId { get; set; }
 
+    /// <summary>
+    /// The sellable unit being held - <b>a variant id</b> since specs/020, under a column still called
+    /// <c>ProductId</c> for the same reason as <see cref="StockItem.ProductId"/>.
+    /// </summary>
     public Guid ProductId { get; set; }
 
     public int Quantity { get; set; }

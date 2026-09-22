@@ -16,7 +16,10 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
           {product.name}
         </Link>
         {categoryName && <span className="text-muted-foreground text-xs">{categoryName}</span>}
-        <span className="font-semibold">{money(product.price)}</span>
+        <span className="font-semibold">
+          {product.priceVaries && <span className="text-muted-foreground text-xs font-normal">from </span>}
+          {money(product.price)}
+        </span>
         <Availability value={product.availability} />
       </CardContent>
     </Card>

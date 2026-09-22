@@ -10,6 +10,23 @@ export interface Product {
   isActive: boolean
   /** Null when there is none. Versioned, so it changes whenever the image does (specs/019). */
   imageUrl: string | null
+  /** True when the shapes do not all cost the same, so the price is shown as "from" (specs/020). */
+  priceVaries: boolean
+  variantCount: number
+  /** Filled on the product lookup, null on the listing. */
+  variants: Variant[] | null
+}
+
+/** One shape a product is sold in - what is priced, stocked and bought (specs/020). */
+export interface Variant {
+  id: string
+  sku: string
+  price: number
+  /** The options in words: "Kit: Body only · Colour: Black". Empty for a product sold one way. */
+  optionSummary: string
+  options: { name: string; value: string }[]
+  availability: 'InStock' | 'OutOfStock' | string
+  isActive: boolean
 }
 
 export interface Page<T> {

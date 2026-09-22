@@ -17,7 +17,12 @@ namespace Ecommerce.Cart.Application.Common.Interfaces;
 /// </remarks>
 public interface ICatalogProducts
 {
-    Task<CatalogDescription> DescribeAsync(IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Describes the SELLABLE units in a cart - variants since specs/020. The ids are what the cart
+    /// lines hold, and for a line written before variants that is the product's own id, which is also
+    /// its only variant's.
+    /// </summary>
+    Task<CatalogDescription> DescribeAsync(IReadOnlyCollection<Guid> variantIds, CancellationToken cancellationToken = default);
 }
 
 /// <param name="Reachable">
@@ -32,4 +37,12 @@ public record CatalogDescription(
     public static CatalogDescription Unreachable() => new(false, [], []);
 }
 
-public record CatalogProduct(Guid ProductId, string Name, decimal Price, bool Sellable);
+/// <param name="ProductId">What the line links to; a variant is a shape OF a product.</param>
+/// <param name="OptionSummary">What the customer chose, in words: <c>Kit: Body only</c>. Empty for a product sold one way.</param>
+public record CatalogProduct(
+    Guid ProductId,
+    string Name,
+    decimal Price,
+    bool Sellable,
+    Guid VariantId = default,
+    string OptionSummary = "");
