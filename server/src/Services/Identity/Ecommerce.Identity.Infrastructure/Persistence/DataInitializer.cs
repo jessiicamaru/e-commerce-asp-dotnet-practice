@@ -1,3 +1,4 @@
+using Ecommerce.Application.Common;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Constants;
 using Ecommerce.Domain.Entities;
@@ -100,9 +101,11 @@ public class DataInitializer(
             ?? throw new InvalidOperationException(
                 $"The '{RoleNames.Admin}' role is missing even though roles were just seeded.");
 
+        // Case-insensitive, like sign-in (#49): an account registered as Admin@... is still this one.
+        var key = EmailKey.For(email);
         var user = await _context.Users
             .Include(u => u.Roles)
-            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == key, cancellationToken);
 
         if (user is null)
         {

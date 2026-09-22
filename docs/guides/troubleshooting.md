@@ -327,7 +327,41 @@ been pulled.
 
 ---
 
-## 8. General Diagnosis Checklist
+## 8. Accounts that differ only by email case
+
+Identity refuses to start after upgrading past `CaseInsensitiveEmail` (#49), with:
+
+```text
+Cannot make emails case-insensitive: 1 email(s) belong to more than one account, differing only by case.
+```
+
+Before #49, `Someone@Example.com` and `someone@example.com` could register as **two** accounts,
+each with its own password, addresses and orders. The migration adds a unique index on
+`lower("Email")`, and it cannot do that while such pairs exist. It stops rather than choosing which
+account survives, because that is a decision about a person's data. The message gives a count and
+no addresses, because it ends up in logs.
+
+**Find them:**
+
+```sql
+SELECT lower("Email") AS mailbox, array_agg("Email" ORDER BY "Id") AS accounts, count(*)
+FROM users GROUP BY 1 HAVING count(*) > 1;
+```
+
+**Resolve each one.** Pick the account to keep (usually the one with the orders), then either:
+
+- **delete the other** if it holds nothing worth keeping (its refresh tokens and addresses go with it), or
+- **retire it** by changing its email to something that no longer collides, for example
+  `UPDATE users SET "Email" = 'retired+' || "Id" || '@invalid' WHERE "Id" = '<id>';`. That keeps its
+  rows but means nobody can sign in to it.
+
+Orders live in Order's database and reference the user id, so neither option loses an order. A
+retired account's orders simply stay with an account nobody can sign in to. Once the query returns
+nothing, start Identity again and the migration completes.
+
+---
+
+## 9. General Diagnosis Checklist
 
 If your IDE reports red errors but your code looks correct:
 
