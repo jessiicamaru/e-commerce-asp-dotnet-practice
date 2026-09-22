@@ -78,7 +78,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (31 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (86 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (93 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (50 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -264,7 +264,9 @@ which language it wants - `?lang=`, then `Accept-Language` - negotiated by ASP.N
 Responses carry `Content-Language` **and `Vary: Accept-Language`**, without which a cache serves one
 shopper's Vietnamese to the next shopper asking in English. Search is diacritic-insensitive through
 `unaccent` over both the translation and the original, with **no index** - recorded, and the first
-thing to fix at scale. ⚠️ **An order freezes its words in the language it was placed in**
+thing to fix at scale. **Category names are translated too** since specs/026, the same way and with
+the same per-field fallback; they were called out of scope twice before a redesigned storefront made
+an English page full of `Máy ảnh không gương lật` impossible to keep calling that. ⚠️ **An order freezes its words in the language it was placed in**
 (`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an
 order is a record of a purchase, not a view of the catalogue.
 

@@ -11,7 +11,11 @@ public class CategoryRepository(CatalogDbContext context) : ICategoryRepository
 
     public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        // With its translations: this is the read the write path uses, and a handler that upserts
+        // one has to see the ones already there or it inserts a second row per language.
+        return await _context.Categories
+            .Include(c => c.Translations)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
     public async Task<Category?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
@@ -21,7 +25,11 @@ public class CategoryRepository(CatalogDbContext context) : ICategoryRepository
 
     public async Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Categories.ToListAsync(cancellationToken);
+        // Translations come with the list, or every category on every page falls back to its
+        // default text (specs/026) - which is exactly what the storefront was showing.
+        return await _context.Categories
+            .Include(c => c.Translations)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(Category category, CancellationToken cancellationToken = default)

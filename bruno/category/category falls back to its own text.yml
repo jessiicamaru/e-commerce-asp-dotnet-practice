@@ -1,0 +1,37 @@
+info:
+  name: category falls back to its own text
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/categories"
+  headers:
+    - name: Accept-Language
+      value: "vi"
+  auth:
+    auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("asked in Vietnamese, the category shows the text it was created with", function() {
+          var mine = res.body.find(function(c) { return c.id === bru.getVar("categoryId"); });
+          expect(mine.name).to.not.equal("Bruno category in English");
+          expect(mine.language).to.equal("vi");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The previous request wrote English only. Asked in Vietnamese, the category falls back to its own
+  columns - and `language` says `vi`, which is how a client tells "this is Vietnamese" from "nobody
+  has written the Vietnamese yet".

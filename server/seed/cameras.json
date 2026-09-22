@@ -19,20 +19,26 @@
     "looks like a photograph is worse than a blank. Products come back with imageUrl null, which the",
     "storefront already handles (specs/019)."
   ],
-
   "categories": [
     {
       "slug": "may-anh-mirrorless",
       "name": "Máy ảnh không gương lật",
-      "description": "Máy ảnh mirrorless, ống kính rời"
+      "description": "Máy ảnh mirrorless, ống kính rời",
+      "en": {
+        "name": "Mirrorless cameras",
+        "description": "Mirrorless bodies with interchangeable lenses"
+      }
     },
     {
       "slug": "may-anh-compact",
       "name": "Máy ảnh compact",
-      "description": "Máy ảnh nhỏ gọn, ống kính liền"
+      "description": "Máy ảnh nhỏ gọn, ống kính liền",
+      "en": {
+        "name": "Compact cameras",
+        "description": "Small bodies with a fixed lens"
+      }
     }
   ],
-
   "products": [
     {
       "sku": "SONY-A7M4",
@@ -48,14 +54,36 @@
       "variants": [
         {
           "sku": "SONY-A7M4-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 45000000,
           "usd": 2198,
           "stock": 12
         },
         {
           "sku": "SONY-A7M4-2870",
-          "options": [{ "vi": ["Bộ", "Kèm ống kính 28-70mm"], "en": ["Kit", "With 28-70mm lens"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính 28-70mm"
+              ],
+              "en": [
+                "Kit",
+                "With 28-70mm lens"
+              ]
+            }
+          ],
           "vnd": 50500000,
           "usd": 2498,
           "stock": 7
@@ -77,8 +105,26 @@
         {
           "sku": "SONY-A7CII-BODY-BLACK",
           "options": [
-            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
-            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
           ],
           "vnd": 48500000,
           "usd": 2198,
@@ -87,8 +133,26 @@
         {
           "sku": "SONY-A7CII-BODY-SILVER",
           "options": [
-            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
-            { "vi": ["Màu", "Bạc"], "en": ["Colour", "Silver"] }
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Bạc"
+              ],
+              "en": [
+                "Colour",
+                "Silver"
+              ]
+            }
           ],
           "vnd": 48500000,
           "usd": 2198,
@@ -110,14 +174,36 @@
       "variants": [
         {
           "sku": "SONY-ZVE10M2-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 22000000,
           "usd": 999,
           "stock": 20
         },
         {
           "sku": "SONY-ZVE10M2-1650",
-          "options": [{ "vi": ["Bộ", "Kèm ống kính 16-50mm"], "en": ["Kit", "With 16-50mm lens"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính 16-50mm"
+              ],
+              "en": [
+                "Kit",
+                "With 16-50mm lens"
+              ]
+            }
+          ],
           "vnd": 25500000,
           "usd": 1098,
           "stock": 15
@@ -138,14 +224,36 @@
       "variants": [
         {
           "sku": "CANON-R6M2-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 52000000,
           "usd": 2499,
           "stock": 8
         },
         {
           "sku": "CANON-R6M2-24105",
-          "options": [{ "vi": ["Bộ", "Kèm ống kính RF 24-105mm f/4L"], "en": ["Kit", "With RF 24-105mm f/4L"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính RF 24-105mm f/4L"
+              ],
+              "en": [
+                "Kit",
+                "With RF 24-105mm f/4L"
+              ]
+            }
+          ],
           "vnd": 75000000,
           "usd": 3599,
           "stock": 3
@@ -166,7 +274,18 @@
       "variants": [
         {
           "sku": "CANON-R8-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 35000000,
           "usd": 1499,
           "stock": 11
@@ -188,8 +307,26 @@
         {
           "sku": "CANON-R50-1845-BLACK",
           "options": [
-            { "vi": ["Bộ", "Kèm ống kính 18-45mm"], "en": ["Kit", "With 18-45mm lens"] },
-            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính 18-45mm"
+              ],
+              "en": [
+                "Kit",
+                "With 18-45mm lens"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
           ],
           "vnd": 18500000,
           "usd": 799,
@@ -198,8 +335,26 @@
         {
           "sku": "CANON-R50-1845-WHITE",
           "options": [
-            { "vi": ["Bộ", "Kèm ống kính 18-45mm"], "en": ["Kit", "With 18-45mm lens"] },
-            { "vi": ["Màu", "Trắng"], "en": ["Colour", "White"] }
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính 18-45mm"
+              ],
+              "en": [
+                "Kit",
+                "With 18-45mm lens"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Trắng"
+              ],
+              "en": [
+                "Colour",
+                "White"
+              ]
+            }
           ],
           "vnd": 18900000,
           "usd": 819,
@@ -221,14 +376,36 @@
       "variants": [
         {
           "sku": "NIKON-Z6III-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 62000000,
           "usd": 2499,
           "stock": 5
         },
         {
           "sku": "NIKON-Z6III-2470",
-          "options": [{ "vi": ["Bộ", "Kèm ống kính 24-70mm f/4"], "en": ["Kit", "With 24-70mm f/4"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính 24-70mm f/4"
+              ],
+              "en": [
+                "Kit",
+                "With 24-70mm f/4"
+              ]
+            }
+          ],
           "vnd": 78000000,
           "usd": 3099,
           "stock": 2
@@ -249,7 +426,18 @@
       "variants": [
         {
           "sku": "NIKON-ZF-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 52000000,
           "usd": 1999,
           "stock": 6
@@ -271,8 +459,26 @@
         {
           "sku": "FUJI-XT5-BODY-BLACK",
           "options": [
-            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
-            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
           ],
           "vnd": 42000000,
           "usd": 1699,
@@ -281,8 +487,26 @@
         {
           "sku": "FUJI-XT5-BODY-SILVER",
           "options": [
-            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
-            { "vi": ["Màu", "Bạc"], "en": ["Colour", "Silver"] }
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Bạc"
+              ],
+              "en": [
+                "Colour",
+                "Silver"
+              ]
+            }
           ],
           "vnd": 42000000,
           "usd": 1699,
@@ -291,8 +515,26 @@
         {
           "sku": "FUJI-XT5-1855",
           "options": [
-            { "vi": ["Bộ", "Kèm ống kính 18-55mm"], "en": ["Kit", "With 18-55mm lens"] },
-            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+            {
+              "vi": [
+                "Bộ",
+                "Kèm ống kính 18-55mm"
+              ],
+              "en": [
+                "Kit",
+                "With 18-55mm lens"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
           ],
           "vnd": 52500000,
           "usd": 2099,
@@ -314,7 +556,18 @@
       "variants": [
         {
           "sku": "FUJI-XS20-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 32000000,
           "usd": 1299,
           "stock": 14
@@ -335,7 +588,18 @@
       "variants": [
         {
           "sku": "PANA-S5M2-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 45000000,
           "usd": 1997,
           "stock": 7
@@ -356,7 +620,18 @@
       "variants": [
         {
           "sku": "OM-OM5-BODY",
-          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "Chỉ thân máy"
+              ],
+              "en": [
+                "Kit",
+                "Body only"
+              ]
+            }
+          ],
           "vnd": 28000000,
           "usd": 1199,
           "stock": 9
@@ -377,14 +652,36 @@
       "variants": [
         {
           "sku": "FUJI-X100VI-BLACK",
-          "options": [{ "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }],
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
           "vnd": 41000000,
           "usd": 1599,
           "stock": 3
         },
         {
           "sku": "FUJI-X100VI-SILVER",
-          "options": [{ "vi": ["Màu", "Bạc"], "en": ["Colour", "Silver"] }],
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Bạc"
+              ],
+              "en": [
+                "Colour",
+                "Silver"
+              ]
+            }
+          ],
           "vnd": 41000000,
           "usd": 1599,
           "stock": 2
@@ -405,7 +702,18 @@
       "variants": [
         {
           "sku": "RICOH-GR3X-BODY",
-          "options": [{ "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }],
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
           "vnd": 25000000,
           "usd": 1049,
           "stock": 5
