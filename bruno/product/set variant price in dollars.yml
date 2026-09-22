@@ -1,0 +1,40 @@
+info:
+  name: set variant price in dollars
+  type: http
+  seq: 13
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/variants/{{variantId}}/prices/USD"
+  body:
+    type: json
+    data: |-
+          {
+            "amount": 1499
+          }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the amount comes back exactly as entered, in the currency it was set for", function() {
+          expect(res.body.price).to.equal(1499);
+          expect(res.body.currency).to.equal("USD");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A price is an amount somebody DECIDED (specs/022). The variant costs 129,000 in the shop's default
+  currency and 1499 in dollars - deliberately not a conversion of each other, because no exchange
+  rate is applied anywhere. An upsert, like a translation: writing it twice leaves the second amount.

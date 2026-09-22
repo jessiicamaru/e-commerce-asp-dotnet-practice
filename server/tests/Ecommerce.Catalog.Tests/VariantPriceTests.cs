@@ -148,6 +148,23 @@ public class VariantPriceTests(CatalogTestFixture fixture)
     }
 
     [Fact]
+    public async Task An_amount_the_currency_cannot_hold_is_refused()
+    {
+        var product = await CreateProductAsync(price: 40_000_000m);
+        var variant = Assert.Single(product.Variants!);
+
+        // 9.99 dong is not a price. Found against the running stack: an order's tax came out at a
+        // whole 3,003 dong while its subtotal was 29.97, because rounding what the system COMPUTES
+        // does nothing to an amount somebody TYPED - a subtotal is a unit price times an integer.
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            SendAsync(new SetVariantPriceCommand(product.Id, variant.Id, "VND", 9.99m)));
+
+        // ...and the same amount is perfectly good in a currency that has cents.
+        await SendAsync(new SetVariantPriceCommand(product.Id, variant.Id, "USD", 9.99m));
+        Assert.Equal(9.99m, (await ReadAsync(product.Id, Dollars)).Variants![0].Price);
+    }
+
+    [Fact]
     public async Task Setting_a_price_twice_replaces_it_rather_than_conflicting()
     {
         var product = await CreateProductAsync(price: 40_000_000m);

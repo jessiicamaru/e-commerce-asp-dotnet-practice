@@ -4,7 +4,10 @@ using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Contracts.Catalog;
 using MassTransit;
 using Ecommerce.Shared.Exceptions;
+using Ecommerce.Catalog.Application.Products.Prices;
+using Ecommerce.Shared.Money;
 using FluentValidation;
+using Microsoft.Extensions.Options;
 using MediatR;
 
 namespace Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
@@ -26,10 +29,15 @@ public record VariantOptionInput(string Name, string Value);
 
 public class AddProductVariantCommandValidator : AbstractValidator<AddProductVariantCommand>
 {
-    public AddProductVariantCommandValidator()
+    public AddProductVariantCommandValidator(IOptions<CurrencyOptions> money)
     {
         RuleFor(x => x.Sku).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Price).GreaterThan(0);
+
+        // The price on these commands is the DEFAULT currency's (specs/022). A price of 9.99 dong is
+        // not a price, and nothing downstream would round it away: a subtotal is a unit price times
+        // an integer.
+        RuleFor(x => x.Price).MustFitTheCurrency(money.Value, _ => money.Value.DefaultCurrency);
         RuleForEach(x => x.Options).ChildRules(option =>
         {
             option.RuleFor(o => o.Name).NotEmpty().MaximumLength(50);

@@ -22,6 +22,9 @@ runtime:
     - type: after-response
       code: |-
         if (res.body && res.body.orderId) bru.setVar("orderId", res.body.orderId);
+        // Kept so a later request can prove the order still reports what it charged, in the
+        // currency it charged in (specs/022).
+        if (res.body && res.body.totalAmount !== undefined) bru.setVar("orderTotal", res.body.totalAmount);
     - type: tests
       code: |-
         test("status 200", function() {

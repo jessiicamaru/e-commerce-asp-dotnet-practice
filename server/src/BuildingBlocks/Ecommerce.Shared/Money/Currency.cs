@@ -29,5 +29,17 @@ public record Currency(string Code, int Decimals)
     /// </remarks>
     public decimal Round(decimal amount) => Math.Round(amount, Decimals, MidpointRounding.AwayFromZero);
 
+    /// <summary>
+    /// Whether this is an amount somebody could actually be charged in this currency.
+    /// </summary>
+    /// <remarks>
+    /// <b>9.99 dong is not a price.</b> Rounding what the system COMPUTES is not enough on its own:
+    /// an amount entered with more decimals than the currency has flows into a subtotal untouched,
+    /// because a subtotal is a unit price times an integer and there is nothing there to round. Found
+    /// against the running stack, on an order whose tax came out at a whole 3,003 dong and whose
+    /// subtotal was 29.97 (specs/022).
+    /// </remarks>
+    public bool Fits(decimal amount) => Math.Round(amount, Decimals) == amount;
+
     public override string ToString() => Code;
 }

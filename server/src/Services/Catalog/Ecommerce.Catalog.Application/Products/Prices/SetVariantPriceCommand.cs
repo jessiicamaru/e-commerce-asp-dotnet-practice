@@ -37,6 +37,32 @@ public static class CurrencyRules
         rule.Must(currency => options.Supported.Any(supported =>
                 string.Equals(supported.Code, currency, StringComparison.OrdinalIgnoreCase)))
             .WithMessage($"Currency must be one of: {string.Join(", ", options.Supported.Select(c => c.Code))}.");
+
+    /// <summary>
+    /// The amount has to be one somebody could be charged in that currency: <b>9.99 dong is not a
+    /// price</b>, and a price like it flows into a subtotal untouched, because a subtotal is a unit
+    /// price times an integer and there is nothing there to round.
+    /// </summary>
+    public static IRuleBuilderOptions<T, decimal> MustFitTheCurrency<T>(
+        this IRuleBuilder<T, decimal> rule, CurrencyOptions options, Func<T, string> currencyOf) =>
+        rule.Must((command, amount) => Find(options, currencyOf(command)) is not { } currency || currency.Fits(amount))
+            .WithMessage((command, amount) =>
+            {
+                var currency = Find(options, currencyOf(command));
+                return currency is null
+                    ? "Unknown currency."
+                    : $"{amount} is not an amount in {currency.Code}, which has "
+                      + (currency.Decimals == 0 ? "no decimal places." : $"{currency.Decimals} decimal places.");
+            });
+
+    /// <summary>The configured currency for a code, or <c>null</c>.</summary>
+    public static Currency? Find(CurrencyOptions options, string? code) =>
+        code is null
+            ? null
+            : options.Supported
+                .Where(supported => string.Equals(supported.Code, code, StringComparison.OrdinalIgnoreCase))
+                .Select(supported => new Currency(supported.Code.ToUpperInvariant(), supported.Decimals))
+                .FirstOrDefault();
 }
 
 public class SetVariantPriceCommandValidator : AbstractValidator<SetVariantPriceCommand>
@@ -48,6 +74,7 @@ public class SetVariantPriceCommandValidator : AbstractValidator<SetVariantPrice
         // Zero is a price, and it is a free camera. Anything that means "stop selling this in dollars"
         // is a DELETE, which says so.
         RuleFor(x => x.Amount).GreaterThan(0);
+        RuleFor(x => x.Amount).MustFitTheCurrency(money.Value, command => command.Currency);
     }
 }
 

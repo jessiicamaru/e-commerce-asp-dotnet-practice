@@ -145,7 +145,9 @@ public class AvailabilityTests(CatalogTestFixture fixture)
         var created = await SendAsync(new CreateProductCommand(
             $"Widget {Guid.NewGuid():N}"[..20],
             "created by a test",
-            19.99m,
+            // Whole dong: the shop's default currency has no decimal places, so 19.99 is not an
+            // amount anybody could be charged and the validator refuses it (specs/022).
+            1_999_000m,
             $"SKU{Guid.NewGuid():N}"[..20],
             categoryId));
 

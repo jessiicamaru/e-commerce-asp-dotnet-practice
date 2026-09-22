@@ -12,7 +12,7 @@ http:
       {
         "name": "iPhone 16 Pro Max {{runId}}",
         "description": "Apple iPhone 16 Pro Max 512GB Gold",
-        "price": 1499.99,
+        "price": 1499000,
         "sku": "IP16PM-{{runId}}",
         "categoryId": "{{categoryId}}"
       }
