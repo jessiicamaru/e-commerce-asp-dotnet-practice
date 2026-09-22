@@ -1,6 +1,7 @@
 // The model types live in ./types, imported from there: this file's export is the class, and a
 // class and an interface cannot share a name.
 import { http } from '@/config/axios'
+import { CURRENCY_HEADER } from '@/config/money'
 import type { NewProduct, Page, Product as ProductModel, ProductQuery } from './types'
 
 /** Catalog's products. Browsing needs no account, so every call here is anonymous. */
@@ -17,8 +18,16 @@ export class Product {
     return data
   }
 
-  static async get(id: string): Promise<ProductModel> {
-    const { data } = await http.get<ProductModel>(`/products/${id}`, { anonymous: true })
+  /**
+   * One product. `currency` overrides what the visitor is browsing in - needed by the seller's own
+   * page, which shows every currency's price at once and therefore asks once per currency
+   * (specs/022 gives a response one currency's prices, deliberately, because nothing converts).
+   */
+  static async get(id: string, currency?: string): Promise<ProductModel> {
+    const { data } = await http.get<ProductModel>(`/products/${id}`, {
+      anonymous: true,
+      headers: currency ? { [CURRENCY_HEADER]: currency } : undefined,
+    })
     return data
   }
 

@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
+import { CURRENCIES } from '@/config/money'
 import { Product } from '@/services/product'
 import type { NewProduct, ProductQuery } from '@/services/product/types'
 
@@ -76,3 +77,36 @@ export const useUploadProductImage = (productId: string) =>
 
 export const useDeleteProduct = (productId: string) =>
   useListingMutation(() => Product.remove(productId), productId)
+
+/**
+ * The same product read once per currency, for the seller's price editor.
+ *
+ * A response carries ONE currency's prices (specs/022) - which is right for a shopper and wrong for
+ * the person setting them, who needs to see the price they are not browsing in. Asking twice is the
+ * honest way to see both; the alternative would be an endpoint that returns every currency at once,
+ * which is a backend change this page does not need.
+ */
+export function useProductInEveryCurrency(id: string) {
+  return useQueries({
+    queries: CURRENCIES.map((currency) => ({
+      queryKey: ['product', id, currency] as const,
+      queryFn: () => Product.get(id, currency),
+      enabled: id !== '',
+      retry: false,
+    })),
+    combine: (results) => ({
+      isPending: results.some((r) => r.isPending),
+      isError: results.some((r) => r.isError),
+      /** `{ VND: 41000000, USD: null }` per variant id - null meaning NOT SOLD, never zero. */
+      byCurrency: Object.fromEntries(
+        CURRENCIES.map((currency, index) => [
+          currency,
+          Object.fromEntries(
+            (results[index].data?.variants ?? []).map((variant) => [variant.id, variant.price]),
+          ),
+        ]),
+      ) as Record<string, Record<string, number | null>>,
+      product: results[0].data,
+    }),
+  })
+}

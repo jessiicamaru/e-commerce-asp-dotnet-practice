@@ -50,9 +50,22 @@ function renderPage() {
   )
 }
 
+/** What each currency's own response looks like: one currency's prices, never both (specs/022). */
+function inCurrency(currency: string, price: number | null): ProductModel {
+  return {
+    ...listing,
+    price,
+    currency,
+    variants: [{ ...listing.variants[0], price, currency }],
+  }
+}
+
 beforeEach(async () => {
   await i18n.changeLanguage('en')
-  vi.spyOn(Product, 'get').mockResolvedValue(listing)
+  localStorage.setItem('currency', 'USD')
+  vi.spyOn(Product, 'get').mockImplementation(async (_id, currency) =>
+    currency === 'USD' ? inCurrency('USD', null) : inCurrency('VND', 52000000),
+  )
 })
 
 describe('SellerProductPage', () => {
@@ -130,5 +143,36 @@ describe('SellerProductPage', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('was not found'))
     expect(screen.queryByText(/not allowed|forbidden|permission/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('SellerProductPage prices, read per currency', () => {
+  /**
+   * The bug this test exists for, seen in a screenshot: browsing in USD, the VND box was EMPTY
+   * although a VND price existed. A response carries one currency's prices, so reading the product
+   * once and filtering by `variant.currency` can only ever fill in the currency already being
+   * browsed in - and this is the one page whose whole job is the OTHER one.
+   */
+  it('shows the price of a currency the seller is not browsing in', async () => {
+    renderPage()
+
+    await waitFor(() => expect(screen.getByLabelText('VND SONY-A7M4')).toHaveValue('52000000'))
+    expect(screen.getByLabelText('USD SONY-A7M4')).toHaveValue('')
+  })
+
+  it('asks once per currency, with the currency stated rather than inherited', async () => {
+    const get = vi.mocked(Product.get)
+    renderPage()
+
+    await waitFor(() => expect(get.mock.calls.length).toBeGreaterThanOrEqual(2))
+    expect(get.mock.calls.map((call) => call[1]).sort()).toEqual(['USD', 'VND'])
+  })
+
+  /** Null is not zero: a currency nobody priced says so, instead of offering the camera for nothing. */
+  it('says a currency has no price rather than showing 0', async () => {
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText(/No price in this currency/i)).toBeInTheDocument())
+    expect(screen.getByLabelText('USD SONY-A7M4')).not.toHaveValue('0')
   })
 })

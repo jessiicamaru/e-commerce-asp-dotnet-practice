@@ -54,7 +54,12 @@ http.interceptors.request.use((config) => {
 
   // ...and which currency it wants its amounts in (specs/022). A different header, because it is a
   // different choice: a Vietnamese person reading English still pays in dong.
-  request.headers[CURRENCY_HEADER] = currentCurrency()
+  //
+  // `??=`, not `=`: a caller that set this header meant it. The seller's own listing page asks for
+  // the SAME product once per currency, because a response carries one currency's prices and a
+  // seller editing prices has to see the ones they are not currently browsing in. Overwriting here
+  // made both requests identical and left an existing VND price showing as an empty box.
+  request.headers[CURRENCY_HEADER] ??= currentCurrency()
   const token = request.anonymous ? null : tokenProvider()
   if (token) {
     request.headers.Authorization = `Bearer ${token}`

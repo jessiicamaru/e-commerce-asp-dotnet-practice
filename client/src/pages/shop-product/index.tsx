@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductImage } from '@/components/product/product-image'
-import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CURRENCIES } from '@/config/money'
-import { useDeleteProduct, useProduct, useSetVariantPrice, useUploadProductImage } from '@/hooks/product'
+import {
+  useDeleteProduct,
+  useProductInEveryCurrency,
+  useSetVariantPrice,
+  useUploadProductImage,
+} from '@/hooks/product'
 
 /**
  * One of the seller's own listings, and the three things they can do to it (specs/028).
@@ -32,7 +36,7 @@ export function SellerProductPage() {
   const { t } = useTranslation('seller')
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const product = useProduct(id)
+  const product = useProductInEveryCurrency(id)
 
   const setPrice = useSetVariantPrice(id)
   const upload = useUploadProductImage(id)
@@ -44,11 +48,11 @@ export function SellerProductPage() {
     return <ErrorMessage>{t('listing.loadFailed')}</ErrorMessage>
   }
 
-  if (product.isPending || !product.data) {
+  if (product.isPending || !product.product) {
     return <LoadingRows />
   }
 
-  const item = product.data
+  const item = product.product
   const variants = item.variants ?? []
 
   return (
@@ -61,8 +65,11 @@ export function SellerProductPage() {
         <p className="text-muted-foreground text-sm">{item.sku}</p>
       </header>
 
-      <div className="bg-card ring-border/60 grid gap-4 rounded-3xl p-6 ring-1 sm:grid-cols-[220px_1fr]">
-        <div className="grid gap-2">
+      {/* minmax(0, 220px), not 220px: a fixed track does not shrink, and a file input has a large
+          intrinsic width - it pushed this column to 313px and drew the image straight over the
+          price editor. Seen in a screenshot, which is the only way this kind of thing is seen. */}
+      <div className="bg-card ring-border/60 grid gap-4 rounded-3xl p-6 ring-1 sm:grid-cols-[minmax(0,220px)_1fr]">
+        <div className="grid min-w-0 gap-2">
           <ProductImage product={item} />
           <label className="text-sm font-semibold" htmlFor="image">
             {t('edit.image')}
@@ -71,7 +78,7 @@ export function SellerProductPage() {
             id="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            className="text-sm"
+            className="w-full min-w-0 text-sm"
             onChange={(event) => {
               const file = event.target.files?.[0]
               if (file) {
@@ -82,7 +89,7 @@ export function SellerProductPage() {
           <ServerError error={upload.error} fallback={t('listing.loadFailed')} />
         </div>
 
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 content-start gap-4">
           <h2 className="font-semibold">{t('edit.price')}</h2>
 
           {variants.map((variant) => (
@@ -92,8 +99,10 @@ export function SellerProductPage() {
               )}
               {CURRENCIES.map((currency) => {
                 const key = `${variant.id}:${currency}`
-                // A price in this currency, or the absence of one - which is a real state, not a zero.
-                const current = variant.currency === currency ? variant.price : undefined
+                // The price in THIS currency, read from that currency's own response - not from the
+                // one the seller happens to be browsing in. A variant nobody priced here is null,
+                // which is a real state and not a zero.
+                const current = product.byCurrency[currency]?.[variant.id] ?? null
 
                 return (
                   <div key={currency} className="flex flex-wrap items-center gap-2">
@@ -115,7 +124,7 @@ export function SellerProductPage() {
                     >
                       {t('edit.savePrice')}
                     </Button>
-                    {current === null && variant.currency === currency && (
+                    {current === null && (
                       <span className="text-muted-foreground text-xs">{t('listing.noPrice')}</span>
                     )}
                   </div>
@@ -125,10 +134,6 @@ export function SellerProductPage() {
           ))}
 
           <ServerError error={setPrice.error} fallback={t('listing.loadFailed')} />
-
-          <p className="text-sm">
-            <Price value={item.price} currency={item.currency} />
-          </p>
 
           <Link to={`/products/${item.id}`} className="text-sm underline">
             {t('edit.view')}
