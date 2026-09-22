@@ -59,7 +59,11 @@
 - [X] T033 [P] `RequestCurrencyTests` — resolution order, the unsupported code, **and that the language does not decide it**
 - [X] T034 [P] `VariantPriceTests` — the stored amount comes back exactly; a missing price is null and not sellable; the "from" price
 - [X] T035 [P] `OrderCurrencyTests` — the order freezes it; a null currency reads as the default; VND has no fractional part and the parts still sum
-- [X] T036 [P] `SagaCurrencyRelayTests` — the currency survives the relay into `ProcessPaymentCommand`
+- [X] T036 [P] The currency survives the relay into `ProcessPaymentCommand` — **not** the separate
+  `SagaCurrencyRelayTests` this task named. The Orchestrator has no test project, so the relay is
+  covered from both ends instead: `OrderCurrencyTests.The_currency_travels_with_the_amount_to_the_saga`
+  proves the event carries it, and the payments row read out of the running stack proves the saga
+  passed it on. The mutation that removes it turns the first red; only the stack shows the second.
 - [X] T037 Run all four negative controls from [quickstart.md](quickstart.md) and record what went red
 - [X] T038 Bruno: a USD read, a price write, the unpriced refusal, the quote in both currencies
 - [X] T039 `verify-saga.sh` in both currencies, and `verify-auth.sh` unchanged
