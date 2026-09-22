@@ -40,6 +40,20 @@ dotnet build                                          # whole solution
 dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/   # single service
 ```
 
+**A catalogue with real cameras in it** — [server/seed/](server/seed/), run against a started stack:
+
+```bash
+cd server
+ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-catalogue.py
+```
+
+It posts through the gateway as an administrator rather than writing SQL, so every row goes down the
+path a person uses — which is how it found that `VariantOptionResponse` carried no id and the
+translation endpoint from specs/021 was therefore unreachable. Idempotent by SKU, and it never
+deletes. ⚠️ **The prices in `seed/cameras.json` are APPROXIMATE**: right order of magnitude and right
+relative order, from a model's knowledge up to May 2026, not from any shop. The two lists are
+deliberately not conversions of each other.
+
 EF Core migrations — note the Orchestrator is the one service where `--project` and `--startup-project` are the same (its DbContext lives in the WebApi project):
 
 ```bash

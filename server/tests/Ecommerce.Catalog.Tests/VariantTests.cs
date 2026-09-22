@@ -200,6 +200,50 @@ public class VariantTests(CatalogTestFixture fixture)
     private static VariantResponse Variant(ProductResponse product, Guid variantId) =>
         product.Variants!.Single(v => v.Id == variantId);
 
+    [Fact]
+    public async Task Two_shapes_of_one_product_list_their_options_in_the_same_order()
+    {
+        var product = await CreateProductAsync(price: 42_000_000m);
+        var body = Assert.Single(product.Variants!);
+
+        // Entered in OPPOSITE orders on purpose. Nothing orders the rows, so before this was fixed
+        // the two summaries came back as "Colour: … · Kit: …" and "Kit: … · Colour: …" - two
+        // different strings describing one product, which is what Summarise exists to prevent.
+        // Seen in the seeded camera catalogue, not invented here.
+        var kit = await SendAsync(new AddProductVariantCommand(
+            product.Id,
+            $"{product.Sku}-KIT",
+            52_500_000m,
+            [new VariantOptionInput("Kit", "With 18-55mm"), new VariantOptionInput("Colour", "Black")]));
+
+        var detail = await SendAsync(new GetProductByIdQuery(product.Id));
+        var summaries = detail!.Variants!.Select(v => v.OptionSummary).Where(s => s.Length > 0).ToList();
+
+        Assert.All(summaries, summary => Assert.StartsWith("Colour: ", summary));
+        Assert.Equal("Colour: Black · Kit: With 18-55mm", kit.OptionSummary);
+        Assert.NotEqual(body.Id, kit.Id);
+    }
+
+    [Fact]
+    public async Task An_option_carries_its_id_so_it_can_be_addressed()
+    {
+        var product = await CreateProductAsync(price: 42_000_000m);
+
+        var kit = await SendAsync(new AddProductVariantCommand(
+            product.Id, $"{product.Sku}-KIT", 52_500_000m, [new VariantOptionInput("Kit", "With 18-55mm")]));
+
+        // Without this the translation endpoint added in specs/021 - PUT
+        // /api/products/{id}/options/{optionId}/translations/{lang} - could not be called by anything
+        // outside the database, because no response carried the id it takes. Found by the camera
+        // seeder, which is the first API client that ever tried to use it.
+        var option = Assert.Single(kit.Options);
+        Assert.NotEqual(Guid.Empty, option.Id);
+
+        var detail = await SendAsync(new GetProductByIdQuery(product.Id));
+        var read = detail!.Variants!.Single(v => v.Id == kit.Id).Options.Single();
+        Assert.Equal(option.Id, read.Id);
+    }
+
     private async Task<ProductResponse> ListAsync(Guid productId)
     {
         var page = await SendAsync(new GetProductsQuery { PageSize = 200 });

@@ -1,0 +1,416 @@
+{
+  "_about": [
+    "Real camera models, so the storefront has something a person can recognise instead of",
+    "'iPhone 16 Pro Max 1790085352812'.",
+    "",
+    "⚠️ THE PRICES ARE APPROXIMATE AND NOBODY HAS CHECKED THEM AGAINST A SHOP.",
+    "They come from what the assistant that wrote this file knew of the Vietnamese and US markets",
+    "up to May 2026, which is a knowledge cutoff and not a price feed. They are the right ORDER OF",
+    "MAGNITUDE and the right RELATIVE ORDER - an A7 IV costs more than a ZV-E10 II and less than a",
+    "Z6III - which is what makes the catalogue useful to click through. Treat any individual number",
+    "as wrong until somebody looks it up.",
+    "",
+    "The two price lists are deliberately NOT conversions of each other (specs/022): each is the",
+    "price in that market, and those markets do not move together. 45,000,000 VND and 2,198 USD is",
+    "about 20,500 VND to the dollar; 18,500,000 and 799 is about 23,200. That spread is real and it",
+    "is the reason the shop stores two lists rather than one and a rate.",
+    "",
+    "No images: there is no honest way to obtain product photographs here, and a placeholder that",
+    "looks like a photograph is worse than a blank. Products come back with imageUrl null, which the",
+    "storefront already handles (specs/019)."
+  ],
+
+  "categories": [
+    {
+      "slug": "may-anh-mirrorless",
+      "name": "Máy ảnh không gương lật",
+      "description": "Máy ảnh mirrorless, ống kính rời"
+    },
+    {
+      "slug": "may-anh-compact",
+      "name": "Máy ảnh compact",
+      "description": "Máy ảnh nhỏ gọn, ống kính liền"
+    }
+  ],
+
+  "products": [
+    {
+      "sku": "SONY-A7M4",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Sony Alpha A7 IV",
+        "description": "Máy ảnh mirrorless full-frame 33MP, quay 4K 60p, lấy nét theo mắt người và động vật. Dòng chủ lực cho người chụp vừa ảnh vừa video."
+      },
+      "en": {
+        "name": "Sony Alpha A7 IV",
+        "description": "33MP full-frame mirrorless with 4K 60p video and eye autofocus for people and animals. The workhorse for anyone shooting both stills and video."
+      },
+      "variants": [
+        {
+          "sku": "SONY-A7M4-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 45000000,
+          "usd": 2198,
+          "stock": 12
+        },
+        {
+          "sku": "SONY-A7M4-2870",
+          "options": [{ "vi": ["Bộ", "Kèm ống kính 28-70mm"], "en": ["Kit", "With 28-70mm lens"] }],
+          "vnd": 50500000,
+          "usd": 2498,
+          "stock": 7
+        }
+      ]
+    },
+    {
+      "sku": "SONY-A7CII",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Sony Alpha A7C II",
+        "description": "Full-frame 33MP trong thân máy nhỏ gọn kiểu rangefinder. Nhẹ hơn A7 IV khoảng 180g, hợp với người đi nhiều."
+      },
+      "en": {
+        "name": "Sony Alpha A7C II",
+        "description": "The same 33MP full-frame sensor in a compact rangefinder-style body, around 180g lighter than the A7 IV. Made for travelling light."
+      },
+      "variants": [
+        {
+          "sku": "SONY-A7CII-BODY-BLACK",
+          "options": [
+            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
+            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+          ],
+          "vnd": 48500000,
+          "usd": 2198,
+          "stock": 9
+        },
+        {
+          "sku": "SONY-A7CII-BODY-SILVER",
+          "options": [
+            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
+            { "vi": ["Màu", "Bạc"], "en": ["Colour", "Silver"] }
+          ],
+          "vnd": 48500000,
+          "usd": 2198,
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "sku": "SONY-ZVE10M2",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Sony ZV-E10 II",
+        "description": "Máy quay vlog APS-C 26MP, màn hình lật, micro ba hướng. Nhẹ và rẻ nhất trong dòng ống kính rời của Sony."
+      },
+      "en": {
+        "name": "Sony ZV-E10 II",
+        "description": "26MP APS-C built for vlogging: flip-out screen, three-capsule microphone. The lightest and cheapest interchangeable-lens Sony."
+      },
+      "variants": [
+        {
+          "sku": "SONY-ZVE10M2-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 22000000,
+          "usd": 999,
+          "stock": 20
+        },
+        {
+          "sku": "SONY-ZVE10M2-1650",
+          "options": [{ "vi": ["Bộ", "Kèm ống kính 16-50mm"], "en": ["Kit", "With 16-50mm lens"] }],
+          "vnd": 25500000,
+          "usd": 1098,
+          "stock": 15
+        }
+      ]
+    },
+    {
+      "sku": "CANON-R6M2",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Canon EOS R6 Mark II",
+        "description": "Full-frame 24MP, chụp liên tiếp 40 hình/giây bằng màn trập điện tử. Lấy nét bám chủ thể rất chắc, hợp chụp thể thao và đời thường."
+      },
+      "en": {
+        "name": "Canon EOS R6 Mark II",
+        "description": "24MP full-frame shooting 40 frames a second on the electronic shutter, with subject tracking that holds on. Sports and everything else."
+      },
+      "variants": [
+        {
+          "sku": "CANON-R6M2-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 52000000,
+          "usd": 2499,
+          "stock": 8
+        },
+        {
+          "sku": "CANON-R6M2-24105",
+          "options": [{ "vi": ["Bộ", "Kèm ống kính RF 24-105mm f/4L"], "en": ["Kit", "With RF 24-105mm f/4L"] }],
+          "vnd": 75000000,
+          "usd": 3599,
+          "stock": 3
+        }
+      ]
+    },
+    {
+      "sku": "CANON-R8",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Canon EOS R8",
+        "description": "Cảm biến full-frame 24MP giống R6 Mark II trong thân máy nhẹ hơn nhiều. Đánh đổi: pin nhỏ và không chống rung trong thân."
+      },
+      "en": {
+        "name": "Canon EOS R8",
+        "description": "The R6 Mark II's 24MP full-frame sensor in a far lighter body. The trade: a small battery and no in-body stabilisation."
+      },
+      "variants": [
+        {
+          "sku": "CANON-R8-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 35000000,
+          "usd": 1499,
+          "stock": 11
+        }
+      ]
+    },
+    {
+      "sku": "CANON-R50",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Canon EOS R50",
+        "description": "APS-C 24MP cho người mới, nhẹ 375g. Chế độ tự động đủ thông minh để dùng ngay khi mở hộp."
+      },
+      "en": {
+        "name": "Canon EOS R50",
+        "description": "A 375g 24MP APS-C camera for someone starting out, with automatic modes good enough to use straight out of the box."
+      },
+      "variants": [
+        {
+          "sku": "CANON-R50-1845-BLACK",
+          "options": [
+            { "vi": ["Bộ", "Kèm ống kính 18-45mm"], "en": ["Kit", "With 18-45mm lens"] },
+            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+          ],
+          "vnd": 18500000,
+          "usd": 799,
+          "stock": 25
+        },
+        {
+          "sku": "CANON-R50-1845-WHITE",
+          "options": [
+            { "vi": ["Bộ", "Kèm ống kính 18-45mm"], "en": ["Kit", "With 18-45mm lens"] },
+            { "vi": ["Màu", "Trắng"], "en": ["Colour", "White"] }
+          ],
+          "vnd": 18900000,
+          "usd": 819,
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "sku": "NIKON-Z6III",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Nikon Z6III",
+        "description": "Full-frame 24MP với cảm biến partially-stacked, quay RAW nội bộ 6K. Kính ngắm sáng nhất trong tầm giá."
+      },
+      "en": {
+        "name": "Nikon Z6III",
+        "description": "24MP full-frame on a partially stacked sensor, recording 6K RAW internally, behind the brightest viewfinder at this price."
+      },
+      "variants": [
+        {
+          "sku": "NIKON-Z6III-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 62000000,
+          "usd": 2499,
+          "stock": 5
+        },
+        {
+          "sku": "NIKON-Z6III-2470",
+          "options": [{ "vi": ["Bộ", "Kèm ống kính 24-70mm f/4"], "en": ["Kit", "With 24-70mm f/4"] }],
+          "vnd": 78000000,
+          "usd": 3099,
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "sku": "NIKON-ZF",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Nikon Zf",
+        "description": "Full-frame 24MP trong thân máy kiểu cơ, có vòng chỉnh tốc độ và ISA bằng kim loại. Chụp như máy phim, lấy nét như máy hiện đại."
+      },
+      "en": {
+        "name": "Nikon Zf",
+        "description": "24MP full-frame in a mechanical body with metal shutter-speed and ISO dials. Handles like a film camera, focuses like a modern one."
+      },
+      "variants": [
+        {
+          "sku": "NIKON-ZF-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 52000000,
+          "usd": 1999,
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "sku": "FUJI-XT5",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Fujifilm X-T5",
+        "description": "APS-C 40MP, ba vòng chỉnh cơ trên nóc máy, giả lập màu phim của Fujifilm. Máy chụp ảnh tĩnh trước, quay phim sau."
+      },
+      "en": {
+        "name": "Fujifilm X-T5",
+        "description": "40MP APS-C with three mechanical dials on top and Fujifilm's film simulations. A stills camera first and a video camera second."
+      },
+      "variants": [
+        {
+          "sku": "FUJI-XT5-BODY-BLACK",
+          "options": [
+            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
+            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+          ],
+          "vnd": 42000000,
+          "usd": 1699,
+          "stock": 10
+        },
+        {
+          "sku": "FUJI-XT5-BODY-SILVER",
+          "options": [
+            { "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] },
+            { "vi": ["Màu", "Bạc"], "en": ["Colour", "Silver"] }
+          ],
+          "vnd": 42000000,
+          "usd": 1699,
+          "stock": 8
+        },
+        {
+          "sku": "FUJI-XT5-1855",
+          "options": [
+            { "vi": ["Bộ", "Kèm ống kính 18-55mm"], "en": ["Kit", "With 18-55mm lens"] },
+            { "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }
+          ],
+          "vnd": 52500000,
+          "usd": 2099,
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "sku": "FUJI-XS20",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Fujifilm X-S20",
+        "description": "APS-C 26MP có chống rung trong thân, pin dùng được cả ngày. Cầm như máy thường chứ không có ba vòng chỉnh như X-T5."
+      },
+      "en": {
+        "name": "Fujifilm X-S20",
+        "description": "26MP APS-C with in-body stabilisation and a battery that lasts the day. A conventional grip rather than the X-T5's three dials."
+      },
+      "variants": [
+        {
+          "sku": "FUJI-XS20-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 32000000,
+          "usd": 1299,
+          "stock": 14
+        }
+      ]
+    },
+    {
+      "sku": "PANA-S5M2",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "Panasonic Lumix S5 II",
+        "description": "Full-frame 24MP, lấy nét theo pha - thứ dòng Lumix chờ nhiều năm. Quay 6K nội bộ, không giới hạn thời gian."
+      },
+      "en": {
+        "name": "Panasonic Lumix S5 II",
+        "description": "24MP full-frame with phase-detect autofocus, which this line waited years for, and unlimited internal 6K recording."
+      },
+      "variants": [
+        {
+          "sku": "PANA-S5M2-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 45000000,
+          "usd": 1997,
+          "stock": 7
+        }
+      ]
+    },
+    {
+      "sku": "OM-OM5",
+      "category": "may-anh-mirrorless",
+      "vi": {
+        "name": "OM System OM-5",
+        "description": "Micro Four Thirds 20MP, chống nước bụi chuẩn IP53, nặng 414g cả pin. Máy để mang đi leo núi."
+      },
+      "en": {
+        "name": "OM System OM-5",
+        "description": "20MP Micro Four Thirds, IP53 weather sealing, 414g with the battery in. The one to take up a mountain."
+      },
+      "variants": [
+        {
+          "sku": "OM-OM5-BODY",
+          "options": [{ "vi": ["Bộ", "Chỉ thân máy"], "en": ["Kit", "Body only"] }],
+          "vnd": 28000000,
+          "usd": 1199,
+          "stock": 9
+        }
+      ]
+    },
+    {
+      "sku": "FUJI-X100VI",
+      "category": "may-anh-compact",
+      "vi": {
+        "name": "Fujifilm X100VI",
+        "description": "Ống kính liền 35mm tương đương, cảm biến APS-C 40MP, kính ngắm lai quang học - điện tử. Máy đường phố, không đổi được ống kính."
+      },
+      "en": {
+        "name": "Fujifilm X100VI",
+        "description": "A fixed 35mm-equivalent lens over a 40MP APS-C sensor, behind a hybrid optical/electronic viewfinder. A street camera; the lens does not come off."
+      },
+      "variants": [
+        {
+          "sku": "FUJI-X100VI-BLACK",
+          "options": [{ "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }],
+          "vnd": 41000000,
+          "usd": 1599,
+          "stock": 3
+        },
+        {
+          "sku": "FUJI-X100VI-SILVER",
+          "options": [{ "vi": ["Màu", "Bạc"], "en": ["Colour", "Silver"] }],
+          "vnd": 41000000,
+          "usd": 1599,
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "sku": "RICOH-GR3X",
+      "category": "may-anh-compact",
+      "vi": {
+        "name": "Ricoh GR IIIx",
+        "description": "APS-C 24MP với ống kính 40mm tương đương, bỏ vừa túi quần. Bật máy chưa tới một giây."
+      },
+      "en": {
+        "name": "Ricoh GR IIIx",
+        "description": "24MP APS-C behind a 40mm-equivalent lens, in something that fits a trouser pocket and wakes up in under a second."
+      },
+      "variants": [
+        {
+          "sku": "RICOH-GR3X-BODY",
+          "options": [{ "vi": ["Màu", "Đen"], "en": ["Colour", "Black"] }],
+          "vnd": 25000000,
+          "usd": 1049,
+          "stock": 5
+        }
+      ]
+    }
+  ]
+}

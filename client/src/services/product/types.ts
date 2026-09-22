@@ -32,7 +32,8 @@ export interface Variant {
   currency: string
   /** The options in words: "Kit: Body only · Colour: Black". Empty for a product sold one way. */
   optionSummary: string
-  options: { name: string; value: string }[]
+  /** `id` is what addresses an option, e.g. to translate it (specs/021). */
+  options: { id: string; name: string; value: string }[]
   availability: 'InStock' | 'OutOfStock' | string
   isActive: boolean
 }
