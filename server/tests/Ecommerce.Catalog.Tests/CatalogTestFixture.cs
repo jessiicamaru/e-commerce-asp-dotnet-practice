@@ -153,13 +153,18 @@ public class CatalogTestFixture : IAsyncLifetime
     /// A scope, optionally answering in a given language (specs/021). There is no HTTP request here,
     /// so the language is handed in rather than negotiated.
     /// </summary>
-    public AsyncServiceScope NewScope(string? language = null)
+    public AsyncServiceScope NewScope(string? language = null, Currency? currency = null)
     {
         var scope = Services.CreateAsyncScope();
 
         if (language is not null)
         {
             scope.ServiceProvider.GetRequiredService<TestLanguage>().Current = language;
+        }
+
+        if (currency is not null)
+        {
+            scope.ServiceProvider.GetRequiredService<TestCurrency>().Current = currency;
         }
 
         return scope;
