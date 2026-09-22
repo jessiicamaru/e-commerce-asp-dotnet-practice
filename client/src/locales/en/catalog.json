@@ -1,0 +1,44 @@
+{
+  "title": "Shop",
+  "searchPlaceholder": "Search by name or SKU",
+  "allCategories": "All categories",
+  "sort": {
+    "label": "Sort",
+    "name_asc": "Name A–Z",
+    "name_desc": "Name Z–A",
+    "price_asc": "Price, low to high",
+    "price_desc": "Price, high to low"
+  },
+  "category": "Category",
+  "nothingMatches": "Nothing matches.",
+  "resultCount_one": "{{count}} product",
+  "resultCount_other": "{{count}} products",
+  "resultCountFor_one": "{{count}} product for “{{term}}”",
+  "resultCountFor_other": "{{count}} products for “{{term}}”",
+  "loadFailed": "The catalogue could not be loaded. Is the backend running?",
+  "product": {
+    "back": "← Back to the shop",
+    "notFound": "This product does not exist.",
+    "loadFailed": "The product could not be loaded.",
+    "from": "from ",
+    "taxNote": "Price excludes tax, which is added at checkout for your delivery country.",
+    "sku": "SKU {{sku}}",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "chooseOne": "Choose one",
+    "chooseFirst": "Choose an option first.",
+    "quantity": "Quantity",
+    "addToCart": "Add to cart",
+    "adding": "Adding…",
+    "added_one": "Added {{count}} to your cart.",
+    "added_other": "Added {{count}} to your cart.",
+    "addFailed": "It could not be added. Try again.",
+    "signInToAdd": "<0>Sign in</0> to add this to your cart.",
+    "viewCart": "View cart"
+  },
+  "pager": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{total}}"
+  }
+}

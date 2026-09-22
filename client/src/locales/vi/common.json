@@ -1,0 +1,31 @@
+{
+  "brand": "e-commerce",
+  "nav": {
+    "status": "Trạng thái",
+    "cart": "Giỏ hàng",
+    "orders": "Đơn hàng",
+    "signIn": "Đăng nhập",
+    "signUp": "Tạo tài khoản",
+    "signOut": "Đăng xuất"
+  },
+  "language": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "loading": "Đang tải…",
+  "notFound": "Không tìm thấy trang.",
+  "checkingSession": "Đang kiểm tra phiên đăng nhập…",
+  "error": {
+    "unreachable": "Không kết nối được máy chủ. Thử lại sau giây lát.",
+    "generic": "Có lỗi xảy ra. Thử lại sau giây lát."
+  },
+  "action": {
+    "save": "Lưu",
+    "saving": "Đang lưu…",
+    "cancel": "Huỷ",
+    "edit": "Sửa",
+    "delete": "Xoá",
+    "search": "Tìm"
+  }
+}

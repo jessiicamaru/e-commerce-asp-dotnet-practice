@@ -13,8 +13,10 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
     {
         return await _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Translations)
             .Include(p => p.Variants.OrderBy(v => v.CreatedAt))
                 .ThenInclude(v => v.Options)
+                    .ThenInclude(o => o.Translations)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
@@ -48,6 +50,7 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
     public Task<ProductVariant?> GetVariantAsync(Guid variantId, CancellationToken cancellationToken = default) =>
         _context.ProductVariants
             .Include(v => v.Options)
+                .ThenInclude(o => o.Translations)
             .Include(v => v.Product)
             .FirstOrDefaultAsync(v => v.Id == variantId, cancellationToken);
 
@@ -61,7 +64,9 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         return await _context.ProductVariants
             .AsNoTracking()
             .Include(v => v.Options)
+                .ThenInclude(o => o.Translations)
             .Include(v => v.Product)
+                .ThenInclude(p => p!.Translations)
             .Where(v => wanted.Contains(v.Id))
             .ToListAsync(cancellationToken);
     }
@@ -125,11 +130,14 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         Guid? categoryId,
         string? searchTerm,
         string? sortBy,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string language = "")
     {
         // Variants come with the page: the card shows a "from" price and whether the prices differ.
+        // Translations too, or every card would fall back to the default language (specs/021).
         var query = _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Translations)
             .Include(p => p.Variants)
             .AsQueryable();
 
@@ -141,7 +149,20 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var term = searchTerm.Trim().ToLower();
-            query = query.Where(p => p.Name.ToLower().Contains(term) || p.Sku.ToLower().Contains(term));
+
+            // Diacritics are ignored on BOTH sides, so "may anh" finds "máy ảnh" and "máy ảnh" finds a
+            // product somebody typed without accents (specs/021 research D5). No index: unaccent() is
+            // not IMMUTABLE, so this is a sequential scan - fine at this size, the first thing to fix
+            // at a hundred thousand products.
+            // Both sides are unaccented INSIDE the query: unaccent() is PostgreSQL's, so calling it on
+            // the term out here would evaluate on the client and throw.
+            query = query.Where(p =>
+                EF.Functions.Unaccent(p.Name.ToLower()).Contains(EF.Functions.Unaccent(term))
+                || p.Sku.ToLower().Contains(term)
+                // ...and the requested language's translation, so a Vietnamese shopper finds a product
+                // by the Vietnamese name somebody gave it.
+                || p.Translations.Any(t => t.Language == language
+                    && EF.Functions.Unaccent(t.Name.ToLower()).Contains(EF.Functions.Unaccent(term))));
         }
 
         query = sortBy?.ToLower() switch

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { ErrorMessage } from '@/components/shared/query-state'
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/auth/useAuth'
 
 export function SignInPage() {
+  const { t } = useTranslation('auth')
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -28,11 +30,7 @@ export function SignInPage() {
     } catch (caught) {
       // Identity answers 401 with one message for "no such email" and "wrong password" (#28), so the
       // page does too - it must not reveal which emails have accounts.
-      setError(
-        ApiError.from(caught).status === 401
-          ? 'That email and password do not match an account.'
-          : 'Signing in failed. Try again in a moment.',
-      )
+      setError(ApiError.from(caught).status === 401 ? t('signIn.wrong') : t('signIn.failed'))
     } finally {
       setBusy(false)
     }
@@ -41,12 +39,12 @@ export function SignInPage() {
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader>
-        <CardTitle className="text-xl">Sign in</CardTitle>
+        <CardTitle className="text-xl">{t('signIn.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="grid gap-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('signIn.email')}</Label>
             <Input
               id="email"
               type="email"
@@ -57,7 +55,7 @@ export function SignInPage() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('signIn.password')}</Label>
             <Input
               id="password"
               type="password"
@@ -69,13 +67,13 @@ export function SignInPage() {
           </div>
           {error && <ErrorMessage>{error}</ErrorMessage>}
           <Button type="submit" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? t('signIn.submitting') : t('signIn.submit')}
           </Button>
         </form>
         <p className="text-muted-foreground mt-4 text-sm">
-          No account?{' '}
+          {t('signIn.noAccount')}{' '}
           <Link to="/sign-up" className="underline">
-            Create one
+            {t('signIn.createOne')}
           </Link>
           .
         </p>

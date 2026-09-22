@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Pager } from '@/components/shared/pager'
@@ -12,12 +13,13 @@ import { money } from '@/utils/shared'
  * user id anywhere in the request.
  */
 export function OrdersPage() {
+  const { t, i18n } = useTranslation('orders')
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
   const { data: result, isPending, isError } = useMyOrders(page, ORDERS_PER_PAGE)
 
   if (isError) {
-    return <ErrorMessage>Your orders could not be loaded.</ErrorMessage>
+    return <ErrorMessage>{t('loadFailed')}</ErrorMessage>
   }
 
   if (isPending || !result) {
@@ -27,11 +29,11 @@ export function OrdersPage() {
   if (result.totalCount === 0) {
     return (
       <section>
-        <h1 className="mb-4 text-2xl font-bold">Your orders</h1>
+        <h1 className="mb-4 text-2xl font-bold">{t('title')}</h1>
         <p>
-          You have not ordered anything yet.{' '}
+          {t('none')}{' '}
           <Link to="/" className="underline">
-            Browse the shop
+            {t('browse')}
           </Link>
           .
         </p>
@@ -41,21 +43,21 @@ export function OrdersPage() {
 
   return (
     <section>
-      <h1 className="mb-4 text-2xl font-bold">Your orders</h1>
+      <h1 className="mb-4 text-2xl font-bold">{t('title')}</h1>
       <ul className="grid gap-3">
         {result.items.map((order) => (
           <li key={order.orderId}>
             <Card>
               <CardContent className="flex flex-col gap-1 p-4">
                 <Link to={`/orders/${order.orderId}`} className="font-medium hover:underline">
-                  {new Date(order.createdAt).toLocaleString()}
+                  {new Date(order.createdAt).toLocaleString(i18n.language)}
                 </Link>
                 <span className="text-sm">
-                  {order.itemCount} item{order.itemCount === 1 ? '' : 's'} ·{' '}
+                  {t('itemCount', { count: order.itemCount })} ·{' '}
                   <span className="font-semibold">{money(order.totalAmount)}</span>
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {describeOrderStatus(order.status, order.failureReason)}
+                  {describeOrderStatus(t, order.status, order.failureReason)}
                 </span>
               </CardContent>
             </Card>
@@ -66,8 +68,8 @@ export function OrdersPage() {
         page={page}
         totalPages={Math.max(1, Math.ceil(result.totalCount / ORDERS_PER_PAGE))}
         onChange={(next) => setParams({ page: String(next) })}
-        previousLabel="Newer"
-        nextLabel="Older"
+        previousLabel={t('newer')}
+        nextLabel={t('older')}
       />
     </section>
   )

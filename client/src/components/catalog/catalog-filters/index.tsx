@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -13,12 +14,7 @@ import type { SortBy } from '@/services/product/types'
 
 const ALL_CATEGORIES = 'all'
 
-const SORTS: { value: SortBy; label: string }[] = [
-  { value: 'name_asc', label: 'Name A–Z' },
-  { value: 'name_desc', label: 'Name Z–A' },
-  { value: 'price_asc', label: 'Price, low to high' },
-  { value: 'price_desc', label: 'Price, high to low' },
-]
+const SORTS: SortBy[] = ['name_asc', 'name_desc', 'price_asc', 'price_desc']
 
 /** Search, category and sort. What they change lives in the URL, so a result can be shared. */
 export function CatalogFilters({
@@ -34,15 +30,16 @@ export function CatalogFilters({
   categories: Category[]
   onChange: (changes: Record<string, string>) => void
 }) {
+  const { t } = useTranslation('catalog')
   const [draft, setDraft] = useState(searchTerm)
 
   // base-ui renders the VALUE in the trigger unless it is told the labels, which is how the two
   // dropdowns came to read "all" and "name_asc" on screen.
   const categoryItems: Record<string, string> = {
-    [ALL_CATEGORIES]: 'All categories',
+    [ALL_CATEGORIES]: t('allCategories'),
     ...Object.fromEntries(categories.map((category) => [category.id, category.name])),
   }
-  const sortItems: Record<string, string> = Object.fromEntries(SORTS.map((sort) => [sort.value, sort.label]))
+  const sortItems: Record<string, string> = Object.fromEntries(SORTS.map((sort) => [sort, t(`sort.${sort}`)]))
 
   function search(event: FormEvent) {
     event.preventDefault()
@@ -53,7 +50,7 @@ export function CatalogFilters({
     <form onSubmit={search} className="mb-6 flex flex-wrap gap-2">
       <Input
         type="search"
-        placeholder="Search by name or SKU"
+        placeholder={t('searchPlaceholder')}
         className="min-w-56 flex-1"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
@@ -63,11 +60,11 @@ export function CatalogFilters({
         value={categoryId || ALL_CATEGORIES}
         onValueChange={(value) => onChange({ category: !value || value === ALL_CATEGORIES ? '' : String(value) })}
       >
-        <SelectTrigger className="w-52" aria-label="Category">
-          <SelectValue placeholder="All categories" />
+        <SelectTrigger className="w-52" aria-label={t('category')}>
+          <SelectValue placeholder={t('allCategories')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+          <SelectItem value={ALL_CATEGORIES}>{t('allCategories')}</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category.id} value={category.id}>
               {category.name}
@@ -76,18 +73,18 @@ export function CatalogFilters({
         </SelectContent>
       </Select>
       <Select items={sortItems} value={sortBy} onValueChange={(value) => value && onChange({ sort: String(value) })}>
-        <SelectTrigger className="w-52" aria-label="Sort">
+        <SelectTrigger className="w-52" aria-label={t('sort.label')}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {SORTS.map((sort) => (
-            <SelectItem key={sort.value} value={sort.value}>
-              {sort.label}
+            <SelectItem key={sort} value={sort}>
+              {t(`sort.${sort}`)}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <Button type="submit">Search</Button>
+      <Button type="submit">{t('action.search', { ns: 'common' })}</Button>
     </form>
   )
 }

@@ -2,6 +2,7 @@ using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Infrastructure.Images;
 using Ecommerce.Catalog.Infrastructure.Persistence;
+using Ecommerce.Shared.Localization;
 using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
 using Ecommerce.Catalog.WebApi.Consumers;
 using MassTransit;
@@ -88,6 +89,11 @@ public class CatalogTestFixture : IAsyncLifetime
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
 
+        // No request to negotiate from: a test says which language it is asking in.
+        services.AddSingleton<TestLanguage>();
+        services.AddSingleton<IRequestLanguage>(sp => sp.GetRequiredService<TestLanguage>());
+        services.Configure<LanguageOptions>(o => { });
+
         // Product images (specs/019): the REAL filesystem store, in a directory of its own.
         Images = new TestImageStore(new FileSystemProductImageStore(
             Path.Combine(Path.GetTempPath(), $"catalog_images_{Guid.NewGuid():N}")));
@@ -118,7 +124,21 @@ public class CatalogTestFixture : IAsyncLifetime
         await drop.ExecuteNonQueryAsync();
     }
 
-    public AsyncServiceScope NewScope() => Services.CreateAsyncScope();
+    /// <summary>
+    /// A scope, optionally answering in a given language (specs/021). There is no HTTP request here,
+    /// so the language is handed in rather than negotiated.
+    /// </summary>
+    public AsyncServiceScope NewScope(string? language = null)
+    {
+        var scope = Services.CreateAsyncScope();
+
+        if (language is not null)
+        {
+            scope.ServiceProvider.GetRequiredService<TestLanguage>().Current = language;
+        }
+
+        return scope;
+    }
 }
 
 [CollectionDefinition(nameof(CatalogTestCollection))]
@@ -163,4 +183,10 @@ public sealed class TestImageStore(FileSystemProductImageStore inner) : IProduct
 
     public Task DeleteAsync(string key, CancellationToken cancellationToken = default) =>
         FailDeletes ? throw new IOException("Simulated storage failure.") : Inner.DeleteAsync(key, cancellationToken);
+}
+
+/// <summary>A settable <see cref="IRequestLanguage"/>: the tests' way of saying "asked in Vietnamese".</summary>
+public class TestLanguage : IRequestLanguage
+{
+    public string Current { get; set; } = "vi";
 }

@@ -1,0 +1,31 @@
+info:
+  name: customer cannot translate a product (403)
+  type: http
+  seq: 18
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/translations/en"
+  body:
+    type: json
+    data: |-
+          {
+            "name": "Not mine to write"
+          }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

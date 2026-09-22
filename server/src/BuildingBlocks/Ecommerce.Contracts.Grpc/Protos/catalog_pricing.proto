@@ -99,6 +99,11 @@ message PricedProduct {
 message PriceVariantsRequest {
   // Variant ids as UUID strings. Duplicates allowed; each distinct one is answered once.
   repeated string variant_ids = 1;
+
+  // Which language to answer in (specs/021). The name and option summary come back in it, and Order
+  // FREEZES them onto the line - so this decides the words an order keeps for good. Empty means the
+  // shop's default, which is what an Order built before this feature sends.
+  string language = 2;
 }
 
 message PriceVariantsResponse {
@@ -107,6 +112,9 @@ message PriceVariantsResponse {
 
 message DescribeVariantsRequest {
   repeated string variant_ids = 1;
+
+  // Which language to describe them in (specs/021). Empty means the shop's default.
+  string language = 2;
 }
 
 message DescribeVariantsResponse {

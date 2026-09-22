@@ -22,7 +22,13 @@ public interface ICatalogProducts
     /// lines hold, and for a line written before variants that is the product's own id, which is also
     /// its only variant's.
     /// </summary>
-    Task<CatalogDescription> DescribeAsync(IReadOnlyCollection<Guid> variantIds, CancellationToken cancellationToken = default);
+    /// <param name="language">
+    /// Which language to describe them in (specs/021). Empty means the shop's default.
+    /// </param>
+    Task<CatalogDescription> DescribeAsync(
+        IReadOnlyCollection<Guid> variantIds,
+        CancellationToken cancellationToken = default,
+        string language = "");
 }
 
 /// <param name="Reachable">

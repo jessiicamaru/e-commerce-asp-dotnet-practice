@@ -1,15 +1,25 @@
-/** Why a cart line cannot be bought, in words a shopper understands. Null when it can. */
-export function lineProblem(status: string): string | null {
+import type { TFunction } from 'i18next'
+
+/**
+ * Why a cart line cannot be bought - as a translation key, not a sentence (specs/021). Null when it
+ * can be bought, which is the common case and says nothing.
+ */
+export function lineProblemKey(status: string): string | null {
   switch (status) {
     case 'Available':
       return null
     case 'NotForSale':
-      return 'No longer for sale.'
+      return 'status.notForSale'
     case 'NoLongerAvailable':
-      return 'This product has been removed from the shop.'
+      return 'status.noLongerAvailable'
     case 'PriceUnavailable':
-      return 'The price could not be checked right now.'
+      return 'status.priceUnavailable'
     default:
-      return 'This item cannot be bought right now.'
+      return 'status.unavailable'
   }
+}
+
+export function lineProblem(t: TFunction<'cart'>, status: string): string | null {
+  const key = lineProblemKey(status)
+  return key ? t(key) : null
 }

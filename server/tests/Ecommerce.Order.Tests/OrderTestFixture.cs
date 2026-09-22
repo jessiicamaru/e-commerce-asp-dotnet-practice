@@ -6,6 +6,7 @@ using Ecommerce.Order.Infrastructure.Shipping;
 using Ecommerce.Order.Infrastructure.Tax;
 using Ecommerce.Order.WebApi.Consumers;
 using Ecommerce.Shared.Authentication;
+using Ecommerce.Shared.Localization;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,19 @@ public class OrderTestFixture : IAsyncLifetime
     public TestCurrentUser CurrentUser { get; } = new();
 
     public FakeCheckoutDependencies Checkout { get; } = new();
+
+    private TestLanguage LanguageHolder { get; } = new();
+
+    /// <summary>
+    /// The language checkout runs in. Vietnamese by default, like the shop. Settable per test - the
+    /// provider is built once for the whole collection, so a language captured at registration would
+    /// be the first test's forever.
+    /// </summary>
+    public string Language
+    {
+        get => LanguageHolder.Current;
+        set => LanguageHolder.Current = value;
+    }
 
     public ITestHarness Harness => Services.GetRequiredService<ITestHarness>();
 
@@ -104,6 +118,10 @@ public class OrderTestFixture : IAsyncLifetime
         // identity is handed in — not that the identity handed in at runtime came from a valid
         // token. That end of the path is exercised by the auth smoke script, not from here.
         services.AddSingleton<ICurrentUser>(CurrentUser);
+
+        // No HTTP request in these tests, so the language is handed in rather than negotiated
+        // (specs/021). Tests that care set Language.
+        services.AddSingleton<IRequestLanguage>(_ => LanguageHolder);
 
         // Checkout's three synchronous reads, faked - they are other services, and what the checkout
         // tests are about is what Order does with the answers. The real gRPC path is exercised end to
@@ -174,9 +192,15 @@ public class FakeCheckoutDependencies : ICartReader, ICatalogPrices, IAddressRea
     public Task<IReadOnlyList<CartItem>> GetMyCartAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<CartItem>>(Cart);
 
+    /// <summary>What language checkout asked Catalog to answer in (specs/021).</summary>
+    public string? LastLanguageAsked { get; private set; }
+
     public Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
-        IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<CatalogPrice>>(productIds.Select(id => Prices[id]).ToList());
+        IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default, string language = "")
+    {
+        LastLanguageAsked = language;
+        return Task.FromResult<IReadOnlyList<CatalogPrice>>(productIds.Select(id => Prices[id]).ToList());
+    }
 
     public Task<AddressCopy?> GetMyAddressAsync(Guid? addressId, CancellationToken cancellationToken = default)
     {
@@ -187,3 +211,9 @@ public class FakeCheckoutDependencies : ICartReader, ICatalogPrices, IAddressRea
 
 [CollectionDefinition(nameof(OrderTestCollection))]
 public class OrderTestCollection : ICollectionFixture<OrderTestFixture>;
+
+/// <summary>A settable <see cref="IRequestLanguage"/>: these tests have no request to negotiate from.</summary>
+public class TestLanguage : IRequestLanguage
+{
+    public string Current { get; set; } = "vi";
+}

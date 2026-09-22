@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
@@ -14,9 +15,11 @@ export function AddressChoice({
   addressId: string | null
   onChange: (addressId: string) => void
 }) {
+  const { t } = useTranslation('checkout')
+
   return (
     <fieldset className="rounded-lg border p-4">
-      <legend className="px-1 text-sm font-medium">Deliver to</legend>
+      <legend className="px-1 text-sm font-medium">{t('deliverTo')}</legend>
       <RadioGroup value={addressId ?? ''} onValueChange={onChange} className="gap-3">
         {addresses.map((address) => (
           <div key={address.id} className="flex items-start gap-3">
@@ -24,7 +27,7 @@ export function AddressChoice({
             <Label htmlFor={`address-${address.id}`} className="flex flex-col items-start gap-1 font-normal">
               <span className="flex items-center gap-2 font-medium">
                 {address.recipientName}
-                {address.isDefault && <Badge variant="secondary">Default</Badge>}
+                {address.isDefault && <Badge variant="secondary">{t('default')}</Badge>}
               </span>
               <span className="text-muted-foreground text-xs">{describeAddress(address)}</span>
             </Label>
@@ -32,7 +35,7 @@ export function AddressChoice({
         ))}
       </RadioGroup>
       <Link to="/addresses" className="text-muted-foreground mt-3 inline-block text-xs underline">
-        Manage addresses
+        {t('manageAddresses')}
       </Link>
     </fieldset>
   )

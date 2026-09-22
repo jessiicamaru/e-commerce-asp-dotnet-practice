@@ -1,0 +1,24 @@
+{
+  "title": "Checkout",
+  "loadFailed": "Checkout could not be loaded.",
+  "needAddress": "You need a delivery address first.",
+  "addOne": "Add one",
+  "deliverTo": "Deliver to",
+  "manageAddresses": "Manage addresses",
+  "delivery": "Delivery",
+  "default": "Default",
+  "pricing": "Pricing your order…",
+  "priceFailed": "Your order could not be priced.",
+  "cartRefused": "This cart cannot be checked out.",
+  "dependencyDown": "A service needed to price your order is unavailable. Try again in a moment.",
+  "backToCart": "Back to the cart",
+  "placeOrder": "Place order · {{amount}}",
+  "placing": "Placing your order…",
+  "totals": {
+    "items": "Items",
+    "delivery": "Delivery",
+    "tax": "Tax",
+    "discount": "Discount",
+    "total": "Total"
+  }
+}

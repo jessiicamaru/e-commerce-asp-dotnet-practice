@@ -22,7 +22,11 @@ public interface IProductRepository
 
     Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
     Task<List<Product>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default);
+    /// <param name="language">
+    /// Which language's translations to search as well as the default text (specs/021). Empty searches
+    /// the default text only, which is what a caller with no request does.
+    /// </param>
+    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "");
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 

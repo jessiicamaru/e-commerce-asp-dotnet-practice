@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
@@ -10,13 +11,14 @@ import { useProduct } from '@/hooks/product'
 import { money } from '@/utils/shared'
 
 export function ProductPage() {
+  const { t } = useTranslation('catalog')
   const { id = '' } = useParams()
   const { data: product, isPending, error } = useProduct(id)
   const [chosenVariantId, setChosenVariantId] = useState<string | null>(null)
 
   if (error) {
     const status = ApiError.from(error).status
-    return <ErrorMessage>{status === 404 ? 'This product does not exist.' : 'The product could not be loaded.'}</ErrorMessage>
+    return <ErrorMessage>{status === 404 ? t('product.notFound') : t('product.loadFailed')}</ErrorMessage>
   }
 
   if (isPending || !product) {
@@ -32,7 +34,7 @@ export function ProductPage() {
     <section>
       <p className="mb-4">
         <Link to="/" className="text-sm underline">
-          ← Back to the shop
+          {t('product.back')}
         </Link>
       </p>
       <div className="grid gap-8 md:grid-cols-2">
@@ -41,22 +43,20 @@ export function ProductPage() {
           <h1 className="text-2xl font-bold">{product.name}</h1>
           <p className="text-2xl font-semibold">
             {!variant && product.priceVaries && (
-              <span className="text-muted-foreground text-base font-normal">from </span>
+              <span className="text-muted-foreground text-base font-normal">{t('product.from')}</span>
             )}
             {money(variant?.price ?? product.price)}
           </p>
-          <p className="text-muted-foreground text-xs">
-            Price excludes tax, which is added at checkout for your delivery country.
-          </p>
+          <p className="text-muted-foreground text-xs">{t('product.taxNote')}</p>
           <Availability value={variant?.availability ?? product.availability} />
           <VariantChooser variants={sellable} selectedId={chosenVariantId} onSelect={setChosenVariantId} />
           <AddToCart
             productId={product.id}
             variantId={variant?.id}
-            disabledReason={variant ? undefined : 'Choose an option first.'}
+            disabledReason={variant ? undefined : t('product.chooseFirst')}
           />
           {product.description && <p className="text-sm">{product.description}</p>}
-          <p className="text-muted-foreground text-xs">SKU {variant?.sku ?? product.sku}</p>
+          <p className="text-muted-foreground text-xs">{t('product.sku', { sku: variant?.sku ?? product.sku })}</p>
         </div>
       </div>
     </section>

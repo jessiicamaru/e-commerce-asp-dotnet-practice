@@ -1,32 +1,44 @@
+import type { TFunction } from 'i18next'
 import { ORDER_STATUS } from '@/constants/order'
 
 /**
- * An order's status as a sentence a customer understands (#39).
+ * Which sentence describes an order's status (specs/021: the key, not the sentence).
  *
  * The saga's failure reasons are written for operators ("Insufficient stock for product 01a0..."), so
- * they are classified here rather than shown raw.
+ * they are classified here into something a customer reads - and the classification decides a
+ * translation key rather than an English sentence, because the same order is read in two languages.
  */
-export function describeOrderStatus(status: string, failureReason: string | null): string {
+export function orderStatusKey(status: string, failureReason: string | null): string {
   switch (status) {
     case ORDER_STATUS.submitted:
-      return 'We are reserving your items and taking payment…'
+      return 'status.submitted'
     case ORDER_STATUS.paid:
-      return 'Paid. We will start preparing it soon.'
+      return 'status.paid'
     case ORDER_STATUS.preparing:
-      return 'Being prepared for dispatch.'
+      return 'status.preparing'
     case ORDER_STATUS.shipped:
-      return 'On its way.'
+      return 'status.shipped'
     case ORDER_STATUS.failed:
       if (failureReason && /stock/i.test(failureReason)) {
-        return 'Not placed: some items ran out of stock. Nothing was charged, and your cart is unchanged.'
+        return 'status.failedStock'
       }
       if (failureReason && /payment|declin/i.test(failureReason)) {
-        return 'Not placed: the payment was declined. Your cart is unchanged, so you can try again.'
+        return 'status.failedPayment'
       }
-      return 'Not placed. Nothing was charged, and your cart is unchanged.'
+      return 'status.failed'
     default:
-      return status
+      return ''
   }
+}
+
+/** The sentence itself. A status nobody has a sentence for shows as it came, rather than as a key. */
+export function describeOrderStatus(
+  t: TFunction<'orders'>,
+  status: string,
+  failureReason: string | null,
+): string {
+  const key = orderStatusKey(status, failureReason)
+  return key ? t(key) : status
 }
 
 /** Which tone to show a status in. */

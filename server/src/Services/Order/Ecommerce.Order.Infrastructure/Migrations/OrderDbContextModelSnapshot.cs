@@ -39,6 +39,9 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<string>("Language")
+                        .HasColumnType("text");
+
                     b.Property<string>("ShippingOptionCode")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");

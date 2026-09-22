@@ -1,0 +1,8 @@
+{
+  "title": "Backend status",
+  "subtitle": "Each service's health, checked through the gateway.",
+  "checking": "checking…",
+  "up": "up",
+  "down": "down ({{detail}})",
+  "orchestratorNote": "The orchestrator has no health endpoint - it has no HTTP surface at all - so it cannot be listed here."
+}

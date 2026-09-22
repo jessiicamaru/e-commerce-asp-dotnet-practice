@@ -1,0 +1,40 @@
+info:
+  name: translate product
+  type: http
+  seq: 9
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/translations/vi"
+  body:
+    type: json
+    data: |-
+          {
+            "name": "Máy ảnh Bruno",
+            "description": "Mô tả tiếng Việt"
+          }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the product now reads in Vietnamese, and says so", function() {
+          expect(res.body.language).to.equal("vi");
+          expect(res.body.name).to.equal("Máy ảnh Bruno");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  An upsert: writing it twice leaves the second text (specs/021). The product's own Name column
+  keeps the text it was entered with, and is the fallback for a language nobody has translated.

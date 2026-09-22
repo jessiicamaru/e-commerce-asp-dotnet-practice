@@ -38,9 +38,14 @@ public interface ICatalogPrices
     /// Prices the SELLABLE units being bought - variants since specs/020. All-or-nothing: an unknown
     /// one refuses the whole order rather than pricing the rest.
     /// </summary>
+    /// <param name="language">
+    /// Which language to answer in (specs/021). The name and options that come back are FROZEN onto
+    /// the order, so this decides the words the order keeps. Empty means the shop's default.
+    /// </param>
     Task<IReadOnlyList<CatalogPrice>> GetPricesAsync(
         IReadOnlyCollection<Guid> variantIds,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        string language = "");
 }
 
 /// <summary>

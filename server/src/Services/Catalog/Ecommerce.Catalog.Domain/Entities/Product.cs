@@ -49,6 +49,12 @@ public class Product
 
     /// <summary>The shapes this product is sold in. At least one; the variant is what is bought.</summary>
     public List<ProductVariant> Variants { get; set; } = [];
+
+    /// <summary>
+    /// This product's name and description in other languages (specs/021). <see cref="Name"/> and
+    /// <see cref="Description"/> hold the default-language text and are the fallback.
+    /// </summary>
+    public List<ProductTranslation> Translations { get; set; } = [];
     public Guid CategoryId { get; set; }
     public Category? Category { get; set; }
     public bool IsActive { get; set; } = true;

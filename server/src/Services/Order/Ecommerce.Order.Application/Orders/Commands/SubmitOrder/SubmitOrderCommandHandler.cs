@@ -96,6 +96,8 @@ public class SubmitOrderCommandHandler(
                 Country = address.Country,
                 Phone = address.Phone
             },
+            // Which language the frozen words above are in (specs/021).
+            Language = priced.Language,
             ShippingOptionCode = shipping.Code,
             ShippingOptionName = shipping.Name,
             ShippingPrice = shipping.Price,

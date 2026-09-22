@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { Variant } from '@/services/product/types'
@@ -19,6 +20,7 @@ export function VariantChooser({
   selectedId: string | null
   onSelect: (variantId: string) => void
 }) {
+  const { t } = useTranslation('catalog')
   const sellable = variants.filter((variant) => variant.isActive)
 
   if (sellable.length <= 1) {
@@ -27,7 +29,7 @@ export function VariantChooser({
 
   return (
     <fieldset className="rounded-lg border p-4">
-      <legend className="px-1 text-sm font-medium">Choose one</legend>
+      <legend className="px-1 text-sm font-medium">{t('product.chooseOne')}</legend>
       <RadioGroup value={selectedId ?? ''} onValueChange={onSelect} className="gap-3">
         {sellable.map((variant) => (
           <div key={variant.id} className="flex items-start gap-3">
@@ -37,7 +39,7 @@ export function VariantChooser({
                 {variant.optionSummary || variant.sku} · <span className="font-semibold">{money(variant.price)}</span>
               </span>
               <span className="text-muted-foreground text-xs">
-                {variant.availability === 'InStock' ? 'In stock' : 'Out of stock'} · {variant.sku}
+                {variant.availability === 'InStock' ? t('product.inStock') : t('product.outOfStock')} · {variant.sku}
               </span>
             </Label>
           </div>

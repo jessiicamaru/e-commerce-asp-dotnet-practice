@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { OrderLines } from '@/components/order/order-lines'
@@ -13,6 +14,7 @@ import { describeAddress } from '@/utils/address'
  * and takes payment, so the hook polls until it settles and the page says what is happening.
  */
 export function OrderPage() {
+  const { t, i18n } = useTranslation('orders')
   const { id = '' } = useParams()
   const justPlaced = (useLocation().state as { justPlaced?: boolean } | null)?.justPlaced ?? false
   const { data: order, isPending, error, isRefetching } = useOrder(id)
@@ -20,7 +22,7 @@ export function OrderPage() {
   if (error) {
     // Another customer's order is simply not found (#39): the page cannot tell the two apart either.
     const status = ApiError.from(error).status
-    return <ErrorMessage>{status === 404 ? 'Order not found.' : 'The order could not be loaded.'}</ErrorMessage>
+    return <ErrorMessage>{status === 404 ? t('order.notFound') : t('order.loadFailed')}</ErrorMessage>
   }
 
   if (isPending || !order) {
@@ -35,31 +37,33 @@ export function OrderPage() {
     <section>
       <p className="mb-4">
         <Link to="/orders" className="text-sm underline">
-          ← Your orders
+          {t('order.back')}
         </Link>
       </p>
       <h1 className="text-2xl font-bold">
-        {justPlaced && !settling && order.status !== ORDER_STATUS.failed ? 'Thank you for your order' : 'Order'}
+        {justPlaced && !settling && order.status !== ORDER_STATUS.failed ? t('order.thanks') : t('order.title')}
       </h1>
       <p className="text-muted-foreground mb-4 text-xs">
-        {order.orderId} · placed {new Date(order.createdAt).toLocaleString()}
+        {t('order.placedAt', { id: order.orderId, at: new Date(order.createdAt).toLocaleString(i18n.language) })}
       </p>
 
       <OrderStatus
         status={order.status}
         failureReason={order.failureReason}
         showSpinner={settling && !gaveUp}
-        overrideMessage={gaveUp ? 'This is taking longer than usual. Your order is safe; check back in a minute.' : undefined}
+        overrideMessage={gaveUp ? t('order.taking') : undefined}
       />
 
       {order.status === ORDER_STATUS.failed && (
         <p className="mt-3">
           <Link to="/cart" className="underline">
-            Back to your cart
+            {t('order.backToCart')}
           </Link>
         </p>
       )}
-      {order.trackingReference && <p className="mt-3 text-sm">Tracking reference: {order.trackingReference}</p>}
+      {order.trackingReference && (
+        <p className="mt-3 text-sm">{t('order.tracking', { reference: order.trackingReference })}</p>
+      )}
 
       <div className="mt-4">
         <OrderLines items={order.items} />
@@ -68,7 +72,7 @@ export function OrderPage() {
 
       {order.shippingAddress && (
         <p className="text-sm">
-          <span className="font-medium">Delivering to</span> {order.shippingAddress.recipientName},{' '}
+          <span className="font-medium">{t('order.deliveringTo')}</span> {order.shippingAddress.recipientName},{' '}
           {describeAddress(order.shippingAddress)}
         </p>
       )}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddressChoice } from '@/components/checkout/address-choice'
@@ -17,6 +18,7 @@ import { money } from '@/utils/shared'
  * total here is the total charged unless the cart or a price changes in between.
  */
 export function CheckoutPage() {
+  const { t } = useTranslation('checkout')
   const navigate = useNavigate()
   const addresses = useAddresses()
   const options = useShippingOptions()
@@ -34,7 +36,7 @@ export function CheckoutPage() {
   const quote = useCheckoutQuote(addressId && shippingOption ? { addressId, shippingOption } : null)
 
   if (addresses.isError || options.isError) {
-    return <ErrorMessage>Checkout could not be loaded.</ErrorMessage>
+    return <ErrorMessage>{t('loadFailed')}</ErrorMessage>
   }
 
   if (addresses.isPending || options.isPending || !addresses.data || !options.data) {
@@ -44,11 +46,11 @@ export function CheckoutPage() {
   if (addresses.data.length === 0) {
     return (
       <section>
-        <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
+        <h1 className="mb-4 text-2xl font-bold">{t('title')}</h1>
         <p>
-          You need a delivery address first.{' '}
+          {t('needAddress')}{' '}
           <Link to="/addresses" className="underline">
-            Add one
+            {t('addOne')}
           </Link>
           .
         </p>
@@ -71,22 +73,22 @@ export function CheckoutPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">Checkout</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       <AddressChoice addresses={addresses.data} addressId={addressId} onChange={setChosenAddressId} />
       <DeliveryChoice options={options.data} shippingOption={shippingOption} onChange={setChosenShippingOption} />
 
-      {quote.isFetching && !quote.data && <p className="text-muted-foreground text-sm">Pricing your order…</p>}
+      {quote.isFetching && !quote.data && <p className="text-muted-foreground text-sm">{t('pricing')}</p>}
 
       {quoteError && (
         <ErrorMessage>
           {quoteError.status === 409
-            ? (quoteError.problem.detail ?? 'This cart cannot be checked out.')
+            ? (quoteError.problem.detail ?? t('cartRefused'))
             : quoteError.status === 503
-              ? 'A service needed to price your order is unavailable. Try again in a moment.'
-              : 'Your order could not be priced.'}{' '}
+              ? t('dependencyDown')
+              : t('priceFailed')}{' '}
           <Link to="/cart" className="underline">
-            Back to the cart
+            {t('backToCart')}
           </Link>
         </ErrorMessage>
       )}
@@ -97,7 +99,7 @@ export function CheckoutPage() {
           <OrderTotals totals={quote.data} shippingName={quote.data.shippingOption.name} />
           {placeOrder.isError && <ErrorMessage>{ApiError.from(placeOrder.error).message}</ErrorMessage>}
           <Button className="self-start" disabled={placeOrder.isPending} onClick={place}>
-            {placeOrder.isPending ? 'Placing your order…' : `Place order · ${money(quote.data.totalAmount)}`}
+            {placeOrder.isPending ? t('placing') : t('placeOrder', { amount: money(quote.data.totalAmount) })}
           </Button>
         </>
       )}

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/config/axios'
 import { ErrorMessage } from '@/components/shared/query-state'
 import { Button } from '@/components/ui/button'
@@ -8,15 +9,15 @@ import { Label } from '@/components/ui/label'
 import type { AddressFields } from '@/services/address/types'
 import { normaliseAddress } from '@/utils/address'
 
-const FIELDS: { name: keyof AddressFields; label: string; required?: boolean; hint?: string }[] = [
-  { name: 'recipientName', label: 'Recipient name', required: true },
-  { name: 'line1', label: 'Address line 1', required: true },
-  { name: 'line2', label: 'Address line 2' },
-  { name: 'city', label: 'City', required: true },
-  { name: 'region', label: 'Region / state' },
-  { name: 'postalCode', label: 'Postal code', required: true },
-  { name: 'country', label: 'Country', required: true, hint: 'Two-letter code, such as VN or GB' },
-  { name: 'phone', label: 'Phone' },
+const FIELDS: { name: keyof AddressFields; required?: boolean; hint?: boolean }[] = [
+  { name: 'recipientName', required: true },
+  { name: 'line1', required: true },
+  { name: 'line2' },
+  { name: 'city', required: true },
+  { name: 'region' },
+  { name: 'postalCode', required: true },
+  { name: 'country', required: true, hint: true },
+  { name: 'phone' },
 ]
 
 /**
@@ -34,6 +35,7 @@ export function AddressForm({
   onSave: (fields: AddressFields) => Promise<void>
   onCancel: () => void
 }) {
+  const { t } = useTranslation('auth')
   const [fields, setFields] = useState<AddressFields>(initial)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
@@ -68,8 +70,8 @@ export function AddressForm({
         <form onSubmit={submit} className="flex flex-col gap-4">
           {FIELDS.map((field) => (
             <div key={field.name} className="grid gap-1.5">
-              <Label htmlFor={field.name}>{field.label}</Label>
-              {field.hint && <span className="text-muted-foreground text-xs">{field.hint}</span>}
+              <Label htmlFor={field.name}>{t(`addresses.fields.${field.name}`)}</Label>
+              {field.hint && <span className="text-muted-foreground text-xs">{t('addresses.countryHint')}</span>}
               <Input
                 id={field.name}
                 required={field.required}
@@ -83,10 +85,10 @@ export function AddressForm({
           {error && <ErrorMessage>{error}</ErrorMessage>}
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={busy}>
-              {busy ? 'Saving…' : 'Save'}
+              {busy ? t('action.saving', { ns: 'common' }) : t('action.save', { ns: 'common' })}
             </Button>
             <Button type="button" variant="ghost" onClick={onCancel}>
-              Cancel
+              {t('action.cancel', { ns: 'common' })}
             </Button>
           </div>
         </form>

@@ -1,0 +1,44 @@
+{
+  "title": "Cửa hàng",
+  "searchPlaceholder": "Tìm theo tên hoặc mã SKU",
+  "allCategories": "Tất cả danh mục",
+  "sort": {
+    "label": "Sắp xếp",
+    "name_asc": "Tên A–Z",
+    "name_desc": "Tên Z–A",
+    "price_asc": "Giá tăng dần",
+    "price_desc": "Giá giảm dần"
+  },
+  "category": "Danh mục",
+  "nothingMatches": "Không có sản phẩm nào khớp.",
+  "resultCount_one": "{{count}} sản phẩm",
+  "resultCount_other": "{{count}} sản phẩm",
+  "resultCountFor_one": "{{count}} sản phẩm cho “{{term}}”",
+  "resultCountFor_other": "{{count}} sản phẩm cho “{{term}}”",
+  "loadFailed": "Không tải được danh mục sản phẩm. Backend đã chạy chưa?",
+  "product": {
+    "back": "← Về cửa hàng",
+    "notFound": "Sản phẩm này không tồn tại.",
+    "loadFailed": "Không tải được sản phẩm.",
+    "from": "từ ",
+    "taxNote": "Giá chưa gồm thuế; thuế được tính khi thanh toán theo quốc gia nhận hàng.",
+    "sku": "Mã SKU {{sku}}",
+    "inStock": "Còn hàng",
+    "outOfStock": "Hết hàng",
+    "chooseOne": "Chọn một loại",
+    "chooseFirst": "Hãy chọn một loại trước.",
+    "quantity": "Số lượng",
+    "addToCart": "Thêm vào giỏ",
+    "adding": "Đang thêm…",
+    "added_one": "Đã thêm {{count}} vào giỏ.",
+    "added_other": "Đã thêm {{count}} vào giỏ.",
+    "addFailed": "Không thêm được. Thử lại.",
+    "signInToAdd": "<0>Đăng nhập</0> để thêm sản phẩm này vào giỏ.",
+    "viewCart": "Xem giỏ hàng"
+  },
+  "pager": {
+    "previous": "Trước",
+    "next": "Sau",
+    "page": "Trang {{page}} / {{total}}"
+  }
+}

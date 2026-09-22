@@ -1,0 +1,27 @@
+{
+  "title": "Your cart",
+  "empty": "Your cart is empty.",
+  "browse": "Browse the shop",
+  "loadFailed": "The cart could not be loaded.",
+  "pricesUnavailable": "Prices could not be checked just now. Your items are safe; try again in a moment.",
+  "columns": {
+    "product": "Product",
+    "price": "Price",
+    "quantity": "Quantity",
+    "total": "Total"
+  },
+  "remove": "Remove",
+  "unknownProduct": "Unknown product",
+  "estimated": "Estimated {{amount}}",
+  "totalUnavailable": "Total unavailable",
+  "estimateNote": "An estimate from today's prices, before shipping and tax. The final amount is fixed at checkout.",
+  "checkout": "Check out",
+  "fixLines": "Remove or fix the items marked above before checking out.",
+  "saveFailed": "That change could not be saved.",
+  "status": {
+    "notForSale": "No longer for sale.",
+    "noLongerAvailable": "This product has been removed from the shop.",
+    "priceUnavailable": "The price could not be checked right now.",
+    "unavailable": "This item cannot be bought right now."
+  }
+}

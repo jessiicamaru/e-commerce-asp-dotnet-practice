@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Observability;
 using Ecommerce.Cart.Application;
 using Ecommerce.Cart.Infrastructure;
@@ -121,6 +122,10 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
+// A cart shows product names and option values, which are Catalog's text - so it has to ask for them
+// in the language this request is in (specs/021).
+builder.Services.AddRequestLanguage(builder.Configuration);
+
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks();
 builder.Services.AddGrpcReflection();
@@ -174,6 +179,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.UseRequestLanguage();
 
 app.UseAuthentication();
 app.UseAuthorization();
