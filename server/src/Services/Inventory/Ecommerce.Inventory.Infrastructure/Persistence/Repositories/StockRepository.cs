@@ -71,6 +71,19 @@ public class StockRepository(InventoryDbContext context) : IStockRepository
         await _context.StockItems.AddAsync(stockItem, cancellationToken);
     }
 
+    public Task<int> ForgetAsync(IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
+    {
+        var wanted = productIds.Distinct().ToList();
+
+        // One statement, and no read first: there is nothing to decide. A row that is not there was
+        // already forgotten, which is the answer the caller wanted either way. Reservations cascade
+        // from the stock row, and any that survive a deleted product were for a product nobody can
+        // order any more.
+        return _context.StockItems
+            .Where(s => wanted.Contains(s.ProductId))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);
