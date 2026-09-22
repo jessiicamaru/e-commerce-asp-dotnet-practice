@@ -1,5 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { currentLanguage } from '@/config/i18n'
+import { CURRENCY_HEADER, currentCurrency } from '@/config/money'
 import { ApiError } from './api-error'
 
 export * from './api-error'
@@ -50,6 +51,10 @@ http.interceptors.request.use((config) => {
   // The interface and the product text have to agree, so every call says which language this is
   // (specs/021). The server negotiates it the standard way and answers with Content-Language.
   request.headers['Accept-Language'] = currentLanguage()
+
+  // ...and which currency it wants its amounts in (specs/022). A different header, because it is a
+  // different choice: a Vietnamese person reading English still pays in dong.
+  request.headers[CURRENCY_HEADER] = currentCurrency()
   const token = request.anonymous ? null : tokenProvider()
   if (token) {
     request.headers.Authorization = `Bearer ${token}`

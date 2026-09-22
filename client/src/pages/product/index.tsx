@@ -8,7 +8,7 @@ import { ProductImage } from '@/components/product/product-image'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct } from '@/hooks/product'
-import { money } from '@/utils/shared'
+import { Price } from '@/components/shared/price'
 
 export function ProductPage() {
   const { t } = useTranslation('catalog')
@@ -45,7 +45,10 @@ export function ProductPage() {
             {!variant && product.priceVaries && (
               <span className="text-muted-foreground text-base font-normal">{t('product.from')}</span>
             )}
-            {money(variant?.price ?? product.price)}
+            <Price
+              value={variant ? variant.price : product.price}
+              currency={variant?.currency ?? product.currency}
+            />
           </p>
           <p className="text-muted-foreground text-xs">{t('product.taxNote')}</p>
           <Availability value={variant?.availability ?? product.availability} />

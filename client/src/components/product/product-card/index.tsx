@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { Availability } from '@/components/product/availability'
 import { ProductImage } from '@/components/product/product-image'
 import { Card, CardContent } from '@/components/ui/card'
+import { Price } from '@/components/shared/price'
 import type { Product } from '@/services/product/types'
-import { money } from '@/utils/shared'
 
 export function ProductCard({ product, categoryName }: { product: Product; categoryName?: string }) {
   const { t } = useTranslation('catalog')
@@ -23,7 +23,7 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
           {product.priceVaries && (
             <span className="text-muted-foreground text-xs font-normal">{t('product.from')}</span>
           )}
-          {money(product.price)}
+          <Price value={product.price} currency={product.currency} />
         </span>
         <Availability value={product.availability} />
       </CardContent>

@@ -66,7 +66,7 @@ export function OrderPage() {
       )}
 
       <div className="mt-4">
-        <OrderLines items={order.items} />
+        <OrderLines items={order.items} currency={order.currency} />
       </div>
       <OrderTotals totals={order} shippingName={order.shippingOption?.name} />
 

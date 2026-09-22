@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { Variant } from '@/services/product/types'
-import { money } from '@/utils/shared'
+import { Price } from '@/components/shared/price'
 
 /**
  * Which shape of the product to buy (specs/020).
@@ -36,7 +36,8 @@ export function VariantChooser({
             <RadioGroupItem value={variant.id} id={`variant-${variant.id}`} className="mt-1" />
             <Label htmlFor={`variant-${variant.id}`} className="flex flex-col items-start gap-0.5 font-normal">
               <span>
-                {variant.optionSummary || variant.sku} · <span className="font-semibold">{money(variant.price)}</span>
+                {variant.optionSummary || variant.sku} ·{' '}
+                <Price value={variant.price} currency={variant.currency} className="font-semibold" />
               </span>
               <span className="text-muted-foreground text-xs">
                 {variant.availability === 'InStock' ? t('product.inStock') : t('product.outOfStock')} · {variant.sku}

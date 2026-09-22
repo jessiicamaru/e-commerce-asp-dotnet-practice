@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { ShippingOption } from '@/services/order/types'
-import { money } from '@/utils/shared'
+import { Price } from '@/components/shared/price'
 
 /** The delivery options and what each costs - decided by Order, never by the client. */
 export function DeliveryChoice({
@@ -24,7 +24,7 @@ export function DeliveryChoice({
           <div key={option.code} className="flex items-center gap-3">
             <RadioGroupItem value={option.code} id={`shipping-${option.code}`} />
             <Label htmlFor={`shipping-${option.code}`} className="font-normal">
-              {option.name} · {money(option.price)}
+              {option.name} · <Price value={option.price} currency={option.currency} />
             </Label>
           </div>
         ))}

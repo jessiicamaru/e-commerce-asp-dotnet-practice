@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
+import { CurrencySwitcher } from '@/components/layout/currency-switcher'
 import { LanguageSwitcher } from '@/components/layout/language-switcher'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/auth/useAuth'
@@ -20,6 +21,7 @@ export function TopBar() {
         </NavLink>
         <nav className="flex flex-wrap items-center gap-4">
           <LanguageSwitcher />
+          <CurrencySwitcher />
           <NavLink to="/status" className={link}>
             {t('nav.status')}
           </NavLink>

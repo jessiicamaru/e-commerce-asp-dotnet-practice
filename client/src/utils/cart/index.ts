@@ -14,6 +14,11 @@ export function lineProblemKey(status: string): string | null {
       return 'status.noLongerAvailable'
     case 'PriceUnavailable':
       return 'status.priceUnavailable'
+    // Not withdrawn - just not priced in the currency being browsed in (specs/022). A different
+    // sentence from "no longer available", because switching currency brings it back and the other
+    // wording would not lead anybody to try.
+    case 'NotSoldInCurrency':
+      return 'status.notSoldInCurrency'
     default:
       return 'status.unavailable'
   }

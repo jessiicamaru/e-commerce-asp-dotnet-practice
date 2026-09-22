@@ -50,7 +50,9 @@ export function CartLines({
                 )}
                 {problem && <div className="text-destructive text-xs">{problem}</div>}
               </TableCell>
-              <TableCell className="align-top">{line.unitPrice === null ? '-' : money(line.unitPrice)}</TableCell>
+              <TableCell className="align-top">
+                {line.unitPrice === null ? '-' : money(line.unitPrice, cart.currency)}
+              </TableCell>
               <TableCell className="align-top">
                 <Input
                   key={line.quantity} // re-read from the server after every change
@@ -70,7 +72,9 @@ export function CartLines({
                   }}
                 />
               </TableCell>
-              <TableCell className="align-top">{line.lineTotal === null ? '-' : money(line.lineTotal)}</TableCell>
+              <TableCell className="align-top">
+                {line.lineTotal === null ? '-' : money(line.lineTotal, cart.currency)}
+              </TableCell>
               <TableCell className="align-top">
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => onRemove(line.variantId)}>
                   {t('remove')}

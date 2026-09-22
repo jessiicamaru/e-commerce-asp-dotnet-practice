@@ -1,4 +1,10 @@
-export type CartLineStatus = 'Available' | 'NotForSale' | 'NoLongerAvailable' | 'PriceUnavailable'
+export type CartLineStatus =
+  | 'Available'
+  | 'NotForSale'
+  | 'NoLongerAvailable'
+  | 'PriceUnavailable'
+  /** Nobody has priced this shape in the currency being browsed in (specs/022). */
+  | 'NotSoldInCurrency'
 
 export interface CartLine {
   productId: string
@@ -20,4 +26,6 @@ export interface Cart {
   canCheckOut: boolean
   /** False when Catalog could not be reached. The lines are still there, without prices. */
   pricesAvailable: boolean
+  /** Which currency the amounts above are in (specs/022). Not frozen - a cart is not a purchase. */
+  currency: string
 }
