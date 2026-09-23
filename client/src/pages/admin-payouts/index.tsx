@@ -36,8 +36,7 @@ export function AdminPayoutsPage() {
   const { t } = useTranslation('admin')
   const due = usePayoutsDue()
   const pay = usePaySeller()
-  // One dialog for the page, open while a row is being confirmed. Controlled, because the dialog's
-  // action button does not close it on its own - left open, it hid the refusal behind it.
+  // One dialog for the page, open while a row is being confirmed, rather than one per row.
   const [confirming, setConfirming] = useState<PayoutDue | null>(null)
 
   if (due.isError) {

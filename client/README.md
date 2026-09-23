@@ -58,13 +58,16 @@ Two rules that come out of the structure:
 - **`ui/` is generated.** `npx shadcn@latest add <component>` writes it, oxlint ignores it, and its
   components import `{ cn } from "cn"`, an alias mapped in `vite.config.ts` and `tsconfig.app.json` to
   `utils/shared/cn.ts`, so a freshly added component needs no editing.
-  ⚠️ **Three files in it ARE edited, on purpose, and `shadcn add --overwrite` would undo it:**
-  `select.tsx`, `combobox.tsx` and `dropdown-menu.tsx`. Their items were `py-1 pl-1.5` inside a popup
+  ⚠️ **Four files in it ARE edited, on purpose, and `shadcn add --overwrite` would undo it:**
+  `select.tsx`, `combobox.tsx`, `dropdown-menu.tsx` and `alert-dialog.tsx`. Their items were `py-1 pl-1.5` inside a popup
   this theme rounds to 1rem, so the text sat against the edge; they are now `py-2 pl-3`, with the
   popups padded to match. And `SelectContent` defaults `alignItemWithTrigger` to **false**: base-nova's
   `true` places the chosen item exactly over the trigger, macOS-style, which read as the dropdown
   covering its own button. Fixing it in the component, once, is what shadcn intends - fixing it at
   every call site is how one of them gets missed.
+  `AlertDialogAction` was generated as a plain `Button` that **does not close the dialog**; it is now
+  a `Close` like `AlertDialogCancel`, because a confirmed dialog left open hid the refusal the page
+  showed next. `address-card`'s tests fail if it regresses.
 - **Use shadcn before writing a component.** Dialogs, menus, comboboxes, tabs, sheets, pagination,
   tooltips all come from `ui/`. The few things here that are not - `shared/image-dropzone`,
   `shared/quantity-stepper` - exist because shadcn has no such component, and each is a thin

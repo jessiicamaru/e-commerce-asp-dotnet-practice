@@ -49,7 +49,9 @@ export function SellerLayout() {
           {shop.data && <RenameShopDialog current={shop.data.shopName} />}
         </div>
 
-        <nav className="bg-card ring-border/60 flex gap-1 overflow-x-auto rounded-3xl p-2 ring-1 lg:grid">
+        {/* Four equal columns on a phone, icon over label, so every destination is on screen - a row
+            that scrolled sideways hid the fourth, "Payouts", past the edge at 390px. */}
+        <nav className="bg-card ring-border/60 grid grid-cols-4 gap-1 rounded-3xl p-2 ring-1 lg:grid-cols-1">
           {links.map(({ to, end, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -57,7 +59,7 @@ export function SellerLayout() {
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex shrink-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-center text-xs font-medium transition-colors lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm',
                   isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
                 )
               }

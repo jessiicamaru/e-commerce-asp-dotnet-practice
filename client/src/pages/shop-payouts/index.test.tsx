@@ -33,7 +33,8 @@ describe('ShopPayoutsPage', () => {
     vi.spyOn(Order, 'payouts').mockResolvedValue(empty)
     renderPage()
 
-    const dong = await screen.findByRole('generic', { name: 'Balance in VND' })
+    // A generous wait: under the whole suite's parallel load the first render has taken over a second.
+    const dong = await screen.findByRole('generic', { name: 'Balance in VND' }, { timeout: 5000 })
     expect(within(dong).getByText('On the way').nextElementSibling).toHaveTextContent('₫1,095,000')
     expect(within(dong).getByText('Paid out').nextElementSibling).toHaveTextContent('₫2,300,000')
 
