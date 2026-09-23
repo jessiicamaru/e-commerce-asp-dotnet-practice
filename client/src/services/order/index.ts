@@ -54,6 +54,12 @@ export class Order {
     return data
   }
 
+  /** The caller says one parcel of their order arrived (specs/040). */
+  static async receive(orderId: string, shipmentId: string): Promise<OrderModel> {
+    const { data } = await http.post<OrderModel>(`/orders/${orderId}/shipments/${shipmentId}/received`)
+    return data
+  }
+
   /** The caller's own orders: there is no user id in the request (Constitution IV). */
   static async listMine(page: number, pageSize: number): Promise<OrderPage> {
     const { data } = await http.get<OrderPage>(`/orders?page=${page}&pageSize=${pageSize}`)

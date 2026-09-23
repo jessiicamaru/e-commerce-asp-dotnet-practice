@@ -90,7 +90,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (44 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (18 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (152 tests,
+`Ecommerce.Payment.Tests` (18 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (164 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -389,7 +389,7 @@ unit, the remainder to the first (shop first, then by seller id), pure code in `
 on goods **before tax**; tax stays with the shop, which charged it. The shop's own part takes no
 commission and keeps its share. A part is money only on a **paid** order - ⚠️ checkout writes a failed
 order's parts too, so the status filter is what keeps a declined payment out of a balance - and is *on
-the way* until shipped, *due* once shipped, *paid out* once a payout claims it. `POST
+the way* until **delivered** ("until shipped" before specs/040), *due* once delivered, *paid out* once a payout claims it. `POST
 /api/orders/payouts` (Admin) settles a seller in one currency with **one statement**: a CTE `UPDATE …
 SET "PayoutId" … WHERE "PayoutId" IS NULL … RETURNING` claims the parts and the `INSERT` records the
 sum of exactly those, `HAVING count(*) > 0` - so of two administrators at once the second claims
@@ -421,6 +421,16 @@ what they do**, because two classes called `OrderCancelledConsumer` would share 
 ⚠️ `Sales.Statuses` (what a seller SEES) now includes `Cancelled`, so a seller stops preparing; balances
 and payouts count `Sales.Earning`, which does not - confusing the two would pay sellers for cancelled
 orders. `verify-saga.sh` cancels a second order and asserts the stock back and one full refund.
+
+**A parcel is delivered when its customer says so** (specs/040: `POST
+/api/orders/{id}/shipments/{shipmentId}/received`, owner only, one guarded `UPDATE`) **or 7 days after it
+shipped** (`Delivery:AutoConfirmDays`, validated at startup) - `DeliveryConfirmationSweeper`, a hosted
+service shaped like Inventory's expiry sweeper, takes the rest as delivered "Auto", safely on several
+instances. ⚠️ Delivered is **columns, not a status**: `order_shipments.ShippedAt`, `DeliveredAt`,
+`DeliveryConfirmedBy`, with the part still `Shipped` - a `Delivered` enum value would stop a rolled-back
+image reading the row. ⚠️ `ShippedAt` is written by the ship move and was backfilled from `UpdatedAt`;
+counting the week from `UpdatedAt` would restart it at the part's next write. Money is **due only for a
+delivered parcel** - balances, the due list and the payout's claim all require `DeliveredAt`.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

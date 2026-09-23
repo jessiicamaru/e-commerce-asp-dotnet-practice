@@ -38,9 +38,10 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
             .Select(g => new
             {
                 Currency = g.Key,
-                OnTheWay = g.Sum(s => s.Status != ShipmentStatus.Shipped
+                // Due means DELIVERED since specs/040 - shipped alone is still on the way.
+                OnTheWay = g.Sum(s => s.DeliveredAt == null
                     ? s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value : 0m),
-                Due = g.Sum(s => s.Status == ShipmentStatus.Shipped && s.PayoutId == null
+                Due = g.Sum(s => s.DeliveredAt != null && s.PayoutId == null
                     ? s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value : 0m),
                 PaidOut = g.Sum(s => s.PayoutId != null
                     ? s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value : 0m)
@@ -72,7 +73,7 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
     public async Task<List<PayoutDueResponse>> GetDueAsync(CancellationToken cancellationToken = default)
     {
         var due = await Earning(null)
-            .Where(s => s.Status == ShipmentStatus.Shipped && s.PayoutId == null)
+            .Where(s => s.Status == ShipmentStatus.Shipped && s.DeliveredAt != null && s.PayoutId == null)
             .GroupBy(s => new { SellerId = s.SellerId!.Value, s.Order!.Currency })
             .Select(g => new
             {
@@ -134,6 +135,7 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
                  WHERE o."Id" = s."OrderId"
                    AND s."SellerId" = {sellerId}
                    AND s."Status" = {shipped}
+                   AND s."DeliveredAt" IS NOT NULL
                    AND s."PayoutId" IS NULL
                    AND s."GoodsTotal" IS NOT NULL
                    AND o."Currency" = {currency}

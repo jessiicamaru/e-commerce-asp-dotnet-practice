@@ -20,11 +20,13 @@ beforeEach(async () => {
 })
 
 describe('earningState', () => {
-  it('follows the money: on the way, due once sent, paid out once settled', () => {
+  it('follows the money: on the way, due once received, paid out once settled', () => {
     expect(earningState({ payout: 10, paidOut: false, status: 'Paid' })).toBe('onTheWay')
     expect(earningState({ payout: 10, paidOut: false, status: 'Preparing' })).toBe('onTheWay')
-    expect(earningState({ payout: 10, paidOut: false, status: 'Shipped' })).toBe('due')
-    expect(earningState({ payout: 10, paidOut: true, status: 'Shipped' })).toBe('paidOut')
+    // specs/040: shipped is not enough - still on the way until the customer has it.
+    expect(earningState({ payout: 10, paidOut: false, status: 'Shipped', deliveredAt: null })).toBe('onTheWay')
+    expect(earningState({ payout: 10, paidOut: false, status: 'Shipped', deliveredAt: '2026-09-24T08:00:00Z' })).toBe('due')
+    expect(earningState({ payout: 10, paidOut: true, status: 'Shipped', deliveredAt: '2026-09-24T08:00:00Z' })).toBe('paidOut')
   })
 
   /** A null payout is "never recorded", not "zero" - the one state that must not be read as money. */

@@ -1,4 +1,5 @@
 using Ecommerce.Order.Application.Orders.Commands.CancelOrder;
+using Ecommerce.Order.Application.Orders.Commands.ConfirmDelivery;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
 using Ecommerce.Order.Application.Orders.Commands.RecordPayout;
 using Ecommerce.Order.Application.Orders.Commands.SellerFulfilment;
@@ -90,6 +91,16 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> Cancel(Guid id)
     {
         return Ok(await Mediator.Send(new CancelMyOrderCommand(id)));
+    }
+
+    /// <summary>
+    /// The customer says one parcel of their order arrived (specs/040). 404 for none or not theirs; 409 if it
+    /// has not been shipped; repeating it is a no-op.
+    /// </summary>
+    [HttpPost("{id:guid}/shipments/{shipmentId:guid}/received")]
+    public async Task<IActionResult> ConfirmDelivery(Guid id, Guid shipmentId)
+    {
+        return Ok(await Mediator.Send(new ConfirmDeliveryCommand(id, shipmentId)));
     }
 
     // ------------------------------------------------------------------ sales (sellers, specs/034)

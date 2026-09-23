@@ -146,3 +146,16 @@ export function useCancelOrder(id: string) {
     },
   })
 }
+
+/** The customer says a parcel arrived (specs/040); the order and the list are re-read. */
+export function useReceiveParcel(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (shipmentId: string) => Order.receive(orderId, shipmentId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.order(orderId) })
+      await queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}

@@ -7,7 +7,7 @@ import type { Sale } from '@/services/order/types'
  */
 export type EarningState = 'unrecorded' | 'cancelled' | 'onTheWay' | 'due' | 'paidOut'
 
-export function earningState(sale: Pick<Sale, 'payout' | 'paidOut' | 'status'>): EarningState {
+export function earningState(sale: Pick<Sale, 'payout' | 'paidOut' | 'status' | 'deliveredAt'>): EarningState {
   if (sale.payout === null) {
     return 'unrecorded'
   }
@@ -21,5 +21,6 @@ export function earningState(sale: Pick<Sale, 'payout' | 'paidOut' | 'status'>):
     return 'paidOut'
   }
 
-  return sale.status === 'Shipped' ? 'due' : 'onTheWay'
+  // Due once the parcel ARRIVED (specs/040) - shipped alone is still on the way.
+  return sale.deliveredAt ? 'due' : 'onTheWay'
 }

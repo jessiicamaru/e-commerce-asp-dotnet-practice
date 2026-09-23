@@ -68,6 +68,7 @@ public record SaleSummaryResponse(
     decimal? Payout = null,
     bool PaidOut = false);
 
+
 /// <summary>
 /// One sale: the caller's own lines of one order, and nothing that describes the rest of it.
 /// </summary>
@@ -100,4 +101,5 @@ public record SaleDetailResponse(
     decimal? Commission = null,
     decimal? ShippingShare = null,
     decimal? Payout = null,
-    bool PaidOut = false);
+    bool PaidOut = false,
+    DateTime? DeliveredAt = null);

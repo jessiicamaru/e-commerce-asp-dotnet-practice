@@ -23,6 +23,8 @@ runtime:
           expect(res.body.shippingAddress).to.be.an("object");
           expect(res.body.shipments).to.be.an("array");
         });
+        // The parcel's id, for the customer to say it arrived (specs/040).
+        if (res.body.shipments && res.body.shipments.length) bru.setVar("shipmentId", res.body.shipments[0].id);
 
 settings:
   encodeUrl: true

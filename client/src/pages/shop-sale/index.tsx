@@ -78,6 +78,11 @@ export function ShopSalePage() {
               ) : (
                 <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
               )}
+              {data.deliveredAt && (
+                <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">
+                  {t('fulfil.received', { at: new Date(data.deliveredAt).toLocaleDateString(i18n.language) })}
+                </p>
+              )}
             </CardContent>
           </Card>
 

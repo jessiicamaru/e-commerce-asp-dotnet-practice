@@ -280,7 +280,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                         s.GoodsTotal,
                         s.Commission,
                         s.ShippingShare,
-                        PaidOut = s.PayoutId != null
+                        PaidOut = s.PayoutId != null,
+                        s.DeliveredAt
                     })
                     .FirstOrDefault(),
                 x.ShipTo,
@@ -334,7 +335,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             row.Part?.Commission,
             row.Part?.ShippingShare,
             Owed(row.Part?.GoodsTotal, row.Part?.Commission, row.Part?.ShippingShare),
-            row.Part?.PaidOut ?? false);
+            row.Part?.PaidOut ?? false,
+            row.Part?.DeliveredAt);
     }
 
     /// <summary>What the shop owes for a part, or null when its terms were never recorded (specs/037).</summary>
@@ -351,13 +353,14 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         // the shop's goods, starting in the state the ORDER is in - so an order an older image shipped is
         // a shipped part here, not a part waiting to be shipped a second time.
         await _context.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO order_shipments ("Id", "OrderId", "SellerId", "Status", "TrackingReference", "UpdatedAt")
+            INSERT INTO order_shipments ("Id", "OrderId", "SellerId", "Status", "TrackingReference", "UpdatedAt", "ShippedAt")
             SELECT gen_random_uuid(),
                    o."Id",
                    i."SellerId",
                    CASE o."Status" WHEN 'Preparing' THEN 'Preparing' WHEN 'Shipped' THEN 'Shipped' ELSE 'Pending' END,
                    CASE WHEN o."Status" = 'Shipped' THEN o."TrackingReference" END,
-                   o."UpdatedAt"
+                   o."UpdatedAt",
+                   CASE WHEN o."Status" = 'Shipped' THEN o."UpdatedAt" END
               FROM orders o
               JOIN (SELECT DISTINCT "OrderId", "SellerId" FROM order_items WHERE "OrderId" = {orderId}) i
                 ON i."OrderId" = o."Id"
@@ -421,12 +424,14 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             var part = _context.OrderShipments
                 .Where(s => s.OrderId == orderId && s.SellerId == sellerId && s.Status == from);
 
+            // Shipping records WHEN, which automatic delivery counts from (specs/040 research D2).
             var moved = trackingReference is null
                 ? await part.ExecuteUpdateAsync(
                     x => x.SetProperty(s => s.Status, to).SetProperty(s => s.UpdatedAt, at), cancellationToken)
                 : await part.ExecuteUpdateAsync(
                     x => x.SetProperty(s => s.Status, to)
                           .SetProperty(s => s.TrackingReference, trackingReference)
+                          .SetProperty(s => s.ShippedAt, to == ShipmentStatus.Shipped ? at : (DateTime?)null)
                           .SetProperty(s => s.UpdatedAt, at),
                     cancellationToken);
 
@@ -477,6 +482,57 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             await transaction.CommitAsync(cancellationToken);
             return new ShipmentMoveResult(ShipmentMoveOutcome.Moved, now!.Status, now.TrackingReference, summary);
         });
+    }
+
+    public async Task<DeliveryConfirmOutcome> TryConfirmDeliveryAsync(
+        Guid orderId, Guid shipmentId, Guid ownerId, DateTime at, CancellationToken cancellationToken = default)
+    {
+        // The parcel, of this order, of this owner - all in the query, so a stranger's parcel is never read
+        // and then refused; it is simply not there (research D3).
+        var mine = _context.OrderShipments.Where(s =>
+            s.Id == shipmentId && s.OrderId == orderId && s.Order!.UserId == ownerId);
+
+        // One guarded statement: shipped, and not delivered yet. A repeat, or a sweep that got there first,
+        // affects no row - and the first word stands.
+        var confirmed = await mine
+            .Where(s => s.Status == ShipmentStatus.Shipped && s.DeliveredAt == null)
+            .ExecuteUpdateAsync(
+                x => x.SetProperty(s => s.DeliveredAt, at)
+                      .SetProperty(s => s.DeliveryConfirmedBy, ParcelDelivery.ByCustomer),
+                cancellationToken);
+
+        if (confirmed == 1)
+        {
+            return DeliveryConfirmOutcome.Confirmed;
+        }
+
+        // Nothing changed: say why, from what is there now.
+        var now = await mine
+            .AsNoTracking()
+            .Select(s => new { s.Status, s.DeliveredAt })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return now is null
+            ? DeliveryConfirmOutcome.NotFound
+            : now.DeliveredAt is not null
+                ? DeliveryConfirmOutcome.AlreadyDelivered
+                : DeliveryConfirmOutcome.NotShipped;
+    }
+
+    public async Task<int> AutoConfirmDeliveriesAsync(
+        DateTime shippedBefore, DateTime at, CancellationToken cancellationToken = default)
+    {
+        // The same guard as the customer's, plus the window. Two instances sweeping at once, or a customer
+        // confirming mid-sweep: each row is set once, by whoever is first (research D3).
+        return await _context.OrderShipments
+            .Where(s => s.Status == ShipmentStatus.Shipped
+                && s.DeliveredAt == null
+                && s.ShippedAt != null
+                && s.ShippedAt <= shippedBefore)
+            .ExecuteUpdateAsync(
+                x => x.SetProperty(s => s.DeliveredAt, at)
+                      .SetProperty(s => s.DeliveryConfirmedBy, ParcelDelivery.ByAuto),
+                cancellationToken);
     }
 
     public Task<CancelOutcome> TryCancelAsync(

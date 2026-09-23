@@ -91,4 +91,35 @@ describe('OrderPage cancelling (specs/039)', () => {
     expect(screen.queryByRole('region', { name: 'Parcels' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Cancel order/ })).not.toBeInTheDocument()
   })
+
+  /** specs/040: a one-parcel order has no parcel list, so "received" is offered on its own. */
+  it('lets the customer say a one-parcel order arrived, after confirming', async () => {
+    const shipped = { ...part('Shipped', null), id: 'p-1' }
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Shipped', shipments: [shipped] }))
+    const receive = vi.spyOn(Order, 'receive').mockResolvedValue(order({ status: 'Shipped', shipments: [{ ...shipped, deliveredAt: '2026-09-24T08:00:00Z' }] }))
+    const user = userEvent.setup()
+    renderAt()
+
+    await user.click(await screen.findByRole('button', { name: /received it/ }))
+    expect(receive).not.toHaveBeenCalled()
+    await user.click(await screen.findByRole('button', { name: /Yes, it arrived/ }))
+
+    await waitFor(() => expect(receive).toHaveBeenCalledWith('o-1', 'p-1'))
+  })
+
+  it('offers it per parcel on a multi-parcel order, and reads delivered once all arrived', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({
+      status: 'Shipped',
+      shipments: [
+        { ...part('Shipped', null), id: 'p-1', deliveredAt: '2026-09-24T08:00:00Z', deliveryConfirmedBy: 'Auto' },
+        { ...part('Shipped', 'Mai'), id: 'p-2', deliveredAt: '2026-09-24T09:00:00Z', deliveryConfirmedBy: 'Customer' },
+      ],
+    }))
+    renderAt()
+
+    expect(await screen.findByText(/Delivered - you have received every parcel/)).toBeInTheDocument()
+    expect(screen.getByText(/Taken as received on/)).toBeInTheDocument()
+    expect(screen.getByText(/^Received on/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /received it/ })).not.toBeInTheDocument()
+  })
 })

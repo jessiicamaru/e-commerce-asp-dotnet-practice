@@ -58,6 +58,12 @@ export interface Shipment {
   sellerName: string | null
   /** The shop's own parcel: named in the reader's language here, not frozen on the server. */
   isShop: boolean
+  /** The parcel's id - what the customer names when they say it arrived (specs/040). */
+  id?: string
+  /** When it was confirmed as received; null until then. */
+  deliveredAt?: string | null
+  /** 'Customer', or 'Auto' when nobody confirmed it within the period after shipping. */
+  deliveryConfirmedBy?: string | null
 }
 
 export interface Order extends Totals {
@@ -162,6 +168,8 @@ export interface Sale {
   trackingReference: string | null
   /** Where to send it - present ONLY while their part is waiting or being prepared (research D6). */
   shippingAddress: AddressFields | null
+  /** When their parcel was confirmed as received (specs/040); until then its money is on the way. */
+  deliveredAt?: string | null
   /**
    * What the shop owes the seller for this sale (specs/037), frozen at checkout: goods before tax, less
    * the marketplace's commission, plus their share of the delivery charge. All four are null on an

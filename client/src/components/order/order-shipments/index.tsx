@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { PackageIcon, PackageCheckIcon, TruckIcon } from 'lucide-react'
+import type { UseMutationResult } from '@tanstack/react-query'
+import { ReceiveParcel } from '@/components/order/receive-parcel'
 import { Badge } from '@/components/ui/badge'
 import type { Shipment } from '@/services/order/types'
 import { cn } from '@/utils/shared'
@@ -11,7 +13,14 @@ import { cn } from '@/utils/shared'
  * Drawn only for two or more: an order in one parcel reads exactly as it did before parts existed,
  * with its single tracking reference on the order.
  */
-export function OrderShipments({ shipments }: { shipments: Shipment[] }) {
+export function OrderShipments({
+  shipments,
+  receive,
+}: {
+  shipments: Shipment[]
+  /** The customer's "I've received it" (specs/040). Left out on pages where the reader is not the customer. */
+  receive?: UseMutationResult<unknown, Error, string>
+}) {
   const { t } = useTranslation('orders')
 
   if (shipments.length < 2) {
@@ -63,6 +72,7 @@ export function OrderShipments({ shipments }: { shipments: Shipment[] }) {
                   {t('parcels.tracking')} <span className="font-mono font-semibold">{shipment.trackingReference}</span>
                 </p>
               )}
+              {receive && <ReceiveParcel shipment={shipment} receive={receive} />}
             </li>
           )
         })}

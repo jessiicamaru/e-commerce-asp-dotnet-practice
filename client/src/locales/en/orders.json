@@ -27,7 +27,8 @@
     "failedStock": "Not placed: some items ran out of stock. Nothing was charged, and your cart is unchanged.",
     "failedPayment": "Not placed: the payment was declined. Your cart is unchanged, so you can try again.",
     "failed": "Not placed. Nothing was charged, and your cart is unchanged.",
-    "cancelled": "Cancelled."
+    "cancelled": "Cancelled.",
+    "delivered": "Delivered - you have received every parcel."
   },
   "parcels": {
     "title": "Parcels",
@@ -53,5 +54,15 @@
     "done": "Order cancelled.",
     "byYou": "You cancelled this order. What you paid has been refunded.",
     "byShop": "The shop cancelled this order. What you paid has been refunded."
+  },
+  "received": {
+    "button": "I've received it",
+    "title": "Did this parcel arrive?",
+    "body": "Confirming releases the seller’s payment for this parcel. It cannot be undone.",
+    "confirm": "Yes, it arrived",
+    "done": "Thanks for confirming.",
+    "hint": "If you do not confirm, the parcel is taken as received 7 days after it shipped.",
+    "at": "Received on {{at}}",
+    "auto": "Taken as received on {{at}}"
   }
 }

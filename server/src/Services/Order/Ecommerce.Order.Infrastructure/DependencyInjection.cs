@@ -9,9 +9,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Ecommerce.Order.Infrastructure.Identity;
+using Ecommerce.Order.Infrastructure.Delivery;
 using Ecommerce.Order.Infrastructure.Marketplace;
 using Ecommerce.Order.Infrastructure.Shipping;
 using Ecommerce.Order.Infrastructure.Tax;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Ecommerce.Order.Infrastructure;
 
@@ -68,6 +70,11 @@ public static class DependencyInjection
         services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
         services.AddSingleton<ITaxRates, ConfiguredTaxRates>();
         services.AddSingleton<ICommissionRate, ConfiguredCommissionRate>();
+
+        // specs/040: parcels nobody confirms are taken as delivered after a configured period.
+        DeliveryOptions.Register(services, configuration);
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddHostedService<DeliveryConfirmationSweeper>();
 
         return services;
     }

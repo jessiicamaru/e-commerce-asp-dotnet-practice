@@ -28,6 +28,11 @@ public class OrderShipmentConfiguration : IEntityTypeConfiguration<OrderShipment
 
         builder.Property(x => x.TrackingReference).HasMaxLength(100);
 
+        builder.Property(x => x.DeliveryConfirmedBy).HasMaxLength(16);
+
+        // The sweep's question - "shipped, not delivered, shipped before the cutoff" (specs/040).
+        builder.HasIndex(x => new { x.Status, x.DeliveredAt, x.ShippedAt });
+
         builder.Property(x => x.GoodsTotal).HasPrecision(18, 2);
         builder.Property(x => x.Commission).HasPrecision(18, 2);
         builder.Property(x => x.ShippingShare).HasPrecision(18, 2);
