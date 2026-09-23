@@ -41,7 +41,7 @@ import { cn } from '@/utils/shared'
  */
 export function TopBar() {
   const { t } = useTranslation()
-  const { user, restoring, isSeller, isAdmin, signOut } = useAuth()
+  const { user, restoring, isSeller, isStaff, signOut } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
@@ -101,14 +101,14 @@ export function TopBar() {
                     <StoreIcon />
                   </IconLink>
                 )}
-                {isAdmin && (
+                {isStaff && (
                   <IconLink to="/admin" label={t('admin:nav')}>
                     <ShieldCheckIcon />
                   </IconLink>
                 )}
               </span>
               <span className="hidden md:inline-flex md:pl-1">
-                <UserMenu user={user} isSeller={isSeller} isAdmin={isAdmin} onSignOut={() => void signOut()} />
+                <UserMenu user={user} isSeller={isSeller} isStaff={isStaff} onSignOut={() => void signOut()} />
               </span>
             </>
           ) : (
@@ -182,7 +182,7 @@ function IconLink({
  */
 function MobileMenu() {
   const { t } = useTranslation()
-  const { user, isSeller, isAdmin, signOut } = useAuth()
+  const { user, isSeller, isStaff, signOut } = useAuth()
 
   const item = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -227,7 +227,7 @@ function MobileMenu() {
                   <StoreIcon /> {t('seller:nav')}
                 </NavLink>
               )}
-              {isAdmin && (
+              {isStaff && (
                 <NavLink to="/admin" className={item}>
                   <ShieldCheckIcon /> {t('admin:nav')}
                 </NavLink>

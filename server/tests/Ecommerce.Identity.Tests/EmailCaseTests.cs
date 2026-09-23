@@ -92,8 +92,15 @@ public class EmailCaseTests(IdentityTestFixture fixture)
             var migrator = db.GetService<IMigrator>();
 
             await migrator.MigrateAsync("20260921153902_AddDeliveryAddresses");
-            db.Users.AddRange(NewUser("Twin@Example.test"), NewUser("twin@example.test"));
-            await db.SaveChangesAsync();
+            // In SQL, not through the model: the model is today's, and it has columns (specs/043's lock and
+            // ban) that this older schema does not. The test is about the data, not about the entity.
+            foreach (var email in new[] { "Twin@Example.test", "twin@example.test" })
+            {
+                await db.Database.ExecuteSqlAsync($"""
+                    INSERT INTO users ("Id", "Email", "PasswordHash", "FirstName", "LastName", "CreatedAt", "UpdatedAt")
+                    VALUES ({Guid.CreateVersion7()}, {email}, 'not-a-real-hash', 'A', 'B', now(), now())
+                    """);
+            }
 
             var refused = await Assert.ThrowsAsync<PostgresException>(() => migrator.MigrateAsync());
 

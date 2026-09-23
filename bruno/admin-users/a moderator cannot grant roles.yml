@@ -1,0 +1,28 @@
+info:
+  name: a moderator cannot grant roles
+  type: http
+  seq: 7
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/users/{{customerId}}/roles/Moderator"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Roles are an administrator's alone.

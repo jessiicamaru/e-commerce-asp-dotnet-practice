@@ -1,0 +1,38 @@
+info:
+  name: a moderator cannot lock for more than 30 days
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users/{{customerId}}/lock"
+  body:
+    type: json
+    data: |-
+      {
+        "days": 31,
+        "reason": "Too long for a moderator"
+      }
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("says the limit", function() {
+          expect(res.body.detail).to.contain("30 days");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The cap agreed for moderators (specs/043). An administrator may lock for up to a year.

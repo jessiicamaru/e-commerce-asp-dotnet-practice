@@ -21,6 +21,8 @@
     "NewSale": "You have a new sale: {{order}}.",
     "SaleCancelled": "Order {{order}} with your goods was cancelled - nothing to send.",
     "ParcelReceived": "The customer received your parcel of order {{order}}.",
-    "PayoutRecorded": "The shop recorded paying you {{amount}}."
+    "PayoutRecorded": "The shop recorded paying you {{amount}}.",
+    "ModeratorGranted": "You are now a moderator. The console is in your menu.",
+    "ModeratorRevoked": "You are no longer a moderator."
   }
 }

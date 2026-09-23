@@ -1,4 +1,5 @@
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Application;
@@ -124,6 +125,9 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Who did what, through the outbox with every change (specs/041).
 builder.Services.AddAuditTrail("identity");
+
+// Telling people what happened to their account (specs/042, 043).
+builder.Services.AddNotifier();
 
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks();

@@ -27,6 +27,7 @@ export const queryKeys = {
   adminOrder: (id: string) => ['admin-order', id] as const,
   payoutsDue: () => ['payouts-due'] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
+  accounts: (search: string, page: number) => ['accounts', search, page] as const,
   auditEntry: (id: string) => ['audit-entry', id] as const,
   auditSummary: (from: string) => ['audit-summary', from] as const,
   unreadCount: () => ['notifications', 'unread-count'] as const,

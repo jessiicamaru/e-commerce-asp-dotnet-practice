@@ -1,4 +1,5 @@
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Notifications;
 using MassTransit;
 using Ecommerce.Application;
 using Ecommerce.Application.Common.Interfaces;
@@ -63,7 +64,7 @@ public class IdentityTestFixture : IAsyncLifetime
     }
 
     /// <summary>A provider whose caller is <paramref name="userId"/>.</summary>
-    public ServiceProvider For(Guid userId)
+    public ServiceProvider For(Guid userId, params string[] roles)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -92,8 +93,9 @@ public class IdentityTestFixture : IAsyncLifetime
         // returns - that Catalog hears about it is verified where Catalog consumes it.
         services.AddMassTransitTestHarness();
         services.AddAuditTrail("identity");
+        services.AddNotifier();
 
-        services.AddSingleton<ICurrentUser>(new FixedUser(userId));
+        services.AddSingleton<ICurrentUser>(new FixedUser(userId, roles));
         return services.BuildServiceProvider(validateScopes: true);
     }
 
@@ -125,14 +127,14 @@ public class IdentityTestFixture : IAsyncLifetime
         await drop.ExecuteNonQueryAsync();
     }
 
-    private sealed class FixedUser(Guid id) : ICurrentUser
+    private sealed class FixedUser(Guid id, string[] roles) : ICurrentUser
     {
         public Guid? Id { get; } = id;
         public string? Email => null;
         public bool IsAuthenticated => true;
 
-        // No handler under test here asks about a role; the seller ones read the profile instead.
-        public bool IsInRole(string role) => false;
+        // The roles the token would carry - the moderation rules ask (specs/043).
+        public bool IsInRole(string role) => roles.Contains(role);
     }
 }
 

@@ -1,0 +1,32 @@
+info:
+  name: an administrator grants moderator
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/users/{{modId}}/roles/Moderator"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("now holds Moderator", function() {
+          expect(res.body.roles).to.include("Moderator");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Moderator is the only role that can be granted here (specs/043). It reaches the person at their next
+  refresh or sign-in; a token already issued lives out its minutes.

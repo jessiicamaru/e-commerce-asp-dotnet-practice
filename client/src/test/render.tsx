@@ -19,6 +19,7 @@ function renderWithRoles(roles: string[], children: ReactNode, path: string) {
     restoring: false,
     isSeller: roles.includes('Seller'),
     isAdmin: roles.includes('Admin'),
+    isStaff: roles.includes('Admin') || roles.includes('Moderator'),
     signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
 
@@ -39,4 +40,9 @@ export function renderAsSeller(children: ReactNode, path = '/') {
 /** Signed in as an administrator (specs/038). */
 export function renderAsAdmin(children: ReactNode, path = '/') {
   return renderWithRoles(['Admin'], children, path)
+}
+
+/** Signed in as a moderator, who is a customer too (specs/043). */
+export function renderAsModerator(children: ReactNode, path = '/') {
+  return renderWithRoles(['Moderator', 'Customer'], children, path)
 }

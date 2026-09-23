@@ -19,10 +19,11 @@ import { ShopSalePage } from '@/pages/shop-sale'
 import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { AdminLayout } from '@/layouts/admin-layout'
-import { AdminOrdersPage } from '@/pages/admin-orders'
 import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { AdminAuditPage } from '@/pages/admin-audit'
+import { AdminHome } from '@/pages/admin-home'
+import { AdminUsersPage } from '@/pages/admin-users'
 import { NotificationsPage } from '@/pages/notifications'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
@@ -119,15 +120,16 @@ export function AppRoutes() {
           <Route
             path="/admin"
             element={
-              <RequireRole role="Admin">
+              <RequireRole role={['Admin', 'Moderator']}>
                 <AdminLayout />
               </RequireRole>
             }
           >
-            <Route index element={<AdminOrdersPage />} />
+            <Route index element={<AdminHome />} />
             <Route path="orders/:id" element={<AdminOrderPage />} />
             <Route path="payouts" element={<AdminPayoutsPage />} />
             <Route path="audit" element={<AdminAuditPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

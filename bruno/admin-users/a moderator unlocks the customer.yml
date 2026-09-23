@@ -1,0 +1,31 @@
+info:
+  name: a moderator unlocks the customer
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users/{{customerId}}/unlock"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("no longer locked", function() {
+          expect(res.body.lockedUntil).to.equal(null);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Lifting the lock restores access at once.

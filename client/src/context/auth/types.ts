@@ -14,6 +14,11 @@ export interface AuthState {
    * request behind the console is refused by the server for anybody else.
    */
   isAdmin: boolean
+  /**
+   * Admin or Moderator (specs/043): whether to offer the console at all. What each sees inside it is
+   * decided per page; what each may DO is decided by the server.
+   */
+  isStaff: boolean
   signIn(email: string, password: string): Promise<void>
   signUp(input: SignUpInput): Promise<void>
   signOut(): Promise<void>

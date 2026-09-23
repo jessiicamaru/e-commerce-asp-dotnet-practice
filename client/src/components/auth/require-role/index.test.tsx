@@ -10,12 +10,13 @@ function aUser(roles: string[]): User {
   return { id: 'u1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles }
 }
 
-function renderAt(state: Partial<AuthState>) {
+function renderAt(state: Partial<AuthState>, role: string | string[] = 'Seller') {
   const value = {
     user: null,
     restoring: false,
     isSeller: false,
     isAdmin: false,
+    isStaff: false,
     signIn: async () => {},
     signUp: async () => {},
     signOut: async () => {},
@@ -31,7 +32,7 @@ function renderAt(state: Partial<AuthState>) {
           <Route
             path="/shop"
             element={
-              <RequireRole role="Seller">
+              <RequireRole role={role}>
                 <p>the shop</p>
               </RequireRole>
             }
@@ -77,6 +78,17 @@ describe('RequireRole', () => {
   it('does not accept a role that merely exists', () => {
     renderAt({ user: aUser(['Admin', 'Customer']) })
 
+    expect(screen.getByText('catalogue')).toBeInTheDocument()
+  })
+
+  /** The console is for an administrator OR a moderator (specs/043) - any one of the roles named. */
+  it('lets through anybody holding any of several roles, and nobody holding none', () => {
+    renderAt({ user: aUser(['Moderator', 'Customer']) }, ['Admin', 'Moderator'])
+    expect(screen.getByText('the shop')).toBeInTheDocument()
+  })
+
+  it('still refuses a customer when several roles are named', () => {
+    renderAt({ user: aUser(['Customer', 'Seller']) }, ['Admin', 'Moderator'])
     expect(screen.getByText('catalogue')).toBeInTheDocument()
   })
 })

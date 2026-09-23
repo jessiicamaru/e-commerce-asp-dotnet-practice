@@ -1,0 +1,31 @@
+info:
+  name: an administrator revokes moderator
+  type: http
+  seq: 14
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/users/{{modId}}/roles/Moderator"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("Moderator is gone", function() {
+          expect(res.body.roles).to.not.include("Moderator");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The role goes at the next refresh or sign-in.

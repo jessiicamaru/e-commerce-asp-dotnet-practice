@@ -1,0 +1,43 @@
+info:
+  name: register a future moderator
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{modEmail}}",
+        "password": "{{customerPassword}}",
+        "firstName": "Bruno",
+        "lastName": "Moderator"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // A fresh person on every run; an administrator makes them a moderator below.
+        bru.setVar("modEmail", "bruno-mod+" + Date.now() + "@example.test");
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("starts as a customer and nothing more", function() {
+          expect(res.body.roles).to.deep.equal(["Customer"]);
+        });
+        if (res.status === 200) bru.setVar("modId", res.body.id);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/043: somebody an administrator will make a moderator. Self-registration only ever grants Customer.

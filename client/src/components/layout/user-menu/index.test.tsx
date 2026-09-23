@@ -11,11 +11,11 @@ const user = { id: 'u1', email: 'mai@demo.test', firstName: 'Mai', lastName: 'Tr
  * Opens the menu and waits for it: base-ui opens asynchronously, so asserting synchronously right after
  * the click passes or fails depending on timing - it did both before this waited.
  */
-async function open(isSeller: boolean, onSignOut = vi.fn(), isAdmin = false) {
+async function open(isSeller: boolean, onSignOut = vi.fn(), isStaff = false) {
   const clicker = userEvent.setup()
   render(
     <MemoryRouter>
-      <UserMenu user={user} isSeller={isSeller} isAdmin={isAdmin} onSignOut={onSignOut} />
+      <UserMenu user={user} isSeller={isSeller} isStaff={isStaff} onSignOut={onSignOut} />
     </MemoryRouter>,
   )
   await clicker.click(screen.getByRole('button', { name: 'Account' }))

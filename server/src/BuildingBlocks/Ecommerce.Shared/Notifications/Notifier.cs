@@ -19,6 +19,10 @@ public static class NotificationKind
     public const string SaleCancelled = "SaleCancelled";
     public const string ParcelReceived = "ParcelReceived";
     public const string PayoutRecorded = "PayoutRecorded";
+
+    // Somebody's account (specs/043)
+    public const string ModeratorGranted = "ModeratorGranted";
+    public const string ModeratorRevoked = "ModeratorRevoked";
 }
 
 /// <summary>

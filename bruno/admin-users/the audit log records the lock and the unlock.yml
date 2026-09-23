@@ -1,0 +1,34 @@
+info:
+  name: the audit log records the lock and the unlock
+  type: http
+  seq: 15
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/audit?category=Moderation&subjectType=User&subjectId={{customerId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("locked once and unlocked once, each by the moderator", function() {
+          var actions = res.body.items.map(function(e) { return e.action; });
+          expect(actions.filter(function(a) { return a === "AccountLocked"; })).to.have.length(1);
+          expect(actions.filter(function(a) { return a === "AccountUnlocked"; })).to.have.length(1);
+          res.body.items.forEach(function(e) { expect(e.actorRole).to.equal("Moderator"); });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Moderation entries, with the moderator as the actor (specs/041, 043).

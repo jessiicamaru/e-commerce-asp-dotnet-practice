@@ -14,10 +14,16 @@ public static class RoleNames
     /// would otherwise refuse them.</summary>
     public const string Seller = "Seller";
 
+    /// <summary>Staff who keep the shop in order (specs/043): lock accounts for up to 30 days, and -
+    /// in the features that follow - review shops, products and reviews. Granted only by an
+    /// administrator, and the only role that can be.</summary>
+    public const string Moderator = "Moderator";
+
     public static readonly IReadOnlyDictionary<string, string> Descriptions = new Dictionary<string, string>
     {
         [Admin] = "Full administrative access to the platform.",
         [Customer] = "Default role granted to every registered shopper.",
-        [Seller] = "Lists and manages their own products; cannot touch anybody else's."
+        [Seller] = "Lists and manages their own products; cannot touch anybody else's.",
+        [Moderator] = "Reviews what others publish and may lock an account for up to 30 days."
     };
 }

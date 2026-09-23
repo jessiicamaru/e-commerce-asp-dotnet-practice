@@ -92,7 +92,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (174 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (65 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -464,9 +464,22 @@ and [specs/009-catalog-owns-price](specs/009-catalog-owns-price/).
 **The user id never comes from the request body.** `SubmitOrderCommand` deliberately has no
 `UserId`; the handler reads it from `ICurrentUser`. Keep it that way for new commands.
 
-Roles (`Admin`, `Customer`) and the first administrator are seeded at Identity startup by
-`DataInitializer`, from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. The bootstrap path closes as soon as any
-admin exists. Self-registration always grants `Customer`.
+Roles (`Admin`, `Customer`, `Seller`, `Moderator`) and the first administrator are seeded at Identity
+startup by `DataInitializer`, from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. The bootstrap path closes as soon
+as any admin exists. Self-registration always grants `Customer`.
+
+**Staff are Admin or Moderator** (specs/043), named once as `StaffRoles.Staff` in
+`Ecommerce.Shared/Authentication` for `[Authorize(Roles = StaffRoles.Staff)]`. An administrator finds a
+person at `GET /api/users?search=` and grants or revokes **Moderator - the only role that can be
+granted**; Admin stays seeded and Seller comes from opening a shop. A moderator may **lock** an account
+for at most 30 days (an administrator for up to a year); only an administrator **bans** or lifts a ban.
+Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
+depend on the target's row, so they live in `ModerationRules`, not in an attribute. A lock or ban ends
+every session at once, refresh refuses the account whatever its token, and sign-in answers **403 with
+the reason only after the right password** - before it, a locked account and a wrong password must
+look the same (#28). ⚠️ A grant or a lock reaches a token already issued only at its next refresh: an
+access token lives out its minutes. `ForbiddenException` (Shared) is the 403 whose message is shown; a
+"not yours" is still a 404.
 
 **Emails are compared case-insensitively and stored as typed** (#49). Every lookup goes through
 `EmailKey.For` (trim, lower-case), and a unique index on `lower("Email")` enforces one account per

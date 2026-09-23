@@ -4,7 +4,8 @@
   "menu": {
     "fulfilment": "Đơn cần giao",
     "payouts": "Thanh toán người bán",
-    "audit": "Nhật ký"
+    "audit": "Nhật ký",
+    "users": "Người dùng"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -125,7 +126,61 @@
       "PaymentRefused": "Từ chối thanh toán",
       "RefundRecorded": "Hoàn tiền",
       "OrderPaid": "Đơn đã thanh toán",
-      "OrderFailed": "Đơn thất bại"
+      "OrderFailed": "Đơn thất bại",
+      "RoleGranted": "Cấp vai trò",
+      "RoleRevoked": "Thu hồi vai trò",
+      "AccountLocked": "Khoá tài khoản",
+      "AccountUnlocked": "Mở khoá tài khoản",
+      "AccountBanned": "Cấm tài khoản",
+      "BanLifted": "Gỡ lệnh cấm"
     }
+  },
+  "users": {
+    "title": "Người dùng",
+    "subtitle": "Tìm người dùng theo email hoặc tên. Cấp quyền kiểm duyệt viên, hoặc khoá tài khoản đang gây hại.",
+    "search": "Email hoặc tên",
+    "none": "Không có ai khớp.",
+    "loadFailed": "Không tải được danh sách người dùng.",
+    "columns": {
+      "person": "Người dùng",
+      "roles": "Vai trò",
+      "status": "Trạng thái"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "locked": "Bị khoá đến {{until}}",
+      "banned": "Bị cấm"
+    },
+    "actions": "Thao tác với {{email}}",
+    "grant": "Cấp quyền kiểm duyệt",
+    "revoke": "Thu hồi quyền kiểm duyệt",
+    "lock": "Khoá…",
+    "unlock": "Mở khoá",
+    "ban": "Cấm…",
+    "liftBan": "Gỡ lệnh cấm",
+    "lockTitle": "Khoá {{email}}",
+    "lockBody": "Người này bị đăng xuất ngay và không đăng nhập được cho đến khi hết hạn khoá hoặc có người mở khoá.",
+    "days": "Trong bao lâu",
+    "daysOption_one": "{{count}} ngày",
+    "daysOption_other": "{{count}} ngày",
+    "banTitle": "Cấm {{email}}",
+    "banBody": "Người này bị đăng xuất ngay và không đăng nhập được cho đến khi quản trị viên gỡ lệnh cấm.",
+    "reason": "Lý do",
+    "reasonHint": "Người này sẽ thấy lý do khi thử đăng nhập.",
+    "confirmLock": "Khoá",
+    "confirmBan": "Cấm",
+    "granted": "{{email}} đã là kiểm duyệt viên. Quyền có hiệu lực từ lần đăng nhập tới.",
+    "revoked": "{{email}} không còn là kiểm duyệt viên.",
+    "locked": "Đã khoá {{email}}.",
+    "unlocked": "Đã mở khoá {{email}}.",
+    "banned": "Đã cấm {{email}}.",
+    "banLifted": "Đã gỡ lệnh cấm cho {{email}}.",
+    "you": "bạn"
+  },
+  "roles": {
+    "Admin": "Quản trị viên",
+    "Moderator": "Kiểm duyệt viên",
+    "Seller": "Người bán",
+    "Customer": "Khách hàng"
   }
 }
