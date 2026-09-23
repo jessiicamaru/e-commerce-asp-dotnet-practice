@@ -19,3 +19,5 @@
 > change. End to end: Bruno reads the order it followed back from `/api/audit` (placed, prepared, shipped,
 > received - once each), 403 for a customer, 401 anonymous; verify-saga.sh passes; the admin page shows
 > the diff old → new.
+> Mutations, one at a time, each turning a test red: redaction off, the `ON CONFLICT` removed, a parcel move
+> saved without its entry, a refused sign-in recorded under another name.
