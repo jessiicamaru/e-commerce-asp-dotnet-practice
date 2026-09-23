@@ -1,3 +1,5 @@
+using Ecommerce.Inventory.Infrastructure.Catalog;
+using Ecommerce.Contracts.Grpc;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Infrastructure.Persistence;
 using Ecommerce.Inventory.Infrastructure.Persistence.Repositories;
@@ -25,6 +27,22 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
+
+        // Inventory's FIRST synchronous dependency on another service (specs/031). Everything it
+        // did before this was messages.
+        //
+        // h2c on a port of its own, like every gRPC edge here: one plaintext port cannot carry
+        // HTTP/1.1 and HTTP/2, because telling them apart needs ALPN and ALPN is part of TLS. The
+        // address is configurable so the container (catalog:8081) and start-dev (localhost:5157)
+        // can differ.
+        var catalogGrpc = configuration["Catalog:GrpcAddress"]
+            ?? Environment.GetEnvironmentVariable("CATALOG_GRPC_ADDRESS")
+            ?? "http://localhost:5157";
+
+        services.AddGrpcClient<CatalogOwnership.CatalogOwnershipClient>(o =>
+            o.Address = new Uri(catalogGrpc));
+
+        services.AddScoped<IProductOwnership, GrpcProductOwnership>();
 
         return services;
     }

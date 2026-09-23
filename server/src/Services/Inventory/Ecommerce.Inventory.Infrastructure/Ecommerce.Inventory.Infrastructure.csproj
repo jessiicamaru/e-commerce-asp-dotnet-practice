@@ -1,10 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Ecommerce.Inventory.Application\Ecommerce.Inventory.Application.csproj" />
+    <!-- specs/031: Inventory asks Catalog who owns a variant before letting a seller stock it. -->
+    <ProjectReference Include="..\..\..\BuildingBlocks\Ecommerce.Contracts.Grpc\Ecommerce.Contracts.Grpc.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.66.0" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.3.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />

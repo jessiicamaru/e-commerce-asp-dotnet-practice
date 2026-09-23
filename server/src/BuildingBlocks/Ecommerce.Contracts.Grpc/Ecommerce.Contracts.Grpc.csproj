@@ -32,6 +32,7 @@
     <Protobuf Include="Protos\catalog_pricing.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\cart_reading.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\address_reading.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\catalog_ownership.proto" GrpcServices="Both" />
   </ItemGroup>
 
 </Project>

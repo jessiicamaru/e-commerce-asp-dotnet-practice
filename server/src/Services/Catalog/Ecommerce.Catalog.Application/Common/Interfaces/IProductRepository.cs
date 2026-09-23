@@ -102,6 +102,18 @@ public interface IProductRepository
     Task<List<ProductVariant>> GetVariantsByIdsAsync(IEnumerable<Guid> variantIds, CancellationToken cancellationToken = default);
 
     /// <summary>Whether any variant already uses this sku. Skus are unique across the catalogue.</summary>
+    /// <summary>
+    /// Who owns the products these variants belong to (specs/031).
+    /// </summary>
+    /// <remarks>
+    /// A projection rather than a reuse of <see cref="GetVariantsByIdsAsync"/>, which loads options
+    /// and their translations: an authorization question should not drag a display graph behind it.
+    /// A variant that does not exist is simply absent from the result - the caller turns absence
+    /// into its own refusal, which is what keeps "not yours" and "no such variant" identical.
+    /// </remarks>
+    Task<List<VariantOwnership>> GetVariantOwnersAsync(
+        IEnumerable<Guid> variantIds, CancellationToken cancellationToken = default);
+
     Task<bool> VariantSkuExistsAsync(string sku, CancellationToken cancellationToken = default);
 
     Task AddVariantAsync(ProductVariant variant, CancellationToken cancellationToken = default);
@@ -123,3 +135,13 @@ public interface IProductRepository
     /// </summary>
     Task RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Who a variant belongs to. <c>SellerId</c> null means the shop itself (specs/027).
+/// </summary>
+/// <remarks>
+/// NOT <c>VariantOwner</c>: the generated proto message is called that, and two types with the
+/// same name in two namespaces compile right up until one file needs both - which the gRPC service
+/// does. The same trap the front end documents for a service class and its model type.
+/// </remarks>
+public record VariantOwnership(Guid VariantId, Guid ProductId, Guid? SellerId);
