@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Products.Images.GetProductImage;
@@ -216,6 +217,56 @@ public class ProductImageTests(CatalogTestFixture fixture) : IDisposable
             context.Database.ExecuteSqlInterpolatedAsync(
                 $"UPDATE products SET \"ImageContentType\" = 'image/svg+xml', \"ImageUpdatedAt\" = now() WHERE \"Id\" = {productId}"));
         Assert.Equal("CK_products_image_type", svg.ConstraintName);
+    }
+
+    /// <summary>
+    /// A deleted product takes its picture with it (specs/029, issue #66).
+    /// </summary>
+    /// <remarks>
+    /// Until this was written, <c>DeleteProductCommandHandler</c> never asked for the store: the row
+    /// went and the bytes stayed on the volume forever, unreachable, with nothing to reclaim them.
+    /// Nothing broke, which is why it went unnoticed - two orphans were found by listing the
+    /// directory while answering a question about where images are kept.
+    /// </remarks>
+    [Fact]
+    public async Task Deleting_a_product_deletes_its_image()
+    {
+        var productId = await SeedProductAsync();
+        await UploadAsync(productId, Png);
+        Assert.Single(FilesOf(productId));
+
+        await SendAsync(new DeleteProductCommand(productId));
+
+        Assert.Empty(FilesOf(productId));
+    }
+
+    /// <summary>
+    /// The store failing must not stop the product going.
+    /// </summary>
+    /// <remarks>
+    /// <c>DELETE /api/products/{id}</c> exists for rows that should never have existed (specs/024).
+    /// A product that cannot be removed from the catalogue because of a leftover PNG is a worse
+    /// defect than the leak this feature fixes, and a read-only volume cannot be retried into
+    /// success. The file is left behind and said so in the log - the same bargain
+    /// <c>RemoveProductImage</c> already strikes.
+    /// </remarks>
+    [Fact]
+    public async Task A_failing_store_does_not_stop_a_product_being_deleted()
+    {
+        var productId = await SeedProductAsync();
+        await UploadAsync(productId, Png);
+
+        _fixture.Images.FailDeletes = true;
+
+        await SendAsync(new DeleteProductCommand(productId));   // does not throw
+
+        await using var scope = _fixture.NewScope();
+        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        Assert.Null(await db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == productId));
+
+        // ...and the orphan it leaves is the deliberate, bounded cost of that choice.
+        _fixture.Images.FailDeletes = false;
+        Assert.Single(FilesOf(productId));
     }
 
     private Task<ProductResponse> UploadAsync(Guid productId, byte[] content) =>
