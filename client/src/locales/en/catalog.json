@@ -60,5 +60,29 @@
     "in_other": "{{count}} in stock",
     "reserved_one": "{{count}} held in checkouts",
     "reserved_other": "{{count}} held in checkouts"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "average": "Rated {{average}} out of 5",
+    "count_one": "{{count}} review",
+    "count_other": "{{count}} reviews",
+    "none": "No reviews yet.",
+    "by": "{{name}}",
+    "edited": "edited",
+    "stars": "{{count}} star",
+    "stars_other": "{{count}} stars",
+    "starsOf": "{{count}} out of 5",
+    "yours": "Your review",
+    "write": "Review this product",
+    "rating": "Your rating",
+    "body": "What did you think? (optional)",
+    "submit": "Post review",
+    "update": "Update review",
+    "saving": "Saving…",
+    "saved": "Thank you - your review is up.",
+    "failed": "Could not save your review.",
+    "onlyBuyers": "Only customers who have received this product can review it.",
+    "signIn": "Sign in to review a product you bought.",
+    "loadFailed": "Could not load reviews."
   }
 }

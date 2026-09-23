@@ -8,7 +8,8 @@
     "users": "Users",
     "shops": "Shop applications",
     "moderation": "Moderation",
-    "review": "Products to review"
+    "review": "Products to review",
+    "reviews": "Reviews"
   },
   "queue": {
     "title": "Orders to ship",
@@ -143,7 +144,11 @@
       "ProductRejected": "Product rejected",
       "ProductTakenDown": "Product taken down",
       "ProductResubmitted": "Product sent back",
-      "ProductSentForReview": "Product back in review"
+      "ProductSentForReview": "Product back in review",
+      "ReviewPosted": "Review posted",
+      "ReviewEdited": "Review edited",
+      "ReviewHidden": "Review hidden",
+      "ReviewRestored": "Review shown again"
     }
   },
   "users": {
@@ -252,5 +257,25 @@
     "recent": "Your recent decisions",
     "noneRecent": "You have not decided anything yet.",
     "loadFailed": "Could not load."
+  },
+  "reviews": {
+    "title": "Reviews",
+    "subtitle": "What buyers wrote. Hiding one takes it off the page and out of the average; it can be shown again.",
+    "tab": {
+      "visible": "Shown",
+      "hidden": "Hidden"
+    },
+    "none": "Nothing here.",
+    "loadFailed": "Could not load reviews.",
+    "on": "on {{product}}",
+    "hide": "Hide…",
+    "restore": "Show again",
+    "hideTitle": "Hide this review",
+    "hideBody": "It leaves the product page and the average. Say why, for the record.",
+    "reason": "Reason",
+    "confirmHide": "Hide",
+    "hidden": "Review hidden.",
+    "restored": "Review shown again.",
+    "hiddenBecause": "Hidden: {{reason}}"
   }
 }

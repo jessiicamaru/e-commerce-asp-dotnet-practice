@@ -168,7 +168,13 @@ public interface IOrderRepository
         DateTime shippedBefore,
         DateTime at,
         CancellationToken cancellationToken = default,
-        Func<int, CancellationToken, Task>? stage = null);
+        Func<IReadOnlyList<Guid>, CancellationToken, Task>? stage = null);
+
+    /// <summary>
+    /// What each of these parcels carried, as the products a customer received (specs/046): the order's
+    /// lines of the same seller as the parcel - the shop's own part is the lines with no seller.
+    /// </summary>
+    Task<List<DeliveredParcel>> GetDeliveredParcelsAsync(IEnumerable<Guid> shipmentIds, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates any part the order is missing, in the order's state, and nothing else. Idempotent:
@@ -188,3 +194,6 @@ public interface IOrderRepository
         Guid userId,
         CancellationToken cancellationToken = default);
 }
+
+/// <summary>One delivered parcel and the products in it (specs/046).</summary>
+public record DeliveredParcel(Guid OrderId, Guid ShipmentId, Guid BuyerId, List<Guid> ProductIds, DateTime DeliveredAt);

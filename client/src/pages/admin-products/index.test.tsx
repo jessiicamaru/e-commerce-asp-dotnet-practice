@@ -13,7 +13,7 @@ import { AdminProductsPage } from '.'
 const lens = (over: Partial<Product> = {}): Product => ({
   id: 'p1', name: 'Mai Lens 35mm', description: 'A fast prime', price: 9_000_000, currency: 'VND', availability: 'OutOfStock',
   sku: 'MAI-35', categoryId: 'c1', isActive: true, imageUrl: null, sellerId: 's1', sellerName: 'Mai Lens', priceVaries: false,
-  variantCount: 1, variants: null, reviewStatus: 'Pending', reviewReason: null, ...over,
+  variantCount: 1, variants: null, reviewStatus: 'Pending', reviewReason: null, ratingAverage: null, ratingCount: 0, ...over,
 })
 const page = (...items: Product[]) => ({ items, pageNumber: 1, totalPages: 1, totalCount: items.length, hasPreviousPage: false, hasNextPage: false })
 

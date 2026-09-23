@@ -28,6 +28,7 @@ import { AdminShopsPage } from '@/pages/admin-shops'
 import { OpenShopPage } from '@/pages/open-shop'
 import { AdminModerationPage } from '@/pages/admin-moderation'
 import { AdminProductsPage } from '@/pages/admin-products'
+import { AdminReviewsPage } from '@/pages/admin-reviews'
 import { NotificationsPage } from '@/pages/notifications'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
@@ -145,6 +146,7 @@ export function AppRoutes() {
             <Route path="shops" element={<AdminShopsPage />} />
             <Route path="moderation" element={<AdminModerationPage />} />
             <Route path="products" element={<AdminProductsPage />} />
+            <Route path="reviews" element={<AdminReviewsPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

@@ -10,7 +10,7 @@ import { ReviewBanner } from '.'
 const listing = (over: Partial<ProductModel>): ProductModel => ({
   id: 'p1', name: 'Mai Lens 35mm', description: null, price: 9_000_000, currency: 'VND', availability: 'InStock', sku: 'MAI-35',
   categoryId: 'c1', isActive: true, imageUrl: null, sellerId: 'u1', sellerName: 'Mai Lens', priceVaries: false, variantCount: 1,
-  variants: null, reviewStatus: 'Approved', reviewReason: null, ...over,
+  variants: null, reviewStatus: 'Approved', reviewReason: null, ratingAverage: null, ratingCount: 0, ...over,
 })
 
 beforeEach(async () => {

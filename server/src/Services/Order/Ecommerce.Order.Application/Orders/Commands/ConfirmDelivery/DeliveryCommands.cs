@@ -3,6 +3,7 @@ using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
+using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Ecommerce.Shared.Audit;
@@ -23,7 +24,8 @@ public record AutoConfirmDeliveriesCommand(DateTime ShippedBefore) : IRequest<in
 
 public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
     IAuditTrail audit,
-    INotifier notifier)
+    INotifier notifier,
+    IPublishEndpoint publish)
     : IRequestHandler<ConfirmDeliveryCommand, OrderDetailResponse>
 {
     private readonly INotifier _notifier = notifier;
@@ -49,6 +51,7 @@ public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser
                     cancellationToken: ct);
                 await OrderNotices.WithFactsAsync(_orders, request.OrderId,
                     facts => OrderNotices.ReceivedAsync(_notifier, facts, request.ShipmentId, ct), ct);
+                await ParcelDeliveries.AnnounceAsync(_orders, publish, [request.ShipmentId], ct);
             });
 
         switch (outcome)
@@ -66,7 +69,8 @@ public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser
 }
 
 public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogger<AutoConfirmDeliveriesCommandHandler> logger,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    IPublishEndpoint publish)
     : IRequestHandler<AutoConfirmDeliveriesCommand, int>
 {
     private readonly IAuditTrail _audit = audit;
@@ -78,11 +82,15 @@ public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogge
     {
         var confirmed = await _orders.AutoConfirmDeliveriesAsync(
             request.ShippedBefore, DateTime.UtcNow, cancellationToken,
-            (count, ct) => _audit.RecordAsync(
-                AuditCategory.System, "DeliveriesAutoConfirmed", "Parcel", null,
-                $"Took {count} parcel(s) shipped before {request.ShippedBefore:u} as delivered; nobody had confirmed them",
-                after: new { Count = count, ShippedBefore = request.ShippedBefore },
-                cancellationToken: ct));
+            async (parcels, ct) =>
+            {
+                await _audit.RecordAsync(
+                    AuditCategory.System, "DeliveriesAutoConfirmed", "Parcel", null,
+                    $"Took {parcels.Count} parcel(s) shipped before {request.ShippedBefore:u} as delivered; nobody had confirmed them",
+                    after: new { Count = parcels.Count, ShippedBefore = request.ShippedBefore },
+                    cancellationToken: ct);
+                await ParcelDeliveries.AnnounceAsync(_orders, publish, parcels, ct);
+            });
 
         if (confirmed > 0)
         {
@@ -92,5 +100,22 @@ public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogge
         }
 
         return confirmed;
+    }
+}
+
+/// <summary>
+/// Tells the rest of the system what a customer received (specs/046) - one event per parcel, staged in the
+/// transaction that marked it delivered, so it is announced exactly when it happened and never twice.
+/// </summary>
+public static class ParcelDeliveries
+{
+    public static async Task AnnounceAsync(
+        IOrderRepository orders, IPublishEndpoint publish, IReadOnlyCollection<Guid> shipmentIds, CancellationToken cancellationToken)
+    {
+        foreach (var parcel in await orders.GetDeliveredParcelsAsync(shipmentIds, cancellationToken))
+        {
+            await publish.Publish(new Ecommerce.Contracts.Order.ParcelDeliveredEvent(
+                parcel.OrderId, parcel.ShipmentId, parcel.BuyerId, parcel.ProductIds, parcel.DeliveredAt), cancellationToken);
+        }
     }
 }

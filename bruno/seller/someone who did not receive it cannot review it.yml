@@ -1,0 +1,38 @@
+info:
+  name: someone who did not receive it cannot review it
+  type: http
+  seq: 55
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/reviews/mine"
+  body:
+    type: json
+    data: |-
+      {
+        "rating": 1
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("says why, in words", function() {
+          expect(res.body.detail).to.equal("Only a customer who has received this product can review it.");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The seller registered in this collection is a customer too, but never received this camera (specs/046).
+  Here rather than in the reviews folder because this folder runs last, and the seller's token is set in it.

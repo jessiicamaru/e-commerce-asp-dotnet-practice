@@ -1,0 +1,29 @@
+info:
+  name: the review is on the product page
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{productId}}/reviews?pageSize=50"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("listed, to anybody", function() {
+          expect(res.body.items.filter(function(r) { return r.id === bru.getVar("reviewId"); })).to.have.length(1);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Public: reading reviews needs no account.

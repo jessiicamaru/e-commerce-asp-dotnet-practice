@@ -100,6 +100,14 @@ public class Product
     /// <summary>On the shelf: approved. Everything public and everything sellable asks this.</summary>
     public bool IsListed => ReviewStatus == ProductReviewStatus.Approved;
 
+    /// <summary>
+    /// The average of the visible reviews and how many there are (specs/046) - kept on the row, recomputed
+    /// in the transaction of every review change, so a listing shows stars without counting anything.
+    /// </summary>
+    public decimal? RatingAverage { get; set; }
+
+    public int RatingCount { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

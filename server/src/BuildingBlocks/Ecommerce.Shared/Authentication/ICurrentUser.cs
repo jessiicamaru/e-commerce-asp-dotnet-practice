@@ -13,6 +13,12 @@ public interface ICurrentUser
     bool IsAuthenticated { get; }
 
     /// <summary>
+    /// The caller's first name, for signing what they write in public - a review (specs/046). Null for a
+    /// token issued before it was added, and for every test double, which is why it has a default.
+    /// </summary>
+    string? GivenName => null;
+
+    /// <summary>
     /// Whether the caller holds a role (specs/027). Read from the token, like everything else here.
     /// </summary>
     /// <remarks>

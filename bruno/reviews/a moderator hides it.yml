@@ -1,0 +1,38 @@
+info:
+  name: a moderator hides it
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/reviews/{{reviewId}}/hide"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Bruno checks hiding"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("hidden, with the reason", function() {
+          expect(res.body.hiddenAt).to.be.a("string");
+          expect(res.body.hiddenReason).to.equal("Bruno checks hiding");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Hidden, not deleted: off the page and out of the average, and a moderator can put it back.

@@ -25,7 +25,7 @@ const listing = {
   priceVaries: false,
   variantCount: 1,
   reviewStatus: 'Approved',
-  reviewReason: null,
+  reviewReason: null, ratingAverage: null, ratingCount: 0,
   variants: [
     {
       id: 'p1',

@@ -31,6 +31,9 @@ export interface Product {
    */
   reviewStatus: ReviewStatus
   reviewReason: string | null
+  /** The average of the visible reviews, null when there are none (specs/046). */
+  ratingAverage: number | null
+  ratingCount: number
 }
 
 export type ReviewStatus = 'Approved' | 'Pending' | 'Rejected'
