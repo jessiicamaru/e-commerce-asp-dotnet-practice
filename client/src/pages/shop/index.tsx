@@ -52,7 +52,15 @@ export function ShopPage() {
   return (
     <section className="grid gap-6">
       <header className="grid gap-1">
-        <h1 className="text-2xl font-bold">{shop.data?.shopName ?? t('title')}</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold">{shop.data?.shopName ?? t('title')}</h1>
+          <Link
+            to="/shop/sales"
+            className="ring-border hover:bg-muted rounded-full px-4 py-2 text-sm font-semibold ring-1 transition-colors"
+          >
+            {t('sales.link')}
+          </Link>
+        </div>
         <p className="text-muted-foreground text-sm">{t('subtitle')}</p>
       </header>
 

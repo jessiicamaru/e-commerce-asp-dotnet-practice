@@ -73,3 +73,26 @@ export function useMyOrders(page: number, pageSize: number) {
     placeholderData: (previous) => previous,
   })
 }
+
+/**
+ * The seller's sales. `enabled` keeps a customer who is not a seller from asking and collecting a
+ * 403 - which is the server's decision either way; this only avoids the pointless request.
+ */
+export function useMySales(page: number, pageSize: number, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.mySales(page),
+    queryFn: () => Order.sales(page, pageSize),
+    enabled,
+    placeholderData: (previous) => previous,
+  })
+}
+
+/** One sale. A 404 will not turn into something else on a retry. */
+export function useSale(id: string) {
+  return useQuery({
+    queryKey: queryKeys.sale(id),
+    queryFn: () => Order.sale(id),
+    enabled: id !== '',
+    retry: false,
+  })
+}

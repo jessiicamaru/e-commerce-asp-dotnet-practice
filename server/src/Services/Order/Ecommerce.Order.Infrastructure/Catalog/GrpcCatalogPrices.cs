@@ -66,6 +66,8 @@ public class GrpcCatalogPrices(
                     response.Variants.Count,
                     (int)(DateTime.UtcNow - started).TotalMilliseconds);
 
+                WarnIfSellerUnknown(response.Variants);
+
                 return response.Variants.Select(v => new CatalogPrice(
                     Guid.Parse(v.ProductId),
                     v.Name,
@@ -82,7 +84,8 @@ public class GrpcCatalogPrices(
                     Guid.Parse(v.VariantId),
                     v.Sku,
                     v.OptionSummary,
-                    v.Currency)).ToList();
+                    v.Currency,
+                    SellerOf(v))).ToList();
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
             {
@@ -118,6 +121,36 @@ public class GrpcCatalogPrices(
 
                 await Task.Delay(wait, cancellationToken);
             }
+        }
+    }
+
+    /// <summary>
+    /// Whose product this is (specs/034): a seller, or null for the shop's own.
+    /// </summary>
+    /// <remarks>
+    /// An UNSET field is a Catalog too old to say, and it comes back null too - the order is placed and
+    /// the line records no seller, because refusing a customer's checkout over a reporting field puts
+    /// the report ahead of the sale. <see cref="WarnIfSellerUnknown"/> is what keeps that from being
+    /// silent.
+    /// </remarks>
+    public static Guid? SellerOf(PricedVariant variant) =>
+        variant.HasSellerId && Guid.TryParse(variant.SellerId, out var seller) ? seller : null;
+
+    /// <summary>
+    /// Says so when Catalog could not tell us whose a product is. Without this, a real seller's sale
+    /// written down as nobody's would be found only when the seller asked where it went.
+    /// </summary>
+    private void WarnIfSellerUnknown(IEnumerable<PricedVariant> variants)
+    {
+        var unknown = variants.Where(v => !v.HasSellerId).Select(v => v.VariantId).ToList();
+
+        if (unknown.Count > 0)
+        {
+            _logger.LogWarning(
+                "Catalog did not say whose {Count} variant(s) are ({Variants}); the order lines will record "
+                + "no seller, and those sales will not appear to any seller. Is Catalog older than Order?",
+                unknown.Count,
+                string.Join(", ", unknown));
         }
     }
 }

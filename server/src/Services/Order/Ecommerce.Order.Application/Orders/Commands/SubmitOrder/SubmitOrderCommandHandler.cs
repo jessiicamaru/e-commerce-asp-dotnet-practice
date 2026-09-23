@@ -67,7 +67,12 @@ public class SubmitOrderCommandHandler(
             // withdrawn variant must not change what this order says was bought (specs/020).
             VariantId = line.VariantId == default ? null : line.VariantId,
             Sku = string.IsNullOrEmpty(line.Sku) ? null : line.Sku,
-            OptionSummary = string.IsNullOrEmpty(line.OptionSummary) ? null : line.OptionSummary
+            OptionSummary = string.IsNullOrEmpty(line.OptionSummary) ? null : line.OptionSummary,
+
+            // ...and whose it was (specs/034). The only record that this sale was a seller's: nothing
+            // can recover it later, because the answer lives in Catalog's database, and asking again
+            // would answer with whoever owns the product by then.
+            SellerId = line.SellerId
         }).ToList();
 
         // The grand total travels in OrderSubmittedEvent and the saga charges exactly that, so no contract

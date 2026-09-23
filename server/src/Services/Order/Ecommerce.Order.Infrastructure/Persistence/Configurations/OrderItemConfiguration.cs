@@ -30,5 +30,9 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 
         builder.Property(x => x.TaxAmount)
             .HasPrecision(18, 2);
+
+        // Both of a seller's reads start from "lines of this seller" (specs/034). Without this, every
+        // page a seller opens scans every order line in the shop.
+        builder.HasIndex(x => x.SellerId);
     }
 }

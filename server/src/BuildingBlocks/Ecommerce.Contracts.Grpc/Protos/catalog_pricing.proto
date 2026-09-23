@@ -161,4 +161,13 @@ message PricedVariant {
 
   // Which currency `price` is in, echoed so a caller never has to assume it got what it asked for.
   string currency = 8;
+
+  // Whose product this is (specs/034): the seller's id, or EMPTY for the shop's own. Order freezes it
+  // onto the line, like the name and the price, so a sale stays the seller's who made it.
+  //
+  // `optional` on purpose. A plain proto3 string cannot tell "empty" from "not sent", and an older
+  // Catalog that knows nothing of this field sends nothing - which would read exactly like the shop's
+  // own product, and a real seller's sale would be written down as the shop's without a word. With
+  // presence, "not sent" is HasSellerId == false: this Catalog cannot say.
+  optional string seller_id = 9;
 }
