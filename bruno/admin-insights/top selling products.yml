@@ -1,0 +1,39 @@
+info:
+  name: top selling products
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/insights/top-products?by=units&limit=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("most units first, each with its revenue per currency", function() {
+          expect(res.body.length).to.be.at.least(1);
+          for (var i = 1; i < res.body.length; i++) {
+            expect(res.body[i - 1].units).to.be.at.least(res.body[i].units);
+          }
+          res.body.forEach(function(p) {
+            expect(p.units).to.be.above(0);
+            var currencies = p.revenue.map(function(r) { return r.currency; });
+            expect(new Set(currencies).size).to.equal(currencies.length);
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  By units, or by revenue in one currency (`by=revenue&currency=VND`).

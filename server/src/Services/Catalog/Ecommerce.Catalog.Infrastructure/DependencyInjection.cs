@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<IProductViewRepository, ProductViewRepository>();
 
         // The orphan scan (specs/033) needs one read, not twenty-one, so it depends on the
         // narrow interface the repository also implements. Forwarded rather than registered

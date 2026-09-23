@@ -8,6 +8,7 @@ using Ecommerce.Catalog.Application.Products.Images.GetProductImage;
 using Ecommerce.Catalog.Application.Products.Images.RemoveProductImage;
 using Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
 using Ecommerce.Catalog.Application.Products.Review;
+using Ecommerce.Catalog.Application.Products.Views;
 using Ecommerce.Catalog.Application.Products.Translations;
 using Ecommerce.Shared.Authentication;
 using FluentValidation;
@@ -364,4 +365,22 @@ public class ProductsController : ApiControllerBase
     }
 
     public record ReasonRequest(string Reason);
+
+    // ---- Views (specs/047).
+
+    /// <summary>The product page was opened. Anonymous, and always 204 - counted or not.</summary>
+    [AllowAnonymous]
+    [HttpPost("{id:guid}/view")]
+    public async Task<IActionResult> View(Guid id)
+    {
+        await Mediator.Send(new RecordProductViewCommand(id));
+        return NoContent();
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("insights/top-viewed")]
+    public async Task<IActionResult> TopViewed([FromQuery] GetTopViewedQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
 }

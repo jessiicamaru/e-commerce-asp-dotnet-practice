@@ -1,0 +1,32 @@
+info:
+  name: who the buyers are
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/users/lookup?ids={{customerId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the email, from Identity", function() {
+          expect(res.body).to.have.length(1);
+          expect(res.body[0].email).to.equal(bru.getVar("customerEmail"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Identity turns the buyer ids into people, for the Overview page.

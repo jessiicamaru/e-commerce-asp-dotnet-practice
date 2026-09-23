@@ -1,0 +1,34 @@
+info:
+  name: the most viewed products
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/insights/top-viewed?limit=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("at least the view just recorded, most viewed first", function() {
+          expect(res.body.length).to.be.at.least(1);
+          for (var i = 1; i < res.body.length; i++) {
+            expect(res.body[i - 1].views).to.be.at.least(res.body[i].views);
+          }
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  What people look at, over the last 30 days unless told otherwise.

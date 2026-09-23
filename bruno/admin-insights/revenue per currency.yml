@@ -1,0 +1,40 @@
+info:
+  name: revenue per currency
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/insights/revenue"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("dong revenue from the orders this collection paid for, per day", function() {
+          var dong = res.body.totals.filter(function(t) { return t.currency === "VND"; });
+          expect(dong).to.have.length(1);
+          expect(dong[0].revenue).to.be.above(0);
+          expect(dong[0].orders).to.be.at.least(1);
+          expect(res.body.days.length).to.be.at.least(1);
+        });
+        test("never summed across currencies", function() {
+          var currencies = res.body.totals.map(function(t) { return t.currency; });
+          expect(new Set(currencies).size).to.equal(currencies.length);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/047: paid orders only - never failed, cancelled or still settling - over the last 30 days unless
+  from/to say otherwise. One total per currency, never added together.

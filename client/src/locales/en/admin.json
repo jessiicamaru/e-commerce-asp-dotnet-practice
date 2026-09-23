@@ -9,7 +9,8 @@
     "shops": "Shop applications",
     "moderation": "Moderation",
     "review": "Products to review",
-    "reviews": "Reviews"
+    "reviews": "Reviews",
+    "overview": "Overview"
   },
   "queue": {
     "title": "Orders to ship",
@@ -277,5 +278,35 @@
     "hidden": "Review hidden.",
     "restored": "Review shown again.",
     "hiddenBecause": "Hidden: {{reason}}"
+  },
+  "overview": {
+    "title": "Overview",
+    "subtitle": "How the shop is doing. Money is shown per currency - dong and dollars are never added together.",
+    "period": "Last {{count}} days",
+    "people": {
+      "customers": "Customers",
+      "sellers": "Sellers",
+      "moderators": "Moderators",
+      "stopped": "Locked or banned"
+    },
+    "waiting": {
+      "products": "Products to review",
+      "shops": "Shops to review"
+    },
+    "revenue": "Revenue",
+    "orders_one": "{{count}} order",
+    "orders_other": "{{count}} orders",
+    "average": "Average order {{amount}}",
+    "noRevenue": "No paid orders in this period.",
+    "daily": "Revenue per day",
+    "topSelling": "Selling most",
+    "topViewed": "Looked at most",
+    "topBuyers": "Buying most",
+    "units_one": "{{count}} sold",
+    "units_other": "{{count}} sold",
+    "views_one": "{{count}} view",
+    "views_other": "{{count}} views",
+    "none": "Nothing yet.",
+    "loadFailed": "Could not load this."
   }
 }

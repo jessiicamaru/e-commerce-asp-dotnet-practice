@@ -51,6 +51,7 @@ function renderPage() {
 beforeEach(async () => {
   await i18n.changeLanguage('en')
   // The reviews under the product (specs/046) - none, so these tests stay about the product itself.
+  vi.spyOn(Product, 'recordView').mockResolvedValue()
   vi.spyOn(Reviews, 'forProduct').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
 })
 
@@ -110,5 +111,24 @@ describe('ProductPage pictures', () => {
 
     await waitFor(() =>
       expect(screen.getByRole('img')).toHaveAttribute('src', '/api/products/p1/variants/only/image?v=5'))
+  })
+})
+
+describe('ProductPage views', () => {
+  /** What people look at (specs/047): one view per product opened, not one per render or per choice. */
+  it('reports the page once, however often it renders', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue(aProduct([
+      aVariant({ id: 'black', sku: 'XT5-BLACK', optionSummary: 'Colour: Black', options: [{ id: 'o1', name: 'Colour', value: 'Black' }] }),
+      aVariant({ id: 'silver', sku: 'XT5-SILVER', optionSummary: 'Colour: Silver', options: [{ id: 'o2', name: 'Colour', value: 'Silver' }] }),
+    ]))
+    const view = vi.mocked(Product.recordView)
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('radio', { name: /Silver/i }))
+    await user.click(screen.getByRole('radio', { name: /Black/i }))
+
+    expect(view).toHaveBeenCalledTimes(1)
+    expect(view).toHaveBeenCalledWith('p1')
   })
 })

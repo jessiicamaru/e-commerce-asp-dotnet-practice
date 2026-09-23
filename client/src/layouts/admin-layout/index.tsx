@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
-import { GavelIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TruckIcon, UsersIcon, WalletIcon } from 'lucide-react'
+import { GavelIcon, LayoutDashboardIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TruckIcon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth/useAuth'
 import { cn } from '@/utils/shared'
 
@@ -20,6 +20,7 @@ export function AdminLayout() {
   // Each person sees the pages their role can use (specs/043): a moderator has no fulfilment, payouts or
   // audit log to open, and a link to a page that answers 403 is a link to an error.
   const links = [
+    { to: '/admin/overview', end: false, icon: LayoutDashboardIcon, label: t('menu.overview'), adminOnly: true },
     { to: '/admin', end: true, icon: TruckIcon, label: t('menu.fulfilment'), adminOnly: true },
     { to: '/admin/payouts', end: false, icon: WalletIcon, label: t('menu.payouts'), adminOnly: true },
     { to: '/admin/moderation', end: false, icon: GavelIcon, label: t('menu.moderation'), adminOnly: false },

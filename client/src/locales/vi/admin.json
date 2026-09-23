@@ -9,7 +9,8 @@
     "shops": "Đơn mở gian hàng",
     "moderation": "Kiểm duyệt",
     "review": "Sản phẩm chờ duyệt",
-    "reviews": "Đánh giá"
+    "reviews": "Đánh giá",
+    "overview": "Tổng quan"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -277,5 +278,35 @@
     "hidden": "Đã ẩn đánh giá.",
     "restored": "Đã hiện lại đánh giá.",
     "hiddenBecause": "Đã ẩn: {{reason}}"
+  },
+  "overview": {
+    "title": "Tổng quan",
+    "subtitle": "Tình hình cửa hàng. Tiền được hiển thị theo từng loại tiền - đồng và đô không bao giờ cộng chung.",
+    "period": "{{count}} ngày qua",
+    "people": {
+      "customers": "Khách hàng",
+      "sellers": "Người bán",
+      "moderators": "Kiểm duyệt viên",
+      "stopped": "Bị khoá hoặc cấm"
+    },
+    "waiting": {
+      "products": "Sản phẩm chờ duyệt",
+      "shops": "Gian hàng chờ duyệt"
+    },
+    "revenue": "Doanh thu",
+    "orders_one": "{{count}} đơn",
+    "orders_other": "{{count}} đơn",
+    "average": "Trung bình mỗi đơn {{amount}}",
+    "noRevenue": "Không có đơn đã thanh toán trong khoảng này.",
+    "daily": "Doanh thu theo ngày",
+    "topSelling": "Bán chạy nhất",
+    "topViewed": "Xem nhiều nhất",
+    "topBuyers": "Mua nhiều nhất",
+    "units_one": "đã bán {{count}}",
+    "units_other": "đã bán {{count}}",
+    "views_one": "{{count}} lượt xem",
+    "views_other": "{{count}} lượt xem",
+    "none": "Chưa có gì.",
+    "loadFailed": "Không tải được."
   }
 }
