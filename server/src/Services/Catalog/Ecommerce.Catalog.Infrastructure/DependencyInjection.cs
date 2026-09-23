@@ -25,6 +25,11 @@ public static class DependencyInjection
 
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+
+        // The orphan scan (specs/033) needs one read, not twenty-one, so it depends on the
+        // narrow interface the repository also implements. Forwarded rather than registered
+        // separately, so both resolve to the SAME instance inside a scope.
+        services.AddScoped<ILiveImageKeys>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<ISellerRepository, SellerRepository>();
 
         // Product images (specs/019): a directory, which assumes one Catalog instance. In containers

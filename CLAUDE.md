@@ -87,7 +87,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (122 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (130 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -520,8 +520,20 @@ bytes stayed was invisible because nothing broke: two orphans were found by list
 while answering a question about where images are kept. The bytes go **after** the row and outside
 the transaction, and a store that throws is logged and swallowed rather than failing the deletion -
 a product that cannot be removed from the catalogue because of a leftover PNG is a worse defect than
-the leak. That bargain means orphans are still possible on purpose, and **nothing reconciles the
-directory against the table**; that sweeper is filed, not built. The type comes
+the leak. That bargain means orphans are still possible on purpose, and since specs/033 **an administrator
+can find and reclaim them**: `GET /api/products/images/orphans` reports what the store holds that no
+row can name, and `DELETE` on the same address removes it. ⚠️ **Nothing runs it on a timer.** It is
+the one part of this system whose failure mode is destroying data somebody is using, so a person
+asks. ⚠️ **The live keys are read FIRST and a failure is fatal** - if that read threw and the code
+carried on with an empty set, every file would be a candidate and the reclaim would remove the whole
+catalogue's images; `liveKeys` is published in the response so a nonsensical answer is visible as
+one. A file younger than `ProductImages:OrphanGraceHours` (default 24) is never an orphan, because
+an upload between its two steps has written bytes no row names **yet**; that number covers the
+operator, not the window, which is milliseconds. The reclaim **takes no key list** - it reconciles
+again and removes what it finds, since the caller's list is minutes old by the time a person has
+read it. ⚠️ **The one-instance assumption is now destructive if broken**: two Catalog instances each
+see only their own directory and would report the other's images as orphans, which is why the
+response carries a line saying so. The type comes
 from the file's bytes, never from its `Content-Type`, and SVG is refused.
 
 **A VARIANT can have its own photograph too** (specs/032), so choosing "silver" changes the picture.

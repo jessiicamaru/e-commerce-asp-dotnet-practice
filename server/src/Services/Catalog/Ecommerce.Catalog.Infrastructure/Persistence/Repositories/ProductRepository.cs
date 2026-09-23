@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Catalog.Infrastructure.Persistence;
@@ -48,6 +49,44 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                 .SetProperty(p => p.ImageContentType, contentType)
                 .SetProperty(p => p.ImageUpdatedAt, updatedAt)
                 .SetProperty(p => p.UpdatedAt, DateTime.UtcNow), cancellationToken);
+
+    public async Task<HashSet<string>> GetLiveImageKeysAsync(CancellationToken cancellationToken = default)
+    {
+        // Two reads rather than one join: a product and a variant produce different key shapes
+        // (specs/032), so there is nothing to be gained by fetching them together and a union of
+        // two projections says what it means.
+        var products = await _context.Products
+            .AsNoTracking()
+            .Where(p => p.ImageUpdatedAt != null && p.ImageContentType != null)
+            .Select(p => new { p.Id, p.ImageUpdatedAt, p.ImageContentType })
+            .ToListAsync(cancellationToken);
+
+        var variants = await _context.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.ImageUpdatedAt != null && v.ImageContentType != null)
+            .Select(v => new { v.Id, v.ImageUpdatedAt, v.ImageContentType })
+            .ToListAsync(cancellationToken);
+
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var row in products)
+        {
+            if (ImageFormat.FromContentType(row.ImageContentType) is { } format)
+            {
+                keys.Add(ProductImageKey.For(row.Id, row.ImageUpdatedAt!.Value, format));
+            }
+        }
+
+        foreach (var row in variants)
+        {
+            if (ImageFormat.FromContentType(row.ImageContentType) is { } format)
+            {
+                keys.Add(ProductImageKey.ForVariant(row.Id, row.ImageUpdatedAt!.Value, format));
+            }
+        }
+
+        return keys;
+    }
 
     public Task<int> TrySetVariantImageAsync(
         Guid variantId,

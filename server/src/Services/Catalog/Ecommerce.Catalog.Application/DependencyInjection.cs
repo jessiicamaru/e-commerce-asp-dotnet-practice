@@ -19,6 +19,10 @@ public static class DependencyInjection
             cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
+        // The reconciliation the orphan report and the orphan reclaim share (specs/033). Scoped,
+        // like the repository and the store it holds.
+        services.AddScoped<Products.Images.OrphanImageScan>();
+
         return services;
     }
 }

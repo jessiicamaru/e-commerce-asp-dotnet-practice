@@ -2,7 +2,7 @@ using Ecommerce.Catalog.Domain.Entities;
 
 namespace Ecommerce.Catalog.Application.Common.Interfaces;
 
-public interface IProductRepository
+public interface IProductRepository : ILiveImageKeys
 {
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     /// <summary>
@@ -156,3 +156,23 @@ public interface IProductRepository
 /// does. The same trap the front end documents for a service class and its model type.
 /// </remarks>
 public record VariantOwnership(Guid VariantId, Guid ProductId, Guid? SellerId);
+
+/// <summary>
+/// Every store key a product or a variant currently names (specs/033).
+/// </summary>
+/// <remarks>
+/// <para>
+/// A one-method interface rather than a method on the repository, because the orphan scan needs
+/// exactly this and nothing else - and because a test for "the catalogue could not be read" should
+/// not have to implement twenty-one members to say so. <c>IProductRepository</c> implements it.
+/// </para>
+/// <para>
+/// ⚠️ <b>A failure here must NOT be read as "there are none".</b> An empty set makes every file in
+/// the store an orphan, and the caller deletes them. It throws rather than returning empty, and the
+/// caller lets it.
+/// </para>
+/// </remarks>
+public interface ILiveImageKeys
+{
+    Task<HashSet<string>> GetLiveImageKeysAsync(CancellationToken cancellationToken = default);
+}

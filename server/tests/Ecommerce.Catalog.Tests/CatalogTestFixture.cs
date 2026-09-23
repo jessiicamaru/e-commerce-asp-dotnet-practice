@@ -89,6 +89,11 @@ public class CatalogTestFixture : IAsyncLifetime
 
         services.AddDbContext<CatalogDbContext>(options => options.UseNpgsql(_connectionString));
         services.AddScoped<IProductRepository, ProductRepository>();
+
+        // The orphan scan (specs/033) needs one read, not twenty-one, so it depends on the
+        // narrow interface the repository also implements. Forwarded rather than registered
+        // separately, so both resolve to the SAME instance inside a scope.
+        services.AddScoped<ILiveImageKeys>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ISellerRepository, SellerRepository>();
 
@@ -221,6 +226,9 @@ public sealed class TestImageStore(FileSystemProductImageStore inner) : IProduct
 
     public Task DeleteAsync(string key, CancellationToken cancellationToken = default) =>
         FailDeletes ? throw new IOException("Simulated storage failure.") : Inner.DeleteAsync(key, cancellationToken);
+
+    public IAsyncEnumerable<StoredImage> ListAsync(CancellationToken cancellationToken = default) =>
+        Inner.ListAsync(cancellationToken);
 }
 
 /// <summary>A settable <see cref="IRequestLanguage"/>: the tests' way of saying "asked in Vietnamese".</summary>

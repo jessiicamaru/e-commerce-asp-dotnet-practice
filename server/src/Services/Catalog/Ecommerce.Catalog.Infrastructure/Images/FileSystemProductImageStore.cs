@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 
@@ -84,6 +85,44 @@ public sealed partial class FileSystemProductImageStore : IProductImageStore
     {
         File.Delete(PathFor(key));   // no error when it is already gone
         return Task.CompletedTask;
+    }
+
+    public async IAsyncEnumerable<StoredImage> ListAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var path in Directory.EnumerateFiles(_root))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var name = Path.GetFileName(path);
+
+            // The write probe this class creates at construction, and anything else beginning with
+            // a dot. It is not a product image; counting it as waste would be wrong and deleting it
+            // as if the catalogue had lost it would be worse. Only the store knows what its own
+            // bookkeeping looks like, which is why this exclusion lives here (specs/033 research D5).
+            if (name.StartsWith('.'))
+            {
+                continue;
+            }
+
+            FileInfo info;
+            try
+            {
+                info = new FileInfo(path);
+                if (!info.Exists)
+                {
+                    continue;   // deleted between the enumeration and here; not an error
+                }
+            }
+            catch (IOException)
+            {
+                continue;
+            }
+
+            yield return new StoredImage(name, info.Length, info.LastWriteTimeUtc);
+        }
+
+        await Task.CompletedTask;
     }
 
     /// <summary>
