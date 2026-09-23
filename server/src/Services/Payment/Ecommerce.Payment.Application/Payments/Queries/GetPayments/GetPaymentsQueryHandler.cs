@@ -18,10 +18,15 @@ public class GetPaymentsQueryHandler(IPaymentRepository paymentRepository)
         var (items, totalCount) = await _paymentRepository.GetPaginatedAsync(
             pageNumber, pageSize, request.OrderId, request.Status, cancellationToken);
 
+        // The page's refunds (specs/039) in one query, not one per row.
+        var refunds = await _paymentRepository.GetRefundsAsync(items.Select(x => x.OrderId).ToList(), cancellationToken);
+
         var responses = items
             .Select(x => new PaymentResponse(
                 x.Id, x.OrderId, x.UserId, x.Amount,
-                x.Status.ToString(), x.FailureReason, x.Provider, x.ProcessedAt))
+                x.Status.ToString(), x.FailureReason, x.Provider, x.ProcessedAt,
+                refunds.GetValueOrDefault(x.OrderId)?.Amount,
+                refunds.GetValueOrDefault(x.OrderId)?.RefundedAt))
             .ToList();
 
         return new PaginatedList<PaymentResponse>(responses, totalCount, pageNumber, pageSize);

@@ -56,6 +56,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
         builder.Property(x => x.DiscountTotal).HasPrecision(18, 2);
         builder.Property(x => x.TaxRate).HasPrecision(5, 4);
         builder.Property(x => x.CommissionRate).HasPrecision(5, 4);
+        builder.Property(x => x.CancelledBy).HasMaxLength(16);
 
         // Feature 022 - the currency every amount above is in. Nullable, because an order placed
         // before this feature recorded amounts whose currency nobody stated, and writing one in now

@@ -72,6 +72,8 @@ export interface Order extends Totals {
   /** The parcel's, when there is exactly one; null when the order goes in several (see `shipments`). */
   trackingReference: string | null
   shipments: Shipment[] | null
+  /** Who cancelled it (specs/039): 'Customer' or 'Staff'; null unless cancelled. */
+  cancelledBy?: string | null
 }
 
 export interface OrderSummary {

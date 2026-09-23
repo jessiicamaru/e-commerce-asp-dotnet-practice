@@ -1,0 +1,26 @@
+info:
+  name: cancelling an order without a token is 401
+  type: http
+  seq: 41
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/cancel"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Whose order it is comes from the token (specs/039).

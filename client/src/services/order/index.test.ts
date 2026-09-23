@@ -46,3 +46,14 @@ describe('Order.balance and Order.payouts', () => {
     expect(get.mock.calls.every((call) => call[1] === undefined)).toBe(true)
   })
 })
+
+describe('Order.cancel', () => {
+  /** The order is named; the owner is the token (specs/039, Constitution IV). */
+  it('names the order and nobody else', async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: {} })
+
+    await Order.cancel('o-1')
+
+    expect(post.mock.calls[0]).toEqual(['/orders/o-1/cancel'])
+  })
+})

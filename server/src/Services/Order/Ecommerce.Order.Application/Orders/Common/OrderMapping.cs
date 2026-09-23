@@ -81,5 +81,6 @@ public static class OrderMapping
         // somebody browsing in dollars, because an order is a record of a purchase (specs/022).
         order.Currency ?? string.Empty,
         order.Language ?? string.Empty,
-        ToShipments(order));
+        ToShipments(order),
+        order.CancelledBy);
 }

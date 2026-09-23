@@ -1,0 +1,30 @@
+info:
+  name: cancelling a shipped order is 409 for its customer
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/cancel"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The customer's own route, on their own order, refused for the same reason (specs/039). A cancellation
+  that succeeds - and what it undoes in Inventory and Payment - is proven by verify-saga.sh, which can see
+  between services; one collection run cannot cancel the order the rest of it goes on to use.

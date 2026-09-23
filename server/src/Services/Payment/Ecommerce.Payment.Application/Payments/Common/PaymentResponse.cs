@@ -8,5 +8,7 @@ public record PaymentResponse(
     string Status,
     string? FailureReason,
     string Provider,
-    DateTime ProcessedAt
+    DateTime ProcessedAt,
+    decimal? RefundedAmount = null,
+    DateTime? RefundedAt = null
 );

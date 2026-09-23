@@ -230,7 +230,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
         var sales = rows.Select(x => new SaleSummaryResponse(
             x.Id,
-            x.Part is { } part ? OrderMapping.Describe(part) : OrderMapping.Describe(x.Status),
+            // Cancelled (specs/039) says so, whatever state its part was left in.
+            x.Status == OrderStatus.Cancelled
+                ? OrderMapping.Describe(x.Status)
+                : x.Part is { } part ? OrderMapping.Describe(part) : OrderMapping.Describe(x.Status),
             x.CreatedAt,
             x.UpdatedAt,
             x.LineCount,
@@ -311,9 +314,12 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             _ => ShipmentStatus.Pending
         };
 
+        // A cancelled sale (specs/039): nothing to ship, so no status of a parcel and no address.
+        var cancelled = row.Status == OrderStatus.Cancelled;
+
         return new SaleDetailResponse(
             row.Id,
-            OrderMapping.Describe(partStatus),
+            cancelled ? OrderMapping.Describe(row.Status) : OrderMapping.Describe(partStatus),
             row.CreatedAt,
             row.UpdatedAt,
             row.Items,
@@ -323,7 +329,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             row.Part?.TrackingReference,
             // ⚠️ Where to send it - only while sending it is their job (specs/035 research D6). Once
             // their parcel is out, a seller holding the customer's home address has no use for it.
-            partStatus == ShipmentStatus.Shipped ? null : OrderMapping.ToResponse(row.ShipTo),
+            cancelled || partStatus == ShipmentStatus.Shipped ? null : OrderMapping.ToResponse(row.ShipTo),
             row.Part?.GoodsTotal,
             row.Part?.Commission,
             row.Part?.ShippingShare,
@@ -389,6 +395,17 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             if (orderStatus is null)
             {
                 return new ShipmentMoveResult(ShipmentMoveOutcome.NoSuchPart);
+            }
+
+            if (orderStatus == OrderStatus.Cancelled)
+            {
+                // Only someone with a part on it learns it was cancelled; anyone else is told there is no
+                // such part, in the same words as always (specs/039 research D5).
+                var hasPart = await _context.OrderShipments
+                    .AnyAsync(s => s.OrderId == orderId && s.SellerId == sellerId, cancellationToken);
+                return new ShipmentMoveResult(
+                    hasPart ? ShipmentMoveOutcome.OrderCancelled : ShipmentMoveOutcome.NoSuchPart,
+                    OrderStatus: orderStatus);
             }
 
             if (!Payable.Contains(orderStatus.Value))
@@ -459,6 +476,94 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
             await transaction.CommitAsync(cancellationToken);
             return new ShipmentMoveResult(ShipmentMoveOutcome.Moved, now!.Status, now.TrackingReference, summary);
+        });
+    }
+
+    public Task<CancelOutcome> TryCancelAsync(
+        Guid orderId,
+        Guid? ownerId,
+        bool allowWhilePreparing,
+        string cancelledBy,
+        DateTime at,
+        Func<CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default)
+    {
+        // The execution strategy, for the same reason as TryMoveShipmentAsync. A retried attempt starts
+        // from a clean change tracker, so an outbox message staged by a failed attempt is not saved twice.
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // 1. The order's row lock - the SAME one every parcel move takes first, which is what makes a
+            //    cancel and a ship on one order run one after the other (research D2).
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"""SELECT 1 FROM orders WHERE "Id" = {orderId} FOR UPDATE""", cancellationToken);
+
+            // The owner is part of the query, so someone else's order is simply not found.
+            var status = await _context.Orders
+                .Where(o => o.Id == orderId && (ownerId == null || o.UserId == ownerId))
+                .Select(o => (OrderStatus?)o.Status)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (status is null)
+            {
+                return CancelOutcome.NotFound;
+            }
+
+            if (status == OrderStatus.Cancelled)
+            {
+                return CancelOutcome.AlreadyCancelled;
+            }
+
+            if (!Payable.Contains(status.Value))
+            {
+                return CancelOutcome.NotPaid;
+            }
+
+            // 2. Parts an older image never wrote, in the order's state - so a legacy "Preparing" order is
+            //    seen as being prepared, not as waiting.
+            await EnsureShipmentsAsync(orderId, cancellationToken);
+
+            var parts = await _context.OrderShipments
+                .AsNoTracking()
+                .Where(s => s.OrderId == orderId)
+                .Select(s => s.Status)
+                .ToListAsync(cancellationToken);
+
+            if (parts.Any(p => p == ShipmentStatus.Shipped))
+            {
+                await transaction.CommitAsync(cancellationToken); // the parts step 2 may have created
+                return CancelOutcome.Shipped;
+            }
+
+            if (!allowWhilePreparing && parts.Any(p => p != ShipmentStatus.Pending))
+            {
+                await transaction.CommitAsync(cancellationToken);
+                return CancelOutcome.BeingPrepared;
+            }
+
+            // 3. The guarded statement, then the event, then one save: the row and the outbox message
+            //    commit together.
+            var cancelled = await _context.Orders
+                .Where(o => o.Id == orderId && Payable.Contains(o.Status))
+                .ExecuteUpdateAsync(
+                    x => x.SetProperty(o => o.Status, OrderStatus.Cancelled)
+                          .SetProperty(o => o.CancelledBy, cancelledBy)
+                          .SetProperty(o => o.UpdatedAt, at),
+                    cancellationToken);
+
+            if (cancelled == 0)
+            {
+                return CancelOutcome.AlreadyCancelled; // unreachable under the lock; guarded all the same
+            }
+
+            await stage(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return CancelOutcome.Cancelled;
         });
     }
 

@@ -30,7 +30,9 @@
     "shipTo": "Giao tới",
     "noAddress": "Đơn này không ghi địa chỉ giao.",
     "lines": "Toàn bộ đơn",
-    "customer": "Khách hàng"
+    "customer": "Khách hàng",
+    "cancelledByCustomer": "Khách đã huỷ đơn này. Không còn gì để gửi.",
+    "cancelledByStaff": "Cửa hàng đã huỷ đơn này. Không còn gì để gửi."
   },
   "payouts": {
     "title": "Thanh toán người bán",

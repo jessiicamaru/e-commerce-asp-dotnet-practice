@@ -26,7 +26,8 @@
     "shipped": "Đang trên đường giao.",
     "failedStock": "Chưa đặt được: một số sản phẩm đã hết hàng. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên.",
     "failedPayment": "Chưa đặt được: thanh toán bị từ chối. Giỏ hàng vẫn còn nguyên, bạn có thể thử lại.",
-    "failed": "Chưa đặt được. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên."
+    "failed": "Chưa đặt được. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên.",
+    "cancelled": "Đơn đã huỷ."
   },
   "parcels": {
     "title": "Các kiện hàng",
@@ -42,5 +43,15 @@
     "from": "từ {{shop}}",
     "theShop": "Cửa hàng"
   },
-  "soldBy": "Bán bởi {{shop}}"
+  "soldBy": "Bán bởi {{shop}}",
+  "cancel": {
+    "button": "Huỷ đơn",
+    "title": "Huỷ đơn này?",
+    "body": "Hàng được trả lại kho và số tiền đã trả được hoàn lại. Không hoàn tác được.",
+    "keep": "Giữ đơn",
+    "confirm": "Huỷ đơn",
+    "done": "Đã huỷ đơn.",
+    "byYou": "Bạn đã huỷ đơn này. Số tiền đã trả được hoàn lại.",
+    "byShop": "Cửa hàng đã huỷ đơn này. Số tiền đã trả được hoàn lại."
+  }
 }

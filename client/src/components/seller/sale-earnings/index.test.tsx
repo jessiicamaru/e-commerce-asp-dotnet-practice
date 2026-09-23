@@ -57,6 +57,14 @@ describe('SaleEarnings', () => {
     expect(screen.getByText('Paid out')).toBeInTheDocument()
   })
 
+  /** specs/039: a cancelled order is never money, whatever terms it recorded. */
+  it('says a cancelled sale earns nothing', async () => {
+    render(<SaleEarnings sale={sale({ status: 'Cancelled' })} />)
+
+    expect(screen.getByText(/cancelled, so nothing is owed/)).toBeInTheDocument()
+    expect(screen.queryByText(/₫/)).not.toBeInTheDocument()
+  })
+
   /** An old order says why there is no number, rather than showing zeros that read as "you earned nothing". */
   it('explains an order whose terms were never recorded, and shows no amounts', () => {
     render(<SaleEarnings sale={sale({ ...noEarnings })} />)

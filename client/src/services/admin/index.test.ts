@@ -41,4 +41,12 @@ describe('Admin', () => {
 
     expect(post.mock.calls[0]).toEqual(['/orders/payouts', { sellerId: 's-1', currency: 'VND' }])
   })
+
+  it('cancels through the staff route', async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: {} })
+
+    await Admin.cancel('o-1')
+
+    expect(post.mock.calls[0]).toEqual(['/orders/fulfilment/o-1/cancel'])
+  })
 })

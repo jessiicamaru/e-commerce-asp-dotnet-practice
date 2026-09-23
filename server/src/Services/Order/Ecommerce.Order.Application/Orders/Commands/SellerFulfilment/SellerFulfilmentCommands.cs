@@ -76,6 +76,10 @@ internal static class SellerStep
             case ShipmentMoveOutcome.OrderNotPaid:
                 throw new NotFoundException(Sales.NotFound);
 
+            // Their own sale, cancelled (specs/039): they can see it, so saying so gives nothing away.
+            case ShipmentMoveOutcome.OrderCancelled:
+                throw new ConflictException(Sales.Cancelled);
+
             default: // WrongState - it IS theirs, so saying where it stands discloses nothing new
                 if (result.Current == to)
                 {

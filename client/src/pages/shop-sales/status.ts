@@ -12,6 +12,8 @@ export function describeSaleStatus(t: TFunction<'seller'>, status: string): stri
       return t('sales.status.preparing')
     case 'Shipped':
       return t('sales.status.shipped')
+    case 'Cancelled':
+      return t('sales.status.cancelled')
     default:
       return status
   }

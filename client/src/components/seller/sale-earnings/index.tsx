@@ -20,8 +20,8 @@ export function SaleEarnings({ sale }: { sale: Sale }) {
   const { t } = useTranslation('seller')
   const state = earningState(sale)
 
-  if (state === 'unrecorded') {
-    return <p className="text-muted-foreground text-sm">{t('earnings.unrecorded')}</p>
+  if (state === 'unrecorded' || state === 'cancelled') {
+    return <p className="text-muted-foreground text-sm">{t(`earnings.${state}`)}</p>
   }
 
   const row = (label: string, value: number | null, sign = '') => (

@@ -18,7 +18,13 @@ public enum ShipmentMoveOutcome
     OrderNotPaid,
 
     /// <summary>No such order, or no part of this seller's on it. Nothing changed.</summary>
-    NoSuchPart
+    NoSuchPart,
+
+    /// <summary>
+    /// The order was cancelled (specs/039), and the caller DOES have a part on it - anyone else is told
+    /// <see cref="NoSuchPart"/>, so this answer never confirms that somebody else sold on an order.
+    /// </summary>
+    OrderCancelled
 }
 
 /// <param name="Current">The part's status after the attempt, when there is a part.</param>

@@ -108,6 +108,26 @@ public interface IOrderRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Cancels a paid order, if it may be cancelled, and stages the event that undoes it elsewhere - in ONE
+    /// transaction under the same row lock as every parcel move (specs/039 research D2), so a cancel and a
+    /// ship on one order run one after the other and exactly one of them wins.
+    /// </summary>
+    /// <param name="ownerId">The customer; null for staff. Someone else's order is <see cref="CancelOutcome.NotFound"/>.</param>
+    /// <param name="allowWhilePreparing">Staff may cancel while a parcel is being prepared; a customer may not.</param>
+    /// <param name="stage">
+    /// Publishes the event. Called only when the order was cancelled by THIS call, between the guarded
+    /// UPDATE and the save, so the outbox message commits with the row.
+    /// </param>
+    Task<CancelOutcome> TryCancelAsync(
+        Guid orderId,
+        Guid? ownerId,
+        bool allowWhilePreparing,
+        string cancelledBy,
+        DateTime at,
+        Func<CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Creates any part the order is missing, in the order's state, and nothing else. Idempotent:
     /// <c>INSERT … ON CONFLICT DO NOTHING</c> against the unique (order, seller) index.
     /// </summary>

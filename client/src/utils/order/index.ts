@@ -18,6 +18,8 @@ export function orderStatusKey(status: string, failureReason: string | null): st
       return 'status.preparing'
     case ORDER_STATUS.shipped:
       return 'status.shipped'
+    case ORDER_STATUS.cancelled:
+      return 'status.cancelled'
     case ORDER_STATUS.failed:
       if (failureReason && /stock/i.test(failureReason)) {
         return 'status.failedStock'
@@ -43,7 +45,7 @@ export function describeOrderStatus(
 
 /** Which tone to show a status in. */
 export function orderStatusTone(status: string): 'good' | 'bad' | 'waiting' {
-  if (status === ORDER_STATUS.failed) return 'bad'
+  if (status === ORDER_STATUS.failed || status === ORDER_STATUS.cancelled) return 'bad'
   if (status === ORDER_STATUS.submitted) return 'waiting'
   return 'good'
 }

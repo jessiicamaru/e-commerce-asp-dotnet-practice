@@ -33,6 +33,9 @@ public class Order
     /// rate changed later never alters what a seller earned on it. Null on orders placed before that.
     /// </summary>
     public decimal? CommissionRate { get; set; }
+
+    /// <summary>Who cancelled it (specs/039): "Customer" or "Staff". Null unless cancelled.</summary>
+    public string? CancelledBy { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

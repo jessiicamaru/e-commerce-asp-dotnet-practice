@@ -20,7 +20,8 @@ namespace Ecommerce.Inventory.Application.Common;
 /// somebody else's problem, which is how this repository shipped the outbox bug twice.
 /// </para>
 /// <para>
-/// <b>If you add a seventh path that moves stock, it must call this too.</b> Nothing enforces that —
+/// <b>If you add an eighth path that moves stock, it must call this too</b> - the seventh, restocking a
+/// cancelled order (specs/039), does. Nothing enforces that —
 /// an EF SaveChanges interceptor would, and was rejected as unverified (research D2). What stands in
 /// for enforcement is one test per call site in <c>Ecommerce.Inventory.Tests</c>.
 /// </para>

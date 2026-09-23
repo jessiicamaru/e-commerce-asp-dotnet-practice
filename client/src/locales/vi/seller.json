@@ -92,7 +92,8 @@
     "status": {
       "paid": "Đã thanh toán - chờ chuẩn bị",
       "preparing": "Đang chuẩn bị",
-      "shipped": "Đã gửi đi"
+      "shipped": "Đã gửi đi",
+      "cancelled": "Đã huỷ"
     }
   },
   "menu": {
@@ -154,7 +155,8 @@
     "shipped": "Đã đánh dấu đã gửi.",
     "trackingIs": "Mã vận đơn:",
     "shipTo": "Giao tới",
-    "addressGone": "Kiện hàng đã được gửi, nên địa chỉ giao không còn hiển thị."
+    "addressGone": "Kiện hàng đã được gửi, nên địa chỉ giao không còn hiển thị.",
+    "cancelled": "Đơn này đã bị huỷ - không cần chuẩn bị hay gửi hàng."
   },
   "earnings": {
     "title": "Bạn nhận",
@@ -172,7 +174,8 @@
       "onTheWay": "Khách đã trả. Tiền đến hạn khi bạn gửi kiện hàng.",
       "due": "Kiện đã gửi. Sàn sẽ thanh toán trong lần chi trả tới.",
       "paidOut": "Sàn đã ghi nhận thanh toán khoản này."
-    }
+    },
+    "cancelled": "Đơn đã huỷ, nên không có khoản nào cho bạn."
   },
   "payouts": {
     "title": "Thanh toán",

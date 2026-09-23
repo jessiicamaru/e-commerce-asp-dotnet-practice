@@ -47,6 +47,25 @@ public class PaymentRepository(PaymentDbContext context) : IPaymentRepository
         await _context.Payments.AddAsync(payment, cancellationToken);
     }
 
+    public async Task<Domain.Entities.Refund?> GetRefundAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Refunds.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+    }
+
+    public async Task<Dictionary<Guid, Domain.Entities.Refund>> GetRefundsAsync(
+        IReadOnlyCollection<Guid> orderIds, CancellationToken cancellationToken = default)
+    {
+        return await _context.Refunds
+            .AsNoTracking()
+            .Where(x => orderIds.Contains(x.OrderId))
+            .ToDictionaryAsync(x => x.OrderId, cancellationToken);
+    }
+
+    public async Task AddRefundAsync(Domain.Entities.Refund refund, CancellationToken cancellationToken = default)
+    {
+        await _context.Refunds.AddAsync(refund, cancellationToken);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);
