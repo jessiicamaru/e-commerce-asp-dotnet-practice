@@ -31,6 +31,8 @@ export const queryKeys = {
   myShopApplications: ['shop-applications', 'mine'] as const,
   reviewQueue: (status: string, page: number) => ['review-queue', status, page] as const,
   myDecisions: ['my-decisions'] as const,
+  insights: (part: string, from: string) => ['insights', part, from] as const,
+  people: (ids: string[]) => ['people', ...ids] as const,
   productReviews: (productId: string, page: number) => ['reviews', productId, page] as const,
   myReview: (productId: string) => ['reviews', productId, 'mine'] as const,
   staffReviews: (hidden: boolean, page: number) => ['staff-reviews', hidden, page] as const,

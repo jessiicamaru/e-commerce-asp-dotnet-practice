@@ -145,6 +145,7 @@ public class OrderTestFixture : IAsyncLifetime
 
         services.AddDbContext<OrderDbContext>(options => options.UseNpgsql(_connectionString));
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
         services.AddSingleton<ICommissionRate>(Commission);
 

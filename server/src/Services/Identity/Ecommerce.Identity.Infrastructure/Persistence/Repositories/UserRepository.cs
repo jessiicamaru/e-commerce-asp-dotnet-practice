@@ -99,6 +99,24 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
         return (items, total);
     }
 
+    public Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var wanted = ids.Distinct().ToList();
+        return _context.Users.AsNoTracking().Where(u => wanted.Contains(u.Id)).ToListAsync(cancellationToken);
+    }
+
+    public async Task<(Dictionary<string, int> ByRole, int Locked, int Banned, int Total)> CountAsync(
+        DateTime now, CancellationToken cancellationToken = default)
+    {
+        var byRole = await _context.Roles.AsNoTracking()
+            .Select(r => new { r.Name, Count = r.Users.Count })
+            .ToDictionaryAsync(r => r.Name, r => r.Count, cancellationToken);
+        var locked = await _context.Users.CountAsync(u => u.LockedUntil != null && u.LockedUntil > now, cancellationToken);
+        var banned = await _context.Users.CountAsync(u => u.BannedAt != null, cancellationToken);
+        var total = await _context.Users.CountAsync(cancellationToken);
+        return (byRole, locked, banned, total);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);

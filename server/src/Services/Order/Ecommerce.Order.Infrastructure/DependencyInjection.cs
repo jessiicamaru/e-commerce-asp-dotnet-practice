@@ -33,6 +33,7 @@ public static class DependencyInjection
                     errorCodesToAdd: null)));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
 
         // The first synchronous cross-service call in this system. Everything else is messages.

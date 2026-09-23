@@ -103,6 +103,11 @@ export class Product {
     await http.delete(`/products/${productId}`)
   }
 
+  /** The product page was opened (specs/047). Counted by the server only for a shopper; always quiet. */
+  static async recordView(productId: string): Promise<void> {
+    await http.post(`/products/${productId}/view`)
+  }
+
   /** A seller sends their rejected product back to the moderators (specs/045). */
   static async resubmit(productId: string): Promise<ProductModel> {
     const { data } = await http.post<ProductModel>(`/products/${productId}/resubmit`)

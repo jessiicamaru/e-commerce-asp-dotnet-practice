@@ -90,9 +90,9 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (176 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (149 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (71 tests, PostgreSQL on 5435) and
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (179 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (152 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (73 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -353,6 +353,16 @@ One review per customer per product (a second write edits the first), signed wit
 test double still compiles. `products.RatingAverage` / `RatingCount` are **recomputed from the visible
 rows** in the transaction of every write, hide and restore, never incremented. Hidden, not deleted.
 Parcels delivered before this give no right to review; there is no backfill.
+
+**An administrator sees how the shop is doing** at `/admin/overview` (specs/047) - composed by the
+client from three services, each answering from its own data: Order (`/api/orders/insights/revenue`,
+`top-products`, `top-buyers`), Catalog (`/api/products/insights/top-viewed`) and Identity
+(`/api/users/lookup`, `/api/users/stats`), all Admin-only. ⚠️ **One definition of a sale** -
+`OrderInsights.Sold`: Paid, Completed, Preparing, Shipped - never failed, cancelled or still settling;
+and **money is never added across currencies**. A product view is its own request
+(`POST /api/products/{id}/view`, anonymous, always 204), counted per product per day by an upsert that
+increments in SQL, and only for a shopper looking at something on sale - not a side effect of
+`GET /products/{id}`, which the seller page and focus refetches call repeatedly.
 
 **A seller has somewhere to click** since specs/028: `/shop` lists their own products, `/shop/products/new`
 lists a new one, and `/shop/products/:id` sets prices, uploads a photograph and withdraws it. The

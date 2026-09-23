@@ -288,3 +288,38 @@ public class UserAdministrationHandlers(
         user.BanReason
     };
 }
+
+/// <summary>Who an id is, for an administrator's report (specs/047) - Order knows buyers only by id.</summary>
+public record UserBrief(Guid Id, string Email, string FirstName, string LastName);
+
+public record LookupUsersQuery(List<Guid> Ids) : IRequest<List<UserBrief>>;
+
+public class LookupUsersQueryValidator : AbstractValidator<LookupUsersQuery>
+{
+    public LookupUsersQueryValidator() =>
+        RuleFor(x => x.Ids).NotNull().Must(ids => ids.Count is > 0 and <= 100).WithMessage("Between 1 and 100 ids.");
+}
+
+/// <summary>The headline numbers about people (specs/047).</summary>
+public record UserStats(int Total, int Customers, int Sellers, int Moderators, int Admins, int Locked, int Banned);
+
+public record GetUserStatsQuery : IRequest<UserStats>;
+
+public class UserReportHandlers(IUserRepository users) :
+    IRequestHandler<LookupUsersQuery, List<UserBrief>>,
+    IRequestHandler<GetUserStatsQuery, UserStats>
+{
+    private readonly IUserRepository _users = users;
+
+    public async Task<List<UserBrief>> Handle(LookupUsersQuery request, CancellationToken cancellationToken) =>
+        (await _users.GetByIdsAsync(request.Ids, cancellationToken))
+            .Select(u => new UserBrief(u.Id, u.Email, u.FirstName, u.LastName))
+            .ToList();
+
+    public async Task<UserStats> Handle(GetUserStatsQuery request, CancellationToken cancellationToken)
+    {
+        var (byRole, locked, banned, total) = await _users.CountAsync(DateTime.UtcNow, cancellationToken);
+        int Of(string role) => byRole.TryGetValue(role, out var n) ? n : 0;
+        return new UserStats(total, Of(RoleNames.Customer), Of(RoleNames.Seller), Of(RoleNames.Moderator), Of(RoleNames.Admin), locked, banned);
+    }
+}

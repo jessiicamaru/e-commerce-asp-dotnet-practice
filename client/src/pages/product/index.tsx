@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
@@ -8,6 +8,7 @@ import { ProductImage } from '@/components/product/product-image'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct } from '@/hooks/product'
+import { Product } from '@/services/product'
 import { useVariantStock } from '@/hooks/stock'
 import { Price } from '@/components/shared/price'
 import { StarRating } from '@/components/product/star-rating'
@@ -18,6 +19,14 @@ export function ProductPage() {
   const { id = '' } = useParams()
   const { data: product, isPending, error } = useProduct(id)
   const [chosenVariantId, setChosenVariantId] = useState<string | null>(null)
+  // One view per product opened (specs/047) - not per render, not per refetch when the tab regains focus.
+  // Fire and forget: a view that fails to count is not worth an error on the page.
+  const counted = useRef<string | null>(null)
+  useEffect(() => {
+    if (!id || counted.current === id) return
+    counted.current = id
+    Product.recordView(id).catch(() => {})
+  }, [id])
   // Inventory's real count for every shape, not Catalog's in-stock flag: "2 left" is the thing a
   // shopper deciding between two kits wants to know, and the plus button stops there.
   const stock = useVariantStock((product?.variants ?? []).filter((v) => v.isActive).map((v) => v.id))

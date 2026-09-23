@@ -22,6 +22,21 @@ public class UsersController : ApiControllerBase
         return Ok(await Mediator.Send(new GetUsersQuery(search, page, pageSize)));
     }
 
+    /// <summary>Who these ids are - for the insights' top buyers (specs/047). Administrators only.</summary>
+    [Authorize(Roles = RoleNames.Admin)]
+    [HttpGet("lookup")]
+    public async Task<IActionResult> Lookup([FromQuery] List<Guid> ids)
+    {
+        return Ok(await Mediator.Send(new LookupUsersQuery(ids)));
+    }
+
+    [Authorize(Roles = RoleNames.Admin)]
+    [HttpGet("stats")]
+    public async Task<IActionResult> Stats()
+    {
+        return Ok(await Mediator.Send(new GetUserStatsQuery()));
+    }
+
     [Authorize(Roles = RoleNames.Admin)]
     [HttpPut("{id:guid}/roles/{role}")]
     public async Task<IActionResult> Grant(Guid id, string role)

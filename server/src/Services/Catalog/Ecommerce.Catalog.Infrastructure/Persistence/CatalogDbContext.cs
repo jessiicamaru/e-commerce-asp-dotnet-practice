@@ -13,6 +13,7 @@ public class CatalogDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<ProductView> ProductViews => Set<ProductView>();
     public DbSet<ReviewEligibility> ReviewEligibility => Set<ReviewEligibility>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<VariantOption> VariantOptions => Set<VariantOption>();

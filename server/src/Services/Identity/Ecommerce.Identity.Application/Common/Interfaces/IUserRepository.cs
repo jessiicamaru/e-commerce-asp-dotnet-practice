@@ -28,6 +28,12 @@ public interface IUserRepository
     /// </summary>
     Task<(List<User> Items, int TotalCount)> SearchAsync(string? search, int page, int pageSize, CancellationToken cancellationToken = default);
 
+    /// <summary>Who these ids are, for an administrator's report (specs/047). Unknown ids are left out.</summary>
+    Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
+
+    /// <summary>How many accounts hold each role, and how many are stopped (specs/047).</summary>
+    Task<(Dictionary<string, int> ByRole, int Locked, int Banned, int Total)> CountAsync(DateTime now, CancellationToken cancellationToken = default);
+
     Task AddAsync(User user, CancellationToken cancellationToken = default);
 
     /// <summary>

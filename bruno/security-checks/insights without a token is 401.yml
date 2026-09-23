@@ -1,0 +1,26 @@
+info:
+  name: insights without a token is 401
+  type: http
+  seq: 50
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/insights/revenue"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Administrators only (specs/047).
