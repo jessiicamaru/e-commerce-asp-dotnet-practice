@@ -73,6 +73,7 @@ builder.Services.AddMassTransit(x =>
     x.SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "ActivitySvc", includeNamespace: false));
 
     x.AddConsumer<RecordAuditEntryConsumer>();
+    x.AddConsumer<RecordNotificationConsumer>();
 
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
         cfg.UseEntityFrameworkOutbox<ActivityDbContext>(context));

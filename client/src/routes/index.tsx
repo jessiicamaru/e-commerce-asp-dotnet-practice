@@ -23,6 +23,7 @@ import { AdminOrdersPage } from '@/pages/admin-orders'
 import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { AdminAuditPage } from '@/pages/admin-audit'
+import { NotificationsPage } from '@/pages/notifications'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -67,6 +68,14 @@ export function AppRoutes() {
             element={
               <RequireAuth>
                 <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <RequireAuth>
+                <NotificationsPage />
               </RequireAuth>
             }
           />

@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
@@ -41,14 +42,17 @@ public class PrepareMySaleCommandHandler(IOrderRepository orders, ICurrentUser c
 }
 
 public class ShipMySaleCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    INotifier notifier)
     : IRequestHandler<ShipMySaleCommand, SaleDetailResponse>
 {
+    private readonly INotifier _notifier = notifier;
+
     private readonly IAuditTrail _audit = audit;
 
     public Task<SaleDetailResponse> Handle(ShipMySaleCommand request, CancellationToken cancellationToken) =>
         SellerStep.MoveAsync(orders, currentUser, request.OrderId,
-            ShipmentStatus.Preparing, ShipmentStatus.Shipped, request.TrackingReference.Trim(), cancellationToken, _audit);
+            ShipmentStatus.Preparing, ShipmentStatus.Shipped, request.TrackingReference.Trim(), cancellationToken, _audit, _notifier);
 }
 
 /// <summary>A seller's step on their own part, and what each outcome looks like from outside.</summary>
@@ -62,14 +66,15 @@ internal static class SellerStep
         ShipmentStatus to,
         string? trackingReference,
         CancellationToken cancellationToken,
-        IAuditTrail? audit = null)
+        IAuditTrail? audit = null,
+        INotifier? notifier = null)
     {
         var sellerId = currentUser.Id
             ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
         var result = await orders.TryMoveShipmentAsync(
             orderId, sellerId, from, to, trackingReference, DateTime.UtcNow, cancellationToken,
-            audit is null ? null : ct => ParcelAudit.RecordAsync(audit, orderId, sellerId, from, to, trackingReference, ct));
+            audit is null ? null : ct => ParcelAudit.RecordMoveAsync(audit, notifier, orders, orderId, sellerId, from, to, trackingReference, ct));
 
         switch (result.Outcome)
         {

@@ -1,0 +1,44 @@
+info:
+  name: the customer was told the order was paid and shipped
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/notifications?page=1&pageSize=50"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        var mine = (res.body.items || []).filter(function(n) { return n.data && n.data.orderId === bru.getVar("orderId"); });
+        test("told once that it was paid and once that it was shipped", function() {
+          var kinds = mine.map(function(n) { return n.kind; });
+          expect(kinds.filter(function(k) { return k === "OrderPaid"; }).length).to.equal(1);
+          expect(kinds.filter(function(k) { return k === "ParcelShipped"; }).length).to.equal(1);
+        });
+        test("each points at the order and carries data, not sentences", function() {
+          mine.forEach(function(n) {
+            expect(n.link).to.equal("/orders/" + bru.getVar("orderId"));
+            expect(n.data).to.be.an("object");
+            expect(n.readAt).to.equal(null);
+          });
+        });
+        if (mine.length) bru.setVar("notificationId", mine[0].id);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/042: the customer's own inbox. The order this collection placed was paid by the saga and shipped
+  by staff, so the customer holds one notice for each. A notice stores its kind and data; the storefront
+  words it in the reader's language. Notices travel through RabbitMQ, a moment behind what caused them.

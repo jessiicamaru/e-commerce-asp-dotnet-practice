@@ -7,6 +7,7 @@ namespace Ecommerce.Activity.Infrastructure.Persistence;
 public class ActivityDbContext(DbContextOptions<ActivityDbContext> options) : DbContext(options)
 {
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
