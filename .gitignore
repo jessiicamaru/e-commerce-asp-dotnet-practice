@@ -48,3 +48,9 @@ out/
 node_modules/
 
 /local
+
+# Product images for the seeder (specs/019). Fetched or dropped in locally, never committed:
+# this repository is PUBLIC, and a product photograph belongs to whoever took it. The images
+# live on the catalog_images Docker volume, which is where the seeder puts them - the folder
+# here is just the staging area.
+server/seed/images/
