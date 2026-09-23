@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
+import { CancelOrder } from '@/components/order/cancel-order'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderShipments } from '@/components/order/order-shipments'
 import { OrderStatus } from '@/components/order/order-status'
 import { OrderTotals } from '@/components/order/order-totals'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ORDER_STATUS, isSettling } from '@/constants/order'
-import { useOrder } from '@/hooks/order'
+import { useCancelOrder, useOrder } from '@/hooks/order'
+import { customerCanCancel } from '@/utils/order/cancel'
 import { describeAddress } from '@/utils/address'
 
 /**
@@ -19,6 +21,7 @@ export function OrderPage() {
   const { id = '' } = useParams()
   const justPlaced = (useLocation().state as { justPlaced?: boolean } | null)?.justPlaced ?? false
   const { data: order, isPending, error, isRefetching } = useOrder(id)
+  const cancel = useCancelOrder(id)
 
   if (error) {
     // Another customer's order is simply not found (#39): the page cannot tell the two apart either.
@@ -52,8 +55,20 @@ export function OrderPage() {
         status={order.status}
         failureReason={order.failureReason}
         showSpinner={settling && !gaveUp}
-        overrideMessage={gaveUp ? t('order.taking') : undefined}
+        overrideMessage={
+          gaveUp
+            ? t('order.taking')
+            : order.status === ORDER_STATUS.cancelled
+              ? t(order.cancelledBy === 'Customer' ? 'cancel.byYou' : 'cancel.byShop')
+              : undefined
+        }
       />
+
+      {customerCanCancel(order) && (
+        <div className="mt-3">
+          <CancelOrder cancel={cancel} />
+        </div>
+      )}
 
       {order.status === ORDER_STATUS.failed && (
         <p className="mt-3">
@@ -66,7 +81,8 @@ export function OrderPage() {
         <p className="mt-3 text-sm">{t('order.tracking', { reference: order.trackingReference })}</p>
       )}
 
-      {order.shipments && (
+      {/* A cancelled order has no parcels to follow - nothing will be sent. */}
+      {order.shipments && order.status !== ORDER_STATUS.cancelled && (
         <div className="mt-6">
           <OrderShipments shipments={order.shipments} />
         </div>

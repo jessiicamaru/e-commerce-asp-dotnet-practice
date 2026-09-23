@@ -28,6 +28,10 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CancelledBy")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
                     b.Property<decimal?>("CommissionRate")
                         .HasPrecision(5, 4)
                         .HasColumnType("numeric(5,4)");

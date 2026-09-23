@@ -1,3 +1,4 @@
+using Ecommerce.Order.Application.Orders.Commands.CancelOrder;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
 using Ecommerce.Order.Application.Orders.Commands.RecordPayout;
 using Ecommerce.Order.Application.Orders.Commands.SellerFulfilment;
@@ -79,6 +80,16 @@ public class OrdersController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetMyOrderByIdQuery(id));
         return Ok(result);
+    }
+
+    /// <summary>
+    /// The customer cancels their own paid order while every parcel is still waiting (specs/039). 404 for
+    /// none or not theirs; 409 once anything is being prepared or shipped; repeating it is a no-op.
+    /// </summary>
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<IActionResult> Cancel(Guid id)
+    {
+        return Ok(await Mediator.Send(new CancelMyOrderCommand(id)));
     }
 
     // ------------------------------------------------------------------ sales (sellers, specs/034)
@@ -182,6 +193,14 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> GetForStaff(Guid id)
     {
         return Ok(await Mediator.Send(new GetOrderForStaffQuery(id)));
+    }
+
+    /// <summary>Staff: cancel any paid order until its first parcel has shipped (specs/039).</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("fulfilment/{id:guid}/cancel")]
+    public async Task<IActionResult> CancelForStaff(Guid id)
+    {
+        return Ok(await Mediator.Send(new CancelOrderCommand(id)));
     }
 
     /// <summary>Staff: Paid → Preparing. Repeating it is a no-op; from any other state, 409.</summary>

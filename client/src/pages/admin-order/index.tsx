@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
+import { CancelOrder } from '@/components/order/cancel-order'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderShipments } from '@/components/order/order-shipments'
 import { OrderTotals } from '@/components/order/order-totals'
@@ -8,7 +9,8 @@ import { ParcelActions } from '@/components/order/parcel-actions'
 import { LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useMoveShopParcel, useStaffOrder } from '@/hooks/admin'
+import { useMoveShopParcel, useStaffCancelOrder, useStaffOrder } from '@/hooks/admin'
+import { staffCanCancel } from '@/utils/order/cancel'
 import { describeAddress } from '@/utils/address'
 import { shopParcelOf } from './shop-parcel'
 
@@ -21,6 +23,7 @@ export function AdminOrderPage() {
   const { id = '' } = useParams()
   const order = useStaffOrder(id)
   const { prepare, ship } = useMoveShopParcel(id)
+  const cancel = useStaffCancelOrder(id)
 
   const back = (
     <nav className="text-muted-foreground flex items-center gap-1 text-sm">
@@ -46,7 +49,8 @@ export function AdminOrderPage() {
   }
 
   const { data } = order
-  const parcel = shopParcelOf(data)
+  const cancelled = data.status === 'Cancelled'
+  const parcel = cancelled ? null : shopParcelOf(data)
   const address = data.shippingAddress
 
   return (
@@ -77,12 +81,17 @@ export function AdminOrderPage() {
                   <ParcelActions status={parcel.status} trackingReference={parcel.trackingReference} prepare={prepare} ship={ship} />
                 </>
               ) : (
-                <p className="text-muted-foreground text-sm">{t('order.noShopGoods')}</p>
+                <p className="text-muted-foreground text-sm">
+                  {cancelled
+                    ? t(data.cancelledBy === 'Customer' ? 'order.cancelledByCustomer' : 'order.cancelledByStaff')
+                    : t('order.noShopGoods')}
+                </p>
               )}
+              {staffCanCancel(data) && <CancelOrder cancel={cancel} />}
             </CardContent>
           </Card>
 
-          <OrderShipments shipments={data.shipments ?? []} />
+          {!cancelled && <OrderShipments shipments={data.shipments ?? []} />}
 
           <Card className="rounded-3xl">
             <CardHeader>

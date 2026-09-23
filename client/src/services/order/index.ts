@@ -45,6 +45,15 @@ export class Order {
     return data
   }
 
+  /**
+   * The caller cancels their own paid order (specs/039). The order is named; the owner is the token, and
+   * someone else's order is the same 404 as none.
+   */
+  static async cancel(id: string): Promise<OrderModel> {
+    const { data } = await http.post<OrderModel>(`/orders/${id}/cancel`)
+    return data
+  }
+
   /** The caller's own orders: there is no user id in the request (Constitution IV). */
   static async listMine(page: number, pageSize: number): Promise<OrderPage> {
     const { data } = await http.get<OrderPage>(`/orders?page=${page}&pageSize=${pageSize}`)

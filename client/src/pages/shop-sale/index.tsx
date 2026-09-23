@@ -72,7 +72,12 @@ export function ShopSalePage() {
               <CardDescription>{t('fulfil.hint')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
+              {/* Cancelled (specs/039): nothing to prepare or send, and the server refuses a step anyway. */}
+              {data.status === 'Cancelled' ? (
+                <p className="text-destructive text-sm font-medium">{t('fulfil.cancelled')}</p>
+              ) : (
+                <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
+              )}
             </CardContent>
           </Card>
 

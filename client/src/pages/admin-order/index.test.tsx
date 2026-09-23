@@ -85,6 +85,28 @@ describe('AdminOrderPage', () => {
     expect(screen.queryByRole('button', { name: /Start preparing/ })).not.toBeInTheDocument()
   })
 
+  /** specs/039: staff cancel, confirmed, through the staff route. */
+  it('cancels the order for the customer, while a parcel is being prepared', async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([shop('Preparing'), hers]))
+    const cancel = vi.spyOn(Admin, 'cancel').mockResolvedValue({ ...order([shop('Preparing'), hers]), status: 'Cancelled', cancelledBy: 'Staff' })
+    const user = userEvent.setup()
+    renderAt()
+
+    await user.click(await screen.findByRole('button', { name: /Cancel order/ }))
+    await user.click(screen.getAllByRole('button', { name: /Cancel order/ }).at(-1)!)
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith('o-1'))
+  })
+
+  it('offers no step and no cancel on a cancelled order, and says who cancelled it', async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue({ ...order([shop('Paid'), hers]), status: 'Cancelled', cancelledBy: 'Customer' })
+    renderAt()
+
+    expect(await screen.findByText(/The customer cancelled this order/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Start preparing/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Cancel order/ })).not.toBeInTheDocument()
+  })
+
   it('shows a refusal in the server words', async () => {
     vi.spyOn(Admin, 'order').mockRejectedValue(refusal(404, 'Order not found.'))
     renderAt('missing')

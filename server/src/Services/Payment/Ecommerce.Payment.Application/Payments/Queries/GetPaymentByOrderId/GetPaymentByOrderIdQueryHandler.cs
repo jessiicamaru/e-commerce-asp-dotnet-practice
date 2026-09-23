@@ -15,8 +15,12 @@ public class GetPaymentByOrderIdQueryHandler(IPaymentRepository paymentRepositor
         var payment = await _paymentRepository.GetByOrderIdAsync(request.OrderId, cancellationToken)
             ?? throw new NotFoundException($"No payment has been recorded for order '{request.OrderId}'.");
 
+        // Given back for a cancelled order (specs/039), when it was.
+        var refund = await _paymentRepository.GetRefundAsync(request.OrderId, cancellationToken);
+
         return new PaymentResponse(
             payment.Id, payment.OrderId, payment.UserId, payment.Amount,
-            payment.Status.ToString(), payment.FailureReason, payment.Provider, payment.ProcessedAt);
+            payment.Status.ToString(), payment.FailureReason, payment.Provider, payment.ProcessedAt,
+            refund?.Amount, refund?.RefundedAt);
     }
 }

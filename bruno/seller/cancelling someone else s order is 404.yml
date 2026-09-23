@@ -1,0 +1,33 @@
+info:
+  name: cancelling someone else s order is 404
+  type: http
+  seq: 22
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/cancel"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+        test("in the words used for no order at all", function() {
+          expect(res.body.detail).to.equal("Order not found.");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The seller registered in this folder is a customer too, and this is not their order: not found, never
+  forbidden, so the answer does not confirm the id is real (specs/039, #39). Here because it needs
+  `sellerToken`, set in this folder.

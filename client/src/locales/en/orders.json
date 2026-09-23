@@ -26,7 +26,8 @@
     "shipped": "On its way.",
     "failedStock": "Not placed: some items ran out of stock. Nothing was charged, and your cart is unchanged.",
     "failedPayment": "Not placed: the payment was declined. Your cart is unchanged, so you can try again.",
-    "failed": "Not placed. Nothing was charged, and your cart is unchanged."
+    "failed": "Not placed. Nothing was charged, and your cart is unchanged.",
+    "cancelled": "Cancelled."
   },
   "parcels": {
     "title": "Parcels",
@@ -42,5 +43,15 @@
     "from": "from {{shop}}",
     "theShop": "the shop"
   },
-  "soldBy": "Sold by {{shop}}"
+  "soldBy": "Sold by {{shop}}",
+  "cancel": {
+    "button": "Cancel order",
+    "title": "Cancel this order?",
+    "body": "The goods go back on the shelf and what you paid is refunded. This cannot be undone.",
+    "keep": "Keep the order",
+    "confirm": "Cancel order",
+    "done": "Order cancelled.",
+    "byYou": "You cancelled this order. What you paid has been refunded.",
+    "byShop": "The shop cancelled this order. What you paid has been refunded."
+  }
 }

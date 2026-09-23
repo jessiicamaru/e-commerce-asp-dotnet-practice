@@ -99,7 +99,8 @@ public record OrderDetailResponse(
     decimal? TaxRate = null,
     string Currency = "",
     string Language = "",
-    List<ShipmentResponse>? Shipments = null
+    List<ShipmentResponse>? Shipments = null,
+    string? CancelledBy = null
 );
 
 /// <summary>

@@ -89,8 +89,8 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (140 tests,
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (44 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (18 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (152 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -175,8 +175,8 @@ so.
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
-| Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031) |
-| Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
+| Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031); **puts a cancelled order's units back** (specs/039) |
+| Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money**; records a refund for a cancelled order, moving none either (specs/039) |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`).
@@ -227,7 +227,8 @@ Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there 
 name, only Order's own status changed; `Completed` is still in the enum so old rows and a rolled-back
 image parse, and every read reports it as `Paid`. After `Paid`, **only an Admin** moves an order to
 `Preparing` and then `Shipped` (with a tracking reference), through guarded single-statement updates;
-the saga still ends at payment. `Pending`, `StockReserved` and `Cancelled` remain unreachable. See
+the saga still ends at payment. `Pending` and `StockReserved` remain unreachable; `Cancelled` is reached
+by a request since specs/039 (below). See
 [specs/011-order-shipping](specs/011-order-shipping/) and the history in
 [specs/003-order-lifecycle/data-model.md](specs/003-order-lifecycle/data-model.md).
 
@@ -404,6 +405,23 @@ order that is not scoped to its owner** - the role on the route is the whole per
 (`GetOrderForStaffQuery`) must never sit behind any other route. The parcel steps are one component,
 `components/order/parcel-actions`, for a seller's parcel and the shop's.
 
+**A paid order can be cancelled** (specs/039) - by its customer while every parcel still waits
+(`POST /api/orders/{id}/cancel`), by staff until the first parcel ships (`POST
+/api/orders/fulfilment/{id}/cancel`); whole orders only. Order takes the **same row lock as every parcel
+move**, reads the parts, runs the guarded `UPDATE` to `Cancelled` and stages `OrderCancelledEvent` in one
+transaction - so a cancel and a ship on one order serialise and exactly one wins (`CancellationTests`
+fails without the lock). The event carries no items and no amount: **Inventory** puts back what its own
+reservations say (`Confirmed` → on hand again; `Held`, when the cancellation beat the completion - two
+message types, no order between them - → released) and **Payment** records a refund of what its own
+payment row says, in a new `refunds` table unique on `OrderId`. The orchestrator is not involved: the saga
+ended at payment. ⚠️ **No new status a rolled-back image cannot parse**: `Cancelled` was always in Order's
+enum, a returned reservation ends `Released` with the reason saying why, and `payments` is untouched. ⚠️
+The two consumers are `RestockCancelledOrderConsumer` and `RefundCancelledOrderConsumer` - **named for
+what they do**, because two classes called `OrderCancelledConsumer` would share one queue.
+⚠️ `Sales.Statuses` (what a seller SEES) now includes `Cancelled`, so a seller stops preparing; balances
+and payouts count `Sales.Earning`, which does not - confusing the two would pay sellers for cancelled
+orders. `verify-saga.sh` cancels a second order and asserts the stock back and one full refund.
+
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks
 unreachable - a seller was refused at the door and the code deciding whether the listing was hers
@@ -445,7 +463,7 @@ rather than choosing which one survives; how to resolve that is in
 [troubleshooting §8](docs/guides/troubleshooting.md).
 
 ### Shared building blocks
-**Inventory owns stock; Catalog reports a read model of it.** `Product.Availability` is fed by `StockAvailabilityChangedEvent` and surfaces as `"InStock"` / `"OutOfStock"` — never a count. **Nothing may sell against it**: checkout reserves under `FOR UPDATE` against Inventory's row, and a read model fed by messages is seconds behind by design. A real number comes from `GET /api/stock/{productId}` on Inventory, which is public. Six handlers move stock and every one must announce — if you add a seventh, it must call `StockAvailabilityAnnouncer` too, and `Ecommerce.Inventory.Tests/AnnouncementTests.cs` is what catches the omission. Background in [specs/004-stock-single-source](specs/004-stock-single-source/).
+**Inventory owns stock; Catalog reports a read model of it.** `Product.Availability` is fed by `StockAvailabilityChangedEvent` and surfaces as `"InStock"` / `"OutOfStock"` — never a count. **Nothing may sell against it**: checkout reserves under `FOR UPDATE` against Inventory's row, and a read model fed by messages is seconds behind by design. A real number comes from `GET /api/stock/{productId}` on Inventory, which is public. Seven handlers move stock and every one must announce - the seventh, since specs/039, puts a cancelled order's units back - and an eighth must call `StockAvailabilityAnnouncer` too, and `Ecommerce.Inventory.Tests/AnnouncementTests.cs` is what catches the omission. Background in [specs/004-stock-single-source](specs/004-stock-single-source/).
 
 - **`Ecommerce.Contracts`** — the only cross-service coupling allowed: message records grouped by owning domain (`Catalog/`, `Order/`, `Inventory/`, `Payment/`). Pure records, no dependencies. Any new integration event goes here — but only once something publishes it and something consumes it. A record with neither states that a service says something it does not say; `Identity/UserRegisteredEvent` sat here unused until `81b7551`.
 - **`Ecommerce.Shared`** — `GlobalExceptionHandler` (RFC 7807 ProblemDetails; maps `ValidationException` → 400 with an `errors` extension, `NotFoundException` → 404, `ConflictException` → 409, detail hidden outside Development) and `ValidationBehavior` (MediatR open behavior that throws on validator failures). Wired with `AddExceptionHandler<GlobalExceptionHandler>()` + `AddProblemDetails()` + `app.UseExceptionHandler()`.

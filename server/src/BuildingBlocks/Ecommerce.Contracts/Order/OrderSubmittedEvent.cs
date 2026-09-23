@@ -44,3 +44,14 @@ public record OrderFailedEvent(
     string Reason,
     DateTime FailedAt
 );
+
+/// <summary>
+/// A paid order was cancelled before anything shipped (specs/039). Inventory puts its stock back and
+/// Payment records a refund - each from its own rows, which is why this carries no items and no amount.
+/// </summary>
+/// <param name="CancelledBy">"Customer" or "Staff".</param>
+public record OrderCancelledEvent(
+    Guid OrderId,
+    DateTime CancelledAt,
+    string CancelledBy
+);

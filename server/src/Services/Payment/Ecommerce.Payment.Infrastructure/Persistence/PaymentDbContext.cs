@@ -6,6 +6,7 @@ namespace Ecommerce.Payment.Infrastructure.Persistence;
 public class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbContext(options)
 {
     public DbSet<Domain.Entities.Payment> Payments => Set<Domain.Entities.Payment>();
+    public DbSet<Domain.Entities.Refund> Refunds => Set<Domain.Entities.Refund>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

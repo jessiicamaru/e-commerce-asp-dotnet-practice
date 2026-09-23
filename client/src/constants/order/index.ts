@@ -14,6 +14,7 @@ export const ORDER_STATUS = {
   preparing: 'Preparing',
   shipped: 'Shipped',
   failed: 'Failed',
+  cancelled: 'Cancelled',
 } as const
 
 /** Still waiting on the saga: stock is being reserved and payment taken. */

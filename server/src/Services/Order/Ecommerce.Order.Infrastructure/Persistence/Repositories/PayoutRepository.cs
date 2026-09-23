@@ -19,7 +19,7 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
     /// </remarks>
     private IQueryable<Domain.Entities.OrderShipment> Earning(Guid? sellerId)
     {
-        var statuses = Sales.Statuses;
+        var statuses = Sales.Earning;
 
         return _context.OrderShipments
             .AsNoTracking()
@@ -118,7 +118,7 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
         DateTime at,
         CancellationToken cancellationToken = default)
     {
-        var statuses = Sales.Statuses.Select(s => s.ToString()).ToArray();
+        var statuses = Sales.Earning.Select(s => s.ToString()).ToArray();
         var shipped = ShipmentStatus.Shipped.ToString();
 
         // ONE statement (research D5). The CTE claims the parts - its WHERE is the guard, re-evaluated by

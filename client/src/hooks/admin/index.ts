@@ -34,6 +34,19 @@ export function useMoveShopParcel(id: string) {
   }
 }
 
+/** Staff cancel an order (specs/039); the order and every queue are re-read. */
+export function useStaffCancelOrder(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => Admin.cancel(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.adminOrder(id) })
+      await queryClient.invalidateQueries({ queryKey: ['admin-queue'] })
+    },
+  })
+}
+
 export function usePayoutsDue() {
   return useQuery({ queryKey: queryKeys.payoutsDue(), queryFn: () => Admin.due() })
 }

@@ -90,6 +90,8 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<ProcessPaymentConsumer>();
+    // specs/039: a cancelled order is refunded. Registered, or it never runs and never complains.
+    x.AddConsumer<RefundCancelledOrderConsumer>();
 
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
         cfg.UseEntityFrameworkOutbox<PaymentDbContext>(context));

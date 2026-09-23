@@ -437,8 +437,9 @@ for i in $(seq 1 "$SAGA_TIMEOUT_SECONDS"); do
       ;;
     *)
       # A successful checkout settles to Paid (feature 011; it used to read
-      # Completed). Pending, StockReserved and Cancelled are unreachable, and
-      # Preparing/Shipped need an administrator - none of them can appear here.
+      # Completed). Pending and StockReserved are unreachable, Preparing/Shipped
+      # need an administrator and Cancelled a request (specs/039) - none of them
+      # can appear here, before anybody has asked for anything.
       # See specs/003-order-lifecycle/data-model.md. Observing one means the
       # system stopped matching the description this check is built on, which
       # is worth failing over rather than tolerating.
@@ -624,6 +625,74 @@ print((json.load(sys.stdin).get("shippingAddress") or {}).get("recipientName", "
   assert_eq "$STILL_TO" "$ADDRESS_RECIPIENT" \
     "editing the address book afterwards left the order's destination alone" \
     "The address was edited after the order, and the order now reads '$STILL_TO'. An order must hold a copy of where it was sent, not a reference to the address book."
+
+  # ---------------------------------------------------------------- a cancellation (specs/039)
+  #
+  # A second order, paid and then cancelled by its customer. What a cancellation
+  # undoes lives in two OTHER services, told by one event - so this is the only
+  # place that can see it happen: the stock back exactly where it was before the
+  # order, and one refund of what was charged. Inventory and Payment each consume
+  # OrderCancelledEvent with a class of its own name; two of one name would share a
+  # queue and each cancellation would reach only one of them - the same failure as
+  # the OrderCompletedConsumer collision this script was written for.
+  PRE="$(read_stock)"
+  PRE_ON_HAND="$(printf '%s' "$PRE" | json_field quantityOnHand)"
+  PRE_RESERVED="$(printf '%s' "$PRE" | json_field quantityReserved)"
+
+  add_code="$(status -X POST "$CART_URL/api/cart/items" -H 'Content-Type: application/json' \
+    -H "Authorization: Bearer $CUSTOMER_TOKEN" -d "{\"productId\":\"$PRODUCT_ID\",\"quantity\":1}")"
+  CANCEL_ORDER_ID="$(post_json "$ORDER_URL/api/orders" \
+    "$(json_object addressId "$ADDRESS_ID" shippingOption "$SHIPPING_OPTION")" "$CUSTOMER_TOKEN" | json_field orderId)"
+  [ -n "$CANCEL_ORDER_ID" ] || fail "The second order, for the cancellation, was not accepted (add-to-cart HTTP $add_code)."
+
+  CANCEL_STATUS=""
+  for i in $(seq 1 "$SAGA_TIMEOUT_SECONDS"); do
+    CANCEL_STATUS="$(get_json "$ORDER_URL/api/orders/$CANCEL_ORDER_ID" "$CUSTOMER_TOKEN" | json_field status)"
+    [ "$CANCEL_STATUS" = "Paid" ] && break
+    sleep 1
+  done
+  assert_eq "$CANCEL_STATUS" "Paid" "a second order was paid, to be cancelled" \
+    "The second order reached '$CANCEL_STATUS' instead of Paid; the cancellation below could not be exercised."
+
+  CANCELLED="$(post_json "$ORDER_URL/api/orders/$CANCEL_ORDER_ID/cancel" '{}' "$CUSTOMER_TOKEN" | json_field status)"
+  assert_eq "$CANCELLED" "Cancelled" "its customer cancelled it" \
+    "Cancelling a paid order whose parcel had not started answered status '$CANCELLED', expected 'Cancelled'."
+
+  # Polled: Inventory learns of it from an event, and may even hear of the
+  # cancellation before the completion (specs/039 research D4).
+  for i in $(seq 1 20); do
+    NOW="$(read_stock)"
+    NOW_ON_HAND="$(printf '%s' "$NOW" | json_field quantityOnHand)"
+    NOW_RESERVED="$(printf '%s' "$NOW" | json_field quantityReserved)"
+    [ "$NOW_ON_HAND" = "$PRE_ON_HAND" ] && [ "$NOW_RESERVED" = "$PRE_RESERVED" ] && break
+    sleep 1
+  done
+  assert_eq "$NOW_ON_HAND/$NOW_RESERVED" "$PRE_ON_HAND/$PRE_RESERVED" \
+    "the stock is back exactly where it was before the order (on-hand/reserved $NOW_ON_HAND/$NOW_RESERVED)" \
+    "After the cancellation on-hand/reserved read $NOW_ON_HAND/$NOW_RESERVED, expected $PRE_ON_HAND/$PRE_RESERVED as before the order. Inventory did not put the units back: check RestockCancelledOrderConsumer's queue exists with one consumer."
+
+  REFUND=""
+  for i in $(seq 1 20); do
+    REFUND="$(get_json "$PAYMENT_URL/api/payments/$CANCEL_ORDER_ID" "$ADMIN_TOKEN" | "$PYTHON" -c '
+import json, sys
+p = json.load(sys.stdin)
+r = p.get("refundedAmount")
+print("none" if r is None else ("%.2f of %.2f" % (float(r), float(p.get("amount", 0)))))
+')"
+    [ "$REFUND" != "none" ] && break
+    sleep 1
+  done
+  CHARGED2="$(get_json "$PAYMENT_URL/api/payments/$CANCEL_ORDER_ID" "$ADMIN_TOKEN" | "$PYTHON" -c '
+import json, sys
+print("%.2f" % float(json.load(sys.stdin).get("amount", 0)))
+')"
+  assert_eq "$REFUND" "$CHARGED2 of $CHARGED2" \
+    "a refund of everything charged was recorded ($REFUND)" \
+    "After the cancellation Payment reports refund '$REFUND', expected all of $CHARGED2. Check RefundCancelledOrderConsumer's queue exists with one consumer."
+
+  AGAIN="$(status -X POST "$ORDER_URL/api/orders/$CANCEL_ORDER_ID/cancel" -H "Authorization: Bearer $CUSTOMER_TOKEN")"
+  assert_eq "$AGAIN" "200" "cancelling it again is a no-op (200)" \
+    "Cancelling an already-cancelled order answered $AGAIN; a repeat must succeed and change nothing."
 else
   # A failed order never enters fulfilment.
   REFUSED="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST \

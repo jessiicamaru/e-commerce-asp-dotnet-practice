@@ -92,7 +92,8 @@
     "status": {
       "paid": "Paid - waiting to be prepared",
       "preparing": "Being prepared",
-      "shipped": "Shipped"
+      "shipped": "Shipped",
+      "cancelled": "Cancelled"
     }
   },
   "menu": {
@@ -155,7 +156,8 @@
     "shipped": "Marked as shipped.",
     "trackingIs": "Tracking reference:",
     "shipTo": "Ship to",
-    "addressGone": "Your parcel has been sent, so the delivery address is no longer shown."
+    "addressGone": "Your parcel has been sent, so the delivery address is no longer shown.",
+    "cancelled": "This order was cancelled - there is nothing to prepare or send."
   },
   "earnings": {
     "title": "You receive",
@@ -173,7 +175,8 @@
       "onTheWay": "The customer has paid. It becomes due once you send your parcel.",
       "due": "Your parcel is sent. The shop settles it in its next payout.",
       "paidOut": "The shop has recorded paying you for this."
-    }
+    },
+    "cancelled": "The order was cancelled, so nothing is owed to you for it."
   },
   "payouts": {
     "title": "Payouts",

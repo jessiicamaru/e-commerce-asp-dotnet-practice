@@ -30,7 +30,9 @@
     "shipTo": "Ship to",
     "noAddress": "This order recorded no delivery address.",
     "lines": "The whole order",
-    "customer": "Customer"
+    "customer": "Customer",
+    "cancelledByCustomer": "The customer cancelled this order. Nothing left to send.",
+    "cancelledByStaff": "The shop cancelled this order. Nothing left to send."
   },
   "payouts": {
     "title": "Seller payouts",

@@ -130,3 +130,19 @@ export function useMyPayouts(page: number, pageSize: number, enabled: boolean) {
     placeholderData: (previous) => previous,
   })
 }
+
+/**
+ * The customer cancels their order (specs/039), then re-reads it and their list rather than patching
+ * them: what a cancelled order looks like is the server's to say.
+ */
+export function useCancelOrder(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => Order.cancel(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.order(id) })
+      await queryClient.invalidateQueries({ queryKey: ['orders'] })
+    },
+  })
+}

@@ -87,6 +87,15 @@ describe('ShopSalePage', () => {
     expect(within(earnings).getByText('Due')).toBeInTheDocument()
   })
 
+  /** specs/039: the seller learns to stop - no step to take, no address. */
+  it('shows a cancelled sale with nothing to do', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Cancelled', { shippingAddress: null }))
+    renderAt('o-1')
+
+    expect(await screen.findByText(/This order was cancelled/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Start preparing/ })).not.toBeInTheDocument()
+  })
+
   /**
    * "Not your sale" and "no such order" are the same 404 on purpose (specs/034 research D5). The page
    * repeats what the server said instead of guessing which of the two it was.

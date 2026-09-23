@@ -3,6 +3,7 @@ using Ecommerce.Inventory.Application.Reservations.ConfirmStock;
 using Ecommerce.Inventory.Application.Reservations.ExpireStock;
 using Ecommerce.Inventory.Application.Reservations.ReleaseStock;
 using Ecommerce.Inventory.Application.Reservations.ReserveStock;
+using Ecommerce.Inventory.Application.Reservations.RestockCancelledOrder;
 using Ecommerce.Inventory.Application.Stock.Commands.RegisterProduct;
 using Ecommerce.Inventory.Application.Stock.Commands.SetStockOnHand;
 using MassTransit.Testing;
@@ -17,7 +18,8 @@ namespace Ecommerce.Inventory.Tests;
 /// <b>These are the most valuable tests in feature 004, and the reason is worth stating.</b> Six
 /// handlers change availability — reserve, release, confirm, expire, set-on-hand and register — and
 /// every one has to announce, because Catalog's product listing is now fed entirely by these
-/// messages. Nothing enforces that. A seventh path added later, or one of these six edited to stop
+/// messages. Nothing enforces that. A path added later - specs/039 added the seventh, restocking a
+/// cancelled order - or one of these edited to stop
 /// publishing, produces no error anywhere: the listing simply stops updating for that path, and
 /// nobody finds out until a shopper buys something that is gone.
 /// </para>
@@ -25,7 +27,7 @@ namespace Ecommerce.Inventory.Tests;
 /// An EF SaveChanges interceptor would have made the omission impossible. It was rejected as
 /// unverified (research D2) — it would publish during <c>SavingChangesAsync</c> while MassTransit's
 /// outbox writes through the same DbContext, and whether that works is exactly the kind of thing
-/// that appears to and then does not. These six tests are what stands in for it.
+/// that appears to and then does not. These tests, one per path, are what stands in for it.
 /// </para>
 /// </summary>
 [Collection(nameof(InventoryTestCollection))]
@@ -118,6 +120,24 @@ public class AnnouncementTests(InventoryTestFixture fixture)
         // On hand falls to 1 and the hold is gone, so one unit is buyable again.
         Assert.True(announcement.IsAvailable);
         Assert.Equal(1, announcement.QuantityAvailable);
+    }
+
+    /// <summary>The seventh path (specs/039): a cancelled order's units back on the shelf, announced.</summary>
+    [Fact]
+    public async Task RestockCancelledOrder_announces_the_units_put_back()
+    {
+        var productId = await StockedProductAsync(onHand: 2);
+        var orderId = Guid.CreateVersion7();
+
+        await SendAsync(new ReserveStockCommand(orderId, [new ReserveStockItem(productId, 2)]));
+        await SendAsync(new ConfirmStockCommand(orderId));
+        await SendAsync(new RestockCancelledOrderCommand(orderId));
+
+        var announcement = await LastAnnouncementForAsync(productId);
+
+        // Sold out after the confirm; both units buyable again once the order is cancelled.
+        Assert.True(announcement.IsAvailable);
+        Assert.Equal(2, announcement.QuantityAvailable);
     }
 
     [Fact]

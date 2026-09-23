@@ -13,9 +13,23 @@ public static class Sales
     /// ⚠️ <b>Not <c>Failed</c>, and not <c>Submitted</c>.</b> A failed order was never a sale; showing it
     /// would tell a seller they sold something and then take it back. <c>Submitted</c> settles in
     /// seconds, and showing it would do the same whenever the payment is then declined.
+    /// <para>
+    /// Since specs/039 a <b>cancelled</b> order is a sale too - its seller must learn to stop preparing it -
+    /// but it is never money: balances and payouts count <see cref="Earning"/>, not this.
+    /// </para>
     /// </remarks>
     public static readonly OrderStatus[] Statuses =
+        [OrderStatus.Paid, OrderStatus.Completed, OrderStatus.Preparing, OrderStatus.Shipped, OrderStatus.Cancelled];
+
+    /// <summary>
+    /// The sales that are money (specs/037, 039): paid and not cancelled. ⚠️ The only thing keeping a
+    /// cancelled order - whose parts still exist, with their terms - out of a balance and out of a payout.
+    /// </summary>
+    public static readonly OrderStatus[] Earning =
         [OrderStatus.Paid, OrderStatus.Completed, OrderStatus.Preparing, OrderStatus.Shipped];
+
+    /// <summary>Moving a cancelled sale of one's own (specs/039).</summary>
+    public const string Cancelled = "This order was cancelled.";
 
     /// <summary>
     /// One wording for "no such order", "not your sale", "failed" and "still settling" (research D5).

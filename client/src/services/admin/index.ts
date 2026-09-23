@@ -33,6 +33,12 @@ export class Admin {
     return data
   }
 
+  /** Staff cancel any paid order until its first parcel has shipped (specs/039). */
+  static async cancel(id: string): Promise<Order> {
+    const { data } = await http.post<Order>(`/orders/fulfilment/${id}/cancel`)
+    return data
+  }
+
   static async due(): Promise<PayoutDue[]> {
     const { data } = await http.get<PayoutDue[]>('/orders/payouts/due')
     return data

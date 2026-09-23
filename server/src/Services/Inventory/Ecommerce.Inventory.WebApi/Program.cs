@@ -103,6 +103,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<ReserveInventoryConsumer>();
     x.AddConsumer<ReleaseInventoryConsumer>();
     x.AddConsumer<OrderCompletedConsumer>();
+    // specs/039: a cancelled order puts its stock back. Registered, or it never runs and never complains.
+    x.AddConsumer<RestockCancelledOrderConsumer>();
     x.AddConsumer<ProductCreatedConsumer>();
 
     // A later shape of a product is a new sellable unit, and it needs somewhere to count (specs/020).

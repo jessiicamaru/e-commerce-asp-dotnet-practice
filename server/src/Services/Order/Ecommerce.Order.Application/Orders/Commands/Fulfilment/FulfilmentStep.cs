@@ -35,6 +35,7 @@ internal static class FulfilmentStep
                 return OrderMapping.ToDetail(order);
 
             case ShipmentMoveOutcome.OrderNotPaid:
+            case ShipmentMoveOutcome.OrderCancelled:
                 throw new ConflictException(
                     $"Order is {OrderMapping.Describe(result.OrderStatus!.Value)}; only a Paid order can be fulfilled.");
 
