@@ -269,6 +269,10 @@ app.MapControllers();
 
 // Only reachable on the HTTP/2 endpoint above; the REST port cannot carry it.
 app.MapGrpcService<CatalogPricingService>();
+// Who a listing belongs to, so Inventory can refuse a seller stocking somebody else's
+// product (specs/031). Same h2c endpoint; a second service, because ownership is an
+// authorization input and not a price.
+app.MapGrpcService<CatalogOwnershipService>();
 
 // gRPC health is its own protocol and curl cannot speak it, so the CONTAINER health check keeps
 // probing REST /health and is deliberately not repointed here - a probe that cannot fail is worse

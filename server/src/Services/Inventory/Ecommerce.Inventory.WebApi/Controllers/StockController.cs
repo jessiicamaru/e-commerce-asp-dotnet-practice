@@ -29,7 +29,11 @@ public class StockController : ApiControllerBase
 
     public record SetStockOnHandRequest(int QuantityOnHand);
 
-    [Authorize(Roles = "Admin")]
+    // Seller AND Admin (specs/031). Leaving this at "Admin" is how specs/027 shipped with its
+    // ownership checks UNREACHABLE: the seller was refused at the door, the code deciding whether
+    // the listing was hers never ran, and every unit test still passed. Whose variant it is gets
+    // decided in the handler, because an attribute runs before any row is read.
+    [Authorize(Roles = "Seller,Admin")]
     /// <summary>Sets stock for one sellable unit; the id is a <b>variant</b> id (specs/020).</summary>
     [HttpPut("{productId:guid}")]
     public async Task<IActionResult> SetOnHand(Guid productId, [FromBody] SetStockOnHandRequest request)

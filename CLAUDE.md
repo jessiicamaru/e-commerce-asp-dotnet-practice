@@ -85,9 +85,9 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (31 tests, PostgreSQL on 5437),
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (111 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (115 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -171,7 +171,7 @@ so.
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads |
-| Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper |
+| Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
@@ -324,7 +324,21 @@ the **default** currency's amount whatever the seller is browsing in (`CreatePro
 sets `product_variants.Price`), and a product response carries **one** currency's prices - so the
 price editor reads the product once per currency, or a seller browsing in dollars sees an empty box
 where their dong price is. A newly listed product has **no stock** (`RegisterProductCommandHandler`
-writes `QuantityOnHand = 0`) and the form says so.
+writes `QuantityOnHand = 0`) until the seller sets it.
+
+**A seller stocks what they sell** (specs/031). `PUT /api/stock/{variantId}` is `Seller,Admin`, and
+Inventory decides ownership itself by asking Catalog over gRPC - a **new synchronous edge**, and
+Inventory's first. ⚠️ **It is asked live and deliberately never cached.** A read model fed by events
+is this codebase's usual answer and is wrong here, because **authorization must not be eventually
+consistent**: a copy seconds behind refuses a seller her own product with exactly the 404 that means
+"not yours", and nothing can tell the two apart. The read models this project does keep - shop names,
+availability - are about *display*, where stale costs a slightly old page. ⚠️ **Three 404s, and two
+of them must look identical**: "not yours" and "no such variant" are indistinguishable on purpose,
+while "yours, but the stock row has not arrived from the broker yet" must say something else, or a
+seller retrying forever looks the same as a seller being refused. The check runs **before** the
+transaction, because a network call inside the `FOR UPDATE` would hold a row lock open across a round
+trip; an administrator never reaches Catalog at all. Catalog unreachable now means a seller cannot
+stock - accepted, because Catalog unreachable also means nobody can see the product.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

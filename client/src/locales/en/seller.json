@@ -34,7 +34,7 @@
       "title": "Three things this does, so nothing surprises you later",
       "language": "The text you type is stored in {{language}}. Shoppers reading the other language see this text until you translate it.",
       "currency": "The price is in {{currency}} only. Shoppers paying in the other currency will see the product but cannot buy it until it has a price there.",
-      "stock": "A new listing has no stock, so it reads “out of stock” until it is stocked. Sellers cannot set stock yet."
+      "stock": "A new listing has no stock until you set it, on the listing's own page."
     }
   },
   "edit": {
@@ -50,5 +50,14 @@
     "withdrawConfirm": "Withdraw “{{name}}”? It leaves the catalogue and cannot be undone.",
     "withdrawn": "“{{name}}” has been withdrawn.",
     "view": "See it as a shopper does"
+  },
+  "stock": {
+    "title": "Stock",
+    "onHand": "On hand",
+    "reserved": "{{count}} held for orders in progress",
+    "save": "Save stock",
+    "saved": "Stock updated.",
+    "notRegisteredYet": "This listing is still being registered with the warehouse. Try again in a moment.",
+    "hint": "How many you have. Orders reserve from this, so it cannot be set below what is already held."
   }
 }

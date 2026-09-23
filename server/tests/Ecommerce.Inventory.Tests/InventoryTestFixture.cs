@@ -1,3 +1,6 @@
+using Ecommerce.Shared.Authentication;
+using Ecommerce.Inventory.Application.Common;
+using System.Security.Claims;
 using Ecommerce.Inventory.Application;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Infrastructure.Persistence;
@@ -73,6 +76,13 @@ public class InventoryTestFixture : IAsyncLifetime
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
 
+        // Who the tests are acting as, and what Catalog would answer (specs/031). Both settable,
+        // because the refusals under test are exactly "this caller, that owner".
+        services.AddSingleton(Caller);
+        services.AddSingleton<ICurrentUser>(Caller);
+        services.AddSingleton(Owners);
+        services.AddSingleton<IProductOwnership>(Owners);
+
         services.AddMassTransitTestHarness();
 
         Services = services.BuildServiceProvider(true);
@@ -100,9 +110,85 @@ public class InventoryTestFixture : IAsyncLifetime
         await drop.ExecuteNonQueryAsync();
     }
 
+    /// <summary>Who the tests act as. An administrator unless a test says otherwise.</summary>
+    public TestCaller Caller { get; } = new();
+
+    /// <summary>What Catalog would say about who owns a variant.</summary>
+    public TestOwners Owners { get; } = new();
+
     /// <summary>A fresh DI scope, mirroring one message delivery or one HTTP request.</summary>
     public AsyncServiceScope NewScope() => Services.CreateAsyncScope();
 }
 
 [CollectionDefinition(nameof(InventoryTestCollection))]
 public class InventoryTestCollection : ICollectionFixture<InventoryTestFixture>;
+
+/// <summary>
+/// Who a test is acting as. An administrator by default, which is what every stock write required
+/// before sellers could set their own (specs/031).
+/// </summary>
+/// <remarks>
+/// ⚠️ A test that changes this must put it back. The same shared-singleton trap that made eleven
+/// Catalog image tests fail when SellerOwnershipTests left the caller as a seller.
+/// </remarks>
+public class TestCaller : ICurrentUser
+{
+    public Guid? Id { get; set; }
+
+    public string? Email { get; set; }
+
+    public bool IsAuthenticated { get; set; } = true;
+
+    public List<string> Roles { get; set; } = [RoleNames.Admin];
+
+    public ClaimsPrincipal? Principal => null;
+
+    public bool IsInRole(string role) => Roles.Contains(role);
+
+    /// <summary>Act as an administrator again. Call it in a Dispose, not by remembering to.</summary>
+    public void BeAdmin()
+    {
+        Id = null;
+        Roles = [RoleNames.Admin];
+    }
+
+    public void BeSeller(Guid sellerId)
+    {
+        Id = sellerId;
+        Roles = [RoleNames.Seller];
+    }
+}
+
+/// <summary>
+/// What Catalog would answer. A variant nobody registered here is ABSENT, which is how a variant
+/// that does not exist reaches the code under test.
+/// </summary>
+public class TestOwners : IProductOwnership
+{
+    private readonly Dictionary<Guid, VariantOwnership> _owners = [];
+
+    /// <summary>Set when a test wants the lookup itself to fail, rather than to answer.</summary>
+    public Exception? Throws { get; set; }
+
+    public int Calls { get; private set; }
+
+    public void OwnedBy(Guid variantId, Guid? sellerId) =>
+        _owners[variantId] = new VariantOwnership(variantId, Guid.CreateVersion7(), sellerId);
+
+    public void Clear()
+    {
+        _owners.Clear();
+        Throws = null;
+        Calls = 0;
+    }
+
+    public Task<VariantOwnership?> GetAsync(Guid variantId, CancellationToken cancellationToken = default)
+    {
+        Calls++;
+        if (Throws is { } error)
+        {
+            throw error;
+        }
+        return Task.FromResult(_owners.GetValueOrDefault(variantId));
+    }
+}

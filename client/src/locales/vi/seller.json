@@ -34,7 +34,7 @@
       "title": "Ba điều sẽ xảy ra, nói trước để sau không bất ngờ",
       "language": "Chữ bạn nhập được lưu bằng {{language}}. Người xem bằng ngôn ngữ kia sẽ thấy đúng đoạn chữ này cho tới khi bạn dịch.",
       "currency": "Giá này chỉ áp cho {{currency}}. Người trả bằng đơn vị tiền kia vẫn thấy sản phẩm nhưng chưa mua được, cho tới khi nó có giá ở đó.",
-      "stock": "Sản phẩm mới đăng chưa có tồn kho nên sẽ hiện “hết hàng” cho tới khi được nhập kho. Người bán hiện chưa tự đặt tồn kho được."
+      "stock": "Sản phẩm mới đăng chưa có tồn kho cho tới khi bạn nhập, ở trang của chính sản phẩm đó."
     }
   },
   "edit": {
@@ -50,5 +50,14 @@
     "withdrawConfirm": "Gỡ “{{name}}”? Sản phẩm sẽ rời khỏi danh mục và không khôi phục lại được.",
     "withdrawn": "Đã gỡ “{{name}}”.",
     "view": "Xem như người mua nhìn thấy"
+  },
+  "stock": {
+    "title": "Tồn kho",
+    "onHand": "Số lượng có",
+    "reserved": "{{count}} đang được giữ cho đơn đang xử lý",
+    "save": "Lưu tồn kho",
+    "saved": "Đã cập nhật tồn kho.",
+    "notRegisteredYet": "Sản phẩm này còn đang được ghi nhận vào kho. Thử lại sau giây lát.",
+    "hint": "Số lượng bạn đang có. Đơn hàng sẽ giữ chỗ từ đây, nên không đặt thấp hơn số đang được giữ."
   }
 }

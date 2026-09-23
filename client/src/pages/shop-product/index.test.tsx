@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { Product } from '@/services/product'
+import { Stock } from '@/services/stock'
 import type { Product as ProductModel } from '@/services/product/types'
 import { SellerProductPage } from '.'
 
@@ -66,6 +67,9 @@ beforeEach(async () => {
   vi.spyOn(Product, 'get').mockImplementation(async (_id, currency) =>
     currency === 'USD' ? inCurrency('USD', null) : inCurrency('VND', 52000000),
   )
+  vi.spyOn(Stock, 'get').mockResolvedValue({
+    productId: 'p1', sku: 'SONY-A7M4', quantityOnHand: 3, quantityReserved: 2, quantityAvailable: 1,
+  })
 })
 
 describe('SellerProductPage', () => {
@@ -174,5 +178,81 @@ describe('SellerProductPage prices, read per currency', () => {
 
     await waitFor(() => expect(screen.getByText(/No price in this currency/i)).toBeInTheDocument())
     expect(screen.getByLabelText('USD SONY-A7M4')).not.toHaveValue('0')
+  })
+})
+
+describe('SellerProductPage stock', () => {
+  /** A variant id, never a product id: Inventory keys stock by the sellable unit (specs/020). */
+  it('sets stock against the variant, with the number as a number', async () => {
+    const setOnHand = vi.spyOn(Stock, 'setOnHand').mockResolvedValue({
+      productId: 'p1', sku: 'SONY-A7M4', quantityOnHand: 9, quantityReserved: 2, quantityAvailable: 7,
+    })
+    const user = userEvent.setup()
+    renderPage()
+
+    const box = await screen.findByLabelText(/On hand SONY-A7M4/i)
+    // fireEvent.change, not user.clear + type: clear() leaves this controlled input at its
+    // prefilled "3" and typing appends, so the test would assert 39 and pass for the wrong reason.
+    // A real browser's select-all-delete works; the simulation does not.
+    fireEvent.change(box, { target: { value: '9' } })
+    await user.click(screen.getByRole('button', { name: /Save stock/i }))
+
+    await waitFor(() => expect(setOnHand).toHaveBeenCalledWith('p1', 9))
+    expect(typeof setOnHand.mock.calls[0][1]).toBe('number')
+  })
+
+  /**
+   * "I have 3 but only 1 is available" reads as a bug until you know two are inside somebody's
+   * checkout. Reserved is shown for exactly that reason.
+   */
+  it('says how many are held for orders in progress', async () => {
+    renderPage()
+
+    expect(await screen.findByText(/2 held for orders/i)).toBeInTheDocument()
+  })
+
+  /** It shows what is on hand, not what is available - those differ whenever a sale is mid-flight. */
+  it('prefills with on hand, not with available', async () => {
+    renderPage()
+
+    await waitFor(() => expect(screen.getByLabelText(/On hand SONY-A7M4/i)).toHaveValue('3'))
+  })
+
+  /**
+   * A freshly listed product has no stock row for a moment - it is created off the broker. That is
+   * a real state and must not be drawn as a zero, which would be a lie.
+   */
+  it('says when the stock row has not arrived yet, instead of showing zero', async () => {
+    const { AxiosError } = await import('axios')
+    const missing = new AxiosError('failed')
+    missing.response = {
+      status: 404, data: { status: 404, detail: "Product 'p1' is not registered in inventory." },
+      statusText: '', headers: {}, config: { headers: {} as never },
+    }
+    vi.spyOn(Stock, 'get').mockRejectedValue(missing)
+    renderPage()
+
+    expect(await screen.findByText(/still being registered with the warehouse/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/On hand SONY-A7M4/i)).toHaveValue('')
+  })
+
+  /** The server's 404 for somebody else's product stays a 404 here - never "you are not allowed". */
+  it('repeats the server refusal instead of interpreting it', async () => {
+    const { AxiosError } = await import('axios')
+    const refused = new AxiosError('failed')
+    refused.response = {
+      status: 404, data: { status: 404, detail: "Product with ID 'p1' was not found." },
+      statusText: '', headers: {}, config: { headers: {} as never },
+    }
+    vi.spyOn(Stock, 'setOnHand').mockRejectedValue(refused)
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Save stock/i }))
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('alert').some((a) => /was not found/.test(a.textContent ?? ''))).toBe(true),
+    )
+    expect(screen.queryByText(/not allowed|forbidden|permission/i)).not.toBeInTheDocument()
   })
 })

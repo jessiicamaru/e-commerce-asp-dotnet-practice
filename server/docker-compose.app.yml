@@ -170,12 +170,17 @@ services:
       INVENTORY_DB_PORT: "5432"
       INVENTORY_RESERVATION_TTL_MINUTES: ${INVENTORY_RESERVATION_TTL_MINUTES:-15}
       INVENTORY_SWEEP_INTERVAL_SECONDS: ${INVENTORY_SWEEP_INTERVAL_SECONDS:-30}
+      # Inventory's first synchronous dependency (specs/031): it asks Catalog who owns a variant
+      # before letting a seller stock it. h2c on Catalog's second port, like every gRPC edge here.
+      CATALOG_GRPC_ADDRESS: http://catalog:8081
     ports:
       - "5060:8080"
     depends_on:
       postgres-inventory:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      catalog:
         condition: service_healthy
 
   payment:

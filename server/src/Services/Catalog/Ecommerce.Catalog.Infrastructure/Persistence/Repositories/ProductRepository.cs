@@ -57,6 +57,24 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .Include(v => v.Product)
             .FirstOrDefaultAsync(v => v.Id == variantId, cancellationToken);
 
+    public async Task<List<VariantOwnership>> GetVariantOwnersAsync(
+        IEnumerable<Guid> variantIds,
+        CancellationToken cancellationToken = default)
+    {
+        var wanted = variantIds.Distinct().ToList();
+
+        // Three columns, no navigation loaded. An authorization question asked on every stock
+        // write should cost a projection, not a graph (specs/031).
+        return await _context.ProductVariants
+            .AsNoTracking()
+            .Where(variant => wanted.Contains(variant.Id))
+            .Select(variant => new VariantOwnership(
+                variant.Id,
+                variant.ProductId,
+                variant.Product!.SellerId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<ProductVariant>> GetVariantsByIdsAsync(
         IEnumerable<Guid> variantIds,
         CancellationToken cancellationToken = default)

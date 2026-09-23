@@ -1,0 +1,50 @@
+info:
+  name: a seller stocks their own product
+  type: http
+  seq: 10
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/stock/{{sellerProductId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "quantityOnHand": 4
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // The stock row is created off the broker (specs/031 research D6), so a run that gets here
+        // quickly can legitimately find it missing. That is a DIFFERENT 404 from "not yours", and
+        // telling them apart is the point - so this accepts it and says which one it saw.
+        test("the seller is not refused: 200, or the retryable 404", function() {
+          if (res.status === 404) {
+            expect(res.body.detail).to.contain("not registered in inventory");
+          } else {
+            expect(res.status).to.equal(200);
+            expect(res.body.quantityOnHand).to.equal(4);
+          }
+        });
+        test("it is never 403 - that was the defect", function() {
+          expect(res.status).to.not.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Before specs/031 this was **403**: stock was administrators only, so a seller could list a
+  product, price it, and never sell it - the listing read OutOfStock forever (issue #70).
+
+  In the `seller` folder rather than `inventory` because folders run in name order, and
+  `sellerProductId` is set here. `inventory` runs first, where it would be empty - the same trap
+  that made an earlier seller check 401.

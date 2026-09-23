@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecommerce.Contracts.Grpc";
+
+package catalog.ownership.v1;
+
+// Who a listing belongs to, answered by the service that owns the answer.
+//
+// This exists so Inventory can refuse a seller who is stocking somebody else's
+// product (specs/031, issue #70). Ownership lives in products.SellerId, a Catalog
+// column, and Inventory holds only variant ids - so the question is two hops that
+// both land inside Catalog.
+//
+// A SEPARATE service rather than a method on CatalogPricing: this is an input to an
+// AUTHORIZATION decision, and burying it in a service called Pricing means the next
+// person looking for the rule does not find it.
+//
+// It is asked LIVE on every check and deliberately NOT cached. An authorization
+// answer that is seconds out of date refuses a seller their own product with exactly
+// the 404 that means "not yours", and nothing - not the seller, not the log - can
+// tell the two apart. The read models this project keeps (shop names, availability)
+// are about display, where being stale costs a slightly old page. See specs/031
+// research D2.
+service CatalogOwnership {
+  // Who owns the products these variants belong to.
+  //
+  // Plural for a single caller, the lesson PriceVariants already learned: a per-item
+  // call leaves the caller holding partial state when the third one fails, and the
+  // shape does not need changing when a bulk stock editor arrives.
+  rpc GetVariantOwners (GetVariantOwnersRequest) returns (GetVariantOwnersResponse);
+}
+
+message GetVariantOwnersRequest {
+  repeated string variant_ids = 1;
+}
+
+message VariantOwner {
+  string variant_id = 1;
+  string product_id = 2;
+
+  // EMPTY means the product belongs to the shop itself - every product from before
+  // specs/027, and anything an administrator lists. Empty is not "unknown": a variant
+  // that does not exist is simply ABSENT from the response, so the caller can turn
+  // absence into its own refusal with its own wording.
+  string seller_id = 3;
+}
+
+message GetVariantOwnersResponse {
+  repeated VariantOwner owners = 1;
+}
