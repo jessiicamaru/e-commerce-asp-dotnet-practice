@@ -1,0 +1,34 @@
+info:
+  name: the customer says the parcel arrived
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/shipments/{{shipmentId}}/received"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the parcel reads received, by the customer", function() {
+          var parcel = res.body.shipments.filter(function(s) { return s.id === bru.getVar("shipmentId"); })[0];
+          expect(parcel.deliveredAt).to.be.a("string");
+          expect(parcel.deliveryConfirmedBy).to.equal("Customer");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/040: the customer confirms one shipped parcel of their own order. Only then is its seller's money
+  due - shipped alone is still on the way.

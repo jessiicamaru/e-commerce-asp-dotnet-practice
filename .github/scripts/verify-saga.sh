@@ -614,6 +614,18 @@ print(o.get("status", ""), o.get("trackingReference") or "")
     "an administrator moved it to Shipped, and the customer sees the tracking reference" \
     "After preparing and shipping, the customer reads '$SHIPPED', expected 'Shipped $TRACKING'."
 
+  # The customer says it arrived (specs/040) - only then is a seller's money due.
+  PARCEL_ID="$(get_json "$ORDER_URL/api/orders/$ORDER_ID" "$CUSTOMER_TOKEN" | "$PYTHON" -c '
+import json, sys
+print(((json.load(sys.stdin).get("shipments") or [{}])[0]).get("id") or "")
+')"
+  RECEIVED="$(post_json "$ORDER_URL/api/orders/$ORDER_ID/shipments/$PARCEL_ID/received" '{}' "$CUSTOMER_TOKEN" | "$PYTHON" -c '
+import json, sys
+p = (json.load(sys.stdin).get("shipments") or [{}])[0]
+print("received by %s" % p.get("deliveryConfirmedBy") if p.get("deliveredAt") else "not received")
+')"
+  assert_eq "$RECEIVED" "received by Customer"     "the customer confirmed the parcel arrived"     "After the customer confirmed parcel $PARCEL_ID, it reads '$RECEIVED', expected 'received by Customer'."
+
   # An address edited after the order must not move the parcel (FR-008).
   put_json "$IDENTITY_URL/api/addresses/$ADDRESS_ID" \
     "$(json_object recipientName "Somebody Else" line1 "9 Other Road" city "Da Nang" postalCode "550000" country "VN")" \

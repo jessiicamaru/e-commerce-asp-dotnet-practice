@@ -78,6 +78,7 @@ describe('ShopSalePage', () => {
   it('shows what the sale earns the seller', async () => {
     vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', {
       goodsTotal: 2798, commission: 279.8, shippingShare: 2.5, payout: 2520.7, paidOut: false,
+      deliveredAt: '2026-09-24T08:00:00Z',
     }))
     renderAt('o-1')
 
@@ -85,6 +86,19 @@ describe('ShopSalePage', () => {
     expect(within(earnings).getByText('$279.80')).toBeInTheDocument()
     expect(within(earnings).getByText('$2,520.70')).toBeInTheDocument()
     expect(within(earnings).getByText('Due')).toBeInTheDocument()
+    // specs/040: due BECAUSE it arrived - and the page says so.
+    expect(screen.getByText(/The customer received it on/)).toBeInTheDocument()
+  })
+
+  it('keeps a shipped parcel on the way until the customer has it', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', {
+      goodsTotal: 2798, commission: 279.8, shippingShare: 2.5, payout: 2520.7, paidOut: false, deliveredAt: null,
+    }))
+    renderAt('o-1')
+
+    const earnings = (await screen.findByText('You receive', { selector: '[data-slot="card-title"]' })).closest('[data-slot="card"]') as HTMLElement
+    expect(within(earnings).getByText('On the way')).toBeInTheDocument()
+    expect(screen.queryByText(/The customer received it/)).not.toBeInTheDocument()
   })
 
   /** specs/039: the seller learns to stop - no step to take, no address. */

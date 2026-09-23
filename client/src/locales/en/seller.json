@@ -157,7 +157,8 @@
     "trackingIs": "Tracking reference:",
     "shipTo": "Ship to",
     "addressGone": "Your parcel has been sent, so the delivery address is no longer shown.",
-    "cancelled": "This order was cancelled - there is nothing to prepare or send."
+    "cancelled": "This order was cancelled - there is nothing to prepare or send.",
+    "received": "The customer received it on {{at}}."
   },
   "earnings": {
     "title": "You receive",
@@ -172,8 +173,8 @@
       "paidOut": "Paid out"
     },
     "hint": {
-      "onTheWay": "The customer has paid. It becomes due once you send your parcel.",
-      "due": "Your parcel is sent. The shop settles it in its next payout.",
+      "onTheWay": "The customer has paid. It becomes due once they receive the parcel - or 7 days after it shipped if they never confirm.",
+      "due": "The customer received the parcel. The shop settles it in its next payout.",
       "paidOut": "The shop has recorded paying you for this."
     },
     "cancelled": "The order was cancelled, so nothing is owed to you for it."

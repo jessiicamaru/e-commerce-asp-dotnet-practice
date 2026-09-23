@@ -57,3 +57,14 @@ describe('Order.cancel', () => {
     expect(post.mock.calls[0]).toEqual(['/orders/o-1/cancel'])
   })
 })
+
+describe('Order.receive', () => {
+  /** The order and the parcel are named; the owner is the token (specs/040). */
+  it('names the order and the parcel, and nobody', async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: {} })
+
+    await Order.receive('o-1', 'p-2')
+
+    expect(post.mock.calls[0]).toEqual(['/orders/o-1/shipments/p-2/received'])
+  })
+})

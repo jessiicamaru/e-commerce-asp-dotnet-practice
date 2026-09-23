@@ -414,6 +414,10 @@ public class PayoutTests
             .TrySettleAsync(order, status, null, DateTime.UtcNow));
     }
 
+    /// <summary>
+    /// Ships the part AND has it arrive: since specs/040 money is due for a DELIVERED parcel, and these tests
+    /// are about what happens once it is due. That a shipped-only parcel is not due is DeliveryTests' job.
+    /// </summary>
     private async Task ShipAsync(Guid order, Guid? seller)
     {
         await using var scope = _fixture.NewScope();
@@ -422,6 +426,12 @@ public class PayoutTests
             order, seller, ShipmentStatus.Pending, ShipmentStatus.Preparing, null, DateTime.UtcNow)).Outcome);
         Assert.Equal(ShipmentMoveOutcome.Moved, (await repository.TryMoveShipmentAsync(
             order, seller, ShipmentStatus.Preparing, ShipmentStatus.Shipped, "VNPOST", DateTime.UtcNow)).Outcome);
+
+        await scope.ServiceProvider.GetRequiredService<OrderDbContext>().OrderShipments
+            .Where(s => s.OrderId == order && s.SellerId == seller)
+            .ExecuteUpdateAsync(x => x
+                .SetProperty(s => s.DeliveredAt, DateTime.UtcNow)
+                .SetProperty(s => s.DeliveryConfirmedBy, "Customer"));
     }
 
     /// <summary>An order as an image from before this feature wrote it: no rate, no parts, no terms.</summary>

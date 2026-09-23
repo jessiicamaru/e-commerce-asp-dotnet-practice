@@ -156,7 +156,8 @@
     "trackingIs": "Mã vận đơn:",
     "shipTo": "Giao tới",
     "addressGone": "Kiện hàng đã được gửi, nên địa chỉ giao không còn hiển thị.",
-    "cancelled": "Đơn này đã bị huỷ - không cần chuẩn bị hay gửi hàng."
+    "cancelled": "Đơn này đã bị huỷ - không cần chuẩn bị hay gửi hàng.",
+    "received": "Khách đã nhận hàng ngày {{at}}."
   },
   "earnings": {
     "title": "Bạn nhận",
@@ -171,8 +172,8 @@
       "paidOut": "Đã thanh toán"
     },
     "hint": {
-      "onTheWay": "Khách đã trả. Tiền đến hạn khi bạn gửi kiện hàng.",
-      "due": "Kiện đã gửi. Sàn sẽ thanh toán trong lần chi trả tới.",
+      "onTheWay": "Khách đã trả. Tiền đến hạn khi khách nhận được kiện - hoặc 7 ngày sau khi gửi nếu khách không xác nhận.",
+      "due": "Khách đã nhận kiện. Sàn sẽ thanh toán trong lần chi trả tới.",
       "paidOut": "Sàn đã ghi nhận thanh toán khoản này."
     },
     "cancelled": "Đơn đã huỷ, nên không có khoản nào cho bạn."

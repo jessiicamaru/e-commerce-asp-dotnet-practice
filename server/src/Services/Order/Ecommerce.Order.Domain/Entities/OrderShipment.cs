@@ -50,5 +50,17 @@ public class OrderShipment
     /// </summary>
     public Guid? PayoutId { get; set; }
 
+    // Delivery (specs/040). Columns rather than a status value, so an image rolled back to before this
+    // still reads every row: delivered is Status = Shipped AND DeliveredAt IS NOT NULL (research D1).
+
+    /// <summary>When it was marked shipped - what the 7 days of automatic confirmation count from.</summary>
+    public DateTime? ShippedAt { get; set; }
+
+    /// <summary>When it was confirmed as received. Null until then; set once, never cleared.</summary>
+    public DateTime? DeliveredAt { get; set; }
+
+    /// <summary>"Customer" or "Auto" - who said it arrived.</summary>
+    public string? DeliveryConfirmedBy { get; set; }
+
     public Order? Order { get; set; }
 }

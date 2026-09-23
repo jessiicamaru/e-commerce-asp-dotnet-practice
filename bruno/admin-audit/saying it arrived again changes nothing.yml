@@ -1,0 +1,28 @@
+info:
+  name: saying it arrived again changes nothing
+  type: http
+  seq: 14
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/shipments/{{shipmentId}}/received"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A repeat is a no-op, not an error (specs/040): one guarded statement, and the first word stands.

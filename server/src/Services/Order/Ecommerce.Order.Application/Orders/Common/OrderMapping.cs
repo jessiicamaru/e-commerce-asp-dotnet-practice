@@ -41,7 +41,10 @@ public static class OrderMapping
                 // Who sends it (specs/036): the name frozen on its lines. Every line of one part is the
                 // same seller's, so any recorded one will do; none recorded is null, not a guess.
                 order.Items.Where(i => i.SellerId == s.SellerId).Select(i => i.SellerName).FirstOrDefault(n => n is not null),
-                IsShop: s.SellerId is null))
+                IsShop: s.SellerId is null,
+                Id: s.Id,
+                DeliveredAt: s.DeliveredAt,
+                DeliveryConfirmedBy: s.DeliveryConfirmedBy))
             .ToList();
 
     public static ShippingAddressResponse? ToResponse(Domain.Entities.ShippingAddress? a) =>

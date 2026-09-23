@@ -4,11 +4,13 @@ import { ApiError } from '@/config/axios'
 import { CancelOrder } from '@/components/order/cancel-order'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderShipments } from '@/components/order/order-shipments'
+import { ReceiveParcel } from '@/components/order/receive-parcel'
 import { OrderStatus } from '@/components/order/order-status'
 import { OrderTotals } from '@/components/order/order-totals'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ORDER_STATUS, isSettling } from '@/constants/order'
-import { useCancelOrder, useOrder } from '@/hooks/order'
+import { useCancelOrder, useOrder, useReceiveParcel } from '@/hooks/order'
+import { allDelivered } from '@/utils/order/delivery'
 import { customerCanCancel } from '@/utils/order/cancel'
 import { describeAddress } from '@/utils/address'
 
@@ -22,6 +24,7 @@ export function OrderPage() {
   const justPlaced = (useLocation().state as { justPlaced?: boolean } | null)?.justPlaced ?? false
   const { data: order, isPending, error, isRefetching } = useOrder(id)
   const cancel = useCancelOrder(id)
+  const receive = useReceiveParcel(id)
 
   if (error) {
     // Another customer's order is simply not found (#39): the page cannot tell the two apart either.
@@ -60,7 +63,9 @@ export function OrderPage() {
             ? t('order.taking')
             : order.status === ORDER_STATUS.cancelled
               ? t(order.cancelledBy === 'Customer' ? 'cancel.byYou' : 'cancel.byShop')
-              : undefined
+              : allDelivered(order)
+                ? t('status.delivered')
+                : undefined
         }
       />
 
@@ -80,11 +85,17 @@ export function OrderPage() {
       {order.trackingReference && (
         <p className="mt-3 text-sm">{t('order.tracking', { reference: order.trackingReference })}</p>
       )}
+      {/* One parcel: the list below is not drawn, so its "received" lives here (specs/040). */}
+      {order.shipments?.length === 1 && (
+        <div className="mt-3">
+          <ReceiveParcel shipment={order.shipments[0]} receive={receive} />
+        </div>
+      )}
 
       {/* A cancelled order has no parcels to follow - nothing will be sent. */}
       {order.shipments && order.status !== ORDER_STATUS.cancelled && (
         <div className="mt-6">
-          <OrderShipments shipments={order.shipments} />
+          <OrderShipments shipments={order.shipments} receive={receive} />
         </div>
       )}
 

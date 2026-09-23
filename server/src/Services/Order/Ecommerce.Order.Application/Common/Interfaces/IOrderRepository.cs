@@ -128,6 +128,23 @@ public interface IOrderRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Records that one parcel of the owner's order arrived (specs/040): one guarded statement, so a repeat,
+    /// or a sweep at the same moment, sets it once. The owner is part of the query.
+    /// </summary>
+    Task<DeliveryConfirmOutcome> TryConfirmDeliveryAsync(
+        Guid orderId,
+        Guid shipmentId,
+        Guid ownerId,
+        DateTime at,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes every parcel shipped before <paramref name="shippedBefore"/> and not yet confirmed as delivered,
+    /// "Auto" (specs/040). One statement; returns how many it changed.
+    /// </summary>
+    Task<int> AutoConfirmDeliveriesAsync(DateTime shippedBefore, DateTime at, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Creates any part the order is missing, in the order's state, and nothing else. Idempotent:
     /// <c>INSERT … ON CONFLICT DO NOTHING</c> against the unique (order, seller) index.
     /// </summary>
