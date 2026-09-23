@@ -90,7 +90,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (81 tests,
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (98 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (132 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -174,7 +174,7 @@ so.
 | Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
-| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034) |
+| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
@@ -358,6 +358,22 @@ not-there, failed and settling are **one** 404, `Sale not found.`. ⚠️ `selle
 Order then records no seller and logs a warning rather than refuse the checkout. Orders from before
 this record no seller and belong to nobody; there is no backfill, because asking Catalog now would
 answer with today's owner.
+
+**Each seller ships their own part** (specs/035). `order_shipments` holds one row per seller per
+order, plus one for the shop's own goods (`SellerId` null), unique on `(OrderId, SellerId)` **NULLS
+NOT DISTINCT** - without that, two shop parts would be allowed. A seller moves theirs through
+`POST /api/orders/sales/{id}/preparing` and `/shipment`; the staff endpoints keep their addresses and
+now move **the shop's part only** (409 when the order has none). Every move locks the order's row
+(`FOR UPDATE`) first, then creates any missing parts, runs the guarded `UPDATE` on the part, and
+rewrites `orders.Status` as a summary - one transaction. ⚠️ The lock is what makes two sellers
+shipping at once leave the order `Shipped`; `ShipmentTests` fails without it. ⚠️ `orders.Status`
+gained **no new value** ("partly shipped" would stop a rolled-back image from parsing the row) - it
+stays `Paid` / `Preparing` / `Shipped`, and the customer learns "1 of 2" from the parts.
+`orders.TrackingReference` is the part's when there is exactly one part, else null. ⚠️ Parts are
+written at checkout **and created on demand** before every move, in the order's own state, because
+an older image writes orders without them during a rollback; the migration backfilled existing
+orders the same way. A seller sees the delivery address **only while their part is waiting or
+being prepared**. The delivery charge is not split between parts.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

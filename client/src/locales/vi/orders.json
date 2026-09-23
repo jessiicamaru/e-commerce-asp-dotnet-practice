@@ -27,5 +27,17 @@
     "failedStock": "Chưa đặt được: một số sản phẩm đã hết hàng. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên.",
     "failedPayment": "Chưa đặt được: thanh toán bị từ chối. Giỏ hàng vẫn còn nguyên, bạn có thể thử lại.",
     "failed": "Chưa đặt được. Bạn chưa bị trừ tiền, và giỏ hàng vẫn còn nguyên."
+  },
+  "parcels": {
+    "title": "Các kiện hàng",
+    "heading": "Đã gửi {{shipped}}/{{count}} kiện",
+    "number": "Kiện {{index}}/{{count}}",
+    "tracking": "Mã vận đơn:",
+    "partly": "Đã gửi {{shipped}}/{{count}} kiện",
+    "status": {
+      "Paid": "Chờ xử lý",
+      "Preparing": "Đang chuẩn bị",
+      "Shipped": "Đã gửi"
+    }
   }
 }

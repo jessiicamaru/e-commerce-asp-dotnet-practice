@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { AxiosError } from 'axios'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -22,18 +23,28 @@ function renderAt(id: string) {
   )
 }
 
-const shipped: Sale = {
-  orderId: 'o-1',
-  status: 'Shipped',
-  createdAt: '2026-09-23T08:14:02Z',
-  updatedAt: '2026-09-23T09:30:11Z',
-  currency: 'USD',
-  language: 'en',
-  subtotal: 2798,
-  items: [{
-    productId: 'p1', productName: 'Sony A7 IV', variantId: 'v1', sku: 'SONY-A7M4',
-    optionSummary: 'Kit: Body only', quantity: 2, unitPrice: 1399, totalPrice: 2798, taxAmount: 279.8,
-  }],
+const address = {
+  recipientName: 'Lan Pham', line1: '12 Ly Thuong Kiet', line2: null, city: 'Ha Noi', region: null,
+  postalCode: '100000', country: 'VN', phone: '+84 912 345 678',
+}
+
+function sale(status: string, overrides: Partial<Sale> = {}): Sale {
+  return {
+    orderId: 'o-1',
+    status,
+    createdAt: '2026-09-23T08:14:02Z',
+    updatedAt: '2026-09-23T09:30:11Z',
+    currency: 'USD',
+    language: 'en',
+    subtotal: 2798,
+    trackingReference: null,
+    shippingAddress: status === 'Shipped' ? null : address,
+    items: [{
+      productId: 'p1', productName: 'Sony A7 IV', variantId: 'v1', sku: 'SONY-A7M4',
+      optionSummary: 'Kit: Body only', quantity: 2, unitPrice: 1399, totalPrice: 2798, taxAmount: 279.8,
+    }],
+    ...overrides,
+  }
 }
 
 beforeEach(async () => {
@@ -42,21 +53,21 @@ beforeEach(async () => {
 
 describe('ShopSalePage', () => {
   it('asks for the sale named in the address, and shows the seller its lines', async () => {
-    const sale = vi.spyOn(Order, 'sale').mockResolvedValue(shipped)
+    const get = vi.spyOn(Order, 'sale').mockResolvedValue(sale('Paid'))
     renderAt('o-1')
 
     expect(await screen.findByText('Sony A7 IV')).toBeInTheDocument()
-    expect(sale).toHaveBeenCalledWith('o-1')
+    expect(get).toHaveBeenCalledWith('o-1')
     expect(screen.getByText('Kit: Body only')).toBeInTheDocument()
-    expect(screen.getByText('Shipped')).toBeInTheDocument()
   })
 
   it('labels the subtotal as the seller part, in the order currency', async () => {
-    vi.spyOn(Order, 'sale').mockResolvedValue(shipped)
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Paid'))
     renderAt('o-1')
 
-    const label = await screen.findByText(/Your lines/)
-    expect(label).toHaveTextContent('$2,798.00')
+    // The subtotal line, not the line total beside it - both say $2,798.00 on a one-line sale.
+    const subtotal = (await screen.findByText(/Delivery and tax belong/)).previousElementSibling
+    expect(subtotal).toHaveTextContent('$2,798.00')
     // Said on the page, because a subtotal next to "your lines" otherwise reads as the whole order.
     expect(screen.getByText(/Delivery and tax belong to the whole order/)).toBeInTheDocument()
   })
@@ -79,5 +90,54 @@ describe('ShopSalePage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Sale not found.')
     expect(screen.getByRole('link', { name: /Sales/ })).toHaveAttribute('href', '/shop/sales')
+  })
+})
+
+describe('ShopSalePage shipping the seller part', () => {
+  /** Only the next step is offered - the same forwards-one-at-a-time rule the server enforces. */
+  it('offers to start preparing a waiting part, for this order', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Paid'))
+    const prepare = vi.spyOn(Order, 'prepareSale').mockResolvedValue(sale('Preparing'))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    await user.click(await screen.findByRole('button', { name: /Start preparing/i }))
+
+    await waitFor(() => expect(prepare).toHaveBeenCalledWith('o-1'))
+    expect(screen.queryByRole('button', { name: /Mark as shipped/i })).not.toBeInTheDocument()
+  })
+
+  /** The tracking reference is asked for in a dialog: it is what the customer follows, and it is final. */
+  it('ships a part being prepared with the tracking reference typed in the dialog', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Preparing'))
+    const ship = vi.spyOn(Order, 'shipSale').mockResolvedValue(sale('Shipped', { trackingReference: 'VN-1' }))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    await user.click(await screen.findByRole('button', { name: /Mark as shipped/i }))
+    const dialog = await screen.findByRole('dialog')
+    await user.type(within(dialog).getByLabelText('Tracking reference'), '  VN-1 ')
+    await user.click(within(dialog).getByRole('button', { name: /Mark as shipped/i }))
+
+    await waitFor(() => expect(ship).toHaveBeenCalledWith('o-1', 'VN-1'))
+  })
+
+  it('shows where to send it while the part is not yet sent', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Preparing'))
+    renderAt('o-1')
+
+    expect(await screen.findByText('Lan Pham')).toBeInTheDocument()
+    expect(screen.getByText('+84 912 345 678')).toBeInTheDocument()
+  })
+
+  /** research D6: once the parcel is out the server stops sending the address, and the page says why. */
+  it('says the address is gone once the part is shipped, and offers no further step', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', { trackingReference: 'VN-9' }))
+    renderAt('o-1')
+
+    expect(await screen.findByText(/no longer shown/i)).toBeInTheDocument()
+    expect(screen.queryByText('Lan Pham')).not.toBeInTheDocument()
+    expect(screen.getByText('VN-9')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Start preparing|Mark as shipped/i })).not.toBeInTheDocument()
   })
 })

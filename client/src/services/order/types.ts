@@ -43,6 +43,17 @@ export interface Quote extends Totals {
   shippingOption: { code: string; name: string }
 }
 
+/**
+ * One parcel of an order (specs/035): the goods of one seller, or the shop's own. `status` is `Paid`
+ * while nobody has started it, then `Preparing`, then `Shipped` with its tracking reference.
+ */
+export interface Shipment {
+  status: string
+  trackingReference: string | null
+  /** What is in it, in the words frozen on the order's lines. */
+  items: string[]
+}
+
 export interface Order extends Totals {
   orderId: string
   status: string
@@ -52,7 +63,9 @@ export interface Order extends Totals {
   items: OrderLine[]
   shippingAddress: AddressFields | null
   shippingOption: { code: string; name: string } | null
+  /** The parcel's, when there is exactly one; null when the order goes in several (see `shipments`). */
   trackingReference: string | null
+  shipments: Shipment[] | null
 }
 
 export interface OrderSummary {
@@ -67,6 +80,9 @@ export interface OrderSummary {
   currency: string
   /** Frozen too (specs/021): the language its lines were worded in. */
   language: string
+  /** How many parcels it goes in, and how many have gone (specs/035). */
+  shipmentCount: number
+  shipmentsShipped: number
 }
 
 export interface OrderPage {
@@ -115,6 +131,7 @@ export interface SalePage {
  */
 export interface Sale {
   orderId: string
+  /** THEIR part's state (specs/035): Paid (waiting), Preparing or Shipped - not the order's. */
   status: string
   createdAt: string
   updatedAt: string
@@ -122,4 +139,8 @@ export interface Sale {
   subtotal: number
   currency: string
   language: string
+  /** Their parcel's, once shipped. */
+  trackingReference: string | null
+  /** Where to send it - present ONLY while their part is waiting or being prepared (research D6). */
+  shippingAddress: AddressFields | null
 }

@@ -96,3 +96,20 @@ export function useSale(id: string) {
     retry: false,
   })
 }
+
+/**
+ * A seller's two steps on their part. Both re-read the sale and the sales list rather than patching
+ * them: the server decides what the part and the address now are (the address goes once it is shipped).
+ */
+export function useMoveSale(id: string) {
+  const queryClient = useQueryClient()
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.sale(id) })
+    await queryClient.invalidateQueries({ queryKey: ['sales'] })
+  }
+
+  return {
+    prepare: useMutation({ mutationFn: () => Order.prepareSale(id), onSuccess: refresh }),
+    ship: useMutation({ mutationFn: (trackingReference: string) => Order.shipSale(id, trackingReference), onSuccess: refresh }),
+  }
+}

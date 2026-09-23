@@ -111,7 +111,23 @@ public class SubmitOrderCommandHandler(
             Subtotal = totals.Subtotal,
             TaxTotal = totals.Tax,
             DiscountTotal = totals.Discount,
-            TaxRate = taxRate
+            TaxRate = taxRate,
+
+            // One part per seller whose goods are on this order, plus the shop's own (specs/035),
+            // saved with the order in the same transaction - so there is never an order whose parts
+            // are missing because a second write failed.
+            Shipments = orderItems
+                .Select(item => item.SellerId)
+                .Distinct()
+                .Select(sellerId => new OrderShipment
+                {
+                    Id = Guid.CreateVersion7(),
+                    OrderId = orderId,
+                    SellerId = sellerId,
+                    Status = ShipmentStatus.Pending,
+                    UpdatedAt = DateTime.UtcNow
+                })
+                .ToList()
         };
 
         // 1. Stage Order Entity in DbContext

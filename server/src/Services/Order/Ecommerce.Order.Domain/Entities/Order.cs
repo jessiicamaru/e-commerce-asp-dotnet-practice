@@ -49,4 +49,10 @@ public class Order
     public string? Currency { get; set; }
 
     public List<OrderItem> Items { get; set; } = new();
+
+    /// <summary>
+    /// One part per seller whose goods this order holds, plus the shop's own (specs/035). Written with
+    /// the order at checkout; created on demand for an order written by an image that predates them.
+    /// </summary>
+    public List<OrderShipment> Shipments { get; set; } = new();
 }

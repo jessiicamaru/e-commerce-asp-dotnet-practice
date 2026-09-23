@@ -12,6 +12,7 @@ public class OrderDbContext : DbContext
 
     public DbSet<Domain.Entities.Order> Orders => Set<Domain.Entities.Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<OrderShipment> OrderShipments => Set<OrderShipment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

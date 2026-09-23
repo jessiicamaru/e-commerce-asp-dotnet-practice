@@ -48,10 +48,18 @@ public record SaleSummaryResponse(
 /// One sale: the caller's own lines of one order, and nothing that describes the rest of it.
 /// </summary>
 /// <remarks>
-/// ⚠️ <b>Deliberately absent</b> (research D4), and <c>SellerSalesTests</c> fails if one appears: the
-/// customer, the delivery address, the order's total, delivery and tax totals, the tracking reference,
-/// and every line that is not the caller's. A seller who only looks has no use for them; the address
-/// arrives with the job of shipping, which is not this feature.
+/// <para>
+/// ⚠️ <b>Deliberately absent</b> (specs/034 research D4), and <c>SellerSalesTests</c> fails if one
+/// appears: the customer's id or email, the order's total, delivery and tax totals, and every line that
+/// is not the caller's.
+/// </para>
+/// <para>
+/// <paramref name="Status"/> and <paramref name="TrackingReference"/> are THEIR part's (specs/035), not
+/// the order's: another seller's parcel being sent says nothing about theirs.
+/// <paramref name="ShippingAddress"/> is present <b>only while their part is waiting or being
+/// prepared</b> - the address arrives with the job of shipping and leaves when the job is done
+/// (specs/035 research D6).
+/// </para>
 /// </remarks>
 public record SaleDetailResponse(
     Guid OrderId,
@@ -61,4 +69,6 @@ public record SaleDetailResponse(
     List<OrderItemDetailResponse> Items,
     decimal Subtotal,
     string Currency,
-    string Language);
+    string Language,
+    string? TrackingReference = null,
+    ShippingAddressResponse? ShippingAddress = null);

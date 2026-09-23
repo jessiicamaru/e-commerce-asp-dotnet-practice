@@ -226,6 +226,11 @@ public class SellerSalesTests(OrderTestFixture fixture)
     /// What a seller does NOT get (research D4), asserted on the shape rather than on one response - a
     /// field added to the record later would be empty in every existing test and pass all of them.
     /// </summary>
+    /// <remarks>
+    /// The delivery address and the tracking reference left this list with specs/035, deliberately: a
+    /// seller ships their own part now, so the address is the job - shown only while it is, which
+    /// ShipmentTests pins. The customer's identity and the rest of the order stay out for good.
+    /// </remarks>
     [Theory]
     [InlineData(typeof(SaleDetailResponse))]
     [InlineData(typeof(SaleSummaryResponse))]
@@ -233,8 +238,8 @@ public class SellerSalesTests(OrderTestFixture fixture)
     {
         string[] forbidden =
         [
-            "UserId", "CustomerId", "Email", "ShippingAddress", "ShipTo", "TotalAmount",
-            "ShippingPrice", "ShippingOption", "TaxTotal", "DiscountTotal", "TrackingReference"
+            "UserId", "CustomerId", "Email", "ShipTo", "TotalAmount",
+            "ShippingPrice", "ShippingOption", "TaxTotal", "DiscountTotal"
         ];
 
         var present = shape.GetProperties().Select(p => p.Name).Intersect(forbidden).ToList();
