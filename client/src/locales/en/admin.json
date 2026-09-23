@@ -5,7 +5,8 @@
     "fulfilment": "Orders to ship",
     "payouts": "Seller payouts",
     "audit": "Audit log",
-    "users": "Users"
+    "users": "Users",
+    "shops": "Shop applications"
   },
   "queue": {
     "title": "Orders to ship",
@@ -132,7 +133,10 @@
       "AccountLocked": "Account locked",
       "AccountUnlocked": "Account unlocked",
       "AccountBanned": "Account banned",
-      "BanLifted": "Ban lifted"
+      "BanLifted": "Ban lifted",
+      "ShopApplied": "Applied to sell",
+      "ShopApproved": "Shop approved",
+      "ShopRejected": "Shop rejected"
     }
   },
   "users": {
@@ -182,5 +186,28 @@
     "Moderator": "Moderator",
     "Seller": "Seller",
     "Customer": "Customer"
+  },
+  "shops": {
+    "title": "Shop applications",
+    "subtitle": "Who is asking to sell here. Approving opens the shop at once; rejecting tells them why.",
+    "tab": {
+      "Pending": "Waiting",
+      "Approved": "Approved",
+      "Rejected": "Rejected"
+    },
+    "none": "Nothing here.",
+    "loadFailed": "Could not load applications.",
+    "applied": "Applied {{when}}",
+    "phone": "Phone: {{phone}}",
+    "noDescription": "No description given.",
+    "approve": "Approve",
+    "reject": "Reject…",
+    "rejectTitle": "Reject “{{shop}}”",
+    "rejectBody": "The applicant sees this reason and may apply again.",
+    "reason": "Reason",
+    "confirmReject": "Reject",
+    "approved": "“{{shop}}” is open.",
+    "rejected": "“{{shop}}” was not approved.",
+    "decided": "Decided {{when}}"
   }
 }

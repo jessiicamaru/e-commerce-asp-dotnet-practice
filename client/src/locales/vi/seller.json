@@ -193,5 +193,30 @@
       "sales": "Gồm",
       "amount": "Số tiền"
     }
-  }
+  },
+  "apply": {
+    "title": "Mở gian hàng",
+    "subtitle": "Bán máy ảnh và ống kính của bạn tại đây. Mọi gian hàng mới đều được kiểm duyệt viên xem xét trước khi mở.",
+    "shopName": "Tên gian hàng",
+    "description": "Bạn sẽ bán gì?",
+    "descriptionHint": "Một vài câu giúp việc xét duyệt nhanh hơn.",
+    "phone": "Số điện thoại liên hệ",
+    "submit": "Gửi đơn đăng ký",
+    "submitting": "Đang gửi…",
+    "sent": "Đã gửi đơn. Bạn sẽ được báo tại đây và trong mục thông báo.",
+    "history": "Đơn của bạn",
+    "status": {
+      "Pending": "Đang chờ xét duyệt",
+      "Approved": "Đã duyệt",
+      "Rejected": "Không được duyệt"
+    },
+    "pendingBody": "Đơn sẽ sớm được xem xét. Bạn không thể gửi đơn khác khi đơn này đang chờ.",
+    "rejectedBody": "Lý do: {{reason}}",
+    "approvedBody": "Gian hàng của bạn đã mở.",
+    "open": "Vào gian hàng",
+    "opening": "Đang mở…",
+    "applyAgain": "Bạn có thể gửi đơn mới bên dưới.",
+    "failed": "Không gửi được đơn đăng ký."
+  },
+  "openShop": "Mở gian hàng"
 }

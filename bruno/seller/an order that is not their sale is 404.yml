@@ -1,7 +1,7 @@
 info:
   name: an order that is not their sale is 404
   type: http
-  seq: 14
+  seq: 24
 
 http:
   method: GET

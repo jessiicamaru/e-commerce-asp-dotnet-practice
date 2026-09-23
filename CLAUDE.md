@@ -92,7 +92,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (174 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (65 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (71 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -172,7 +172,7 @@ so.
 | Service | HTTP port | DB port / name | Notes |
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
-| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027) |
+| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027); **shop applications** wait for staff (specs/044) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
@@ -320,6 +320,16 @@ one of them** because moderation is the job. Catalog keeps a **read model of sho
 (`sellers`), fed by `SellerRegisteredEvent`/`SellerRenamedEvent`, so a page of products costs no call
 to Identity and an anonymous catalogue read still works with Identity down; renaming a shop changes
 every listing and **writes no product**.
+
+**A shop is an application first** (specs/044). `register-seller` creates a **customer** plus a pending
+row in `shop_applications`; a signed-in customer can apply from `/open-shop` the same way. A moderator or
+administrator approves at `/api/shop-applications/{id}/approve` - which grants `Seller`, writes the
+`SellerProfile` and publishes `SellerRegisteredEvent`, all inside the transaction whose guarded
+`UPDATE ... WHERE "Status" = 'Pending'` decided it, so a second approval is a 409 that wrote nothing.
+Reject needs a reason, and the person may apply again; one pending application per person is a partial
+unique index. Shops from before this are untouched and need no application. ⚠️ The Seller role reaches a
+session at its next refresh - `/open-shop` renews it (`refreshSession`) before sending somebody to
+`/shop`, which would otherwise bounce them.
 
 **A seller has somewhere to click** since specs/028: `/shop` lists their own products, `/shop/products/new`
 lists a new one, and `/shop/products/:id` sets prices, uploads a photograph and withdraws it. The

@@ -1,0 +1,33 @@
+info:
+  name: staff see the application in the queue
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/shop-applications?status=Pending&pageSize=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("this application, with who made it", function() {
+          var ours = res.body.items.filter(function(a) { return a.id === bru.getVar("applicationId"); });
+          expect(ours).to.have.length(1);
+          expect(ours[0].applicantEmail).to.equal(bru.getVar("sellerEmail"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The queue, oldest first so nobody waits behind later applicants.

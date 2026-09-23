@@ -1,7 +1,7 @@
 info:
   name: a seller sees their balance
   type: http
-  seq: 16
+  seq: 26
 
 http:
   method: GET

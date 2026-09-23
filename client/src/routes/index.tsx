@@ -24,6 +24,8 @@ import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { AdminAuditPage } from '@/pages/admin-audit'
 import { AdminHome } from '@/pages/admin-home'
 import { AdminUsersPage } from '@/pages/admin-users'
+import { AdminShopsPage } from '@/pages/admin-shops'
+import { OpenShopPage } from '@/pages/open-shop'
 import { NotificationsPage } from '@/pages/notifications'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
@@ -81,6 +83,14 @@ export function AppRoutes() {
             }
           />
           <Route
+            path="/open-shop"
+            element={
+              <RequireAuth>
+                <OpenShopPage />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/orders"
             element={
               <RequireAuth>
@@ -130,6 +140,7 @@ export function AppRoutes() {
             <Route path="payouts" element={<AdminPayoutsPage />} />
             <Route path="audit" element={<AdminAuditPage />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="shops" element={<AdminShopsPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

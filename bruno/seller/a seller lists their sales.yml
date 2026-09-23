@@ -1,7 +1,7 @@
 info:
   name: a seller lists their sales
   type: http
-  seq: 13
+  seq: 23
 
 http:
   method: GET

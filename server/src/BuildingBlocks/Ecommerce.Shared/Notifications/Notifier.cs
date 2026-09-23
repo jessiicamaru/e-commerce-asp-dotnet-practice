@@ -23,6 +23,10 @@ public static class NotificationKind
     // Somebody's account (specs/043)
     public const string ModeratorGranted = "ModeratorGranted";
     public const string ModeratorRevoked = "ModeratorRevoked";
+
+    // Somebody's application to sell (specs/044)
+    public const string ShopApproved = "ShopApproved";
+    public const string ShopRejected = "ShopRejected";
 }
 
 /// <summary>

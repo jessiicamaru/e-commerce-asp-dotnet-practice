@@ -1,7 +1,7 @@
 info:
   name: staff see what is due to sellers
   type: http
-  seq: 18
+  seq: 28
 
 http:
   method: GET

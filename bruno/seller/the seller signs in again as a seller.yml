@@ -1,0 +1,38 @@
+info:
+  name: the seller signs in again as a seller
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{sellerEmail}}",
+        "password": "Passw0rd!bruno"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("now holds Seller and Customer", function() {
+          expect(res.body.roles).to.include("Seller");
+          expect(res.body.roles).to.include("Customer");
+        });
+        if (res.status === 200) bru.setVar("sellerToken", res.body.token);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The role arrives with the next sign-in or refresh; the rest of this folder uses this session.

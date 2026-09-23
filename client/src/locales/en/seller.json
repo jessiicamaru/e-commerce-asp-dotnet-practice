@@ -194,5 +194,30 @@
       "sales": "Covers",
       "amount": "Amount"
     }
-  }
+  },
+  "apply": {
+    "title": "Open a shop",
+    "subtitle": "Sell your own cameras and lenses here. A moderator looks at every new shop before it opens.",
+    "shopName": "Shop name",
+    "description": "What will you sell?",
+    "descriptionHint": "A sentence or two helps the review go quickly.",
+    "phone": "Contact phone",
+    "submit": "Send the application",
+    "submitting": "Sending…",
+    "sent": "Application sent. You will be told here and in your notifications.",
+    "history": "Your applications",
+    "status": {
+      "Pending": "Waiting for review",
+      "Approved": "Approved",
+      "Rejected": "Not approved"
+    },
+    "pendingBody": "Somebody will look at it soon. You cannot send another while this one waits.",
+    "rejectedBody": "Reason: {{reason}}",
+    "approvedBody": "Your shop is open.",
+    "open": "Go to my shop",
+    "opening": "Opening…",
+    "applyAgain": "You can apply again below.",
+    "failed": "Could not send the application."
+  },
+  "openShop": "Open a shop"
 }

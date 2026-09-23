@@ -1,7 +1,7 @@
 info:
   name: a seller stocks their own product
   type: http
-  seq: 10
+  seq: 20
 
 http:
   method: PUT
