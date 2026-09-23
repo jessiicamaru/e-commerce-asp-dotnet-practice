@@ -59,5 +59,10 @@
     "saved": "Đã cập nhật tồn kho.",
     "notRegisteredYet": "Sản phẩm này còn đang được ghi nhận vào kho. Thử lại sau giây lát.",
     "hint": "Số lượng bạn đang có. Đơn hàng sẽ giữ chỗ từ đây, nên không đặt thấp hơn số đang được giữ."
+  },
+  "variantImage": {
+    "title": "Ảnh của phiên bản này",
+    "hint": "Không bắt buộc. Nếu không có, phiên bản này dùng ảnh chung của sản phẩm.",
+    "remove": "Dùng ảnh chung của sản phẩm"
   }
 }

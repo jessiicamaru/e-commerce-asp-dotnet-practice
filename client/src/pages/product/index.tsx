@@ -42,7 +42,10 @@ export function ProductPage() {
         {/* The picture gets its own panel rather than floating on the page: an object on a surface
             reads as a photographed thing, which is most of what this redesign is doing. */}
         <div className="bg-card ring-border/60 rounded-[2rem] p-4 ring-1">
-          <ProductImage product={product} large />
+          {/* The picture follows the choice (specs/032). `variant.imageUrl` is the variant's own
+              or the product's, folded together by the server, so this needs no fallback of its
+              own - and cannot get one wrong. */}
+          <ProductImage product={product} imageUrl={variant?.imageUrl} large />
         </div>
 
         <div className="flex flex-col gap-4 lg:pt-4">

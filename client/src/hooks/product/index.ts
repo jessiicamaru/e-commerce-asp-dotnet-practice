@@ -110,3 +110,16 @@ export function useProductInEveryCurrency(id: string) {
     }),
   })
 }
+
+export const useUploadVariantImage = (productId: string) =>
+  useListingMutation(
+    ({ variantId, file }: { variantId: string; file: File }) =>
+      Product.uploadVariantImage(productId, variantId, file),
+    productId,
+  )
+
+export const useRemoveVariantImage = (productId: string) =>
+  useListingMutation(
+    (variantId: string) => Product.removeVariantImage(productId, variantId),
+    productId,
+  )

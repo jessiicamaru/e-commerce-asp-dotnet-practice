@@ -34,6 +34,7 @@ const listing = {
       options: [],
       availability: 'OutOfStock',
       isActive: true,
+      imageUrl: null,
     },
   ],
 } satisfies ProductModel
@@ -254,5 +255,33 @@ describe('SellerProductPage stock', () => {
       expect(screen.getAllByRole('alert').some((a) => /was not found/.test(a.textContent ?? ''))).toBe(true),
     )
     expect(screen.queryByText(/not allowed|forbidden|permission/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('SellerProductPage variant photograph', () => {
+  it('uploads against the variant, as one part named file', async () => {
+    const upload = vi.spyOn(Product, 'uploadVariantImage').mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage()
+
+    const input = await screen.findByLabelText(/Photograph of this shape SONY-A7M4/i)
+    await user.upload(input, new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'x.png', { type: 'image/png' }))
+
+    await waitFor(() => expect(upload).toHaveBeenCalled())
+    const [productId, variantId, file] = upload.mock.calls[0]
+    expect(productId).toBe('p1')
+    expect(variantId).toBe('p1')      // the first variant reuses the product id (specs/020)
+    expect(file).toBeInstanceOf(File)
+  })
+
+  /** Removing is not "no picture": the shape goes back to showing the product's. */
+  it('offers to fall back to the product photograph rather than to remove the picture', async () => {
+    const remove = vi.spyOn(Product, 'removeVariantImage').mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Use the product.s photograph/i }))
+
+    await waitFor(() => expect(remove).toHaveBeenCalledWith('p1', 'p1'))
   })
 })

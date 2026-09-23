@@ -59,5 +59,10 @@
     "saved": "Stock updated.",
     "notRegisteredYet": "This listing is still being registered with the warehouse. Try again in a moment.",
     "hint": "How many you have. Orders reserve from this, so it cannot be set below what is already held."
+  },
+  "variantImage": {
+    "title": "Photograph of this shape",
+    "hint": "Optional. Without one, this shape shows the product's photograph.",
+    "remove": "Use the product's photograph"
   }
 }

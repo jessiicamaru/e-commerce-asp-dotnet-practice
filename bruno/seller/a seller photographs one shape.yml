@@ -1,0 +1,44 @@
+info:
+  name: a seller photographs one shape
+  type: http
+  seq: 12
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  auth: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        // specs/032: the fallback is resolved on the SERVER, so a shape with no photograph of its
+        // own arrives carrying the PRODUCT's address rather than null. A client implementing the
+        // fallback itself is a second place to get it wrong, and the wrong one keeps showing the
+        // previously chosen shape - which looks like the feature working.
+        test("every shape carries an image address, or none does", function() {
+          var variants = res.body.variants || [];
+          expect(variants.length).to.be.greaterThan(0);
+          var product = res.body.imageUrl;
+          variants.forEach(function(v) {
+            if (product === null) {
+              expect(v.imageUrl).to.equal(null);
+            } else {
+              expect(v.imageUrl).to.be.a("string");
+            }
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A shape without its own photograph shows the product's (specs/032). Which one it is comes back
+  already resolved, so this asserts the INVARIANT rather than a particular address: if the product
+  has a picture then every shape has an address, and if it has none then no shape does.
