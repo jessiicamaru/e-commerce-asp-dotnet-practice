@@ -135,7 +135,8 @@ public class CheckoutPricing(
                 totals.LineTaxes[i],
                 item.SellableId,
                 variant.Sku,
-                variant.OptionSummary);
+                variant.OptionSummary,
+                variant.SellerId);
         }).ToList();
 
         return new PricedCheckout(
@@ -146,6 +147,7 @@ public class CheckoutPricing(
 /// <param name="VariantId">The sellable unit bought (specs/020).</param>
 /// <param name="Sku">Frozen onto the order line: what the warehouse picks.</param>
 /// <param name="OptionSummary">What the customer chose, in words. Frozen too.</param>
+/// <param name="SellerId">Whose product it is, as Catalog said at this moment (specs/034). Frozen too.</param>
 public record PricedLine(
     Guid ProductId,
     string Name,
@@ -154,7 +156,8 @@ public record PricedLine(
     decimal TaxAmount,
     Guid VariantId = default,
     string Sku = "",
-    string OptionSummary = "")
+    string OptionSummary = "",
+    Guid? SellerId = null)
 {
     public decimal TotalPrice => UnitPrice * Quantity;
 }

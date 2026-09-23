@@ -3,6 +3,8 @@ using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 using Ecommerce.Order.Application.Orders.Queries.GetCheckoutQuote;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrderById;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrders;
+using Ecommerce.Order.Application.Orders.Queries.GetMySale;
+using Ecommerce.Order.Application.Orders.Queries.GetMySales;
 using Ecommerce.Order.Application.Orders.Queries.GetOrdersForFulfilment;
 using Ecommerce.Order.Application.Orders.Queries.GetShippingOptions;
 using Microsoft.AspNetCore.Authorization;
@@ -68,6 +70,30 @@ public class OrdersController : ApiControllerBase
     {
         var result = await Mediator.Send(new GetMyOrderByIdQuery(id));
         return Ok(result);
+    }
+
+    // ------------------------------------------------------------------ sales (sellers, specs/034)
+
+    /// <summary>
+    /// A seller's sales: paid orders holding at least one of their lines, with figures over those lines
+    /// only. <b>Seller, not Admin</b> - an administrator sees every order through fulfilment already.
+    /// </summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("sales")]
+    public async Task<IActionResult> GetMySales([FromQuery] GetMySalesQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
+    /// <summary>
+    /// One sale, the seller's own lines only. 404 - one wording - for no such order, nothing of theirs
+    /// on it, failed, or still settling.
+    /// </summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("sales/{id:guid}")]
+    public async Task<IActionResult> GetMySale(Guid id)
+    {
+        return Ok(await Mediator.Send(new GetMySaleQuery(id)));
     }
 
     // ------------------------------------------------------------------ fulfilment (staff)

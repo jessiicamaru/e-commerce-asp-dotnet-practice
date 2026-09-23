@@ -87,6 +87,26 @@ public interface IOrderRepository
         int pageSize,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// A page of the orders holding at least one of this seller's lines, newest first, counting only
+    /// <see cref="Sales.Statuses"/> (specs/034). Every figure on a row is over the seller's lines only.
+    /// </summary>
+    Task<(List<SaleSummaryResponse> Sales, int TotalCount)> GetSalesPageAsync(
+        Guid sellerId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One sale with <b>only this seller's lines</b>, or null. The seller, the status and the order id
+    /// are all in the one query, so an order that is somebody else's sale is never read and then
+    /// refused - it is simply not found, exactly like one that does not exist.
+    /// </summary>
+    Task<SaleDetailResponse?> GetSaleAsync(
+        Guid orderId,
+        Guid sellerId,
+        CancellationToken cancellationToken = default);
+
     Task<Domain.Entities.Order?> GetByIdForUserAsync(
         Guid orderId,
         Guid userId,

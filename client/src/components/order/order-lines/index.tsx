@@ -13,7 +13,10 @@ export function OrderLines({ items, currency }: { items: OrderLine[]; currency?:
       <TableBody>
         {items.map((item) => (
           <TableRow key={item.variantId ?? item.productId}>
-            <TableCell>
+            {/* The one cell allowed to wrap. shadcn's cells are nowrap, and at phone width a long name
+                pushed the line total past the edge - its currency sign scrolled out of sight, leaving
+                a bare number on a page whose point is saying which money it is. */}
+            <TableCell className="whitespace-normal">
               {item.productName}
               {item.optionSummary && (
                 <div className="text-muted-foreground text-xs">{item.optionSummary}</div>

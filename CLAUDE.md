@@ -86,8 +86,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (130 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (81 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (132 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -170,7 +170,7 @@ so.
 | Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
-| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads |
+| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
@@ -339,6 +339,21 @@ seller retrying forever looks the same as a seller being refused. The check runs
 transaction, because a network call inside the `FOR UPDATE` would hold a row lock open across a round
 trip; an administrator never reaches Catalog at all. Catalog unreachable now means a seller cannot
 stock - accepted, because Catalog unreachable also means nobody can see the product.
+
+**A seller sees what they sold** (specs/034). `order_items.SellerId` is copied from Catalog's pricing
+answer at checkout (`PricedVariant.seller_id`) and never written again, and `GET /api/orders/sales`
+and `/sales/{id}` (`Seller` only) read it. ⚠️ **Frozen here, asked live in specs/031 - and both are
+right.** Stock asks who owns a variant *now*, because that is a permission; a sale records who owned
+it *then*, like the price and the name, so a product that changes hands or is deleted leaves its
+sales where they were. Do not "make them consistent" in either direction. A seller sees **their lines
+only** and a subtotal over them - never the order's total (it includes other sellers' goods),
+delivery, tax totals, the customer or the address; the response records have no field for them and
+`SellerSalesTests` asserts the shape. Failed and still-settling orders are never sales. Not-yours,
+not-there, failed and settling are **one** 404, `Sale not found.`. ⚠️ `seller_id` is proto3
+**`optional`** on purpose: empty means the shop's own, **absent** means a Catalog too old to say -
+Order then records no seller and logs a warning rather than refuse the checkout. Orders from before
+this record no seller and belong to nobody; there is no backfill, because asking Catalog now would
+answer with today's owner.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

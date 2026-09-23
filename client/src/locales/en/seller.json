@@ -64,5 +64,29 @@
     "title": "Photograph of this shape",
     "hint": "Optional. Without one, this shape shows the product's photograph.",
     "remove": "Use the product's photograph"
+  },
+  "sales": {
+    "title": "Sales",
+    "link": "Sales",
+    "subtitle": "Orders that include something you listed. You see your own lines only - not the rest of the order, the customer or where it is going.",
+    "none": "Nothing you listed has been bought yet. An order appears here once it has been paid.",
+    "loadFailed": "Your sales could not be loaded.",
+    "lines_one": "{{count}} of your lines",
+    "lines_other": "{{count}} of your lines",
+    "units_one": "{{count}} unit",
+    "units_other": "{{count}} units",
+    "subtotal": "Your lines",
+    "subtotalHint": "Before tax. Delivery and tax belong to the whole order, not to one seller's part of it.",
+    "newer": "Newer",
+    "older": "Older",
+    "back": "← Sales",
+    "placedAt": "Placed {{at}}",
+    "notFound": "Sale not found.",
+    "quantity": "× {{count}}",
+    "status": {
+      "paid": "Paid - waiting to be prepared",
+      "preparing": "Being prepared",
+      "shipped": "Shipped"
+    }
   }
 }

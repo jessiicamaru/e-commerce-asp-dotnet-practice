@@ -21,6 +21,17 @@ public class OrderItem
     /// same reason as the name and the price: an order has to keep describing itself.
     /// </summary>
     public string? OptionSummary { get; set; }
+    /// <summary>
+    /// Whose product this was when it was bought (specs/034), FROZEN like the name and the price. Null:
+    /// the shop's own, a line from before sellers were recorded, or a Catalog that could not say.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Frozen on purpose, the opposite of how Inventory asks who owns a variant (specs/031, live and
+    /// never cached). That is a permission on a thing NOW; this is a record of a sale THEN. Looking it
+    /// up live would hand a sale to whoever owns the product today, and lose it when it is deleted.
+    /// </remarks>
+    public Guid? SellerId { get; set; }
+
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice => Quantity * UnitPrice;

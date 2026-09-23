@@ -264,7 +264,7 @@ public class CatalogPricingService(
         // here converts; the empty string on the wire is what null looks like in protobuf.
         var price = Priced.Of(variant, wanted, _money.DefaultCurrency);
 
-        return new()
+        var described = new PricedVariant
         {
             VariantId = variant.Id.ToString(),
             ProductId = variant.ProductId.ToString(),
@@ -289,6 +289,16 @@ public class CatalogPricingService(
 
             Currency = wanted,
         };
+
+        // Whose it is (specs/034), which Order freezes onto the order line. Empty is "the shop's own"
+        // and is SET, so it reads differently from a Catalog too old to say. When the product was not
+        // loaded this cannot know either, and it leaves the field unset rather than claim the shop.
+        if (variant.Product is not null)
+        {
+            described.SellerId = variant.Product.SellerId?.ToString() ?? string.Empty;
+        }
+
+        return described;
     }
 
     private static List<Guid> ParseOrThrow(IEnumerable<string> raw)

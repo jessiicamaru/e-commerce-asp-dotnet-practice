@@ -69,6 +69,10 @@ public interface ICatalogPrices
 /// the flag cannot charge a blank.
 /// </param>
 /// <param name="Currency">Which currency <paramref name="Price"/> is in, as Catalog echoed it back.</param>
+/// <param name="SellerId">
+/// Whose product it is (specs/034); null for the shop's own - and for a Catalog too old to say, which
+/// the transport has already logged. Frozen onto the order line.
+/// </param>
 public record CatalogPrice(
     Guid ProductId,
     string Name,
@@ -77,4 +81,5 @@ public record CatalogPrice(
     Guid VariantId = default,
     string Sku = "",
     string OptionSummary = "",
-    string Currency = "");
+    string Currency = "",
+    Guid? SellerId = null);

@@ -192,6 +192,106 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         return (orders, totalCount);
     }
 
+    public async Task<(List<SaleSummaryResponse> Sales, int TotalCount)> GetSalesPageAsync(
+        Guid sellerId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var statuses = Sales.Statuses;
+
+        // Both guards in SQL: a sale is a paid order with a line of theirs. Filtering either afterwards
+        // would page over rows that are then dropped, and report a total that is not the seller's.
+        var query = _context.Orders
+            .AsNoTracking()
+            .Where(x => statuses.Contains(x.Status) && x.Items.Any(i => i.SellerId == sellerId));
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Every figure is over THIS seller's lines only (research D4). The order's own TotalAmount is
+        // not selected at all, so it cannot leak into a row by a later edit to the mapping below.
+        var rows = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.Id,
+                x.Status,
+                x.CreatedAt,
+                x.UpdatedAt,
+                x.Currency,
+                LineCount = x.Items.Count(i => i.SellerId == sellerId),
+                Units = x.Items.Where(i => i.SellerId == sellerId).Sum(i => i.Quantity),
+                Subtotal = x.Items.Where(i => i.SellerId == sellerId).Sum(i => i.UnitPrice * i.Quantity)
+            })
+            .ToListAsync(cancellationToken);
+
+        var sales = rows.Select(x => new SaleSummaryResponse(
+            x.Id,
+            OrderMapping.Describe(x.Status),
+            x.CreatedAt,
+            x.UpdatedAt,
+            x.LineCount,
+            x.Units,
+            x.Subtotal,
+            x.Currency ?? string.Empty)).ToList();
+
+        return (sales, totalCount);
+    }
+
+    public async Task<SaleDetailResponse?> GetSaleAsync(
+        Guid orderId,
+        Guid sellerId,
+        CancellationToken cancellationToken = default)
+    {
+        var statuses = Sales.Statuses;
+
+        // One query, three predicates. Loading the order and then checking would read another seller's
+        // order - or a failed one - into memory before deciding to refuse it.
+        var row = await _context.Orders
+            .AsNoTracking()
+            .Where(x => x.Id == orderId
+                && statuses.Contains(x.Status)
+                && x.Items.Any(i => i.SellerId == sellerId))
+            .Select(x => new
+            {
+                x.Id,
+                x.Status,
+                x.CreatedAt,
+                x.UpdatedAt,
+                x.Currency,
+                x.Language,
+                // Only theirs. The other lines of the order are never selected.
+                Items = x.Items
+                    .Where(i => i.SellerId == sellerId)
+                    .Select(i => new OrderItemDetailResponse(
+                        i.ProductId,
+                        i.ProductName,
+                        i.Quantity,
+                        i.UnitPrice,
+                        i.UnitPrice * i.Quantity,
+                        i.TaxAmount,
+                        i.VariantId,
+                        i.Sku,
+                        i.OptionSummary))
+                    .ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return row is null
+            ? null
+            : new SaleDetailResponse(
+                row.Id,
+                OrderMapping.Describe(row.Status),
+                row.CreatedAt,
+                row.UpdatedAt,
+                row.Items,
+                row.Items.Sum(i => i.TotalPrice),
+                row.Currency ?? string.Empty,
+                row.Language ?? string.Empty);
+    }
+
     public async Task<Domain.Entities.Order?> GetByIdForUserAsync(
         Guid orderId,
         Guid userId,

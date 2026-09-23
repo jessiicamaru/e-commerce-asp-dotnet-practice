@@ -17,5 +17,7 @@ export const queryKeys = {
   checkoutQuote: (choice: CheckoutChoice) => ['checkout-quote', choice] as const,
   order: (id: string) => ['order', id] as const,
   myOrders: (page: number) => ['orders', page] as const,
+  mySales: (page: number) => ['sales', page] as const,
+  sale: (id: string) => ['sale', id] as const,
   health: () => ['health'] as const,
 }

@@ -64,5 +64,29 @@
     "title": "Ảnh của phiên bản này",
     "hint": "Không bắt buộc. Nếu không có, phiên bản này dùng ảnh chung của sản phẩm.",
     "remove": "Dùng ảnh chung của sản phẩm"
+  },
+  "sales": {
+    "title": "Đơn đã bán",
+    "link": "Đơn đã bán",
+    "subtitle": "Các đơn có hàng bạn đăng bán. Bạn chỉ thấy phần của mình - không thấy phần còn lại của đơn, người mua hay nơi giao.",
+    "none": "Chưa có ai mua hàng bạn đăng. Đơn sẽ hiện ở đây sau khi đã thanh toán.",
+    "loadFailed": "Không tải được danh sách đơn đã bán.",
+    "lines_one": "{{count}} dòng của bạn",
+    "lines_other": "{{count}} dòng của bạn",
+    "units_one": "{{count}} sản phẩm",
+    "units_other": "{{count}} sản phẩm",
+    "subtotal": "Phần của bạn",
+    "subtotalHint": "Chưa gồm thuế. Phí giao và thuế tính trên cả đơn, không thuộc riêng phần của một người bán.",
+    "newer": "Mới hơn",
+    "older": "Cũ hơn",
+    "back": "← Đơn đã bán",
+    "placedAt": "Đặt lúc {{at}}",
+    "notFound": "Không tìm thấy đơn.",
+    "quantity": "× {{count}}",
+    "status": {
+      "paid": "Đã thanh toán - chờ chuẩn bị",
+      "preparing": "Đang chuẩn bị",
+      "shipped": "Đã gửi đi"
+    }
   }
 }

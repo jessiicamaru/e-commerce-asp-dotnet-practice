@@ -13,6 +13,8 @@ import { ProductPage } from '@/pages/product'
 import { ShopPage } from '@/pages/shop'
 import { SellerProductPage } from '@/pages/shop-product'
 import { NewProductPage } from '@/pages/shop-product-new'
+import { ShopSalePage } from '@/pages/shop-sale'
+import { ShopSalesPage } from '@/pages/shop-sales'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -99,6 +101,22 @@ export function AppRoutes() {
             element={
               <RequireRole role="Seller">
                 <SellerProductPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/shop/sales"
+            element={
+              <RequireRole role="Seller">
+                <ShopSalesPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/shop/sales/:id"
+            element={
+              <RequireRole role="Seller">
+                <ShopSalePage />
               </RequireRole>
             }
           />

@@ -81,3 +81,45 @@ export interface CheckoutChoice {
   addressId: string | null
   shippingOption: string
 }
+
+/**
+ * One order holding at least one of the signed-in seller's lines (specs/034).
+ *
+ * Every amount is over the SELLER'S lines only. There is deliberately no order total here: on an
+ * order mixing sellers it includes goods that are not theirs, and delivery and tax are computed over
+ * the whole order.
+ */
+export interface SaleSummary {
+  orderId: string
+  /** `Paid`, `Preparing` or `Shipped`. A failed or still-settling order is never a sale. */
+  status: string
+  createdAt: string
+  updatedAt: string
+  lineCount: number
+  units: number
+  /** Before tax, in `currency` - the order's own, frozen at checkout. */
+  subtotal: number
+  currency: string
+}
+
+export interface SalePage {
+  items: SaleSummary[]
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
+/**
+ * One sale: the seller's own lines and nothing else. No customer, no address, no order total and no
+ * tracking reference - a seller who only looks has no use for them (specs/034 research D4).
+ */
+export interface Sale {
+  orderId: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  items: OrderLine[]
+  subtotal: number
+  currency: string
+  language: string
+}

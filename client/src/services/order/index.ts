@@ -1,7 +1,15 @@
 // The model types live in ./types, imported from there: this file's export is the class, and a
 // class and an interface cannot share a name.
 import { http } from '@/config/axios'
-import type { CheckoutChoice, Order as OrderModel, OrderPage, Quote, ShippingOption } from './types'
+import type {
+  CheckoutChoice,
+  Order as OrderModel,
+  OrderPage,
+  Quote,
+  Sale,
+  SalePage,
+  ShippingOption,
+} from './types'
 
 /**
  * Checkout and orders. The customer chooses only where and how; what is bought comes from their cart,
@@ -38,6 +46,21 @@ export class Order {
   /** The caller's own orders: there is no user id in the request (Constitution IV). */
   static async listMine(page: number, pageSize: number): Promise<OrderPage> {
     const { data } = await http.get<OrderPage>(`/orders?page=${page}&pageSize=${pageSize}`)
+    return data
+  }
+
+  /**
+   * The signed-in seller's sales (specs/034). Like `listMine`, the request names nobody: Order reads
+   * the seller from the token, so there is no id here to change into somebody else's.
+   */
+  static async sales(page: number, pageSize: number): Promise<SalePage> {
+    const { data } = await http.get<SalePage>(`/orders/sales?page=${page}&pageSize=${pageSize}`)
+    return data
+  }
+
+  /** One sale, the seller's own lines only. Not theirs and not there are the same 404. */
+  static async sale(id: string): Promise<Sale> {
+    const { data } = await http.get<Sale>(`/orders/sales/${id}`)
     return data
   }
 }
