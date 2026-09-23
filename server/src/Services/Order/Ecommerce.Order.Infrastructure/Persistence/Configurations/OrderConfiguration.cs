@@ -55,6 +55,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
         builder.Property(x => x.TaxTotal).HasPrecision(18, 2);
         builder.Property(x => x.DiscountTotal).HasPrecision(18, 2);
         builder.Property(x => x.TaxRate).HasPrecision(5, 4);
+        builder.Property(x => x.CommissionRate).HasPrecision(5, 4);
 
         // Feature 022 - the currency every amount above is in. Nullable, because an order placed
         // before this feature recorded amounts whose currency nobody stated, and writing one in now
@@ -71,6 +72,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
                 "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" = 0");
             t.HasCheckConstraint("CK_orders_tax_rate_range",
                 "\"TaxRate\" IS NULL OR (\"TaxRate\" >= 0 AND \"TaxRate\" < 1)");
+            t.HasCheckConstraint("CK_orders_commission_rate_range",
+                "\"CommissionRate\" IS NULL OR (\"CommissionRate\" >= 0 AND \"CommissionRate\" < 1)");
         });
 
         // Staff work the fulfilment queue by status, oldest first.

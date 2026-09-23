@@ -90,7 +90,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (103 tests,
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (138 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -174,7 +174,7 @@ so.
 | Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
-| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035) |
+| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money** |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
@@ -373,12 +373,29 @@ stays `Paid` / `Preparing` / `Shipped`, and the customer learns "1 of 2" from th
 written at checkout **and created on demand** before every move, in the order's own state, because
 an older image writes orders without them during a rollback; the migration backfilled existing
 orders the same way. A seller sees the delivery address **only while their part is waiting or
-being prepared**. The delivery charge is not split between parts. Since specs/036 each parcel and each order line
+being prepared**. Since specs/036 each parcel and each order line
 also says **which shop** it comes from: `order_items.SellerName`, frozen at checkout from
 `PricedVariant.seller_name` (Catalog fills it from its `sellers` read model, one batched lookup per
 request), so a shop renamed afterwards does not rename an order. Unset for the shop's own goods and for
 a seller Catalog has not heard of yet - never an empty string or an id; the storefront words the shop's
 own parcel itself.
+
+**The shop knows what it owes each seller** (specs/037). At checkout the order freezes
+`orders.CommissionRate` (`Marketplace:CommissionRate`, one rate for everybody; Order refuses to start
+without it rather than read it as zero) and each part freezes `GoodsTotal`, `Commission` and
+`ShippingShare` - the delivery charge split **equally** between the parts in the currency's smallest
+unit, the remainder to the first (shop first, then by seller id), pure code in `Earnings`. Commission is
+on goods **before tax**; tax stays with the shop, which charged it. The shop's own part takes no
+commission and keeps its share. A part is money only on a **paid** order - ⚠️ checkout writes a failed
+order's parts too, so the status filter is what keeps a declined payment out of a balance - and is *on
+the way* until shipped, *due* once shipped, *paid out* once a payout claims it. `POST
+/api/orders/payouts` (Admin) settles a seller in one currency with **one statement**: a CTE `UPDATE …
+SET "PayoutId" … WHERE "PayoutId" IS NULL … RETURNING` claims the parts and the `INSERT` records the
+sum of exactly those, `HAVING count(*) > 0` - so of two administrators at once the second claims
+nothing and gets 409, and there is no amount in the request to disagree with the parts. ⚠️ **Orders
+from before this have no terms and are owed nothing by this system** (nulls, never zeros; applying
+today's rate would be inventing yesterday's agreement), and neither are parts created on demand for an
+older image's order. Payment is still a stub: a payout is a ledger entry, not a transfer.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

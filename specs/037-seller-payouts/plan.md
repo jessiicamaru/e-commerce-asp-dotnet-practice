@@ -5,15 +5,15 @@
 
 ## Technical Context
 
-- **Order only.** Configuration `Marketplace:CommissionRate` (0.10), read by `ConfiguredCommission`
+- **Order only.** Configuration `Marketplace:CommissionRate` (0.10), read by `ConfiguredCommissionRate`
   (`ICommissionRate`) and checked at startup like `Tax`.
-- **Checkout**: `DeliverySplit.Split` (pure) and `PartEarnings` fill each part's `GoodsTotal`,
+- **Checkout**: `Earnings.SplitDelivery` and `Earnings.ForPart` (pure) fill each part's `GoodsTotal`,
   `Commission`, `ShippingShare`; the order records `CommissionRate`. `CheckoutPricing` gains the
   currency's decimals on its result so the split rounds right.
 - **Reads**: sale summary and detail gain earnings; `GetMyBalanceQuery`, `GetMyPayoutsQuery`,
   `GetPayoutsDueQuery`.
-- **Write**: `RecordPayoutCommand` → `IOrderRepository.TryRecordPayoutAsync` (research D5) inside the
-  execution strategy.
+- **Write**: `RecordPayoutCommand` → `IPayoutRepository.TryRecordAsync` (research D5): one SQL
+  statement, so there is no transaction for the caller to open.
 - **Client**: seller console gains "Thanh toán" (`/shop/payouts`): balance per currency and the payout
   history; sale detail shows goods, commission, delivery share and payout.
 

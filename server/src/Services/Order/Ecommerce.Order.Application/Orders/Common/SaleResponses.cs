@@ -30,6 +30,11 @@ public static class Sales
 /// <param name="Subtotal">
 /// <c>Σ unit price × quantity</c> over the caller's lines, before tax, in <paramref name="Currency"/>.
 /// </param>
+/// <param name="Payout">
+/// What the shop owes the caller for this sale: <c>GoodsTotal - Commission + ShippingShare</c> (specs/037).
+/// All four are null when the terms were not recorded - an order from before that.
+/// </param>
+/// <param name="PaidOut">Whether a payout has covered it.</param>
 /// <remarks>
 /// ⚠️ <b>No order total</b>, on purpose (research D4): on an order mixing sellers it includes goods that
 /// are not the caller's, and delivery and tax are computed over the whole order.
@@ -42,7 +47,12 @@ public record SaleSummaryResponse(
     int LineCount,
     int Units,
     decimal Subtotal,
-    string Currency);
+    string Currency,
+    decimal? GoodsTotal = null,
+    decimal? Commission = null,
+    decimal? ShippingShare = null,
+    decimal? Payout = null,
+    bool PaidOut = false);
 
 /// <summary>
 /// One sale: the caller's own lines of one order, and nothing that describes the rest of it.
@@ -71,4 +81,9 @@ public record SaleDetailResponse(
     string Currency,
     string Language,
     string? TrackingReference = null,
-    ShippingAddressResponse? ShippingAddress = null);
+    ShippingAddressResponse? ShippingAddress = null,
+    decimal? GoodsTotal = null,
+    decimal? Commission = null,
+    decimal? ShippingShare = null,
+    decimal? Payout = null,
+    bool PaidOut = false);

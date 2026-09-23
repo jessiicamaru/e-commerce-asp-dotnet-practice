@@ -8,6 +8,7 @@ import i18n from '@/config/i18n'
 import { Order } from '@/services/order'
 import type { Sale } from '@/services/order/types'
 import { ShopSalePage } from '.'
+import { noEarnings } from '@/test/fixtures'
 
 function renderAt(id: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -39,6 +40,7 @@ function sale(status: string, overrides: Partial<Sale> = {}): Sale {
     subtotal: 2798,
     trackingReference: null,
     shippingAddress: status === 'Shipped' ? null : address,
+    ...noEarnings,
     items: [{
       productId: 'p1', productName: 'Sony A7 IV', variantId: 'v1', sku: 'SONY-A7M4',
       optionSummary: 'Kit: Body only', quantity: 2, unitPrice: 1399, totalPrice: 2798, taxAmount: 279.8,
@@ -66,10 +68,23 @@ describe('ShopSalePage', () => {
     renderAt('o-1')
 
     // The subtotal line, not the line total beside it - both say $2,798.00 on a one-line sale.
-    const subtotal = (await screen.findByText(/Delivery and tax belong/)).previousElementSibling
+    const subtotal = (await screen.findByText(/Before tax, your goods only/)).previousElementSibling
     expect(subtotal).toHaveTextContent('$2,798.00')
-    // Said on the page, because a subtotal next to "your lines" otherwise reads as the whole order.
-    expect(screen.getByText(/Delivery and tax belong to the whole order/)).toBeInTheDocument()
+    // Said on the page, because a subtotal next to "your lines" otherwise reads as what they are paid.
+    expect(screen.getByText(/commission and your share of delivery are under/)).toBeInTheDocument()
+  })
+
+  /** specs/037: what the sale earns them sits beside the lines, in the order's own currency. */
+  it('shows what the sale earns the seller', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', {
+      goodsTotal: 2798, commission: 279.8, shippingShare: 2.5, payout: 2520.7, paidOut: false,
+    }))
+    renderAt('o-1')
+
+    const earnings = (await screen.findByText('You receive', { selector: '[data-slot="card-title"]' })).closest('[data-slot="card"]') as HTMLElement
+    expect(within(earnings).getByText('$279.80')).toBeInTheDocument()
+    expect(within(earnings).getByText('$2,520.70')).toBeInTheDocument()
+    expect(within(earnings).getByText('Due')).toBeInTheDocument()
   })
 
   /**

@@ -82,7 +82,7 @@
     "units_one": "{{count}} sản phẩm",
     "units_other": "{{count}} sản phẩm",
     "subtotal": "Phần của bạn",
-    "subtotalHint": "Chưa gồm thuế. Phí giao và thuế tính trên cả đơn, không thuộc riêng phần của một người bán.",
+    "subtotalHint": "Chưa gồm thuế, chỉ tiền hàng của bạn. Hoa hồng và phần phí giao của bạn nằm ở mục “Bạn nhận”.",
     "newer": "Mới hơn",
     "older": "Cũ hơn",
     "back": "← Đơn đã bán",
@@ -98,7 +98,8 @@
   "menu": {
     "overview": "Tổng quan",
     "products": "Sản phẩm",
-    "sales": "Đơn đã bán"
+    "sales": "Đơn đã bán",
+    "payouts": "Thanh toán"
   },
   "overview": {
     "subtitle": "Tình hình gian hàng và những việc cần bạn xử lý.",
@@ -154,5 +155,39 @@
     "trackingIs": "Mã vận đơn:",
     "shipTo": "Giao tới",
     "addressGone": "Kiện hàng đã được gửi, nên địa chỉ giao không còn hiển thị."
+  },
+  "earnings": {
+    "title": "Bạn nhận",
+    "goods": "Tiền hàng (chưa thuế)",
+    "commission": "Hoa hồng sàn",
+    "shippingShare": "Phần phí giao của bạn",
+    "payout": "Bạn nhận",
+    "unrecorded": "Đơn này đặt trước khi sàn ghi lại hoa hồng và phí giao, nên chưa có số tiền để thanh toán.",
+    "state": {
+      "onTheWay": "Đang về",
+      "due": "Đến hạn",
+      "paidOut": "Đã thanh toán"
+    },
+    "hint": {
+      "onTheWay": "Khách đã trả. Tiền đến hạn khi bạn gửi kiện hàng.",
+      "due": "Kiện đã gửi. Sàn sẽ thanh toán trong lần chi trả tới.",
+      "paidOut": "Sàn đã ghi nhận thanh toán khoản này."
+    }
+  },
+  "payouts": {
+    "title": "Thanh toán",
+    "subtitle": "Tiền sàn nợ bạn: tiền hàng trừ hoa hồng, cộng phần phí giao của bạn. Mỗi loại tiền tính riêng.",
+    "loadFailed": "Không tải được thông tin thanh toán.",
+    "nothingYet": "Chưa có khoản nào. Tiền sẽ hiện ở đây khi có đơn đã thanh toán.",
+    "balanceIn": "Số dư {{currency}}",
+    "history": "Các lần sàn đã thanh toán",
+    "none": "Sàn chưa thanh toán lần nào cho bạn.",
+    "parts_one": "{{count}} đơn",
+    "parts_other": "{{count}} đơn",
+    "columns": {
+      "date": "Ngày",
+      "sales": "Gồm",
+      "amount": "Số tiền"
+    }
   }
 }

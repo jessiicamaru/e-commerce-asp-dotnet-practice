@@ -214,6 +214,11 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.Status,
                 // THEIR part's state (specs/035), when it has one; an order an older image wrote has none.
                 Part = x.Shipments.Where(s => s.SellerId == sellerId).Select(s => (ShipmentStatus?)s.Status).FirstOrDefault(),
+                // What it earns them (specs/037), as recorded at checkout - or nulls, never recomputed.
+                Terms = x.Shipments
+                    .Where(s => s.SellerId == sellerId)
+                    .Select(s => new { s.GoodsTotal, s.Commission, s.ShippingShare, PaidOut = s.PayoutId != null })
+                    .FirstOrDefault(),
                 x.CreatedAt,
                 x.UpdatedAt,
                 x.Currency,
@@ -231,7 +236,12 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             x.LineCount,
             x.Units,
             x.Subtotal,
-            x.Currency ?? string.Empty)).ToList();
+            x.Currency ?? string.Empty,
+            x.Terms?.GoodsTotal,
+            x.Terms?.Commission,
+            x.Terms?.ShippingShare,
+            Owed(x.Terms?.GoodsTotal, x.Terms?.Commission, x.Terms?.ShippingShare),
+            x.Terms?.PaidOut ?? false)).ToList();
 
         return (sales, totalCount);
     }
@@ -260,7 +270,15 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.Language,
                 Part = x.Shipments
                     .Where(s => s.SellerId == sellerId)
-                    .Select(s => new { s.Status, s.TrackingReference })
+                    .Select(s => new
+                    {
+                        s.Status,
+                        s.TrackingReference,
+                        s.GoodsTotal,
+                        s.Commission,
+                        s.ShippingShare,
+                        PaidOut = s.PayoutId != null
+                    })
                     .FirstOrDefault(),
                 x.ShipTo,
                 // Only theirs. The other lines of the order are never selected.
@@ -305,8 +323,17 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             row.Part?.TrackingReference,
             // ⚠️ Where to send it - only while sending it is their job (specs/035 research D6). Once
             // their parcel is out, a seller holding the customer's home address has no use for it.
-            partStatus == ShipmentStatus.Shipped ? null : OrderMapping.ToResponse(row.ShipTo));
+            partStatus == ShipmentStatus.Shipped ? null : OrderMapping.ToResponse(row.ShipTo),
+            row.Part?.GoodsTotal,
+            row.Part?.Commission,
+            row.Part?.ShippingShare,
+            Owed(row.Part?.GoodsTotal, row.Part?.Commission, row.Part?.ShippingShare),
+            row.Part?.PaidOut ?? false);
     }
+
+    /// <summary>What the shop owes for a part, or null when its terms were never recorded (specs/037).</summary>
+    private static decimal? Owed(decimal? goods, decimal? commission, decimal? share) =>
+        goods is { } g && commission is { } c && share is { } d ? new PartTerms(g, c, d).Payout : null;
 
     /// <summary>Order statuses in which a part may be worked on: the order has been paid.</summary>
     private static readonly OrderStatus[] Payable =

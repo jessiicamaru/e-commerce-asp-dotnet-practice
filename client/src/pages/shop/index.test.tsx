@@ -7,6 +7,7 @@ import { Product } from '@/services/product'
 import type { Product as ProductModel } from '@/services/product/types'
 import { renderAsSeller } from '@/test/render'
 import { ShopPage } from '.'
+import { noEarnings } from '@/test/fixtures'
 
 const emptyPage = {
   items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false,
@@ -23,7 +24,7 @@ function listing(id: string, name: string, availability: string): ProductModel {
 function sale(orderId: string, subtotal: number, currency: string): SaleSummary {
   return {
     orderId, status: 'Paid', createdAt: '2026-09-23T08:00:00Z', updatedAt: '2026-09-23T08:00:00Z',
-    lineCount: 1, units: 1, subtotal, currency,
+    lineCount: 1, units: 1, subtotal, currency, ...noEarnings,
   }
 }
 

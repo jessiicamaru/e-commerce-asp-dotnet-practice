@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using Ecommerce.Order.Infrastructure.Identity;
+using Ecommerce.Order.Infrastructure.Marketplace;
 using Ecommerce.Order.Infrastructure.Shipping;
 using Ecommerce.Order.Infrastructure.Tax;
 
@@ -30,6 +31,7 @@ public static class DependencyInjection
                     errorCodesToAdd: null)));
 
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPayoutRepository, PayoutRepository>();
 
         // The first synchronous cross-service call in this system. Everything else is messages.
         //
@@ -65,6 +67,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
         services.AddSingleton<ITaxRates, ConfiguredTaxRates>();
+        services.AddSingleton<ICommissionRate, ConfiguredCommissionRate>();
 
         return services;
     }

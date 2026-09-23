@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { OrderLines } from '@/components/order/order-lines'
 import { SaleActions } from '@/components/seller/sale-actions'
+import { SaleEarnings } from '@/components/seller/sale-earnings'
 import { Price } from '@/components/shared/price'
 import { LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
@@ -92,7 +93,17 @@ export function ShopSalePage() {
           </Card>
         </div>
 
-        <Card className="rounded-3xl lg:sticky lg:top-28">
+        <div className="grid gap-6 lg:sticky lg:top-28">
+        <Card className="rounded-3xl">
+          <CardHeader>
+            <CardTitle>{t('earnings.title')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SaleEarnings sale={data} />
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPinIcon className="size-4.5" /> {t('fulfil.shipTo')}
@@ -114,6 +125,7 @@ export function ShopSalePage() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </section>
   )

@@ -1,0 +1,39 @@
+info:
+  name: staff see what is due to sellers
+  type: http
+  seq: 18
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/payouts/due"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a seller who has sold nothing is owed nothing", function() {
+          expect(res.body).to.be.an("array");
+          var mine = res.body.filter(function(row) { return row.sellerId === bru.getVar("sellerId"); });
+          expect(mine).to.have.length(0);
+        });
+        test("each row names a seller, a currency and an amount", function() {
+          res.body.forEach(function(row) {
+            expect(row).to.have.all.keys("sellerId", "sellerName", "currency", "due", "parts");
+            expect(row.due).to.be.above(0);
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Staff's worklist (specs/037): every seller with a shipped part not yet paid out, per currency.

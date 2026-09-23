@@ -1,0 +1,40 @@
+info:
+  name: paying a seller who is owed nothing is 409
+  type: http
+  seq: 19
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/payouts"
+  body:
+    type: json
+    data: |-
+      {
+        "sellerId": "{{sellerId}}",
+        "currency": "VND"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("says nothing is due, in the currency asked about", function() {
+          expect(res.body.detail || res.body.title).to.contain("VND");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A payout covers what is due and nothing else; nothing due is refused and records nothing (specs/037).
+  The same 409 answers the second of two administrators settling one seller at once -
+  `Simultaneous_payouts_pay_each_part_exactly_once` proves that half, which one collection run cannot.

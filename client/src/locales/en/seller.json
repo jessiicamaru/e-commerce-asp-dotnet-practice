@@ -82,7 +82,7 @@
     "units_one": "{{count}} unit",
     "units_other": "{{count}} units",
     "subtotal": "Your lines",
-    "subtotalHint": "Before tax. Delivery and tax belong to the whole order, not to one seller's part of it.",
+    "subtotalHint": "Before tax, your goods only. The commission and your share of delivery are under “You receive”.",
     "newer": "Newer",
     "older": "Older",
     "back": "← Sales",
@@ -98,7 +98,8 @@
   "menu": {
     "overview": "Overview",
     "products": "Products",
-    "sales": "Sales"
+    "sales": "Sales",
+    "payouts": "Payouts"
   },
   "overview": {
     "subtitle": "How your shop is doing, and what needs you.",
@@ -155,5 +156,39 @@
     "trackingIs": "Tracking reference:",
     "shipTo": "Ship to",
     "addressGone": "Your parcel has been sent, so the delivery address is no longer shown."
+  },
+  "earnings": {
+    "title": "You receive",
+    "goods": "Goods (before tax)",
+    "commission": "Marketplace commission",
+    "shippingShare": "Your share of delivery",
+    "payout": "You receive",
+    "unrecorded": "This order was placed before the shop recorded commission and delivery shares, so there is no amount to pay out for it.",
+    "state": {
+      "onTheWay": "On the way",
+      "due": "Due",
+      "paidOut": "Paid out"
+    },
+    "hint": {
+      "onTheWay": "The customer has paid. It becomes due once you send your parcel.",
+      "due": "Your parcel is sent. The shop settles it in its next payout.",
+      "paidOut": "The shop has recorded paying you for this."
+    }
+  },
+  "payouts": {
+    "title": "Payouts",
+    "subtitle": "What the shop owes you: your goods less commission, plus your share of delivery. Each currency on its own.",
+    "loadFailed": "Could not load your payouts.",
+    "nothingYet": "Nothing yet. Money shows here once an order with your goods is paid.",
+    "balanceIn": "Balance in {{currency}}",
+    "history": "Payouts made to you",
+    "none": "The shop has not paid you out yet.",
+    "parts_one": "{{count}} sale",
+    "parts_other": "{{count}} sales",
+    "columns": {
+      "date": "Date",
+      "sales": "Covers",
+      "amount": "Amount"
+    }
   }
 }

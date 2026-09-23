@@ -31,5 +31,24 @@ public class OrderShipment
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    // What this part earns whoever ships it (specs/037), frozen at checkout. All three are set or none
+    // is: null means the terms were never recorded - an order from before this, or a part created on
+    // demand for an order an older image wrote - and such a part is owed nothing by this system.
+
+    /// <summary>Σ unit price × quantity of this part's lines, before tax.</summary>
+    public decimal? GoodsTotal { get; set; }
+
+    /// <summary>The marketplace's commission on <see cref="GoodsTotal"/>; 0 on the shop's own part.</summary>
+    public decimal? Commission { get; set; }
+
+    /// <summary>This part's share of the order's delivery charge. The shares sum to the charge.</summary>
+    public decimal? ShippingShare { get; set; }
+
+    /// <summary>
+    /// The payout that settled this part, once one has. Set once, by a guarded statement, and never
+    /// cleared - a part is paid at most once (specs/037 research D5).
+    /// </summary>
+    public Guid? PayoutId { get; set; }
+
     public Order? Order { get; set; }
 }

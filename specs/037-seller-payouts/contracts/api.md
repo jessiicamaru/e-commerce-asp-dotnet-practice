@@ -37,5 +37,5 @@ Paged (default 12): `{ items: [{ id, amount, currency, partCount, createdAt }], 
 ### `POST /api/orders/payouts`
 
 Body `{ "sellerId": "…", "currency": "VND" }` → **201** `{ id, sellerId, currency, amount, partCount, createdAt }`.
-**409** `Nothing is due to this seller in VND.` when no part is due. **400** on a missing seller or an
-unsupported currency.
+**409** `Nothing is due to this seller in VND.` when no part is due - including a currency nothing was
+ever sold in. **400** on a missing seller or a currency that is not three letters.

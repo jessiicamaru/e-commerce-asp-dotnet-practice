@@ -17,6 +17,7 @@ public class SubmitOrderCommandHandler(
     IPublishEndpoint publishEndpoint,
     ICurrentUser currentUser,
     CheckoutPricing pricing,
+    ICommissionRate commission,
     ILogger<SubmitOrderCommandHandler> logger
 ) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
@@ -24,6 +25,7 @@ public class SubmitOrderCommandHandler(
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly CheckoutPricing _pricing = pricing;
+    private readonly ICommissionRate _commission = commission;
     private readonly ILogger<SubmitOrderCommandHandler> _logger = logger;
 
     public async Task<OrderResponse> Handle(SubmitOrderCommand request, CancellationToken cancellationToken)
@@ -79,6 +81,39 @@ public class SubmitOrderCommandHandler(
             SellerName = line.SellerName
         }).ToList();
 
+        // ...and what each part earns whoever ships it (specs/037), frozen here with the prices it is
+        // computed from. Ordered shop first, then by seller - the order the parcels are listed in, and
+        // the first part is the one that takes the remainder of an uneven split (research D2).
+        var commissionRate = _commission.Current;
+        var sellers = orderItems
+            .Select(item => item.SellerId)
+            .Distinct()
+            .OrderBy(sellerId => sellerId is not null)
+            .ThenBy(sellerId => sellerId)
+            .ToList();
+        var shares = Earnings.SplitDelivery(priced.DeliveryPrice, sellers.Count, priced.Decimals);
+        var parts = sellers.Select((sellerId, i) =>
+        {
+            var terms = Earnings.ForPart(
+                orderItems.Where(item => item.SellerId == sellerId).Sum(item => item.TotalPrice),
+                commissionRate,
+                shares[i],
+                isShop: sellerId is null,
+                priced.Decimals);
+
+            return new OrderShipment
+            {
+                Id = Guid.CreateVersion7(),
+                OrderId = orderId,
+                SellerId = sellerId,
+                Status = ShipmentStatus.Pending,
+                UpdatedAt = DateTime.UtcNow,
+                GoodsTotal = terms.GoodsTotal,
+                Commission = terms.Commission,
+                ShippingShare = terms.ShippingShare
+            };
+        }).ToList();
+
         // The grand total travels in OrderSubmittedEvent and the saga charges exactly that, so no contract
         // changes. The rate is stored, so a rate changed tomorrow never rewrites this order.
         var totalAmount = totals.Total;
@@ -117,21 +152,14 @@ public class SubmitOrderCommandHandler(
             DiscountTotal = totals.Discount,
             TaxRate = taxRate,
 
+            // The marketplace's rate now, frozen with everything else (specs/037): a rate changed
+            // tomorrow must not change what a seller earned today.
+            CommissionRate = commissionRate,
+
             // One part per seller whose goods are on this order, plus the shop's own (specs/035),
             // saved with the order in the same transaction - so there is never an order whose parts
             // are missing because a second write failed.
-            Shipments = orderItems
-                .Select(item => item.SellerId)
-                .Distinct()
-                .Select(sellerId => new OrderShipment
-                {
-                    Id = Guid.CreateVersion7(),
-                    OrderId = orderId,
-                    SellerId = sellerId,
-                    Status = ShipmentStatus.Pending,
-                    UpdatedAt = DateTime.UtcNow
-                })
-                .ToList()
+            Shipments = parts
         };
 
         // 1. Stage Order Entity in DbContext

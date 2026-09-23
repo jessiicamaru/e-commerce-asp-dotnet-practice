@@ -17,9 +17,9 @@ agreement at the moment of sale.
 ## D2 - Equal split, remainder to the first part, in minor units
 
 `share = floor(delivery / n)` in the currency's smallest unit; the remainder goes to the first part,
-and parts are ordered **shop first, then by seller id** - deterministic, so the quote and the order
-agree. 30,000 ₫ over 3 parts is 10,000 each; $2.00 over 3 is 0.68 / 0.66 / 0.66. A pure function,
-`DeliverySplit.Split`, unit-tested on its own.
+and parts are ordered **shop first, then by seller id** - the order the parcels are listed in, so the
+split is the same however often it is computed. 30,000 ₫ over 3 parts is 10,000 each; $2.00 over 3 is 0.68 / 0.66 / 0.66. A pure function,
+`Earnings.SplitDelivery`, unit-tested on its own.
 
 ## D3 - Commission on goods before tax; tax stays with the shop
 

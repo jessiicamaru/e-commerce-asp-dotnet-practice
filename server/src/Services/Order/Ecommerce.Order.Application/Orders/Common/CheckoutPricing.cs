@@ -141,7 +141,7 @@ public class CheckoutPricing(
         }).ToList();
 
         return new PricedCheckout(
-            address, shipping, lines, totals, taxRate, language, currency.Code, deliveryPrice);
+            address, shipping, lines, totals, taxRate, language, currency.Code, deliveryPrice, currency.Decimals);
     }
 }
 
@@ -173,6 +173,10 @@ public record PricedLine(
 /// What delivery costs in <paramref name="Currency"/> - resolved here rather than read off
 /// <paramref name="Shipping"/> again, so nothing downstream can pick the wrong currency's amount.
 /// </param>
+/// <param name="Decimals">
+/// The currency's minor unit, so what is derived from these amounts after pricing - a seller's share of
+/// delivery, their commission (specs/037) - rounds the way the total did.
+/// </param>
 public record PricedCheckout(
     AddressCopy Address,
     ShippingOption Shipping,
@@ -181,4 +185,5 @@ public record PricedCheckout(
     decimal TaxRate,
     string Language = "",
     string Currency = "",
-    decimal DeliveryPrice = 0);
+    decimal DeliveryPrice = 0,
+    int Decimals = OrderTotals.DefaultDecimals);

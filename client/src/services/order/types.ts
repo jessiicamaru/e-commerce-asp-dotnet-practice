@@ -122,6 +122,17 @@ export interface SaleSummary {
   /** Before tax, in `currency` - the order's own, frozen at checkout. */
   subtotal: number
   currency: string
+  /**
+   * What the shop owes the seller for this sale (specs/037), frozen at checkout: goods before tax, less
+   * the marketplace's commission, plus their share of the delivery charge. All four are null on an
+   * order placed before that, whose terms were never recorded - never a zero.
+   */
+  goodsTotal: number | null
+  commission: number | null
+  shippingShare: number | null
+  payout: number | null
+  /** Whether a payout has covered it. */
+  paidOut: boolean
 }
 
 export interface SalePage {
@@ -149,4 +160,45 @@ export interface Sale {
   trackingReference: string | null
   /** Where to send it - present ONLY while their part is waiting or being prepared (research D6). */
   shippingAddress: AddressFields | null
+  /**
+   * What the shop owes the seller for this sale (specs/037), frozen at checkout: goods before tax, less
+   * the marketplace's commission, plus their share of the delivery charge. All four are null on an
+   * order placed before that, whose terms were never recorded - never a zero.
+   */
+  goodsTotal: number | null
+  commission: number | null
+  shippingShare: number | null
+  payout: number | null
+  /** Whether a payout has covered it. */
+  paidOut: boolean
+}
+
+/**
+ * A seller's money in one currency (specs/037). Only paid orders count, and only those placed once the
+ * terms were being recorded.
+ */
+export interface Balance {
+  currency: string
+  /** Paid by the customer, their parcel not sent yet. */
+  onTheWay: number
+  /** Sent, not paid out yet. */
+  due: number
+  paidOut: number
+}
+
+/** One settlement of what was due, recorded by the shop. Payment is a stub: no money moved. */
+export interface Payout {
+  id: string
+  sellerId: string
+  currency: string
+  amount: number
+  partCount: number
+  createdAt: string
+}
+
+export interface PayoutPage {
+  items: Payout[]
+  page: number
+  pageSize: number
+  totalCount: number
 }
