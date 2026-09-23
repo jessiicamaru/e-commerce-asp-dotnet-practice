@@ -1,0 +1,81 @@
+# Research: A deleted product takes its picture with it
+
+## D1 - An order for a deleted product loses its picture. Is that acceptable?
+
+**Decision**: yes, and it is not a new consequence of this change.
+
+An order freezes the name, price, sku and option summary of what was bought (specs/009, specs/020) -
+it does **not** freeze the image, and never has. `DELETE /api/products/{id}/image` and a replacement
+both already change what an order page shows today, and nothing in specs/019 or specs/024 claims
+otherwise.
+
+What this change does is make the *product* deletion behave like the other three paths instead of
+being the one that quietly hoards bytes. Freezing a copy of the image onto every order line is a
+real design with a real cost - storage per order line, a second copy to keep consistent, and a
+decision about what an order page shows when the copy is missing - and it belongs to whoever decides
+that an order is a receipt with a photograph on it. Not here.
+
+**Rejected - keep the file so old orders keep their picture.** That is the behaviour being fixed,
+described as a feature. Nothing reads those bytes: the only address that serves them is
+`GET /api/products/{id}/image`, which 404s once the product is gone. Bytes no route can reach are
+not a fallback, they are a leak.
+
+## D2 - Row first or bytes first?
+
+**Decision**: row first, bytes second - the order `UploadProductImageCommand` and
+`RemoveProductImageCommand` already use, for the reason they already state.
+
+Deleting the bytes first opens a window where a live row names a file that is gone: every request
+for that image 404s while the product is still listed, and if the transaction then rolls back the
+window never closes. Deleting them second opens a window where a file exists that no row names -
+which is exactly the orphan state this feature is about, except bounded to the length of one
+handler rather than to forever, and it is the state FR-003 already accepts permanently when the
+store fails.
+
+Asymmetric failures, and the cheap one is chosen on purpose.
+
+## D3 - What happens when the store throws?
+
+**Decision**: log it with the key and carry on. The delete succeeds.
+
+`RemoveProductImageCommandHandler` already does exactly this, and its log line already says the
+file "is left behind as an orphan". Copying the wording as well as the shape means one search finds
+every place this can happen.
+
+The alternative - failing the delete - makes a leftover PNG able to stop an administrator removing
+an embarrassing row from the catalogue, which is the operation specs/024 exists for. It also cannot
+be retried into success if the store is genuinely read-only.
+
+**This is a deliberate, bounded leak**, and it is what makes the sweeper in D4 eventually necessary
+rather than merely tidy.
+
+## D4 - Does a reconciliation sweeper belong in this change?
+
+**Decision**: no. Separate issue, and this spec says so out loud rather than leaving it implied.
+
+A sweeper lists the store, asks the database which keys are current, and deletes the difference. It
+is the only thing that can recover what is already orphaned - including the two files from #66, the
+ones FR-003 will create in future, and anything lost to a crash between the two steps.
+
+It is also the only piece of this that can delete a **live** product's image. Get the query wrong,
+or run it while an upload is between its two steps, and it destroys bytes a row is pointing at. That
+risk deserves its own spec, its own tests and its own dry-run, not a paragraph at the end of a
+four-line fix.
+
+The two known orphans are deleted **by hand**, because two files is not a reason to build a robot.
+
+## D5 - Does the key need reading before the row is removed?
+
+**Decision**: yes, and for the same reason `variantIds` already is.
+
+`ProductImageKey.For(product)` reads `ImageUpdatedAt` and `ImageContentType` off the entity. After
+`Remove` plus `SaveChangesAsync` the entity is detached and its values happen to still be in memory,
+so reading it late would work today - and it would be working by accident, next to a comment
+explaining why the variant ids are collected early. Reading both in the same place is the version
+that survives somebody changing how the repository detaches.
+
+## D6 - Is `DeleteAsync` on a key that is not there safe to call?
+
+**Decision**: yes, stated by the interface: *"Removes the key. Removing what is not there is not an
+error."* No existence check is needed, and adding one would be a second opinion about a promise the
+seam already makes - and a race, since between the check and the delete nothing is holding anything.
