@@ -1,0 +1,31 @@
+info:
+  name: an administrator approves the product
+  type: http
+  seq: 17
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}/approve"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("approved", function() {
+          expect(res.body.reviewStatus).to.equal("Approved");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  On the shelf from here; the seller is told. The rest of this folder reads it as a shopper would.

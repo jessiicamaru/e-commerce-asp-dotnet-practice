@@ -136,6 +136,21 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("ReviewReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("SellerId")
                         .HasColumnType("uuid");
 
@@ -143,6 +158,9 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -153,6 +171,8 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
 
                     b.HasIndex("Sku")
                         .IsUnique();
+
+                    b.HasIndex("ReviewStatus", "SubmittedAt");
 
                     b.ToTable("products", null, t =>
                         {

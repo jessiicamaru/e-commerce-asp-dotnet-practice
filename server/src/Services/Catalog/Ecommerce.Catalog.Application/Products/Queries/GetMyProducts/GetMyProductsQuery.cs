@@ -51,7 +51,8 @@ public class GetMyProductsQueryHandler(
             language.Current,
             currency.Current.Code,
             money.Value.DefaultCurrency,
-            sellerId);
+            sellerId,
+            listedOnly: false);
 
         // Their own name, once. A seller's page is entirely their own products, so this is one row.
         var shopNames = await sellers.GetNamesAsync([sellerId], cancellationToken);

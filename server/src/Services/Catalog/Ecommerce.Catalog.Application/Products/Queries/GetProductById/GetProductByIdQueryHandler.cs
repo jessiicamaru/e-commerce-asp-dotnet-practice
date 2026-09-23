@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Shared.Localization;
@@ -13,7 +14,8 @@ public class GetProductByIdQueryHandler(
     IOptions<LanguageOptions> localization,
     IRequestCurrency currency,
     IOptions<CurrencyOptions> money,
-    ISellerRepository sellers)
+    ISellerRepository sellers,
+    Ecommerce.Shared.Authentication.ICurrentUser currentUser)
     : IRequestHandler<GetProductByIdQuery, ProductResponse?>
 {
     private readonly IProductRepository _productRepository = productRepository;
@@ -21,7 +23,9 @@ public class GetProductByIdQueryHandler(
     public async Task<ProductResponse?> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
     {
         var product = await _productRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (product == null)
+        // Not on the shelf (specs/045): its seller and staff see it; to anybody else it does not exist,
+        // the same 404 as a product that never did.
+        if (product == null || !ProductReview.MaySee(product, currentUser))
         {
             return null;
         }

@@ -84,7 +84,8 @@ public class ProductVariant
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>Can a customer buy this right now - both halves of the question.</summary>
-    public bool Sellable => IsActive && (Product?.IsActive ?? true);
+    /// <remarks>An unapproved product sells nothing, whatever its variants say (specs/045).</remarks>
+    public bool Sellable => IsActive && (Product is null || (Product.IsActive && Product.IsListed));
 
     /// <summary>
     /// Flattens options the one way, so the summary shown in a cart and the summary frozen on an order

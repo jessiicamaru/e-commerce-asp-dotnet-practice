@@ -6,7 +6,9 @@
     "payouts": "Seller payouts",
     "audit": "Audit log",
     "users": "Users",
-    "shops": "Shop applications"
+    "shops": "Shop applications",
+    "moderation": "Moderation",
+    "review": "Products to review"
   },
   "queue": {
     "title": "Orders to ship",
@@ -136,7 +138,12 @@
       "BanLifted": "Ban lifted",
       "ShopApplied": "Applied to sell",
       "ShopApproved": "Shop approved",
-      "ShopRejected": "Shop rejected"
+      "ShopRejected": "Shop rejected",
+      "ProductApproved": "Product approved",
+      "ProductRejected": "Product rejected",
+      "ProductTakenDown": "Product taken down",
+      "ProductResubmitted": "Product sent back",
+      "ProductSentForReview": "Product back in review"
     }
   },
   "users": {
@@ -209,5 +216,41 @@
     "approved": "“{{shop}}” is open.",
     "rejected": "“{{shop}}” was not approved.",
     "decided": "Decided {{when}}"
+  },
+  "review": {
+    "title": "Products to review",
+    "subtitle": "What sellers want to put on the shelf. Approving puts it on sale; rejecting tells the seller why.",
+    "tab": {
+      "Pending": "Waiting",
+      "Rejected": "Not approved",
+      "Approved": "On sale"
+    },
+    "none": "Nothing here.",
+    "loadFailed": "Could not load products.",
+    "theShop": "the shop",
+    "soldBy": "by {{shop}}",
+    "approve": "Approve",
+    "reject": "Reject…",
+    "takeDown": "Take down…",
+    "view": "Open",
+    "rejectTitle": "Reject “{{name}}”",
+    "takeDownTitle": "Take down “{{name}}”",
+    "reasonBody": "The seller reads this and may change the listing and send it back.",
+    "reason": "Reason",
+    "confirmReject": "Reject",
+    "confirmTakeDown": "Take down",
+    "approved": "“{{name}}” is on sale.",
+    "rejected": "“{{name}}” was not approved.",
+    "takenDown": "“{{name}}” is off the shelf."
+  },
+  "moderation": {
+    "title": "Moderation",
+    "subtitle": "What is waiting for you, and what you decided lately.",
+    "productsWaiting": "Products waiting",
+    "shopsWaiting": "Shops waiting",
+    "open": "Open the queue",
+    "recent": "Your recent decisions",
+    "noneRecent": "You have not decided anything yet.",
+    "loadFailed": "Could not load."
   }
 }

@@ -1,7 +1,7 @@
 info:
   name: a seller cannot ship a part that is not theirs
   type: http
-  seq: 25
+  seq: 35
 
 http:
   method: POST

@@ -80,6 +80,34 @@ public class Product
     /// <see cref="ImageContentType"/> or not at all; the database enforces it.
     /// </summary>
     public DateTime? ImageUpdatedAt { get; set; }
+    /// <summary>
+    /// Whether the catalogue may show and sell it (specs/045). A seller's new product waits for a
+    /// moderator; the shop's own are approved as listed. Stored as text, and every product from before
+    /// this reads Approved.
+    /// </summary>
+    public ProductReviewStatus ReviewStatus { get; set; } = ProductReviewStatus.Approved;
+
+    /// <summary>Why it was rejected or taken down - the seller reads this.</summary>
+    public string? ReviewReason { get; set; }
+
+    /// <summary>When it last went into the queue: listed, resubmitted, or edited after approval.</summary>
+    public DateTime? SubmittedAt { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public Guid? ReviewedBy { get; set; }
+
+    /// <summary>On the shelf: approved. Everything public and everything sellable asks this.</summary>
+    public bool IsListed => ReviewStatus == ProductReviewStatus.Approved;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Where a product stands with the moderators (specs/045).</summary>
+public enum ProductReviewStatus
+{
+    Approved,
+    Pending,
+    Rejected
 }

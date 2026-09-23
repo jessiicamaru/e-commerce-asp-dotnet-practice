@@ -26,8 +26,27 @@ public interface IProductRepository : ILiveImageKeys
     /// Which language's translations to search as well as the default text (specs/021). Empty searches
     /// the default text only, which is what a caller with no request does.
     /// </param>
-    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "", string currency = "", string defaultCurrency = "", Guid? sellerId = null);
+    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "", string currency = "", string defaultCurrency = "", Guid? sellerId = null, bool listedOnly = true);
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
+
+    /// <summary>The moderators' queue or history for one review status (specs/045), with what a card shows.</summary>
+    Task<(List<Product> Items, int TotalCount)> GetForReviewAsync(
+        ProductReviewStatus status, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Moves a product between review states with a guarded <c>UPDATE ... WHERE "ReviewStatus" IN (from)</c>,
+    /// in one transaction with what <paramref name="stage"/> writes (the audit entry, the notice). Only the
+    /// winner's stage runs. Returns whether this call moved it.
+    /// </summary>
+    Task<bool> TryReviewAsync(
+        Guid productId,
+        IReadOnlyCollection<ProductReviewStatus> from,
+        ProductReviewStatus to,
+        string? reason,
+        Guid? reviewedBy,
+        DateTime at,
+        Func<CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Stages a product and every shape of it for deletion (specs/024).

@@ -15,6 +15,7 @@ function renderConsole(as: typeof renderAsAdmin) {
         <Route index element={<AdminHome />} />
         <Route path="users" element={<p>the users page</p>} />
         <Route path="shops" element={<p>the shops page</p>} />
+        <Route path="moderation" element={<p>the moderation page</p>} />
       </Route>
     </Routes>,
     '/admin',
@@ -31,16 +32,16 @@ describe('AdminLayout (specs/043)', () => {
   it('shows an administrator every page', async () => {
     renderConsole(renderAsAdmin)
 
-    for (const name of ['Orders to ship', 'Seller payouts', 'Shop applications', 'Users', 'Audit log']) {
+    for (const name of ['Orders to ship', 'Seller payouts', 'Moderation', 'Products to review', 'Shop applications', 'Users', 'Audit log']) {
       expect(await screen.findByRole('link', { name: new RegExp(name) })).toBeInTheDocument()
     }
   })
 
   /** A link to a page that answers 403 is a link to an error. */
-  it('shows a moderator only the pages a moderator can use, and opens on the shops waiting', async () => {
+  it('shows a moderator only the pages a moderator can use, and opens on their dashboard', async () => {
     renderConsole(renderAsModerator)
 
-    expect(await screen.findByText('the shops page')).toBeInTheDocument()
+    expect(await screen.findByText('the moderation page')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Shop applications/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Users/ })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Seller payouts/ })).not.toBeInTheDocument()

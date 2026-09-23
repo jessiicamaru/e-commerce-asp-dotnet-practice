@@ -29,6 +29,8 @@ export const queryKeys = {
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   accounts: (search: string, page: number) => ['accounts', search, page] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,
+  reviewQueue: (status: string, page: number) => ['review-queue', status, page] as const,
+  myDecisions: ['my-decisions'] as const,
   shopApplications: (status: string, page: number) => ['shop-applications', status, page] as const,
   auditEntry: (id: string) => ['audit-entry', id] as const,
   auditSummary: (from: string) => ['audit-summary', from] as const,

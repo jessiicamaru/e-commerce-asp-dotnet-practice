@@ -1,0 +1,39 @@
+info:
+  name: renaming it sends it back to review
+  type: http
+  seq: 51
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}/translations/vi"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno seller camera, renamed",
+        "description": "A new description after approval"
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("pending again", function() {
+          expect(res.body.reviewStatus).to.equal("Pending");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Decided with the user: a seller changing the name, the description or a photograph of an approved product
+  sends it back to the moderators and off the shelf. Prices and stock do not.

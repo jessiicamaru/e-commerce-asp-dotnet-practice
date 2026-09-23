@@ -53,7 +53,8 @@ public class RemoveProductImageCommandHandler(
 await _audit.RecordAsync(
     AuditCategory.Catalog, "ProductImageRemoved", "Product", product.Id.ToString(),
     $"Removed the photograph of \"{product.Name}\"", cancellationToken: cancellationToken);
-await _products.SaveChangesAsync(cancellationToken);
+        await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
+        await _products.SaveChangesAsync(cancellationToken);
         try
         {
             await _store.DeleteAsync(key, cancellationToken);

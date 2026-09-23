@@ -25,7 +25,15 @@ export interface Product {
   variantCount: number
   /** Filled on the product lookup, null on the listing. */
   variants: Variant[] | null
+  /**
+   * Where it stands with the moderators (specs/045). A shopper only ever sees Approved ones; its seller
+   * and staff see the rest, with the reason for a rejection.
+   */
+  reviewStatus: ReviewStatus
+  reviewReason: string | null
 }
+
+export type ReviewStatus = 'Approved' | 'Pending' | 'Rejected'
 
 /** One shape a product is sold in - what is priced, stocked and bought (specs/020). */
 export interface Variant {

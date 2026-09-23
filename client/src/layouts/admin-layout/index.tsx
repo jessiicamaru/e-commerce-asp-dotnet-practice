@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
-import { ScrollTextIcon, ShieldCheckIcon, StoreIcon, TruckIcon, UsersIcon, WalletIcon } from 'lucide-react'
+import { GavelIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TruckIcon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth/useAuth'
 import { cn } from '@/utils/shared'
 
@@ -22,6 +22,8 @@ export function AdminLayout() {
   const links = [
     { to: '/admin', end: true, icon: TruckIcon, label: t('menu.fulfilment'), adminOnly: true },
     { to: '/admin/payouts', end: false, icon: WalletIcon, label: t('menu.payouts'), adminOnly: true },
+    { to: '/admin/moderation', end: false, icon: GavelIcon, label: t('menu.moderation'), adminOnly: false },
+    { to: '/admin/products', end: false, icon: PackageCheckIcon, label: t('menu.review'), adminOnly: false },
     { to: '/admin/shops', end: false, icon: StoreIcon, label: t('menu.shops'), adminOnly: false },
     { to: '/admin/users', end: false, icon: UsersIcon, label: t('menu.users'), adminOnly: false },
     { to: '/admin/audit', end: false, icon: ScrollTextIcon, label: t('menu.audit'), adminOnly: true },

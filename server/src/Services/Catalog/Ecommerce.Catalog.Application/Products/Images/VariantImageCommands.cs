@@ -92,7 +92,8 @@ public class UploadVariantImageCommandHandler(
 await _audit.RecordAsync(
     AuditCategory.Catalog, "VariantImageSet", "Variant", variant.Id.ToString(),
     $"New photograph for {variant.Sku}", cancellationToken: cancellationToken);
-await _products.SaveChangesAsync(cancellationToken);
+        await ProductReview.AfterSellerEditAsync(variant.Product!, _currentUser, _audit, cancellationToken);
+        await _products.SaveChangesAsync(cancellationToken);
         if (previousKey is not null)
         {
             await DeleteQuietlyAsync(previousKey, "a replaced variant image");
@@ -183,7 +184,8 @@ public class RemoveVariantImageCommandHandler(
 await _audit.RecordAsync(
     AuditCategory.Catalog, "VariantImageRemoved", "Variant", variant.Id.ToString(),
     $"Removed the photograph of {variant.Sku}", cancellationToken: cancellationToken);
-await _products.SaveChangesAsync(cancellationToken);
+        await ProductReview.AfterSellerEditAsync(variant.Product!, _currentUser, _audit, cancellationToken);
+        await _products.SaveChangesAsync(cancellationToken);
         try
         {
             await _store.DeleteAsync(key, cancellationToken);

@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Shared.Localization;
@@ -170,6 +171,9 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Who did what, through the outbox with every change (specs/041).
 builder.Services.AddAuditTrail("catalog");
+
+// Telling a seller what the moderators decided (specs/045).
+builder.Services.AddNotifier();
 
 // Which language a request wants to be answered in (specs/021). A service whose responses carry text
 // a customer reads needs this; it refuses to start if the default is not one it supports.

@@ -97,7 +97,7 @@ public class CatalogPricingService(
 
                 // Whether it can be BOUGHT - the question being asked, rather than whichever flag
                 // Catalog happens to keep. Not a failure: the caller decides what to do with it.
-                Sellable = product.IsActive
+                Sellable = product.IsActive && product.IsListed
             });
         }
 
@@ -149,7 +149,7 @@ public class CatalogPricingService(
                 ProductId = product.Id.ToString(),
                 Name = product.Name,
                 Price = product.Price.ToString(CultureInfo.InvariantCulture),
-                Sellable = product.IsActive
+                Sellable = product.IsActive && product.IsListed
             });
         }
 

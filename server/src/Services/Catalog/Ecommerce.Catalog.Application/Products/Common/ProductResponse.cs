@@ -62,7 +62,11 @@ public record ProductResponse(
     string Language = "",
     string Currency = "",
     Guid? SellerId = null,
-    string? SellerName = null
+    string? SellerName = null,
+    // specs/045: where it stands with the moderators, and why, for its seller and staff. Anybody else is
+    // only ever shown Approved products, so to them this always reads Approved.
+    string ReviewStatus = "Approved",
+    string? ReviewReason = null
 )
 {
     /// <summary>
@@ -134,6 +138,8 @@ public record ProductResponse(
             // Null means the shop itself - which is every product listed before sellers existed, and
             // anything an administrator lists. The storefront words that; Catalog does not invent a
             // name for it (specs/027).
-            sellerName);
+            sellerName,
+            p.ReviewStatus.ToString(),
+            p.ReviewReason);
     }
 }

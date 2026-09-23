@@ -26,6 +26,8 @@ import { AdminHome } from '@/pages/admin-home'
 import { AdminUsersPage } from '@/pages/admin-users'
 import { AdminShopsPage } from '@/pages/admin-shops'
 import { OpenShopPage } from '@/pages/open-shop'
+import { AdminModerationPage } from '@/pages/admin-moderation'
+import { AdminProductsPage } from '@/pages/admin-products'
 import { NotificationsPage } from '@/pages/notifications'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
@@ -141,6 +143,8 @@ export function AppRoutes() {
             <Route path="audit" element={<AdminAuditPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="shops" element={<AdminShopsPage />} />
+            <Route path="moderation" element={<AdminModerationPage />} />
+            <Route path="products" element={<AdminProductsPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

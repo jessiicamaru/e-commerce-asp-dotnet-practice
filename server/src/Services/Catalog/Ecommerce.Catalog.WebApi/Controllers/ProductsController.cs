@@ -7,7 +7,9 @@ using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Products.Images.GetProductImage;
 using Ecommerce.Catalog.Application.Products.Images.RemoveProductImage;
 using Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
+using Ecommerce.Catalog.Application.Products.Review;
 using Ecommerce.Catalog.Application.Products.Translations;
+using Ecommerce.Shared.Authentication;
 using FluentValidation;
 using FluentValidation.Results;
 using Ecommerce.Catalog.Application.Products.Queries.GetMyProducts;
@@ -321,4 +323,45 @@ public class ProductsController : ApiControllerBase
         Response.Headers.XContentTypeOptions = "nosniff";
         return File(image.Content, image.ContentType);
     }
+
+    // ---- Review (specs/045). Deciding is Staff; a seller only sends their own rejected product back.
+
+    /// <summary>The moderators' queue (Pending, oldest first) or the history of one status.</summary>
+    [Authorize(Roles = StaffRoles.Staff)]
+    [HttpGet("review")]
+    public async Task<IActionResult> GetReviewQueue([FromQuery] GetReviewQueueQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
+    [Authorize(Roles = StaffRoles.Staff)]
+    [HttpPost("{id:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid id)
+    {
+        return Ok(await Mediator.Send(new ApproveProductCommand(id)));
+    }
+
+    [Authorize(Roles = StaffRoles.Staff)]
+    [HttpPost("{id:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] ReasonRequest body)
+    {
+        return Ok(await Mediator.Send(new RejectProductCommand(id, body.Reason)));
+    }
+
+    [Authorize(Roles = StaffRoles.Staff)]
+    [HttpPost("{id:guid}/take-down")]
+    public async Task<IActionResult> TakeDown(Guid id, [FromBody] ReasonRequest body)
+    {
+        return Ok(await Mediator.Send(new TakeDownProductCommand(id, body.Reason)));
+    }
+
+    /// <summary>Sends a rejected product back to the queue. The caller's own - somebody else's is 404.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPost("{id:guid}/resubmit")]
+    public async Task<IActionResult> Resubmit(Guid id)
+    {
+        return Ok(await Mediator.Send(new ResubmitProductCommand(id)));
+    }
+
+    public record ReasonRequest(string Reason);
 }

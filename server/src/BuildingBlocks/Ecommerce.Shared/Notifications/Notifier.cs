@@ -27,6 +27,11 @@ public static class NotificationKind
     // Somebody's application to sell (specs/044)
     public const string ShopApproved = "ShopApproved";
     public const string ShopRejected = "ShopRejected";
+
+    // A seller's product and the moderators (specs/045)
+    public const string ProductApproved = "ProductApproved";
+    public const string ProductRejected = "ProductRejected";
+    public const string ProductTakenDown = "ProductTakenDown";
 }
 
 /// <summary>

@@ -219,5 +219,21 @@
     "applyAgain": "You can apply again below.",
     "failed": "Could not send the application."
   },
-  "openShop": "Open a shop"
+  "openShop": "Open a shop",
+  "review": {
+    "status": {
+      "Pending": "Waiting for review",
+      "Rejected": "Not approved"
+    },
+    "title": {
+      "Pending": "Waiting for a moderator",
+      "Rejected": "Not approved"
+    },
+    "pendingBody": "Shoppers cannot see or buy it until a moderator approves it. You will be told.",
+    "rejectedBody": "Reason: {{reason}}. Change what was asked, then send it back.",
+    "resubmit": "Send back for review",
+    "resubmitted": "Sent back for review.",
+    "approvedHint": "On sale. Changing its name, description or photographs sends it back for review; prices and stock do not.",
+    "failed": "Could not send it back."
+  }
 }

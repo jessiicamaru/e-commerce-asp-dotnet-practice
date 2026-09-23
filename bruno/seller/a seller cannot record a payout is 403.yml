@@ -1,7 +1,7 @@
 info:
   name: a seller cannot record a payout is 403
   type: http
-  seq: 30
+  seq: 40
 
 http:
   method: POST

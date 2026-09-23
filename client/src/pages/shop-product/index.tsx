@@ -26,6 +26,8 @@ import { Separator } from '@/components/ui/separator'
 import { useDeleteProduct, useProductInEveryCurrency, useUploadProductImage } from '@/hooks/product'
 import { useVariantStock } from '@/hooks/stock'
 import { cn } from '@/utils/shared'
+import { ReviewBadge } from '@/components/product/review-badge'
+import { ReviewBanner } from '@/components/seller/review-banner'
 
 /**
  * One of the seller's own listings (specs/028, 031, 032): its photograph, and every variant's prices,
@@ -78,6 +80,7 @@ export function SellerProductPage() {
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-muted-foreground font-mono text-xs">{item.sku}</span>
             <Availability value={item.availability} />
+            <ReviewBadge status={item.reviewStatus} />
           </div>
         </div>
 
@@ -117,6 +120,8 @@ export function SellerProductPage() {
           </AlertDialog>
         </div>
       </header>
+
+      <ReviewBanner product={item} />
       <ServerError error={remove.error} fallback={t('listing.loadFailed')} />
 
       <div className="grid items-start gap-6 lg:grid-cols-[18rem_1fr]">

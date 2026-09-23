@@ -1,7 +1,7 @@
 info:
   name: a seller cannot read an order as staff is 403
   type: http
-  seq: 31
+  seq: 41
 
 http:
   method: GET
