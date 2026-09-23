@@ -8,7 +8,7 @@
 - [X] T006 [US3] Tests: sweep delivers only parcels shipped before the cutoff, as "Auto"; twice → once; options validation
 - [X] T007 [US3] `AutoConfirmDeliveriesCommand`, `DeliveryOptions`, `DeliveryConfirmationSweeper`, appsettings
 - [X] T008 Client: receive button per parcel and on a one-parcel order; received badges; order delivered; seller sees received; earnings; vi/en; Vitest
-- [X] T009 Bruno (received 200, repeat 200, someone else's 404, not shipped 409); verify-saga confirms the shipped parcel
+- [X] T009 Bruno (received 200, repeat 200, someone else's 404 - "not shipped" 409 is DeliveryTests', as one collection run ships only one order); verify-saga confirms the shipped parcel
 - [X] T010 Run everything; mutation checks; CLAUDE.md
 
 > Tests first this time on the server: the delivery commands, routes and responses were stubbed, and
