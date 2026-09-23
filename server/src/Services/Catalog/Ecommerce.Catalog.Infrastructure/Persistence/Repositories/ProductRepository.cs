@@ -208,7 +208,8 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         string language = "",
         string currency = "",
         string defaultCurrency = "",
-        Guid? sellerId = null)
+        Guid? sellerId = null,
+        bool listedOnly = true)
     {
         // Variants come with the page: the card shows a "from" price and whether the prices differ.
         // Translations too, or every card would fall back to the default language (specs/021), and
@@ -219,6 +220,13 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             .Include(p => p.Variants)
                 .ThenInclude(v => v.Prices)
             .AsQueryable();
+
+        // Only what the moderators approved is on the shelf (specs/045). A seller's own page asks for
+        // everything of theirs, whatever its review says.
+        if (listedOnly)
+        {
+            query = query.Where(p => p.ReviewStatus == ProductReviewStatus.Approved);
+        }
 
         if (sellerId.HasValue)
         {
@@ -295,6 +303,70 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         // prices and translations cascade from them, and the product's translations from it.
         _context.ProductVariants.RemoveRange(product.Variants);
         _context.Products.Remove(product);
+    }
+
+    public async Task<(List<Product> Items, int TotalCount)> GetForReviewAsync(
+        ProductReviewStatus status, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Products.AsNoTracking().Where(p => p.ReviewStatus == status);
+        var total = await query.CountAsync(cancellationToken);
+
+        // Pending is a queue - oldest submission first. Decided ones are history - newest first.
+        var ordered = status == ProductReviewStatus.Pending
+            ? query.OrderBy(p => p.SubmittedAt).ThenBy(p => p.Id)
+            : query.OrderByDescending(p => p.ReviewedAt ?? p.UpdatedAt).ThenBy(p => p.Id);
+
+        var items = await ordered
+            .Include(p => p.Category)
+            .Include(p => p.Translations)
+            .Include(p => p.Variants)
+                .ThenInclude(v => v.Prices)
+            .AsSplitQuery()
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
+    public async Task<bool> TryReviewAsync(
+        Guid productId,
+        IReadOnlyCollection<ProductReviewStatus> from,
+        ProductReviewStatus to,
+        string? reason,
+        Guid? reviewedBy,
+        DateTime at,
+        Func<CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // Back into the queue stamps the submission; a decision stamps the reviewer.
+            var submitting = to == ProductReviewStatus.Pending;
+            var moved = await _context.Products
+                .Where(p => p.Id == productId && from.Contains(p.ReviewStatus))
+                .ExecuteUpdateAsync(set => set
+                    .SetProperty(p => p.ReviewStatus, to)
+                    .SetProperty(p => p.ReviewReason, reason)
+                    .SetProperty(p => p.SubmittedAt, p => submitting ? at : p.SubmittedAt)
+                    .SetProperty(p => p.ReviewedAt, p => submitting ? p.ReviewedAt : at)
+                    .SetProperty(p => p.ReviewedBy, p => submitting ? p.ReviewedBy : reviewedBy), cancellationToken);
+
+            if (moved == 0)
+            {
+                return false;
+            }
+
+            await stage(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        });
     }
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

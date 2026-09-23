@@ -1,0 +1,38 @@
+info:
+  name: a moderator takes it down instead
+  type: http
+  seq: 53
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}/reject"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Bruno checks a rejection"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("rejected, with the reason the seller reads", function() {
+          expect(res.body.reviewStatus).to.equal("Rejected");
+          expect(res.body.reviewReason).to.equal("Bruno checks a rejection");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A rejection needs a reason; the seller may change the listing and send it back (resubmit).

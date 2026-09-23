@@ -1,0 +1,27 @@
+info:
+  name: the new product is not on the shelf yet
+  type: http
+  seq: 13
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/045: a seller's listing waits for a moderator. To a shopper it does not exist yet - the same 404 as
+  a product that never did - and checkout would refuse it (Catalog prices it as not for sale).

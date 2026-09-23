@@ -123,3 +123,12 @@ export const useRemoveVariantImage = (productId: string) =>
     (variantId: string) => Product.removeVariantImage(productId, variantId),
     productId,
   )
+
+/** A seller sends a rejected product back for review (specs/045); every read of it is refreshed. */
+export function useResubmitProduct(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => Product.resubmit(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product', id] }),
+  })
+}

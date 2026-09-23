@@ -20,6 +20,7 @@ import { PAGE_SIZE } from '@/constants/shared'
 import { useAuth } from '@/context/auth/useAuth'
 import { useMyProducts } from '@/hooks/product'
 import { useListingStock } from '@/hooks/stock'
+import { ReviewBadge } from '@/components/product/review-badge'
 import { StockBadge } from '@/components/product/stock-badge'
 
 /**
@@ -113,7 +114,10 @@ export function ShopProductsPage() {
                             >
                               {product.name}
                             </Link>
-                            <span className="text-muted-foreground text-xs">{product.sku}</span>
+                            <span className="text-muted-foreground flex items-center gap-2 text-xs">
+                              {product.sku}
+                              <ReviewBadge status={product.reviewStatus} />
+                            </span>
                           </span>
                         </div>
                       </TableCell>

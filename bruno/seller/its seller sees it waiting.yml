@@ -1,0 +1,31 @@
+info:
+  name: its seller sees it waiting
+  type: http
+  seq: 14
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("pending review", function() {
+          expect(res.body.reviewStatus).to.equal("Pending");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Its seller (and staff) still see it, with where it stands.

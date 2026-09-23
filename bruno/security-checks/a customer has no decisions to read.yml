@@ -1,0 +1,28 @@
+info:
+  name: a customer has no decisions to read
+  type: http
+  seq: 48
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/audit/mine"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  "My decisions" is for staff (specs/045).

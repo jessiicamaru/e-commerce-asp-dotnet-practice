@@ -24,6 +24,8 @@ const listing = {
   sellerName: 'Alice Cameras',
   priceVaries: false,
   variantCount: 1,
+  reviewStatus: 'Approved',
+  reviewReason: null,
   variants: [
     {
       id: 'p1',

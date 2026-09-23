@@ -91,7 +91,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (174 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (144 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (71 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -330,6 +330,19 @@ Reject needs a reason, and the person may apply again; one pending application p
 unique index. Shops from before this are untouched and need no application. ⚠️ The Seller role reaches a
 session at its next refresh - `/open-shop` renews it (`refreshSession`) before sending somebody to
 `/shop`, which would otherwise bounce them.
+
+**Nothing a seller lists is on sale until a moderator looks** (specs/045). `products.ReviewStatus` is
+`Approved` / `Pending` / `Rejected` as text, with a database default of `Approved` - every product from
+before, and anything an administrator lists. `Product.IsListed` is what the public listing, the public
+lookup (a 404 for anybody but its seller and staff) and **both pricing paths** ask, through
+`ProductVariant.Sellable` - so checkout refuses an unapproved product the way it refuses an inactive one,
+with no new check anywhere else. Staff approve, reject or take down (with a reason the seller reads)
+through a guarded `UPDATE ... WHERE "ReviewStatus" IN (...)`; a seller resubmits a rejected one.
+⚠️ **A seller changing an approved product's name, description or any photograph - variant photographs
+included - sends it back to review and off the shelf** (decided with the user); prices and stock do not.
+That is `ProductReview.AfterSellerEditAsync`, called before the one save in six handlers - a seventh
+edit of what a shopper reads must call it too. A moderator's console opens on `/admin/moderation`:
+what is waiting in each queue and their own decisions (`GET /api/audit/mine`, Staff).
 
 **A seller has somewhere to click** since specs/028: `/shop` lists their own products, `/shop/products/new`
 lists a new one, and `/shop/products/:id` sets prices, uploads a photograph and withdraws it. The

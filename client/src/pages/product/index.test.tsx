@@ -23,7 +23,7 @@ function aProduct(variants: Variant[]): ProductModel {
     id: 'p1', name: 'Fujifilm X-T5', description: null, price: 41000000, currency: 'VND',
     availability: 'InStock', sku: 'FUJI-XT5', categoryId: 'c1', isActive: true,
     imageUrl: '/api/products/p1/image?v=1', sellerId: null, sellerName: null,
-    priceVaries: false, variantCount: variants.length, variants,
+    priceVaries: false, variantCount: variants.length, reviewStatus: 'Approved', reviewReason: null, variants,
   }
 }
 

@@ -103,6 +103,12 @@ export class Product {
     await http.delete(`/products/${productId}`)
   }
 
+  /** A seller sends their rejected product back to the moderators (specs/045). */
+  static async resubmit(productId: string): Promise<ProductModel> {
+    const { data } = await http.post<ProductModel>(`/products/${productId}/resubmit`)
+    return data
+  }
+
   static async mine(query: ProductQuery): Promise<Page<ProductModel>> {
     const params = new URLSearchParams()
     for (const [key, value] of Object.entries(query)) {

@@ -6,7 +6,9 @@
     "payouts": "Thanh toán người bán",
     "audit": "Nhật ký",
     "users": "Người dùng",
-    "shops": "Đơn mở gian hàng"
+    "shops": "Đơn mở gian hàng",
+    "moderation": "Kiểm duyệt",
+    "review": "Sản phẩm chờ duyệt"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -136,7 +138,12 @@
       "BanLifted": "Gỡ lệnh cấm",
       "ShopApplied": "Xin mở gian hàng",
       "ShopApproved": "Duyệt gian hàng",
-      "ShopRejected": "Từ chối gian hàng"
+      "ShopRejected": "Từ chối gian hàng",
+      "ProductApproved": "Duyệt sản phẩm",
+      "ProductRejected": "Từ chối sản phẩm",
+      "ProductTakenDown": "Gỡ sản phẩm",
+      "ProductResubmitted": "Gửi duyệt lại",
+      "ProductSentForReview": "Sản phẩm phải duyệt lại"
     }
   },
   "users": {
@@ -209,5 +216,41 @@
     "approved": "Đã mở gian hàng “{{shop}}”.",
     "rejected": "Đã từ chối “{{shop}}”.",
     "decided": "Quyết định lúc {{when}}"
+  },
+  "review": {
+    "title": "Sản phẩm chờ duyệt",
+    "subtitle": "Những gì người bán muốn đưa lên kệ. Duyệt thì được bán; từ chối thì người bán được biết lý do.",
+    "tab": {
+      "Pending": "Đang chờ",
+      "Rejected": "Không được duyệt",
+      "Approved": "Đang bán"
+    },
+    "none": "Không có gì ở đây.",
+    "loadFailed": "Không tải được sản phẩm.",
+    "theShop": "cửa hàng",
+    "soldBy": "của {{shop}}",
+    "approve": "Duyệt",
+    "reject": "Từ chối…",
+    "takeDown": "Gỡ xuống…",
+    "view": "Mở",
+    "rejectTitle": "Từ chối “{{name}}”",
+    "takeDownTitle": "Gỡ “{{name}}” xuống",
+    "reasonBody": "Người bán sẽ đọc lý do này, có thể sửa rồi gửi duyệt lại.",
+    "reason": "Lý do",
+    "confirmReject": "Từ chối",
+    "confirmTakeDown": "Gỡ xuống",
+    "approved": "“{{name}}” đã được bán.",
+    "rejected": "Đã từ chối “{{name}}”.",
+    "takenDown": "Đã gỡ “{{name}}” khỏi kệ."
+  },
+  "moderation": {
+    "title": "Kiểm duyệt",
+    "subtitle": "Những gì đang chờ bạn, và những gì bạn vừa quyết định.",
+    "productsWaiting": "Sản phẩm đang chờ",
+    "shopsWaiting": "Gian hàng đang chờ",
+    "open": "Mở hàng chờ",
+    "recent": "Quyết định gần đây của bạn",
+    "noneRecent": "Bạn chưa quyết định gì.",
+    "loadFailed": "Không tải được."
   }
 }

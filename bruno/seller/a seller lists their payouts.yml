@@ -1,7 +1,7 @@
 info:
   name: a seller lists their payouts
   type: http
-  seq: 27
+  seq: 37
 
 http:
   method: GET

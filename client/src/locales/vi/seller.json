@@ -218,5 +218,21 @@
     "applyAgain": "Bạn có thể gửi đơn mới bên dưới.",
     "failed": "Không gửi được đơn đăng ký."
   },
-  "openShop": "Mở gian hàng"
+  "openShop": "Mở gian hàng",
+  "review": {
+    "status": {
+      "Pending": "Đang chờ duyệt",
+      "Rejected": "Không được duyệt"
+    },
+    "title": {
+      "Pending": "Đang chờ kiểm duyệt viên",
+      "Rejected": "Không được duyệt"
+    },
+    "pendingBody": "Khách chưa thấy và chưa mua được cho đến khi kiểm duyệt viên duyệt. Bạn sẽ được báo.",
+    "rejectedBody": "Lý do: {{reason}}. Sửa theo yêu cầu rồi gửi duyệt lại.",
+    "resubmit": "Gửi duyệt lại",
+    "resubmitted": "Đã gửi duyệt lại.",
+    "approvedHint": "Đang bán. Đổi tên, mô tả hoặc ảnh sẽ phải duyệt lại; đổi giá và tồn kho thì không.",
+    "failed": "Không gửi duyệt lại được."
+  }
 }

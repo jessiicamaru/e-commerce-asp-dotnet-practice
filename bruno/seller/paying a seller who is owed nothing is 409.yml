@@ -1,7 +1,7 @@
 info:
   name: paying a seller who is owed nothing is 409
   type: http
-  seq: 29
+  seq: 39
 
 http:
   method: POST

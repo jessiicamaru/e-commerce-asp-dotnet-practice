@@ -23,6 +23,15 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Description).HasMaxLength(2000);
         builder.Property(p => p.Sku).HasMaxLength(50).IsRequired();
         builder.HasIndex(p => p.Sku).IsUnique();
+
+        // specs/045. Text, so a row reads the same to every image that knows the column; required, and
+        // the migration fills existing rows with Approved - they were on sale before review existed.
+        builder.Property(p => p.ReviewStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(p => p.ReviewReason).HasMaxLength(500);
+        builder.Ignore(p => p.IsListed);
+
+        // The moderators' queue: pending, oldest submission first.
+        builder.HasIndex(p => new { p.ReviewStatus, p.SubmittedAt });
         builder.Property(p => p.Price).HasColumnType("decimal(18,2)");
 
         // Required, defaulting to false: a product Inventory has never announced must read as

@@ -94,6 +94,7 @@ public class UploadProductImageCommandHandler(
         await _audit.RecordAsync(
             AuditCategory.Catalog, "ProductImageSet", "Product", product.Id.ToString(),
             $"New photograph for \"{product.Name}\"", cancellationToken: cancellationToken);
+        await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
         // 3. Delete what the row no longer names.
         if (previousKey is not null)

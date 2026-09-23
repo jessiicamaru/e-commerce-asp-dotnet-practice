@@ -65,6 +65,10 @@ public class CreateProductCommandHandler(
             // An administrator's product has no seller and belongs to the SHOP ITSELF - the shape
             // every product listed before sellers existed already has (research D4).
             SellerId = _currentUser.IsInRole(RoleNames.Seller) ? _currentUser.Id : null,
+
+            // A seller's listing waits for a moderator (specs/045); the shop's own goes straight on sale.
+            ReviewStatus = ProductReview.StartsPending(_currentUser) ? ProductReviewStatus.Pending : ProductReviewStatus.Approved,
+            SubmittedAt = ProductReview.StartsPending(_currentUser) ? DateTime.UtcNow : null,
         };
 
         // Every product is sold in at least one shape, so creating one creates its first variant -

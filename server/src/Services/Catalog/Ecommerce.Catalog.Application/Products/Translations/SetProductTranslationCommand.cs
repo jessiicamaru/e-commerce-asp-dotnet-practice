@@ -126,15 +126,18 @@ public class SetProductTranslationCommandHandler(
             $"Edited the {language} name and description of \"{product.Name}\"",
             before, new { Name = request.Name.Trim(), Description = request.Description?.Trim() },
             cancellationToken: cancellationToken);
+        await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
 
         return ProductResponse.WithVariants(product, language, _localization.DefaultLanguage);
     }
 }
 
-public class RemoveProductTranslationCommandHandler(IProductRepository products, ICurrentUser currentUser)
+public class RemoveProductTranslationCommandHandler(IProductRepository products, ICurrentUser currentUser, IAuditTrail audit)
     : IRequestHandler<RemoveProductTranslationCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly ICurrentUser _currentUser = currentUser;
 
@@ -158,6 +161,7 @@ public class RemoveProductTranslationCommandHandler(IProductRepository products,
         }
 
         product.Translations.Remove(translation);
+        await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
     }
 }
