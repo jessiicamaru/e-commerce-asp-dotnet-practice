@@ -1,4 +1,6 @@
+using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
+using Ecommerce.Order.Application.Orders.Queries.GetOrderForStaff;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
@@ -22,6 +24,33 @@ public class FulfilmentTests(OrderTestFixture fixture)
     {
         await using var scope = _fixture.NewScope();
         return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
+
+    /// <summary>
+    /// specs/038: staff can read ANY order - not only their own, which is all `GetMyOrderById` allows -
+    /// because they cannot ship what they cannot see. The caller here owns nothing.
+    /// </summary>
+    [Fact]
+    public async Task Staff_read_any_order_with_its_lines_and_parcels()
+    {
+        var id = await OrderSeed.OrderInAsync(_fixture, OrderStatus.Paid);
+        await using (var scope = _fixture.NewScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IOrderRepository>().EnsureShipmentsAsync(id);
+        }
+
+        _fixture.CurrentUser.Id = Guid.CreateVersion7();
+        var order = await SendAsync(new GetOrderForStaffQuery(id));
+
+        Assert.Equal(id, order.OrderId);
+        Assert.Equal("Desk Lamp", Assert.Single(order.Items).ProductName);
+        Assert.True(Assert.Single(order.Shipments!).IsShop);
+    }
+
+    [Fact]
+    public async Task Staff_reading_an_order_that_does_not_exist_is_404()
+    {
+        await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(new GetOrderForStaffQuery(Guid.CreateVersion7())));
     }
 
     [Fact]

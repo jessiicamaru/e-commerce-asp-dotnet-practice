@@ -2,13 +2,13 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { OrderLines } from '@/components/order/order-lines'
-import { SaleActions } from '@/components/seller/sale-actions'
+import { ParcelActions } from '@/components/order/parcel-actions'
 import { SaleEarnings } from '@/components/seller/sale-earnings'
 import { Price } from '@/components/shared/price'
 import { LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useSale } from '@/hooks/order'
+import { useMoveSale, useSale } from '@/hooks/order'
 import { describeAddress } from '@/utils/address'
 
 /**
@@ -28,6 +28,7 @@ export function ShopSalePage() {
   const { t, i18n } = useTranslation('seller')
   const { id = '' } = useParams()
   const sale = useSale(id)
+  const { prepare, ship } = useMoveSale(id)
 
   const back = (
     <nav className="text-muted-foreground flex items-center gap-1 text-sm">
@@ -71,7 +72,7 @@ export function ShopSalePage() {
               <CardDescription>{t('fulfil.hint')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <SaleActions sale={data} />
+              <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
             </CardContent>
           </Card>
 

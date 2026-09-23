@@ -1,0 +1,29 @@
+info:
+  name: a seller cannot read an order as staff is 403
+  type: http
+  seq: 21
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/fulfilment/{{orderId}}"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A seller reads their own part of an order through `/api/orders/sales/{id}` (specs/034), never the whole
+  order (specs/038). Here because it needs `sellerToken`, set in this folder.

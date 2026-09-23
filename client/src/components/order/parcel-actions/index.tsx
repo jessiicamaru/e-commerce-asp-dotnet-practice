@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { UseMutationResult } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { CheckIcon, PackageIcon, TruckIcon } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,14 +17,14 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useMoveSale } from '@/hooks/order'
-import type { Sale } from '@/services/order/types'
 import { cn } from '@/utils/shared'
 
 const STEPS = ['Paid', 'Preparing', 'Shipped'] as const
 
 /**
- * Where the seller's part of an order has got to, and the one thing they can do next (specs/035).
+ * Where one parcel of an order has got to, and the one thing that can be done next (specs/035) - a
+ * seller's parcel, or the shop's in the administrator's console (specs/038). The steps and the rule are
+ * the same for both, so there is one component; the caller hands in whose mutations these are.
  *
  * <p>
  * Only ever the NEXT step: waiting → preparing → shipped, forwards, one at a time - the same rule the
@@ -31,12 +32,22 @@ const STEPS = ['Paid', 'Preparing', 'Shipped'] as const
  * one thing the customer follows and it cannot be changed afterwards.
  * </p>
  */
-export function SaleActions({ sale }: { sale: Sale }) {
+export function ParcelActions({
+  status,
+  trackingReference,
+  prepare,
+  ship,
+}: {
+  /** `Paid` (waiting), `Preparing` or `Shipped` - the PARCEL's, not the order's. */
+  status: string
+  trackingReference: string | null
+  prepare: UseMutationResult<unknown, Error, void>
+  ship: UseMutationResult<unknown, Error, string>
+}) {
   const { t } = useTranslation('seller')
-  const { prepare, ship } = useMoveSale(sale.orderId)
   const [open, setOpen] = useState(false)
   const [tracking, setTracking] = useState('')
-  const reached = STEPS.indexOf(sale.status as (typeof STEPS)[number])
+  const reached = STEPS.indexOf(status as (typeof STEPS)[number])
 
   return (
     <div className="grid gap-4">
@@ -58,7 +69,7 @@ export function SaleActions({ sale }: { sale: Sale }) {
         ))}
       </ol>
 
-      {sale.status === 'Paid' && (
+      {status === 'Paid' && (
         <Button
           className="h-10 justify-self-start rounded-full px-5 font-semibold"
           disabled={prepare.isPending}
@@ -68,7 +79,7 @@ export function SaleActions({ sale }: { sale: Sale }) {
         </Button>
       )}
 
-      {sale.status === 'Preparing' && (
+      {status === 'Preparing' && (
         <Dialog
           open={open}
           onOpenChange={(next) => {
@@ -123,9 +134,9 @@ export function SaleActions({ sale }: { sale: Sale }) {
         </Dialog>
       )}
 
-      {sale.status === 'Shipped' && sale.trackingReference && (
+      {status === 'Shipped' && trackingReference && (
         <p className="text-sm">
-          {t('fulfil.trackingIs')} <span className="font-mono font-semibold">{sale.trackingReference}</span>
+          {t('fulfil.trackingIs')} <span className="font-mono font-semibold">{trackingReference}</span>
         </p>
       )}
 

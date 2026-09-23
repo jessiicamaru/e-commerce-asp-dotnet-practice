@@ -1,0 +1,52 @@
+{
+  "nav": "Admin",
+  "title": "Running the shop",
+  "menu": {
+    "fulfilment": "Orders to ship",
+    "payouts": "Seller payouts"
+  },
+  "queue": {
+    "title": "Orders to ship",
+    "subtitle": "The shop's own parcels. Sellers send theirs themselves.",
+    "state": {
+      "Paid": "Waiting",
+      "Preparing": "Being prepared",
+      "Shipped": "Shipped"
+    },
+    "none": "No orders at this step.",
+    "loadFailed": "Could not load the orders.",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "parcels": "{{shipped}} of {{count}} parcels sent",
+    "placedAt": "Placed {{at}}"
+  },
+  "order": {
+    "back": "Orders to ship",
+    "loadFailed": "Could not load the order.",
+    "shopParcel": "The shop's parcel",
+    "shopParcelHint": "Prepare and send the shop's part of this order. The customer sees each parcel and its tracking reference.",
+    "toPack": "To pack",
+    "noShopGoods": "This order holds none of the shop's goods - each seller sends their own parcel.",
+    "shipTo": "Ship to",
+    "noAddress": "This order recorded no delivery address.",
+    "lines": "The whole order",
+    "customer": "Customer"
+  },
+  "payouts": {
+    "title": "Seller payouts",
+    "subtitle": "What is due to each seller: parcels sent, not paid out yet. Each currency on its own.",
+    "loadFailed": "Could not load what is due.",
+    "none": "Nothing is due.",
+    "columns": {
+      "seller": "Seller",
+      "parts": "Parcels",
+      "due": "Due"
+    },
+    "unnamed": "Seller {{id}}",
+    "pay": "Record payout",
+    "confirmTitle": "Record paying {{seller}}?",
+    "confirmBody": "The shop records paying {{amount}} for {{count}} parcel(s). No money is moved by this system - it is a ledger entry, and it cannot be undone.",
+    "confirm": "Record",
+    "paid": "Recorded {{amount}} to {{seller}}."
+  }
+}

@@ -30,7 +30,7 @@ function aProduct(variants: Variant[]): ProductModel {
 function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const auth = {
-    user: null, restoring: false, isSeller: false,
+    user: null, restoring: false, isSeller: false, isAdmin: false,
     signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
 
