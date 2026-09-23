@@ -49,6 +49,19 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                 .SetProperty(p => p.ImageUpdatedAt, updatedAt)
                 .SetProperty(p => p.UpdatedAt, DateTime.UtcNow), cancellationToken);
 
+    public Task<int> TrySetVariantImageAsync(
+        Guid variantId,
+        DateTime? expectedUpdatedAt,
+        string? contentType,
+        DateTime? updatedAt,
+        CancellationToken cancellationToken = default) =>
+        _context.ProductVariants
+            .Where(v => v.Id == variantId && v.ImageUpdatedAt == expectedUpdatedAt)
+            .ExecuteUpdateAsync(set => set
+                .SetProperty(v => v.ImageContentType, contentType)
+                .SetProperty(v => v.ImageUpdatedAt, updatedAt)
+                .SetProperty(v => v.UpdatedAt, DateTime.UtcNow), cancellationToken);
+
     public Task<ProductVariant?> GetVariantAsync(Guid variantId, CancellationToken cancellationToken = default) =>
         _context.ProductVariants
             .Include(v => v.Options)

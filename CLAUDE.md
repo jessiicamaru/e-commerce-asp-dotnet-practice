@@ -87,7 +87,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (115 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (122 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -523,6 +523,20 @@ a product that cannot be removed from the catalogue because of a leftover PNG is
 the leak. That bargain means orphans are still possible on purpose, and **nothing reconciles the
 directory against the table**; that sweeper is filed, not built. The type comes
 from the file's bytes, never from its `Content-Type`, and SVG is refused.
+
+**A VARIANT can have its own photograph too** (specs/032), so choosing "silver" changes the picture.
+⚠️ **It hangs on the variant, not on the option value** - one photograph per "Đen" shared by every
+black variant is refuted by the catalogue itself: `FUJI-XT5` is black body-only and `FUJI-XT5-1855`
+is black with the kit, both black and visibly different. It would also need a rule for which option
+axis is the visual one, which nothing in the data says. A variant with **no** photograph falls back
+to the product's, and ⚠️ **the fallback is resolved on the server**, in `VariantResponse.ImageUrl` -
+a client doing it too is a second place to get it wrong, and the wrong one keeps showing the
+previously chosen variant, which looks like the feature working. ⚠️ **Variant keys carry a
+`variant-` prefix and the prefix is load-bearing**: the first variant of a product reuses the
+product's id (12 of 12 products), so without it the two keys differ only by two timestamps happening
+not to agree. `FileSystemProductImageStore` validates the key shape before it becomes a path, so a
+new key form means widening that pattern too. The listing card still shows the **product's**
+picture, deliberately - a card should not show one arbitrary shape of the thing.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)

@@ -73,6 +73,20 @@ export class Product {
     await http.delete(`/products/${productId}/variants/${variantId}/prices/${currency}`)
   }
 
+  /**
+   * One SHAPE's own photograph (specs/032). Removing it makes the variant fall back to the
+   * product's, which is a real state rather than "no picture".
+   */
+  static async uploadVariantImage(productId: string, variantId: string, file: File): Promise<void> {
+    const body = new FormData()
+    body.append('file', file)
+    await http.put(`/products/${productId}/variants/${variantId}/image`, body)
+  }
+
+  static async removeVariantImage(productId: string, variantId: string): Promise<void> {
+    await http.delete(`/products/${productId}/variants/${variantId}/image`)
+  }
+
   /** One multipart part named `file` - the name the server looks for (specs/019). */
   static async uploadImage(productId: string, file: File): Promise<void> {
     const body = new FormData()

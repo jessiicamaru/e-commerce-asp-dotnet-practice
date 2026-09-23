@@ -8,7 +8,20 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
 {
     public void Configure(EntityTypeBuilder<ProductVariant> builder)
     {
-        builder.ToTable("product_variants").HasKey(v => v.Id);
+        builder.ToTable("product_variants", t =>
+        {
+            // The same two the product has (specs/019), because a variant photograph is the same
+            // kind of thing: an image is a type AND a version, or neither - half of one would give
+            // a variant an address that serves nothing.
+            t.HasCheckConstraint("CK_product_variants_image_complete",
+                "(\"ImageContentType\" IS NULL) = (\"ImageUpdatedAt\" IS NULL)");
+
+            // Only what ImageFormat recognises by its bytes - never anything a client merely claimed.
+            t.HasCheckConstraint("CK_product_variants_image_type",
+                "\"ImageContentType\" IS NULL OR \"ImageContentType\" IN ('image/jpeg', 'image/png', 'image/webp')");
+        }).HasKey(v => v.Id);
+
+        builder.Property(v => v.ImageContentType).HasMaxLength(20);
 
         // Application-generated, and for the backfilled variants it is the product's own id
         // (specs/020 research D2). Without this, EF takes a Guid key for database-generated and an

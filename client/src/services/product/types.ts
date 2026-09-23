@@ -40,6 +40,14 @@ export interface Variant {
   options: { id: string; name: string; value: string }[]
   availability: 'InStock' | 'OutOfStock' | string
   isActive: boolean
+  /**
+   * This shape's own photograph, **or the product's when it has none** (specs/032).
+   *
+   * Already resolved by the server, so nothing here implements the fallback. A client doing it
+   * itself and getting it wrong would show the previously chosen variant's picture — which looks
+   * exactly like the feature working. Null only when neither has one.
+   */
+  imageUrl: string | null
 }
 
 export interface Page<T> {

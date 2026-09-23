@@ -12,9 +12,23 @@ import type { Product } from '@/services/product/types'
  * product's id, so a given camera keeps the same tile everywhere it appears and a grid of them reads
  * as variety rather than as repetition.
  */
-export function ProductImage({ product, large = false }: { product: Product; large?: boolean }) {
+export function ProductImage({
+  product,
+  imageUrl,
+  large = false,
+}: {
+  product: Product
+  /**
+   * Shown instead of the product's — the chosen variant's picture (specs/032). Undefined means
+   * "use the product's"; the server has already folded the fallback into it, so passing
+   * `variant.imageUrl` is always correct when a variant is chosen.
+   */
+  imageUrl?: string | null
+  large?: boolean
+}) {
   const [failed, setFailed] = useState<string | null>(null)
-  const missing = !product.imageUrl || failed === product.imageUrl
+  const shown = imageUrl === undefined ? product.imageUrl : imageUrl
+  const missing = !shown || failed === shown
 
   const shape = cn(
     'w-full overflow-hidden rounded-2xl',
@@ -44,10 +58,10 @@ export function ProductImage({ product, large = false }: { product: Product; lar
   return (
     <img
       className={cn(shape, 'bg-card object-contain')}
-      src={product.imageUrl!}
+      src={shown!}
       alt={product.name}
       loading="lazy"
-      onError={() => setFailed(product.imageUrl)}
+      onError={() => setFailed(shown)}
     />
   )
 }

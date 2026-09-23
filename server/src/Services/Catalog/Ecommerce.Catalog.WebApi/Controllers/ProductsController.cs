@@ -230,4 +230,58 @@ public class ProductsController : ApiControllerBase
         Response.Headers.XContentTypeOptions = "nosniff";
         return File(image.Content, image.ContentType);
     }
+
+    /// <summary>
+    /// Give one SHAPE of a product its own photograph, or replace it (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// <b>Seller AND Admin.</b> Leaving this at Admin is how specs/027 shipped with its ownership
+    /// checks unreachable - the seller was refused at the door and the code deciding whether the
+    /// listing was hers never ran, while every unit test passed. specs/031 nearly repeated it.
+    /// Whose variant it is gets decided in the handler, because an attribute runs before any row is
+    /// read.
+    /// </remarks>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPut("{id:guid}/variants/{variantId:guid}/image")]
+    [RequestSizeLimit(ProductImageKey.MaxBytes + 64 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ProductImageKey.MaxBytes + 64 * 1024)]
+    public async Task<IActionResult> PutVariantImage(Guid id, Guid variantId, IFormFile? file)
+    {
+        if (file is null)
+        {
+            throw new ValidationException([new ValidationFailure("File", "Send the image as a multipart part named 'file'.")]);
+        }
+
+        await using var content = file.OpenReadStream();
+        await Mediator.Send(new UploadVariantImageCommand(id, variantId, content, file.Length));
+        return NoContent();
+    }
+
+    /// <summary>Take one shape's own photograph away. It then falls back to the product's.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpDelete("{id:guid}/variants/{variantId:guid}/image")]
+    public async Task<IActionResult> DeleteVariantImage(Guid id, Guid variantId)
+    {
+        await Mediator.Send(new RemoveVariantImageCommand(id, variantId));
+        return NoContent();
+    }
+
+    /// <summary>
+    /// One shape's own photograph, for anyone. 404 when it has none of its own - callers are given
+    /// the product's address by <c>VariantResponse.ImageUrl</c> and should not be here.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/variants/{variantId:guid}/image")]
+    public async Task<IActionResult> GetVariantImage(Guid id, Guid variantId, [FromQuery] string? v)
+    {
+        var image = await Mediator.Send(new GetVariantImageQuery(id, variantId));
+        if (image is null)
+        {
+            return NotFound();
+        }
+
+        Response.Headers.CacheControl = v == image.Version ? "public, max-age=31536000, immutable" : "no-cache";
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(image.Content, image.ContentType);
+    }
 }

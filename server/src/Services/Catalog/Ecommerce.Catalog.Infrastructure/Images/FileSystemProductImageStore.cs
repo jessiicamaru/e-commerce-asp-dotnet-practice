@@ -100,6 +100,10 @@ public sealed partial class FileSystemProductImageStore : IProductImageStore
         return Path.Combine(_root, key);
     }
 
-    [GeneratedRegex("^[a-z0-9]+-[0-9]+\\.(jpg|png|webp)$")]
+    // {id}-{version}.{ext}, optionally prefixed "variant-" (specs/032). The prefix is what keeps a
+    // variant's image from colliding with its product's, since the first variant of a product
+    // REUSES the product's id (specs/020). Still no slash, no dot segment, no traversal - which is
+    // the whole reason this pattern exists.
+    [GeneratedRegex("^(variant-)?[a-z0-9]+-[0-9]+\\.(jpg|png|webp)$")]
     private static partial Regex SafeKey();
 }

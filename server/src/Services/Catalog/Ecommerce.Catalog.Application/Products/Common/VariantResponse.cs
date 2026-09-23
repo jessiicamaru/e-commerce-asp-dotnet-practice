@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Domain.Entities;
 
 namespace Ecommerce.Catalog.Application.Products.Common;
@@ -25,7 +26,17 @@ public record VariantResponse(
     List<VariantOptionResponse> Options,
     string Availability,
     bool IsActive,
-    string Currency = ""
+    string Currency = "",
+    /// <summary>
+    /// This shape's own photograph, <b>or the product's when it has none</b> (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// Resolved here rather than at the caller, so the fallback is decided once. Two callers
+    /// implementing it separately is two chances to get it wrong, and the one that got it wrong
+    /// would show the previous variant's picture - which looks like the feature working.
+    /// Null only when neither the variant nor the product has one.
+    /// </remarks>
+    string? ImageUrl = null
 )
 {
     public static VariantResponse From(
@@ -58,7 +69,12 @@ public record VariantResponse(
             }).ToList(),
             ProductAvailability.From(variant.Availability),
             variant.IsActive,
-            currency);
+            currency,
+            // The variant's own, or the product's. `variant.Product` is null on paths that did not
+            // load it, and then there is nothing to fall back to - which is honest rather than a
+            // guess.
+            ProductImageKey.UrlForVariant(variant)
+                ?? (variant.Product is { } owner ? ProductImageKey.UrlFor(owner) : null));
     }
 }
 

@@ -11,8 +11,10 @@ import { useSetStock, useVariantStock } from '@/hooks/stock'
 import {
   useDeleteProduct,
   useProductInEveryCurrency,
+  useRemoveVariantImage,
   useSetVariantPrice,
   useUploadProductImage,
+  useUploadVariantImage,
 } from '@/hooks/product'
 
 /**
@@ -43,6 +45,8 @@ export function SellerProductPage() {
   const upload = useUploadProductImage(id)
   const remove = useDeleteProduct(id)
   const setStock = useSetStock(id)
+  const uploadVariant = useUploadVariantImage(id)
+  const removeVariant = useRemoveVariantImage(id)
 
   const [amounts, setAmounts] = useState<Record<string, string>>({})
   const [quantities, setQuantities] = useState<Record<string, string>>({})
@@ -133,10 +137,39 @@ export function SellerProductPage() {
                   </div>
                 )
               })}
+
+              {/* This shape's own photograph (specs/032). Absent is normal - it then shows the
+                  product's, which the server has already folded into variant.imageUrl. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold">{t('variantImage.title')}</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label={`${t('variantImage.title')} ${variant.sku}`}
+                  className="min-w-0 text-sm"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    if (file) {
+                      uploadVariant.mutate({ variantId: variant.id, file })
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full"
+                  disabled={removeVariant.isPending}
+                  onClick={() => removeVariant.mutate(variant.id)}
+                >
+                  {t('variantImage.remove')}
+                </Button>
+              </div>
+              <p className="text-muted-foreground text-xs">{t('variantImage.hint')}</p>
             </div>
           ))}
 
           <ServerError error={setPrice.error} fallback={t('listing.loadFailed')} />
+          <ServerError error={uploadVariant.error ?? removeVariant.error} fallback={t('listing.loadFailed')} />
 
           <StockEditor
             variants={variants}
