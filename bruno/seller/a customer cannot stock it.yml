@@ -1,7 +1,7 @@
 info:
   name: a customer cannot stock it
   type: http
-  seq: 11
+  seq: 21
 
 http:
   method: PUT

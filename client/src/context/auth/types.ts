@@ -19,6 +19,11 @@ export interface AuthState {
    * decided per page; what each may DO is decided by the server.
    */
   isStaff: boolean
+  /**
+   * Asks Identity for a fresh session now (specs/044) - how roles granted since sign-in, like Seller after
+   * an approval, reach this tab without signing out. False when the session could not be renewed.
+   */
+  refreshSession(): Promise<boolean>
   signIn(email: string, password: string): Promise<void>
   signUp(input: SignUpInput): Promise<void>
   signOut(): Promise<void>

@@ -9,7 +9,6 @@ using Ecommerce.Domain.Constants;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Shared.Exceptions;
 using FluentValidation;
-using MassTransit;
 using MediatR;
 using Ecommerce.Shared.Audit;
 
@@ -29,7 +28,9 @@ public record RegisterSellerCommand(
     string Password,
     string FirstName,
     string LastName,
-    string ShopName
+    string ShopName,
+    string? Description = null,
+    string? Phone = null
 ) : IRequest<AuthResponse>;
 
 public class RegisterSellerCommandValidator : AbstractValidator<RegisterSellerCommand>
@@ -62,24 +63,31 @@ public class RegisterSellerCommandValidator : AbstractValidator<RegisterSellerCo
         RuleFor(x => x.ShopName)
             .Must(n => !string.IsNullOrWhiteSpace(n)).WithMessage("Shop name is required.")
             .MaximumLength(100).WithMessage("Shop name must be at most 100 characters.");
+
+        RuleFor(x => x.Description).MaximumLength(1000);
+        RuleFor(x => x.Phone).MaximumLength(20);
     }
 }
 
+/// <summary>
+/// Opens an account and applies to sell, in one step (specs/044). The account is a customer's; the shop
+/// waits for a moderator or an administrator - until specs/044 it opened here, at once, for anybody.
+/// </summary>
 public class RegisterSellerCommandHandler(
     IUserRepository userRepository,
     IRoleRepository roleRepository,
+    IShopApplicationRepository applications,
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
-    IPublishEndpoint publishEndpoint,
     IAuditTrail audit) : IRequestHandler<RegisterSellerCommand, AuthResponse>
 {
     private readonly IAuditTrail _audit = audit;
 
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IRoleRepository _roleRepository = roleRepository;
+    private readonly IShopApplicationRepository _applications = applications;
     private readonly IPasswordHasher _passwordHasher = passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
-    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     public async Task<AuthResponse> Handle(RegisterSellerCommand request, CancellationToken cancellationToken)
     {
@@ -88,46 +96,37 @@ public class RegisterSellerCommandHandler(
             throw new ConflictException("An account with this email already exists.");
         }
 
-        // Both roles. A seller who cannot buy is a strange kind of account, and every customer-only
-        // endpoint - the cart, an order, an address - would otherwise refuse them.
-        var sellerRole = await _roleRepository.GetByNameAsync(RoleNames.Seller, cancellationToken)
-            ?? throw new InvalidOperationException(
-                $"The '{RoleNames.Seller}' role is missing. The database has not been seeded.");
-
         var customerRole = await _roleRepository.GetByNameAsync(RoleNames.Customer, cancellationToken)
             ?? throw new InvalidOperationException(
                 $"The '{RoleNames.Customer}' role is missing. The database has not been seeded.");
 
+        // Customer only. Seller comes with the approval - a shop that could list products before anybody
+        // looked at it is the thing specs/044 exists to stop.
         var user = new User
         {
             Email = request.Email.Trim(),   // stored as typed; compared through EmailKey (#49)
             PasswordHash = _passwordHasher.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            Roles = { sellerRole, customerRole },
+            Roles = { customerRole },
         };
 
         await _userRepository.AddAsync(user, cancellationToken);
 
-        var shopName = request.ShopName.Trim();
-
-        await _userRepository.AddSellerProfileAsync(new SellerProfile
+        var application = new ShopApplication
         {
             UserId = user.Id,
-            ShopName = shopName,
-        }, cancellationToken);
-
-        // Staged, then published, then saved - one transaction holding the account, the shop and the
-        // announcement (constitution III). Publishing after the save would allow a registered seller
-        // that Catalog is never told about, whose products would then read as the shop's own forever.
-        await _publishEndpoint.Publish(
-            new SellerRegisteredEvent(user.Id, shopName, DateTime.UtcNow), cancellationToken);
+            ShopName = request.ShopName.Trim(),
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
+        };
+        await _applications.AddAsync(application, cancellationToken);
 
         await _audit.RecordAsync(
-            AuditCategory.User, "ShopOpened", "User", user.Id.ToString(), $"{user.Email} opened the shop \"{shopName}\"",
-            after: new { user.Email, user.FirstName, user.LastName, ShopName = shopName, Roles = user.Roles.Select(r => r.Name) },
+            AuditCategory.User, "ShopApplied", "ShopApplication", application.Id.ToString(),
+            $"{user.Email} registered and applied to open \"{application.ShopName}\"",
+            after: new { user.Email, user.FirstName, user.LastName, application.ShopName, Roles = user.Roles.Select(r => r.Name) },
             actor: AuditActors.Of(user), cancellationToken: cancellationToken);
-        await _userRepository.SaveChangesAsync(cancellationToken);
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
         var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
@@ -139,6 +138,7 @@ public class RegisterSellerCommandHandler(
             ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay),
         });
 
+        // One save: the account, the application, the audit entry and the session commit together.
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse(

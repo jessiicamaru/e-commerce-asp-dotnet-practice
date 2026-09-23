@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSeller: user?.roles.includes('Seller') ?? false,
       isAdmin: user?.roles.includes('Admin') ?? false,
       isStaff: user?.roles.some((role) => role === 'Admin' || role === 'Moderator') ?? false,
+      refreshSession: refresh,
       async signIn(email, password) {
         accept(await Auth.signIn(email, password))
         // Whoever was signed in before, their cart and orders are not this person's.
@@ -86,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
     }),
-    [user, restoring, accept, queryClient],
+    [user, restoring, accept, queryClient, refresh],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

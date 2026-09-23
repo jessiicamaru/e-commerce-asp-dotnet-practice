@@ -32,18 +32,8 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("the token carries BOTH Seller and Customer", function() {
-          var token = res.body.token || res.body.accessToken;
-          var part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-          var claims = JSON.parse(atob(part + "===".slice((part.length + 3) % 4)));
-          var roles = [].concat(claims.role);
-          expect(roles).to.include("Seller");
-          expect(roles).to.include("Customer");
-        });
-        test("the RESPONSE says so too, so a client need not decode the token", function() {
-          expect(res.body.roles).to.be.an("array");
-          expect(res.body.roles).to.include("Seller");
-          expect(res.body.roles).to.include("Customer");
+        test("an applicant is a customer until somebody approves the shop (specs/044)", function() {
+          expect(res.body.roles).to.deep.equal(["Customer"]);
         });
         test("the response roles agree with the token's", function() {
           var token = res.body.token || res.body.accessToken;

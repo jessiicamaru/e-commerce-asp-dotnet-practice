@@ -1,7 +1,7 @@
 info:
   name: a seller cannot touch the shops product (404)
   type: http
-  seq: 4
+  seq: 14
 
 http:
   method: PUT

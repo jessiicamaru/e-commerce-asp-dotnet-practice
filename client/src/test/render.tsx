@@ -20,7 +20,7 @@ function renderWithRoles(roles: string[], children: ReactNode, path: string) {
     isSeller: roles.includes('Seller'),
     isAdmin: roles.includes('Admin'),
     isStaff: roles.includes('Admin') || roles.includes('Moderator'),
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
+    signIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 
   return render(
@@ -40,6 +40,11 @@ export function renderAsSeller(children: ReactNode, path = '/') {
 /** Signed in as an administrator (specs/038). */
 export function renderAsAdmin(children: ReactNode, path = '/') {
   return renderWithRoles(['Admin'], children, path)
+}
+
+/** Signed in as a customer who sells nothing (specs/044). */
+export function renderAsCustomer(children: ReactNode, path = '/') {
+  return renderWithRoles(['Customer'], children, path)
 }
 
 /** Signed in as a moderator, who is a customer too (specs/043). */

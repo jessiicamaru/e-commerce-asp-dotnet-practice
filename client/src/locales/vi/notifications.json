@@ -23,6 +23,8 @@
     "ParcelReceived": "Khách đã nhận kiện của bạn trong đơn {{order}}.",
     "PayoutRecorded": "Sàn đã ghi nhận trả cho bạn {{amount}}.",
     "ModeratorGranted": "Bạn đã là kiểm duyệt viên. Trang quản trị nằm trong menu của bạn.",
-    "ModeratorRevoked": "Bạn không còn là kiểm duyệt viên."
+    "ModeratorRevoked": "Bạn không còn là kiểm duyệt viên.",
+    "ShopApproved": "Gian hàng “{{shop}}” đã được duyệt. Mở từ menu của bạn.",
+    "ShopRejected": "Gian hàng “{{shop}}” không được duyệt: {{reason}}"
   }
 }

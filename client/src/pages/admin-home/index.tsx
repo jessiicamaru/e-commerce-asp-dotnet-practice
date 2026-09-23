@@ -3,10 +3,10 @@ import { useAuth } from '@/context/auth/useAuth'
 import { AdminOrdersPage } from '@/pages/admin-orders'
 
 /**
- * Where the console opens (specs/043): an administrator on the fulfilment queue, as before; a moderator,
- * who has no queue to work yet, on the people they look after.
+ * Where the console opens (specs/043, 044): an administrator on the fulfilment queue, as before; a
+ * moderator on theirs - the shops waiting for review.
  */
 export function AdminHome() {
   const { isAdmin } = useAuth()
-  return isAdmin ? <AdminOrdersPage /> : <Navigate to="/admin/users" replace />
+  return isAdmin ? <AdminOrdersPage /> : <Navigate to="/admin/shops" replace />
 }

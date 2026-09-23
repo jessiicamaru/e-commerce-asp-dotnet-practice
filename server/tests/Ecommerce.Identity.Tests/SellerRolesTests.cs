@@ -41,30 +41,28 @@ public class SellerRolesTests(IdentityTestFixture fixture)
         Assert.Equal(["Customer"], registered.Roles);
     }
 
+    /// <summary>Applying to sell grants nothing yet (specs/044): the shop waits for a moderator.</summary>
     [Fact]
-    public async Task A_seller_holds_Seller_AND_Customer()
+    public async Task Registering_to_sell_is_a_customer_with_a_pending_application()
     {
-        var email = AnEmail("seller");
-
         var registered = await SendAsync(
-            new RegisterSellerCommand(email, "Passw0rd!23", "Alice", "Nguyen", "Alice Cameras"));
+            new RegisterSellerCommand(AnEmail("applicant"), "Passw0rd!23", "Alice", "Nguyen", "Alice Cameras"));
 
-        // Both, in either order: a seller buys things too, and the storefront asks with Contains.
-        Assert.Contains("Seller", registered.Roles);
-        Assert.Contains("Customer", registered.Roles);
-        Assert.Equal(2, registered.Roles.Count);
+        Assert.Equal(["Customer"], registered.Roles);
     }
 
     [Fact]
-    public async Task Signing_in_again_reports_the_same_roles_as_registering_did()
+    public async Task An_approved_seller_holds_Seller_AND_Customer()
     {
-        var email = AnEmail("seller-login");
-        var registered = await SendAsync(
-            new RegisterSellerCommand(email, "Passw0rd!23", "Alice", "Nguyen", "Alice Cameras"));
+        var email = AnEmail("seller");
+        await _fixture.ApprovedSellerAsync(email, "Alice Cameras");
 
         var login = await SendAsync(new LoginCommand(email, "Passw0rd!23"));
 
-        Assert.Equal(registered.Roles.Order(), login.Roles.Order());
+        // Both, in either order: a seller buys things too, and the storefront asks with Contains.
+        Assert.Contains("Seller", login.Roles);
+        Assert.Contains("Customer", login.Roles);
+        Assert.Equal(2, login.Roles.Count);
     }
 
     /// <summary>
@@ -76,12 +74,12 @@ public class SellerRolesTests(IdentityTestFixture fixture)
     public async Task Refreshing_a_session_keeps_the_roles()
     {
         var email = AnEmail("seller-refresh");
-        var registered = await SendAsync(
-            new RegisterSellerCommand(email, "Passw0rd!23", "Alice", "Nguyen", "Alice Cameras"));
+        await _fixture.ApprovedSellerAsync(email, "Alice Cameras");
+        var login = await SendAsync(new LoginCommand(email, "Passw0rd!23"));
 
-        var refreshed = await SendAsync(new RefreshTokenCommand(registered.RefreshToken));
+        var refreshed = await SendAsync(new RefreshTokenCommand(login.RefreshToken));
 
         Assert.Contains("Seller", refreshed.Roles);
-        Assert.Equal(registered.Roles.Order(), refreshed.Roles.Order());
+        Assert.Equal(login.Roles.Order(), refreshed.Roles.Order());
     }
 }

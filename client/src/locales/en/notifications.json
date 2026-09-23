@@ -23,6 +23,8 @@
     "ParcelReceived": "The customer received your parcel of order {{order}}.",
     "PayoutRecorded": "The shop recorded paying you {{amount}}.",
     "ModeratorGranted": "You are now a moderator. The console is in your menu.",
-    "ModeratorRevoked": "You are no longer a moderator."
+    "ModeratorRevoked": "You are no longer a moderator.",
+    "ShopApproved": "Your shop “{{shop}}” is approved. Open it from your menu.",
+    "ShopRejected": "Your shop “{{shop}}” was not approved: {{reason}}"
   }
 }

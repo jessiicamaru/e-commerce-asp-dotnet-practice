@@ -12,6 +12,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<DeliveryAddress> DeliveryAddresses => Set<DeliveryAddress>();
     public DbSet<SellerProfile> SellerProfiles => Set<SellerProfile>();
+    public DbSet<ShopApplication> ShopApplications => Set<ShopApplication>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

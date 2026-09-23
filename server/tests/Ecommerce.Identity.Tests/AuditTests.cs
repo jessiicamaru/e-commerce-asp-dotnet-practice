@@ -57,11 +57,13 @@ public class AuditTests(IdentityTestFixture fixture)
     public async Task Renaming_a_shop_records_the_old_and_the_new_name()
     {
         var email = $"audit-{Guid.NewGuid():N}@example.test";
-        var opened = Assert.Single(await RecordedAsync(Guid.Empty,
+        var applied = Assert.Single(await RecordedAsync(Guid.Empty,
             new RegisterSellerCommand(email, "Passw0rd!23", "Mai", "Tran", "Mai Lens")));
-        Assert.Equal("ShopOpened", opened.Action);
+        Assert.Equal("ShopApplied", applied.Action);
 
-        var renamed = Assert.Single(await RecordedAsync(opened.ActorId!.Value, new RenameShopCommand("Mai Lens Ha Noi")));
+        // The shop exists once a moderator approves it (specs/044); then it can be renamed.
+        var seller = await _fixture.ApprovedSellerAsync($"audit-{Guid.NewGuid():N}@example.test", "Mai Lens");
+        var renamed = Assert.Single(await RecordedAsync(seller.Id, new RenameShopCommand("Mai Lens Ha Noi")));
 
         Assert.Equal("ShopRenamed", renamed.Action);
         Assert.Contains("Mai Lens", renamed.Before);

@@ -78,6 +78,7 @@ public class IdentityTestFixture : IAsyncLifetime
         // Sign-up and sign-in (issue #28) - the real repositories, hasher and token generator.
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IShopApplicationRepository, ShopApplicationRepository>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
@@ -97,6 +98,39 @@ public class IdentityTestFixture : IAsyncLifetime
 
         services.AddSingleton<ICurrentUser>(new FixedUser(userId, roles));
         return services.BuildServiceProvider(validateScopes: true);
+    }
+
+    /// <summary>
+    /// Registers somebody who sells and approves their application as a moderator would (specs/044) -
+    /// what a seller is now. Returns the registration's response; roles on it are the applicant's.
+    /// </summary>
+    public async Task<Ecommerce.Application.Auth.Common.AuthResponse> ApprovedSellerAsync(string email, string shopName, string password = "Passw0rd!23")
+    {
+        Ecommerce.Application.Auth.Common.AuthResponse registered;
+        await using (var provider = For(Guid.Empty))
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            registered = await scope.ServiceProvider.GetRequiredService<MediatR.ISender>().Send(
+                new Ecommerce.Application.Auth.Commands.RegisterSeller.RegisterSellerCommand(email, password, "Test", "Seller", shopName));
+        }
+
+        Guid applicationId;
+        await using (var provider = For(registered.Id))
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var mine = await scope.ServiceProvider.GetRequiredService<MediatR.ISender>().Send(
+                new Ecommerce.Application.ShopApplications.GetMyShopApplicationsQuery());
+            applicationId = mine.Single().Id;
+        }
+
+        await using (var provider = For(Guid.CreateVersion7(), RoleNames.Moderator))
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<MediatR.ISender>().Send(
+                new Ecommerce.Application.ShopApplications.ApproveShopApplicationCommand(applicationId));
+        }
+
+        return registered;
     }
 
     /// <summary>A customer row to own addresses - the address book is locked through it.</summary>

@@ -5,7 +5,8 @@
     "fulfilment": "Đơn cần giao",
     "payouts": "Thanh toán người bán",
     "audit": "Nhật ký",
-    "users": "Người dùng"
+    "users": "Người dùng",
+    "shops": "Đơn mở gian hàng"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -132,7 +133,10 @@
       "AccountLocked": "Khoá tài khoản",
       "AccountUnlocked": "Mở khoá tài khoản",
       "AccountBanned": "Cấm tài khoản",
-      "BanLifted": "Gỡ lệnh cấm"
+      "BanLifted": "Gỡ lệnh cấm",
+      "ShopApplied": "Xin mở gian hàng",
+      "ShopApproved": "Duyệt gian hàng",
+      "ShopRejected": "Từ chối gian hàng"
     }
   },
   "users": {
@@ -182,5 +186,28 @@
     "Moderator": "Kiểm duyệt viên",
     "Seller": "Người bán",
     "Customer": "Khách hàng"
+  },
+  "shops": {
+    "title": "Đơn mở gian hàng",
+    "subtitle": "Những người đang xin bán hàng tại đây. Duyệt thì gian hàng mở ngay; từ chối thì họ được biết lý do.",
+    "tab": {
+      "Pending": "Đang chờ",
+      "Approved": "Đã duyệt",
+      "Rejected": "Đã từ chối"
+    },
+    "none": "Không có đơn nào.",
+    "loadFailed": "Không tải được danh sách đơn.",
+    "applied": "Gửi lúc {{when}}",
+    "phone": "Điện thoại: {{phone}}",
+    "noDescription": "Không có mô tả.",
+    "approve": "Duyệt",
+    "reject": "Từ chối…",
+    "rejectTitle": "Từ chối “{{shop}}”",
+    "rejectBody": "Người gửi sẽ thấy lý do này và có thể gửi lại đơn.",
+    "reason": "Lý do",
+    "confirmReject": "Từ chối",
+    "approved": "Đã mở gian hàng “{{shop}}”.",
+    "rejected": "Đã từ chối “{{shop}}”.",
+    "decided": "Quyết định lúc {{when}}"
   }
 }

@@ -70,9 +70,14 @@ export function UserMenu({
           <DropdownMenuItem onClick={() => navigate('/addresses')}>
             <MapPinIcon /> {t('nav.addresses')}
           </DropdownMenuItem>
-          {isSeller && (
+          {isSeller ? (
             <DropdownMenuItem onClick={() => navigate('/shop')}>
               <StoreIcon /> {t('seller:nav')}
+            </DropdownMenuItem>
+          ) : (
+            // Anybody signed in may ask to sell (specs/044); the page says where their application stands.
+            <DropdownMenuItem onClick={() => navigate('/open-shop')}>
+              <StoreIcon /> {t('seller:openShop')}
             </DropdownMenuItem>
           )}
           {isStaff && (

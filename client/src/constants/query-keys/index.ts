@@ -28,6 +28,8 @@ export const queryKeys = {
   payoutsDue: () => ['payouts-due'] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   accounts: (search: string, page: number) => ['accounts', search, page] as const,
+  myShopApplications: ['shop-applications', 'mine'] as const,
+  shopApplications: (status: string, page: number) => ['shop-applications', status, page] as const,
   auditEntry: (id: string) => ['audit-entry', id] as const,
   auditSummary: (from: string) => ['audit-summary', from] as const,
   unreadCount: () => ['notifications', 'unread-count'] as const,
