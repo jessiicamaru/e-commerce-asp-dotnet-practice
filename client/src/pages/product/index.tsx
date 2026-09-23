@@ -10,6 +10,8 @@ import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct } from '@/hooks/product'
 import { useVariantStock } from '@/hooks/stock'
 import { Price } from '@/components/shared/price'
+import { StarRating } from '@/components/product/star-rating'
+import { ProductReviews } from '@/components/product/product-reviews'
 
 export function ProductPage() {
   const { t } = useTranslation('catalog')
@@ -58,6 +60,12 @@ export function ProductPage() {
             <p className="text-muted-foreground mt-1 text-sm">
               {t('product.soldBy', { seller: product.sellerName ?? t('product.theShop') })}
             </p>
+            {product.ratingCount > 0 && product.ratingAverage !== null && (
+              <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm hover:underline">
+                <StarRating value={product.ratingAverage} label={t('reviews.average', { average: product.ratingAverage.toFixed(1) })} />
+                <span className="text-muted-foreground">{t('reviews.count', { count: product.ratingCount })}</span>
+              </a>
+            )}
           </div>
 
           <div className="flex flex-wrap items-baseline gap-2">
@@ -104,6 +112,8 @@ export function ProductPage() {
           </p>
         </div>
       </div>
+
+      <ProductReviews product={product} />
     </section>
   )
 }

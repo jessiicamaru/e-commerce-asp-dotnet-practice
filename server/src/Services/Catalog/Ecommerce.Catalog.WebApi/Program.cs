@@ -194,6 +194,7 @@ builder.Services.AddMassTransit(x =>
     // which is exactly what happened to Inventory's ProductDeletedConsumer in specs/024.
     x.AddConsumer<SellerRegisteredConsumer>();
     x.AddConsumer<SellerRenamedConsumer>();
+    x.AddConsumer<ReviewEligibilityConsumer>();
 
     // Queue names are derived from consumer CLASS names, and two services naming a consumer the
     // same thing bind to one queue and COMPETE for it — each message reaches one of them instead of

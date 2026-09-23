@@ -28,6 +28,7 @@
     "ShopRejected": "Gian hàng “{{shop}}” không được duyệt: {{reason}}",
     "ProductApproved": "“{{product}}” đã được duyệt và đang bán.",
     "ProductRejected": "“{{product}}” không được duyệt: {{reason}}",
-    "ProductTakenDown": "“{{product}}” đã bị gỡ khỏi kệ: {{reason}}"
+    "ProductTakenDown": "“{{product}}” đã bị gỡ khỏi kệ: {{reason}}",
+    "NewReview": "Có người chấm “{{product}}” {{rating}} sao."
   }
 }

@@ -11,7 +11,7 @@ function withVariants(id: string, name: string, variantIds: string[]): ProductMo
   return {
     id, name, description: null, price: 15490000, currency: 'VND', availability: 'InStock', sku: `SKU-${id}`,
     categoryId: 'c1', isActive: true, imageUrl: null, sellerId: 's1', sellerName: 'Mai Lens',
-    priceVaries: true, variantCount: variantIds.length, reviewStatus: 'Approved', reviewReason: null,
+    priceVaries: true, variantCount: variantIds.length, reviewStatus: 'Approved', reviewReason: null, ratingAverage: null, ratingCount: 0,
     variants: variantIds.map((variantId) => ({
       id: variantId, sku: `SKU-${variantId}`, price: 15490000, currency: 'VND', optionSummary: '', options: [],
       availability: 'InStock', isActive: true, imageUrl: null,

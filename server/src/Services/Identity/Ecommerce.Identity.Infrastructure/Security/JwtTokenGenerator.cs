@@ -28,6 +28,8 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
+            // The name a review is signed with (specs/046) - the first name only, never the surname.
+            new(JwtRegisteredClaimNames.GivenName, user.FirstName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

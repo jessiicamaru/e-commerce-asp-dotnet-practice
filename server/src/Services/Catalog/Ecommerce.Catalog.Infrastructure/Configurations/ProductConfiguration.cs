@@ -30,6 +30,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.ReviewReason).HasMaxLength(500);
         builder.Ignore(p => p.IsListed);
 
+        // specs/046: one decimal place is what a star shows; two are kept.
+        builder.Property(p => p.RatingAverage).HasPrecision(3, 2);
+        builder.Property(p => p.RatingCount).IsRequired().HasDefaultValue(0);
+
         // The moderators' queue: pending, oldest submission first.
         builder.HasIndex(p => new { p.ReviewStatus, p.SubmittedAt });
         builder.Property(p => p.Price).HasColumnType("decimal(18,2)");

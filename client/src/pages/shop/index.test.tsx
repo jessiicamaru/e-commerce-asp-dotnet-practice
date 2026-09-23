@@ -17,7 +17,7 @@ function listing(id: string, name: string, availability: string): ProductModel {
   return {
     id, name, description: null, price: 5190000, currency: 'VND', availability, sku: `SKU-${id}`,
     categoryId: 'c1', isActive: true, imageUrl: null, sellerId: 's1', sellerName: 'Mai Lens',
-    priceVaries: false, variantCount: 1, reviewStatus: 'Approved', reviewReason: null, variants: null,
+    priceVaries: false, variantCount: 1, reviewStatus: 'Approved', reviewReason: null, ratingAverage: null, ratingCount: 0, variants: null,
   }
 }
 

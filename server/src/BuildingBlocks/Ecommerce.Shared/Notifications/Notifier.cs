@@ -32,6 +32,9 @@ public static class NotificationKind
     public const string ProductApproved = "ProductApproved";
     public const string ProductRejected = "ProductRejected";
     public const string ProductTakenDown = "ProductTakenDown";
+
+    // Somebody reviewed a seller's product (specs/046)
+    public const string NewReview = "NewReview";
 }
 
 /// <summary>

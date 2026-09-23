@@ -90,8 +90,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (174 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (144 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (176 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (149 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (71 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -343,6 +343,16 @@ included - sends it back to review and off the shelf** (decided with the user); 
 That is `ProductReview.AfterSellerEditAsync`, called before the one save in six handlers - a seventh
 edit of what a shopper reads must call it too. A moderator's console opens on `/admin/moderation`:
 what is waiting in each queue and their own decisions (`GET /api/audit/mine`, Staff).
+
+**Only somebody who received a product reviews it** (specs/046). Catalog does not know who bought what,
+so Order publishes `ParcelDeliveredEvent` (the parcel's product ids) inside the transaction that marks a
+parcel delivered - the customer's confirmation and the sweep alike; the sweep now locks its rows first
+so the ids it announces are exactly the ones it set - and Catalog keeps `review_eligibility` from it.
+One review per customer per product (a second write edits the first), signed with the token's
+`given_name` - a claim Identity added for this, with `ICurrentUser.GivenName` defaulting to null so every
+test double still compiles. `products.RatingAverage` / `RatingCount` are **recomputed from the visible
+rows** in the transaction of every write, hide and restore, never incremented. Hidden, not deleted.
+Parcels delivered before this give no right to review; there is no backfill.
 
 **A seller has somewhere to click** since specs/028: `/shop` lists their own products, `/shop/products/new`
 lists a new one, and `/shop/products/:id` sets prices, uploads a photograph and withdraws it. The

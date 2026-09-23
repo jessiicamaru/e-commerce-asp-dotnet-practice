@@ -8,7 +8,8 @@
     "users": "Người dùng",
     "shops": "Đơn mở gian hàng",
     "moderation": "Kiểm duyệt",
-    "review": "Sản phẩm chờ duyệt"
+    "review": "Sản phẩm chờ duyệt",
+    "reviews": "Đánh giá"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -143,7 +144,11 @@
       "ProductRejected": "Từ chối sản phẩm",
       "ProductTakenDown": "Gỡ sản phẩm",
       "ProductResubmitted": "Gửi duyệt lại",
-      "ProductSentForReview": "Sản phẩm phải duyệt lại"
+      "ProductSentForReview": "Sản phẩm phải duyệt lại",
+      "ReviewPosted": "Đăng đánh giá",
+      "ReviewEdited": "Sửa đánh giá",
+      "ReviewHidden": "Ẩn đánh giá",
+      "ReviewRestored": "Hiện lại đánh giá"
     }
   },
   "users": {
@@ -252,5 +257,25 @@
     "recent": "Quyết định gần đây của bạn",
     "noneRecent": "Bạn chưa quyết định gì.",
     "loadFailed": "Không tải được."
+  },
+  "reviews": {
+    "title": "Đánh giá",
+    "subtitle": "Những gì người mua viết. Ẩn một đánh giá sẽ gỡ nó khỏi trang và khỏi điểm trung bình; có thể hiện lại.",
+    "tab": {
+      "visible": "Đang hiện",
+      "hidden": "Đã ẩn"
+    },
+    "none": "Không có gì ở đây.",
+    "loadFailed": "Không tải được đánh giá.",
+    "on": "về {{product}}",
+    "hide": "Ẩn…",
+    "restore": "Hiện lại",
+    "hideTitle": "Ẩn đánh giá này",
+    "hideBody": "Đánh giá sẽ rời khỏi trang sản phẩm và điểm trung bình. Hãy ghi lý do.",
+    "reason": "Lý do",
+    "confirmHide": "Ẩn",
+    "hidden": "Đã ẩn đánh giá.",
+    "restored": "Đã hiện lại đánh giá.",
+    "hiddenBecause": "Đã ẩn: {{reason}}"
   }
 }

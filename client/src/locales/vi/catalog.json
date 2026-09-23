@@ -57,5 +57,29 @@
     "low_other": "Chỉ còn {{count}}",
     "in_other": "Còn {{count}} sản phẩm",
     "reserved_other": "{{count}} đang được giữ cho đơn"
+  },
+  "reviews": {
+    "title": "Đánh giá",
+    "average": "Được chấm {{average}} trên 5",
+    "count_one": "{{count}} đánh giá",
+    "count_other": "{{count}} đánh giá",
+    "none": "Chưa có đánh giá nào.",
+    "by": "{{name}}",
+    "edited": "đã sửa",
+    "stars": "{{count}} sao",
+    "stars_other": "{{count}} sao",
+    "starsOf": "{{count}} trên 5",
+    "yours": "Đánh giá của bạn",
+    "write": "Đánh giá sản phẩm này",
+    "rating": "Số sao",
+    "body": "Bạn thấy thế nào? (không bắt buộc)",
+    "submit": "Gửi đánh giá",
+    "update": "Cập nhật đánh giá",
+    "saving": "Đang lưu…",
+    "saved": "Cảm ơn bạn - đánh giá đã được đăng.",
+    "failed": "Không lưu được đánh giá.",
+    "onlyBuyers": "Chỉ khách đã nhận được sản phẩm này mới đánh giá được.",
+    "signIn": "Đăng nhập để đánh giá sản phẩm bạn đã mua.",
+    "loadFailed": "Không tải được đánh giá."
   }
 }

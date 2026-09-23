@@ -66,7 +66,10 @@ public record ProductResponse(
     // specs/045: where it stands with the moderators, and why, for its seller and staff. Anybody else is
     // only ever shown Approved products, so to them this always reads Approved.
     string ReviewStatus = "Approved",
-    string? ReviewReason = null
+    string? ReviewReason = null,
+    // specs/046: the average of the visible reviews, null when there are none, and how many.
+    decimal? RatingAverage = null,
+    int RatingCount = 0
 )
 {
     /// <summary>
@@ -140,6 +143,8 @@ public record ProductResponse(
             // name for it (specs/027).
             sellerName,
             p.ReviewStatus.ToString(),
-            p.ReviewReason);
+            p.ReviewReason,
+            p.RatingAverage,
+            p.RatingCount);
     }
 }

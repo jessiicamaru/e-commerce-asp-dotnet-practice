@@ -24,7 +24,7 @@ const cart: CartModel = {
 const sigma = {
   id: 'p1', name: 'Sigma 18-50mm', description: null, price: 15490000, currency: 'VND', availability: 'InStock',
   sku: 'SIGMA', categoryId: 'c', isActive: true, imageUrl: '/img/product.png', sellerId: 's', sellerName: 'Mai',
-  priceVaries: true, variantCount: 2, reviewStatus: 'Approved', reviewReason: null,
+  priceVaries: true, variantCount: 2, reviewStatus: 'Approved', reviewReason: null, ratingAverage: null, ratingCount: 0,
   variants: [
     { id: 'p1', sku: 'SIGMA-E', price: 15490000, currency: 'VND', optionSummary: 'Mount: Sony E', options: [], availability: 'InStock', isActive: true, imageUrl: '/img/product.png' },
     { id: 'v2', sku: 'SIGMA-X', price: 15990000, currency: 'VND', optionSummary: 'Mount: Fujifilm X', options: [], availability: 'InStock', isActive: true, imageUrl: '/img/fuji-mount.png' },

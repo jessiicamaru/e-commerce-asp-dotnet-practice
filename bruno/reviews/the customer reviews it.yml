@@ -1,0 +1,40 @@
+info:
+  name: the customer reviews it
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/reviews/mine"
+  body:
+    type: json
+    data: |-
+      {
+        "rating": 5,
+        "body": "Bruno liked it"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("five stars, signed with their first name", function() {
+          expect(res.body.rating).to.equal(5);
+          expect(res.body.authorName).to.equal("Bruno");
+        });
+        if (res.status === 200) bru.setVar("reviewId", res.body.id);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  One review per customer per product. The name comes from the token, never from the body.

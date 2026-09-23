@@ -11,6 +11,7 @@ using Ecommerce.Order.Infrastructure.Delivery;
 using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Money;
+using MassTransit.Testing;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -215,6 +216,52 @@ public class DeliveryTests
         Assert.Equal("Auto", (await PartAsync(order, alice)).DeliveryConfirmedBy);
     }
 
+    /// <summary>
+    /// What the customer received, for Catalog's reviews (specs/046): one event per parcel, naming that
+    /// parcel's products only - never the whole order's - and never twice.
+    /// </summary>
+    [Fact]
+    public async Task A_confirmed_parcel_announces_the_products_in_it_once()
+    {
+        var alice = Guid.CreateVersion7();
+        var bob = Guid.CreateVersion7();
+        var (order, customer) = await PaidCheckoutAsync(alice, bob);
+        await ShipAsync(order, alice);
+        var parcel = (await PartAsync(order, alice)).Id;
+
+        await As(customer, () => SendAsync(new ConfirmDeliveryCommand(order, parcel)));
+        await As(customer, () => SendAsync(new ConfirmDeliveryCommand(order, parcel)));
+
+        var told = Delivered(order);
+        var only = Assert.Single(told);
+        Assert.Equal((parcel, customer), (only.ShipmentId, only.BuyerId));
+        Assert.Equal(await ProductsOfAsync(order, alice), only.ProductIds);
+    }
+
+    [Fact]
+    public async Task The_sweep_announces_each_parcel_it_delivers()
+    {
+        var alice = Guid.CreateVersion7();
+        var bob = Guid.CreateVersion7();
+        var (order, _) = await PaidCheckoutAsync(alice, bob);
+        await ShipAsync(order, alice);
+        await ShipAsync(order, bob);
+        var cutoff = DateTime.UtcNow.AddDays(-7);
+        await BackdateShippedAsync(order, alice, cutoff.AddHours(-1));
+        await BackdateShippedAsync(order, bob, cutoff.AddHours(-1));
+
+        await SendAsync(new AutoConfirmDeliveriesCommand(cutoff));
+        await SendAsync(new AutoConfirmDeliveriesCommand(cutoff));
+
+        // One event per parcel, each with its own products; the second sweep found nothing to announce.
+        var told = Delivered(order);
+        Assert.Equal(2, told.Count);
+        var aliceProducts = await ProductsOfAsync(order, alice);
+        var bobProducts = await ProductsOfAsync(order, bob);
+        Assert.Equal((await PartAsync(order, alice)).Id, Assert.Single(told, e => e.ProductIds.SequenceEqual(aliceProducts)).ShipmentId);
+        Assert.Equal((await PartAsync(order, bob)).Id, Assert.Single(told, e => e.ProductIds.SequenceEqual(bobProducts)).ShipmentId);
+    }
+
     [Theory]
     [InlineData("0", "60")]
     [InlineData("7", "0")]
@@ -291,6 +338,17 @@ public class DeliveryTests
         await scope.ServiceProvider.GetRequiredService<OrderDbContext>().OrderShipments
             .Where(s => s.OrderId == order && s.SellerId == seller)
             .ExecuteUpdateAsync(x => x.SetProperty(s => s.ShippedAt, shippedAt));
+    }
+
+    private List<Ecommerce.Contracts.Order.ParcelDeliveredEvent> Delivered(Guid order) =>
+        _fixture.Harness.Published.Select<Ecommerce.Contracts.Order.ParcelDeliveredEvent>()
+            .Select(x => x.Context.Message).Where(e => e.OrderId == order).ToList();
+
+    private async Task<List<Guid>> ProductsOfAsync(Guid order, Guid seller)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<OrderDbContext>()
+            .OrderItems.Where(i => i.OrderId == order && i.SellerId == seller).Select(i => i.ProductId).ToListAsync();
     }
 
     private async Task<OrderShipment> PartAsync(Guid order, Guid? seller)

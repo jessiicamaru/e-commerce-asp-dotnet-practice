@@ -91,6 +91,7 @@ public class CatalogTestFixture : IAsyncLifetime
 
         services.AddDbContext<CatalogDbContext>(options => options.UseNpgsql(_connectionString));
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
 
         // The orphan scan (specs/033) needs one read, not twenty-one, so it depends on the
         // narrow interface the repository also implements. Forwarded rather than registered
@@ -249,7 +250,10 @@ public class TestCaller : ICurrentUser
 {
     public Guid? Id { get; set; } = Guid.CreateVersion7();
 
-    public string? Email => null;
+    public string? Email { get; set; }
+
+    /// <summary>What a review is signed with (specs/046).</summary>
+    public string? GivenName { get; set; }
 
     public bool IsAuthenticated => true;
 

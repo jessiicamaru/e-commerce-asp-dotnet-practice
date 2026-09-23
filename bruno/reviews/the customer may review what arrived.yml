@@ -1,0 +1,33 @@
+info:
+  name: the customer may review what arrived
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{productId}}/reviews/mine"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("eligible, nothing written yet", function() {
+          expect(res.body.eligible).to.equal(true);
+          expect(res.body.review).to.equal(null);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/046: the customer confirmed the parcel arrived (admin-audit folder), Order announced it
+  (ParcelDeliveredEvent), and Catalog now lets them review what was in it.

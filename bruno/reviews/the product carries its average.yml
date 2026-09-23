@@ -1,0 +1,30 @@
+info:
+  name: the product carries its average
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("an average and a count", function() {
+          expect(res.body.ratingCount).to.be.at.least(1);
+          expect(res.body.ratingAverage).to.be.within(1, 5);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Kept on the product, recomputed from the visible reviews in the transaction of every change.

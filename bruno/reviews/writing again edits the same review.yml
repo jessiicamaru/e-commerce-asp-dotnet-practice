@@ -1,0 +1,39 @@
+info:
+  name: writing again edits the same review
+  type: http
+  seq: 3
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/reviews/mine"
+  body:
+    type: json
+    data: |-
+      {
+        "rating": 4,
+        "body": "Bruno liked it, mostly"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the same review, now four stars", function() {
+          expect(res.body.id).to.equal(bru.getVar("reviewId"));
+          expect(res.body.rating).to.equal(4);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A second write is an edit of the first, not a second review.

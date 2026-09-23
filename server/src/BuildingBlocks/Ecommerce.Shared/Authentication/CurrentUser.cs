@@ -19,6 +19,8 @@ public class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICurrentUse
 
     public string? Email => Principal?.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
 
+    public string? GivenName => Principal?.FindFirst(JwtRegisteredClaimNames.GivenName)?.Value;
+
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated ?? false;
 
     // Not Principal.IsInRole: that reads ClaimTypes.Role, and the signing side writes the SHORT

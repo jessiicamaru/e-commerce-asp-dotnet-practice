@@ -28,6 +28,7 @@
     "ShopRejected": "Your shop “{{shop}}” was not approved: {{reason}}",
     "ProductApproved": "“{{product}}” is approved and on sale.",
     "ProductRejected": "“{{product}}” was not approved: {{reason}}",
-    "ProductTakenDown": "“{{product}}” was taken off the shelf: {{reason}}"
+    "ProductTakenDown": "“{{product}}” was taken off the shelf: {{reason}}",
+    "NewReview": "Somebody gave “{{product}}” {{rating}} stars."
   }
 }

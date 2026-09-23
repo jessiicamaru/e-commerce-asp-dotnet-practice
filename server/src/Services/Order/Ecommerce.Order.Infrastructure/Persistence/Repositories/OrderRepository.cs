@@ -599,7 +599,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
     public Task<int> AutoConfirmDeliveriesAsync(
         DateTime shippedBefore, DateTime at, CancellationToken cancellationToken = default,
-        Func<int, CancellationToken, Task>? stage = null)
+        Func<IReadOnlyList<Guid>, CancellationToken, Task>? stage = null)
     {
         var strategy = _context.Database.CreateExecutionStrategy();
 
@@ -609,30 +609,67 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             var confirmed = await SweepDeliveriesAsync(shippedBefore, at, cancellationToken);
 
-            if (confirmed > 0 && stage is not null)
+            if (confirmed.Count > 0 && stage is not null)
             {
                 await stage(confirmed, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
             }
 
             await transaction.CommitAsync(cancellationToken);
-            return confirmed;
+            return confirmed.Count;
         });
     }
 
-    private async Task<int> SweepDeliveriesAsync(DateTime shippedBefore, DateTime at, CancellationToken cancellationToken)
+    private async Task<List<Guid>> SweepDeliveriesAsync(DateTime shippedBefore, DateTime at, CancellationToken cancellationToken)
     {
         // The same guard as the customer's, plus the window. Two instances sweeping at once, or a customer
         // confirming mid-sweep: each row is set once, by whoever is first (research D3).
-        return await _context.OrderShipments
-            .Where(s => s.Status == ShipmentStatus.Shipped
-                && s.DeliveredAt == null
-                && s.ShippedAt != null
-                && s.ShippedAt <= shippedBefore)
+        //
+        // The rows are LOCKED first, and the ones this sweep then sets are the ones it tells about
+        // (specs/046): a row a customer confirmed in the meantime fails the guard below, is not in the
+        // list, and is announced once - by the customer's confirmation.
+        var due = await _context.OrderShipments
+            .FromSqlInterpolated($"""
+                SELECT * FROM order_shipments
+                WHERE "Status" = 'Shipped' AND "DeliveredAt" IS NULL AND "ShippedAt" IS NOT NULL AND "ShippedAt" <= {shippedBefore}
+                FOR UPDATE SKIP LOCKED
+                """)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        if (due.Count == 0)
+        {
+            return due;
+        }
+
+        await _context.OrderShipments
+            .Where(s => due.Contains(s.Id) && s.Status == ShipmentStatus.Shipped && s.DeliveredAt == null)
             .ExecuteUpdateAsync(
                 x => x.SetProperty(s => s.DeliveredAt, at)
                       .SetProperty(s => s.DeliveryConfirmedBy, ParcelDelivery.ByAuto),
                 cancellationToken);
+
+        return due;
+    }
+
+    public async Task<List<DeliveredParcel>> GetDeliveredParcelsAsync(
+        IEnumerable<Guid> shipmentIds, CancellationToken cancellationToken = default)
+    {
+        var ids = shipmentIds.ToList();
+        var rows = await (
+            from s in _context.OrderShipments.AsNoTracking()
+            where ids.Contains(s.Id) && s.DeliveredAt != null
+            join o in _context.Orders.AsNoTracking() on s.OrderId equals o.Id
+            from i in o.Items
+            where i.SellerId == s.SellerId
+            select new { s.OrderId, ShipmentId = s.Id, o.UserId, i.ProductId, DeliveredAt = s.DeliveredAt!.Value })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(r => (r.OrderId, r.ShipmentId, r.UserId, r.DeliveredAt))
+            .Select(g => new DeliveredParcel(g.Key.OrderId, g.Key.ShipmentId, g.Key.UserId,
+                g.Select(r => r.ProductId).Distinct().ToList(), g.Key.DeliveredAt))
+            .ToList();
     }
 
     public Task<CancelOutcome> TryCancelAsync(

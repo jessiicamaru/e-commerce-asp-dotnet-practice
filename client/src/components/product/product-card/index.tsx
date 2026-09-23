@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ProductImage } from '@/components/product/product-image'
+import { StarRating } from '@/components/product/star-rating'
 import { Price } from '@/components/shared/price'
 import type { Product } from '@/services/product/types'
 
@@ -46,6 +47,13 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
         <span className="text-muted-foreground text-xs">
           {t('product.soldBy', { seller: product.sellerName ?? t('product.theShop') })}
         </span>
+
+        {product.ratingCount > 0 && product.ratingAverage !== null && (
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <StarRating value={product.ratingAverage} label={t('reviews.average', { average: product.ratingAverage.toFixed(1) })} />
+            {product.ratingAverage.toFixed(1)} · {product.ratingCount}
+          </span>
+        )}
 
         <div className="mt-auto flex items-baseline gap-1.5 pt-2">
           {product.priceVaries && (

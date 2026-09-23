@@ -7,6 +7,7 @@ import i18n from '@/config/i18n'
 import { AuthContext } from '@/context/auth/useAuth'
 import type { AuthState } from '@/context/auth/types'
 import { Product } from '@/services/product'
+import { Reviews } from '@/services/review'
 import type { Product as ProductModel, Variant } from '@/services/product/types'
 import { ProductPage } from '.'
 
@@ -23,7 +24,7 @@ function aProduct(variants: Variant[]): ProductModel {
     id: 'p1', name: 'Fujifilm X-T5', description: null, price: 41000000, currency: 'VND',
     availability: 'InStock', sku: 'FUJI-XT5', categoryId: 'c1', isActive: true,
     imageUrl: '/api/products/p1/image?v=1', sellerId: null, sellerName: null,
-    priceVaries: false, variantCount: variants.length, reviewStatus: 'Approved', reviewReason: null, variants,
+    priceVaries: false, variantCount: variants.length, reviewStatus: 'Approved', reviewReason: null, ratingAverage: null, ratingCount: 0, variants,
   }
 }
 
@@ -49,6 +50,8 @@ function renderPage() {
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')
+  // The reviews under the product (specs/046) - none, so these tests stay about the product itself.
+  vi.spyOn(Reviews, 'forProduct').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
 })
 
 describe('ProductPage pictures', () => {

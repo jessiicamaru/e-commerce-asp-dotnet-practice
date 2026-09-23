@@ -1,0 +1,33 @@
+info:
+  name: staff see it among the hidden
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/reviews?hidden=true&pageSize=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("with the product it is about", function() {
+          var ours = res.body.items.filter(function(r) { return r.id === bru.getVar("reviewId"); });
+          expect(ours).to.have.length(1);
+          expect(ours[0].productName).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The moderators' list of reviews, hidden or visible.
