@@ -87,7 +87,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (31 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (61 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (109 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (111 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -500,7 +500,14 @@ which is the `catalog_images` volume in containers. That **assumes one Catalog i
 storage is what the seam is for. The volume is mounted on `/app/data`, **not** on the subdirectory: a
 mount point the image lacks is created root-owned, and the non-root service then refuses to start
 (its startup write check). Replacing an image writes the new file, switches the row with a guarded
-`UPDATE`, and only then deletes the old one, so the row never names a missing file. The type comes
+`UPDATE`, and only then deletes the old one, so the row never names a missing file. **Deleting the
+product deletes its image too** (specs/029) - it did not until then, and the row going while the
+bytes stayed was invisible because nothing broke: two orphans were found by listing the directory
+while answering a question about where images are kept. The bytes go **after** the row and outside
+the transaction, and a store that throws is logged and swallowed rather than failing the deletion -
+a product that cannot be removed from the catalogue because of a leftover PNG is a worse defect than
+the leak. That bargain means orphans are still possible on purpose, and **nothing reconciles the
+directory against the table**; that sweeper is filed, not built. The type comes
 from the file's bytes, never from its `Content-Type`, and SVG is refused.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
