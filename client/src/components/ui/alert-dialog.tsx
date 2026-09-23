@@ -139,14 +139,20 @@ function AlertDialogDescription({
   )
 }
 
+// EDITED (specs/038 follow-up): generated as a plain <Button>, which does not close the dialog - the
+// confirmed dialog stayed over the page and hid whatever it said next. Now a Close, like Cancel.
 function AlertDialogAction({
   className,
+  variant = "default",
+  size = "default",
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: AlertDialogPrimitive.Close.Props &
+  Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
   return (
-    <Button
+    <AlertDialogPrimitive.Close
       data-slot="alert-dialog-action"
       className={cn(className)}
+      render={<Button variant={variant} size={size} />}
       {...props}
     />
   )
