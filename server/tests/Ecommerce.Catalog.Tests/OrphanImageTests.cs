@@ -155,6 +155,28 @@ public class OrphanImageTests(CatalogTestFixture fixture) : IDisposable
         File.Delete(probe);
     }
 
+    /// <summary>
+    /// A row with no image contributes no key (specs/033).
+    /// </summary>
+    /// <remarks>
+    /// Without the filter, a product that has never been photographed would produce a key from a
+    /// null timestamp - garbage that matches no file, which is harmless, or worse, one that
+    /// accidentally matches a real one. The live set must contain only keys that are really live.
+    /// </remarks>
+    [Fact]
+    public async Task A_row_with_no_image_contributes_no_key()
+    {
+        var withImage = await AProductAsync();
+        await UploadAsync(withImage.Id, Png);
+        var withoutImage = await AProductAsync();
+
+        await using var scope = _fixture.NewScope();
+        var keys = await scope.ServiceProvider.GetRequiredService<ILiveImageKeys>().GetLiveImageKeysAsync();
+
+        Assert.Contains(await KeyOfProductAsync(withImage.Id), keys);
+        Assert.DoesNotContain(keys, k => k.StartsWith($"{withoutImage.Id:N}-"));
+    }
+
     // ---- helpers ----------------------------------------------------------------------------
 
     /// <summary>Back-dates a file so the grace period does not hide it from a test about orphans.</summary>
