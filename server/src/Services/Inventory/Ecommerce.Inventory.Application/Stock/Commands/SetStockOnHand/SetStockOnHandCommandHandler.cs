@@ -5,6 +5,7 @@ using Ecommerce.Inventory.Application.Stock.Common;
 using Ecommerce.Shared.Exceptions;
 using MassTransit;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Inventory.Application.Stock.Commands.SetStockOnHand;
 
@@ -19,8 +20,11 @@ public class SetStockOnHandCommandHandler(
     IPublishEndpoint publishEndpoint,
     ICurrentUser currentUser,
     IProductOwnership ownership
-) : IRequestHandler<SetStockOnHandCommand, StockResponse>
+,
+    IAuditTrail audit) : IRequestHandler<SetStockOnHandCommand, StockResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
@@ -62,11 +66,16 @@ public class SetStockOnHandCommandHandler(
                     + $"{stock.QuantityReserved} unit(s) are currently reserved for orders.");
             }
 
+            var before = new { stock.QuantityOnHand, stock.QuantityReserved };
             stock.QuantityOnHand = request.QuantityOnHand;
             stock.UpdatedAt = DateTime.UtcNow;
 
             await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stock, ct);
 
+            await _audit.RecordAsync(
+                AuditCategory.Catalog, "StockSet", "Variant", stock.ProductId.ToString(),
+                $"{stock.Sku} stock set to {stock.QuantityOnHand}", before,
+                new { stock.QuantityOnHand, stock.QuantityReserved }, cancellationToken: ct);
             await _stockRepository.SaveChangesAsync(ct);
 
             response = new StockResponse(

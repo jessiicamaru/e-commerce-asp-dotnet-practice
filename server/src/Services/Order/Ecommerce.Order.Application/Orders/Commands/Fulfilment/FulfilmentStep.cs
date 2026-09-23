@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Domain.Enums;
@@ -21,10 +22,12 @@ internal static class FulfilmentStep
         ShipmentStatus from,
         ShipmentStatus to,
         string? trackingReference,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IAuditTrail? audit = null)
     {
         var result = await orders.TryMoveShipmentAsync(
-            orderId, sellerId: null, from, to, trackingReference, DateTime.UtcNow, cancellationToken);
+            orderId, sellerId: null, from, to, trackingReference, DateTime.UtcNow, cancellationToken,
+            audit is null ? null : ct => ParcelAudit.RecordAsync(audit, orderId, null, from, to, trackingReference, ct));
 
         switch (result.Outcome)
         {

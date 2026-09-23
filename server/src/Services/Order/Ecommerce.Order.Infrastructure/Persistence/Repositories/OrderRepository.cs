@@ -375,7 +375,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         ShipmentStatus to,
         string? trackingReference,
         DateTime at,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? stage = null)
     {
         // Through the execution strategy, because production enables EnableRetryOnFailure and that
         // refuses a transaction the caller opened itself. The whole unit is retried, which is safe:
@@ -384,6 +385,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
         return strategy.ExecuteAsync(async () =>
         {
+            // A retried attempt must not save an audit entry the failed attempt staged.
+            _context.ChangeTracker.Clear();
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
             // 1. The order's row lock, before anything is read. See the interface for why.
@@ -479,13 +482,44 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                           .SetProperty(o => o.UpdatedAt, at),
                     cancellationToken);
 
+            // 5. What goes with the move - its audit entry - in the same transaction (specs/041).
+            if (stage is not null)
+            {
+                await stage(cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
             await transaction.CommitAsync(cancellationToken);
             return new ShipmentMoveResult(ShipmentMoveOutcome.Moved, now!.Status, now.TrackingReference, summary);
         });
     }
 
-    public async Task<DeliveryConfirmOutcome> TryConfirmDeliveryAsync(
-        Guid orderId, Guid shipmentId, Guid ownerId, DateTime at, CancellationToken cancellationToken = default)
+    public Task<DeliveryConfirmOutcome> TryConfirmDeliveryAsync(
+        Guid orderId, Guid shipmentId, Guid ownerId, DateTime at, CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? stage = null)
+    {
+        // One transaction: the guarded UPDATE and, when it changed the row, its audit entry (specs/041).
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var outcome = await ConfirmDeliveryAsync(orderId, shipmentId, ownerId, at, cancellationToken);
+
+            if (outcome == DeliveryConfirmOutcome.Confirmed && stage is not null)
+            {
+                await stage(cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return outcome;
+        });
+    }
+
+    private async Task<DeliveryConfirmOutcome> ConfirmDeliveryAsync(
+        Guid orderId, Guid shipmentId, Guid ownerId, DateTime at, CancellationToken cancellationToken)
     {
         // The parcel, of this order, of this owner - all in the query, so a stranger's parcel is never read
         // and then refused; it is simply not there (research D3).
@@ -519,8 +553,30 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 : DeliveryConfirmOutcome.NotShipped;
     }
 
-    public async Task<int> AutoConfirmDeliveriesAsync(
-        DateTime shippedBefore, DateTime at, CancellationToken cancellationToken = default)
+    public Task<int> AutoConfirmDeliveriesAsync(
+        DateTime shippedBefore, DateTime at, CancellationToken cancellationToken = default,
+        Func<int, CancellationToken, Task>? stage = null)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var confirmed = await SweepDeliveriesAsync(shippedBefore, at, cancellationToken);
+
+            if (confirmed > 0 && stage is not null)
+            {
+                await stage(confirmed, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return confirmed;
+        });
+    }
+
+    private async Task<int> SweepDeliveriesAsync(DateTime shippedBefore, DateTime at, CancellationToken cancellationToken)
     {
         // The same guard as the customer's, plus the window. Two instances sweeping at once, or a customer
         // confirming mid-sweep: each row is set once, by whoever is first (research D3).

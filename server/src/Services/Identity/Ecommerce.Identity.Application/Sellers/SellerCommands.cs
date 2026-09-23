@@ -5,6 +5,7 @@ using Ecommerce.Shared.Exceptions;
 using FluentValidation;
 using MassTransit;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Sellers;
 
@@ -55,8 +56,11 @@ public class GetMyShopQueryHandler(IUserRepository users, ICurrentUser currentUs
 public class RenameShopCommandHandler(
     IUserRepository users,
     ICurrentUser currentUser,
-    IPublishEndpoint publishEndpoint) : IRequestHandler<RenameShopCommand, SellerProfileResponse>
+    IPublishEndpoint publishEndpoint,
+    IAuditTrail audit) : IRequestHandler<RenameShopCommand, SellerProfileResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IUserRepository _users = users;
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
@@ -71,6 +75,7 @@ public class RenameShopCommandHandler(
         var profile = await _users.GetSellerProfileAsync(userId, cancellationToken)
             ?? throw new NotFoundException("This account does not sell on the shop.");
 
+        var before = new { profile.ShopName };
         profile.ShopName = request.ShopName.Trim();
         profile.UpdatedAt = DateTime.UtcNow;
 
@@ -79,6 +84,10 @@ public class RenameShopCommandHandler(
         await _publishEndpoint.Publish(
             new SellerRenamedEvent(profile.UserId, profile.ShopName, profile.UpdatedAt), cancellationToken);
 
+        await _audit.RecordAsync(
+            AuditCategory.User, "ShopRenamed", "Seller", profile.UserId.ToString(),
+            $"Shop renamed to \"{profile.ShopName}\"", before, new { profile.ShopName },
+            cancellationToken: cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
 
         return new SellerProfileResponse(profile.UserId, profile.ShopName, profile.CreatedAt);

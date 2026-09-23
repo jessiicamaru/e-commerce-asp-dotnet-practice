@@ -205,6 +205,28 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Activity (specs/041): the audit log - and in-app notifications, #87. Every service reports to it
+  # through RabbitMQ; only the gateway calls it.
+  activity:
+    <<: [*service-common, *service-healthcheck]
+    container_name: ecommerce-activity
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: src/Services/Activity/Ecommerce.Activity.WebApi
+    environment:
+      <<: *env-common
+      DB_HOST: postgres-activity
+      ACTIVITY_DB_PORT: "5432"
+    ports:
+      - "5063:8080"
+    depends_on:
+      postgres-activity:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   # The eighth service. REST for the customer, gRPC (h2c, its own port) for Order at checkout.
   # Both endpoints are declared together in Program.cs: calling ListenAnyIP at all replaces
   # ASPNETCORE_URLS, which unbound Catalog's REST the first time it was tried (feature 009).
@@ -263,6 +285,7 @@ services:
       - "--ReverseProxy:Clusters:inventory-cluster:Destinations:destination1:Address=http://inventory:8080/"
       - "--ReverseProxy:Clusters:payment-cluster:Destinations:destination1:Address=http://payment:8080/"
       - "--ReverseProxy:Clusters:cart-cluster:Destinations:destination1:Address=http://cart:8080/"
+      - "--ReverseProxy:Clusters:activity-cluster:Destinations:destination1:Address=http://activity:8080/"
     ports:
       - "5000:8080"
     depends_on:

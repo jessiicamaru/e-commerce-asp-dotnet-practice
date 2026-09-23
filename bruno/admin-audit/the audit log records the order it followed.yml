@@ -1,0 +1,42 @@
+info:
+  name: the audit log records the order it followed
+  type: http
+  seq: 15
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/audit?subjectType=Order&subjectId={{orderId}}&pageSize=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the order was placed, a parcel prepared and shipped, and received - each once", function() {
+          var actions = res.body.items.map(function(e) { return e.action; });
+          ["OrderPlaced", "ParcelPrepared", "ParcelShipped", "ParcelReceived"].forEach(function(a) {
+            expect(actions.filter(function(x) { return x === a; }).length, a).to.equal(1);
+          });
+        });
+        test("every entry names its category and who did it or the system", function() {
+          res.body.items.forEach(function(e) {
+            expect(e.category).to.be.a("string");
+            expect(e).to.have.property("actorEmail");
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/041: the audit log, read through the gateway. The order this collection placed and staff shipped
+  must appear once per step. Entries reach the Activity service through RabbitMQ, so they are a moment
+  behind the requests that caused them; the collection's own requests since then are that moment.

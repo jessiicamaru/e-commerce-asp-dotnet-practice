@@ -1,6 +1,7 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Categories.Commands.DeleteCategory;
 
@@ -25,8 +26,11 @@ public record DeleteCategoryCommand(Guid CategoryId) : IRequest;
 
 public class DeleteCategoryCommandHandler(
     ICategoryRepository categories,
-    IProductRepository products) : IRequestHandler<DeleteCategoryCommand>
+    IProductRepository products,
+    IAuditTrail audit) : IRequestHandler<DeleteCategoryCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly ICategoryRepository _categories = categories;
     private readonly IProductRepository _products = products;
 
@@ -44,6 +48,10 @@ public class DeleteCategoryCommandHandler(
         }
 
         _categories.Remove(category);
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "CategoryDeleted", "Category", category.Id.ToString(), $"Category \"{category.Name}\" deleted",
+            before: new { category.Name, category.Slug, category.Description, category.ParentCategoryId },
+            cancellationToken: cancellationToken);
         await _categories.SaveChangesAsync(cancellationToken);
     }
 }

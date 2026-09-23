@@ -1,3 +1,4 @@
+using Ecommerce.Application.Common;
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Common.Constants;
@@ -5,6 +6,7 @@ using Ecommerce.Domain.Constants;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Auth.Commands.Register;
 
@@ -13,8 +15,11 @@ IUserRepository userRepository,
 IRoleRepository roleRepository,
 IPasswordHasher passwordHasher,
 IJwtTokenGenerator jwtTokenGenerator
-    ) : IRequestHandler<RegisterCommand, AuthResponse>
+    ,
+    IAuditTrail audit) : IRequestHandler<RegisterCommand, AuthResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IRoleRepository _roleRepository = roleRepository;
     private readonly IPasswordHasher _passwordHasher = passwordHasher;
@@ -51,6 +56,10 @@ IJwtTokenGenerator jwtTokenGenerator
 
         await _userRepository.AddAsync(user, cancellationToken);
 
+        await _audit.RecordAsync(
+            AuditCategory.User, "Registered", "User", user.Id.ToString(), $"{user.Email} registered",
+            after: new { user.Email, user.FirstName, user.LastName, Roles = user.Roles.Select(r => r.Name) },
+            actor: AuditActors.Of(user), cancellationToken: cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);

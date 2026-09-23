@@ -8,6 +8,7 @@ using Ecommerce.Shared.Money;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Variants.UpdateProductVariant;
 
@@ -39,9 +40,12 @@ public class UpdateProductVariantCommandValidator : AbstractValidator<UpdateProd
     }
 }
 
-public class UpdateProductVariantCommandHandler(IProductRepository products, ICurrentUser currentUser)
+public class UpdateProductVariantCommandHandler(IProductRepository products, ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<UpdateProductVariantCommand, VariantResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly ICurrentUser _currentUser = currentUser;
 
@@ -65,10 +69,14 @@ public class UpdateProductVariantCommandHandler(IProductRepository products, ICu
             throw new NotFoundException($"Variant with ID '{request.VariantId}' was not found.");
         }
 
+        var before = CatalogAudit.Of(variant);
         variant.Price = request.Price;
         variant.IsActive = request.IsActive;
         variant.UpdatedAt = DateTime.UtcNow;
 
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "VariantUpdated", "Variant", variant.Id.ToString(), $"Edited {variant.Sku}",
+            before, CatalogAudit.Of(variant), cancellationToken: cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
         await _products.RecomputeProductRollupAsync(variant.ProductId, cancellationToken);
 

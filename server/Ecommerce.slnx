@@ -9,6 +9,12 @@
     <Project Path="src/BuildingBlocks/Ecommerce.Shared/Ecommerce.Shared.csproj" />
   </Folder>
   <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/Activity/">
+    <Project Path="src/Services/Activity/Ecommerce.Activity.Application/Ecommerce.Activity.Application.csproj" />
+    <Project Path="src/Services/Activity/Ecommerce.Activity.Domain/Ecommerce.Activity.Domain.csproj" />
+    <Project Path="src/Services/Activity/Ecommerce.Activity.Infrastructure/Ecommerce.Activity.Infrastructure.csproj" />
+    <Project Path="src/Services/Activity/Ecommerce.Activity.WebApi/Ecommerce.Activity.WebApi.csproj" />
+  </Folder>
   <Folder Name="/src/Services/Cart/">
     <Project Path="src/Services/Cart/Ecommerce.Cart.Application/Ecommerce.Cart.Application.csproj" />
     <Project Path="src/Services/Cart/Ecommerce.Cart.Domain/Ecommerce.Cart.Domain.csproj" />
@@ -54,6 +60,7 @@
     <Project Path="tests/Ecommerce.Order.Tests/Ecommerce.Order.Tests.csproj" />
     <Project Path="tests/Ecommerce.Cart.Tests/Ecommerce.Cart.Tests.csproj" />
     <Project Path="tests/Ecommerce.Identity.Tests/Ecommerce.Identity.Tests.csproj" />
+    <Project Path="tests/Ecommerce.Activity.Tests/Ecommerce.Activity.Tests.csproj" />
     <Project Path="tests/Ecommerce.Payment.Tests/Ecommerce.Payment.Tests.csproj" />
   </Folder>
 </Solution>

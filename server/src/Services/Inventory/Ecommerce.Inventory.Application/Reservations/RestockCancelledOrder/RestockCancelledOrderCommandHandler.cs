@@ -4,6 +4,7 @@ using Ecommerce.Inventory.Domain.Enums;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Inventory.Application.Reservations.RestockCancelledOrder;
 
@@ -32,8 +33,11 @@ public class RestockCancelledOrderCommandHandler(
     IReservationRepository reservationRepository,
     IPublishEndpoint publishEndpoint,
     ILogger<RestockCancelledOrderCommandHandler> logger
-) : IRequestHandler<RestockCancelledOrderCommand, int>
+,
+    IAuditTrail audit) : IRequestHandler<RestockCancelledOrderCommand, int>
 {
+    private readonly IAuditTrail _audit = audit;
+
     public const string Reason = "Returned: order cancelled";
 
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
@@ -93,6 +97,11 @@ public class RestockCancelledOrderCommandHandler(
             // The seventh path that moves stock, and it announces like the other six - or Catalog keeps
             // showing "out of stock" for units that are back on the shelf.
             await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stockItems, ct);
+            await _audit.RecordAsync(
+                AuditCategory.Order, "StockReturned", "Order", request.OrderId.ToString(),
+                $"Put back {confirmed.Sum(r => r.Quantity) + held.Sum(r => r.Quantity)} unit(s) of a cancelled order",
+                after: new { Returned = confirmed.Sum(r => r.Quantity), Released = held.Sum(r => r.Quantity) },
+                cancellationToken: ct);
             await _reservationRepository.SaveChangesAsync(ct);
         }, cancellationToken);
 

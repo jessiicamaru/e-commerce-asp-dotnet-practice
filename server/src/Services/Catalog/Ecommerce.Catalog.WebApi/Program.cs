@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
@@ -166,6 +167,9 @@ builder.Services.Configure<OrphanImageOptions>(
     builder.Configuration.GetSection(OrphanImageOptions.SectionName));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// Who did what, through the outbox with every change (specs/041).
+builder.Services.AddAuditTrail("catalog");
 
 // Which language a request wants to be answered in (specs/021). A service whose responses carry text
 // a customer reads needs this; it refuses to start if the default is not one it supports.

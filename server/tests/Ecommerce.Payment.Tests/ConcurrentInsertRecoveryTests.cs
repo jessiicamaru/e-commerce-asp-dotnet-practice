@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Payment.Application;
 using Ecommerce.Payment.Application.Common.Interfaces;
 using Ecommerce.Payment.Application.Payments.ChargeOrder;
@@ -141,6 +142,8 @@ public class ConcurrentInsertRecoveryTests(PaymentTestFixture fixture)
             new BlindOnFirstRead(new PaymentRepository(sp.GetRequiredService<PaymentDbContext>())));
 
         services.AddMassTransitTestHarness();
+
+        services.AddAuditTrail("payment");
 
         return services.BuildServiceProvider(true);
     }

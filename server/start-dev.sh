@@ -25,6 +25,8 @@ dotnet ef database update --project src/Services/Order/Ecommerce.Order.Infrastru
 
 echo "Applying EF Core Migrations for Payment DB (Port 5438)..."
 dotnet ef database update --project src/Services/Payment/Ecommerce.Payment.Infrastructure/ --startup-project src/Services/Payment/Ecommerce.Payment.WebApi/
+echo "Applying EF Core Migrations for Activity DB (Port 5440)..."
+dotnet ef database update --project src/Services/Activity/Ecommerce.Activity.Infrastructure/ --startup-project src/Services/Activity/Ecommerce.Activity.WebApi/
 
 echo "Applying EF Core Migrations for Inventory DB (Port 5437)..."
 dotnet ef database update --project src/Services/Inventory/Ecommerce.Inventory.Infrastructure/ --startup-project src/Services/Inventory/Ecommerce.Inventory.WebApi/
@@ -42,6 +44,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Order Service (Port 5059)\" -ForegroundColor Green; dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Inventory Service (Port 5060)\" -ForegroundColor Green; dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Payment Service (Port 5061)\" -ForegroundColor Green; dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/'"
+    powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Activity Service (Port 5063)\" -ForegroundColor Green; dotnet run --project src/Services/Activity/Ecommerce.Activity.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"Cart Service (Port 5062)\" -ForegroundColor Green; dotnet run --project src/Services/Cart/Ecommerce.Cart.WebApi/'"
     powershell.exe -Command "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"$PWD\"; Write-Host \"API Gateway (Port 5000)\" -ForegroundColor Green; dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/'"
 else
@@ -51,6 +54,8 @@ else
     dotnet run --project src/Services/Order/Ecommerce.Order.WebApi/ &
     dotnet run --project src/Services/Inventory/Ecommerce.Inventory.WebApi/ &
     dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/ &
+
+    dotnet run --project src/Services/Activity/Ecommerce.Activity.WebApi/ &
     dotnet run --project src/Services/Cart/Ecommerce.Cart.WebApi/ &
     dotnet run --project src/ApiGateway/Ecommerce.ApiGateway/ &
 fi
@@ -63,6 +68,7 @@ echo "  - Orchestrator API: http://localhost:5058"
 echo "  - Order API:        http://localhost:5059"
 echo "  - Inventory API:    http://localhost:5060"
 echo "  - Payment API:      http://localhost:5061"
+echo "  - Activity API:     http://localhost:5063"
 echo "  - Cart API:         http://localhost:5062"
 echo "  - pgAdmin:          http://localhost:5050"
 echo "  - RabbitMQ UI:      http://localhost:15672"

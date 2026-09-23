@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Application;
@@ -120,6 +121,9 @@ builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// Who did what, through the outbox with every change (specs/041).
+builder.Services.AddAuditTrail("identity");
 
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks();

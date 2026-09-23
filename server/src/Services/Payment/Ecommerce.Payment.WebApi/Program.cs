@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
 using Ecommerce.Payment.Application;
@@ -86,6 +87,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// Who did what, through the outbox with every change (specs/041).
+builder.Services.AddAuditTrail("payment");
 
 builder.Services.AddMassTransit(x =>
 {

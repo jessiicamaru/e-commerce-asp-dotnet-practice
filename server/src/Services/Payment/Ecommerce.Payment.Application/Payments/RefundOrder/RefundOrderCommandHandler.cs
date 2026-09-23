@@ -3,6 +3,7 @@ using Ecommerce.Payment.Domain.Entities;
 using Ecommerce.Payment.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Payment.Application.Payments.RefundOrder;
 
@@ -25,8 +26,11 @@ public class RefundOrderCommandHandler(
     IPaymentRepository paymentRepository,
     IUnitOfWork unitOfWork,
     ILogger<RefundOrderCommandHandler> logger
-) : IRequestHandler<RefundOrderCommand, bool>
+,
+    IAuditTrail audit) : IRequestHandler<RefundOrderCommand, bool>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IPaymentRepository _paymentRepository = paymentRepository;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ILogger<RefundOrderCommandHandler> _logger = logger;
@@ -62,6 +66,11 @@ public class RefundOrderCommandHandler(
                 RefundedAt = DateTime.UtcNow
             }, cancellationToken);
 
+            await _audit.RecordAsync(
+                AuditCategory.Payment, "RefundRecorded", "Order", payment.OrderId.ToString(),
+                $"Refunded {payment.Amount} {payment.Currency} through {payment.Provider} for a cancelled order",
+                after: new { PaymentId = payment.Id, payment.Amount, payment.Currency, payment.Provider },
+                cancellationToken: cancellationToken);
             await _paymentRepository.SaveChangesAsync(cancellationToken);
         }
         catch (Exception exception) when (IsUniqueViolation(exception))

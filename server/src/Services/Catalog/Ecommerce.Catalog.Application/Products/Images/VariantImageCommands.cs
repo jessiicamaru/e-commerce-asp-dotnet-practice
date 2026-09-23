@@ -6,6 +6,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Images;
 
@@ -45,8 +46,11 @@ public class UploadVariantImageCommandHandler(
     IProductRepository products,
     IProductImageStore store,
     ICurrentUser currentUser,
-    ILogger<UploadVariantImageCommandHandler> logger) : IRequestHandler<UploadVariantImageCommand>
+    ILogger<UploadVariantImageCommandHandler> logger,
+    IAuditTrail audit) : IRequestHandler<UploadVariantImageCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly IProductImageStore _store = store;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -85,6 +89,10 @@ public class UploadVariantImageCommandHandler(
             throw new ConflictException("This shape's image was changed by someone else meanwhile. Try again.");
         }
 
+await _audit.RecordAsync(
+    AuditCategory.Catalog, "VariantImageSet", "Variant", variant.Id.ToString(),
+    $"New photograph for {variant.Sku}", cancellationToken: cancellationToken);
+await _products.SaveChangesAsync(cancellationToken);
         if (previousKey is not null)
         {
             await DeleteQuietlyAsync(previousKey, "a replaced variant image");
@@ -143,8 +151,11 @@ public class RemoveVariantImageCommandHandler(
     IProductRepository products,
     IProductImageStore store,
     ICurrentUser currentUser,
-    ILogger<RemoveVariantImageCommandHandler> logger) : IRequestHandler<RemoveVariantImageCommand>
+    ILogger<RemoveVariantImageCommandHandler> logger,
+    IAuditTrail audit) : IRequestHandler<RemoveVariantImageCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly IProductImageStore _store = store;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -169,6 +180,10 @@ public class RemoveVariantImageCommandHandler(
             throw new ConflictException("This shape's image was changed by someone else meanwhile. Try again.");
         }
 
+await _audit.RecordAsync(
+    AuditCategory.Catalog, "VariantImageRemoved", "Variant", variant.Id.ToString(),
+    $"Removed the photograph of {variant.Sku}", cancellationToken: cancellationToken);
+await _products.SaveChangesAsync(cancellationToken);
         try
         {
             await _store.DeleteAsync(key, cancellationToken);

@@ -33,5 +33,6 @@ public interface IPayoutRepository
         string currency,
         Guid recordedBy,
         DateTime at,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Func<PayoutResponse, CancellationToken, Task>? stage = null);
 }

@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Order.Application;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Infrastructure.Persistence;
@@ -177,6 +178,7 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddMassTransitTestHarness(x =>
         {
             x.AddConsumer<OrderCompletedConsumer>();
+        services.AddAuditTrail("order");
             x.AddConsumer<OrderFailedConsumer>();
         });
 

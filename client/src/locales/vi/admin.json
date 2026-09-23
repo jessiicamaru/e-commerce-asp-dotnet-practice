@@ -3,7 +3,8 @@
   "title": "Quản trị cửa hàng",
   "menu": {
     "fulfilment": "Đơn cần giao",
-    "payouts": "Thanh toán người bán"
+    "payouts": "Thanh toán người bán",
+    "audit": "Nhật ký"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -50,5 +51,79 @@
     "confirmBody": "Sàn ghi nhận đã trả {{amount}} cho {{count}} kiện. Hệ thống không chuyển tiền - đây là ghi sổ, và không huỷ được.",
     "confirm": "Ghi nhận",
     "paid": "Đã ghi nhận {{amount}} cho {{seller}}."
+  },
+  "audit": {
+    "title": "Nhật ký hoạt động",
+    "subtitle": "Ai đã làm gì, lúc nào, và đã thay đổi những gì. Mỗi thao tác được ghi đúng một lần, cùng lúc với thay đổi.",
+    "category": {
+      "All": "Tất cả",
+      "Security": "Bảo mật",
+      "User": "Người dùng",
+      "Moderation": "Kiểm duyệt",
+      "Catalog": "Sản phẩm",
+      "Order": "Đơn hàng",
+      "Payment": "Thanh toán",
+      "System": "Hệ thống"
+    },
+    "period": {
+      "day": "24 giờ",
+      "week": "7 ngày",
+      "month": "30 ngày",
+      "all": "Tất cả"
+    },
+    "actorFilter": "Lọc theo email người thực hiện",
+    "loadFailed": "Không tải được nhật ký.",
+    "none": "Không có mục nào khớp.",
+    "columns": {
+      "when": "Lúc",
+      "what": "Việc",
+      "who": "Người thực hiện",
+      "changes": "Thay đổi"
+    },
+    "system": "Hệ thống",
+    "subject": "Đối tượng",
+    "service": "Dịch vụ",
+    "noChanges": "Mục này không ghi thay đổi theo trường.",
+    "changes": "Các trường thay đổi",
+    "field": "Trường",
+    "before": "Trước",
+    "after": "Sau",
+    "action": {
+      "SignedIn": "Đăng nhập",
+      "SignInRefused": "Đăng nhập bị từ chối",
+      "Registered": "Đăng ký tài khoản",
+      "ShopOpened": "Mở shop",
+      "ShopRenamed": "Đổi tên shop",
+      "AddressAdded": "Thêm địa chỉ",
+      "AddressUpdated": "Sửa địa chỉ",
+      "AddressDeleted": "Xoá địa chỉ",
+      "CategoryCreated": "Tạo danh mục",
+      "CategoryDeleted": "Xoá danh mục",
+      "ProductCreated": "Đăng sản phẩm",
+      "ProductDeleted": "Gỡ sản phẩm",
+      "ProductTextEdited": "Sửa tên/mô tả sản phẩm",
+      "PriceSet": "Đặt giá",
+      "PriceRemoved": "Bỏ giá",
+      "VariantAdded": "Thêm phiên bản",
+      "VariantUpdated": "Sửa phiên bản",
+      "ProductImageSet": "Đổi ảnh sản phẩm",
+      "ProductImageRemoved": "Xoá ảnh sản phẩm",
+      "VariantImageSet": "Đổi ảnh phiên bản",
+      "VariantImageRemoved": "Xoá ảnh phiên bản",
+      "OrphanImagesReclaimed": "Thu hồi ảnh mồ côi",
+      "StockSet": "Đặt tồn kho",
+      "ReservationsExpired": "Trả hàng giữ quá hạn",
+      "StockReturned": "Trả hàng về kho",
+      "OrderPlaced": "Đặt đơn",
+      "OrderCancelled": "Huỷ đơn",
+      "ParcelPrepared": "Chuẩn bị kiện",
+      "ParcelShipped": "Gửi kiện",
+      "ParcelReceived": "Khách nhận kiện",
+      "DeliveriesAutoConfirmed": "Tự xác nhận đã giao",
+      "PayoutRecorded": "Ghi nhận trả tiền người bán",
+      "PaymentCharged": "Thu tiền",
+      "PaymentRefused": "Từ chối thanh toán",
+      "RefundRecorded": "Hoàn tiền"
+    }
   }
 }

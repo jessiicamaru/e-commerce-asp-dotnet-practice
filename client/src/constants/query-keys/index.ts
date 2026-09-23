@@ -1,6 +1,7 @@
 import type { ProductQuery } from '@/services/product/types'
 import type { CheckoutChoice } from '@/services/order/types'
 import type { QueueState } from '@/services/admin/types'
+import type { AuditFilter } from '@/services/audit/types'
 
 /**
  * Every TanStack Query key in one place, so a mutation can invalidate what it affects without
@@ -25,5 +26,8 @@ export const queryKeys = {
   adminQueue: (status: QueueState, page: number) => ['admin-queue', status, page] as const,
   adminOrder: (id: string) => ['admin-order', id] as const,
   payoutsDue: () => ['payouts-due'] as const,
+  auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
+  auditEntry: (id: string) => ['audit-entry', id] as const,
+  auditSummary: (from: string) => ['audit-summary', from] as const,
   health: () => ['health'] as const,
 }
