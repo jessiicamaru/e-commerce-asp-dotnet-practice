@@ -63,4 +63,16 @@ export class Order {
     const { data } = await http.get<Sale>(`/orders/sales/${id}`)
     return data
   }
+
+  /** The seller starts preparing THEIR part of this order (specs/035). The token says whose. */
+  static async prepareSale(id: string): Promise<Sale> {
+    const { data } = await http.post<Sale>(`/orders/sales/${id}/preparing`)
+    return data
+  }
+
+  /** The seller has sent THEIR part, with the carrier's tracking reference. */
+  static async shipSale(id: string, trackingReference: string): Promise<Sale> {
+    const { data } = await http.post<Sale>(`/orders/sales/${id}/shipment`, { trackingReference })
+    return data
+  }
 }

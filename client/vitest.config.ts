@@ -27,5 +27,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // 15s, not the default 5s. The tests that type into forms with userEvent - a price, a SKU, a
+    // tracking reference - take 3-5s each when twenty files run in parallel on a machine also running
+    // the Docker stack, and different ones timed out on different runs ("Test timed out in 5000ms",
+    // never an assertion). A real hang still fails; a slow keyboard no longer does.
+    testTimeout: 15_000,
   },
 })

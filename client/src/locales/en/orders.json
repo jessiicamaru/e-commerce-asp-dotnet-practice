@@ -27,5 +27,17 @@
     "failedStock": "Not placed: some items ran out of stock. Nothing was charged, and your cart is unchanged.",
     "failedPayment": "Not placed: the payment was declined. Your cart is unchanged, so you can try again.",
     "failed": "Not placed. Nothing was charged, and your cart is unchanged."
+  },
+  "parcels": {
+    "title": "Parcels",
+    "heading": "{{shipped}} of {{count}} parcels shipped",
+    "number": "Parcel {{index}} of {{count}}",
+    "tracking": "Tracking reference:",
+    "partly": "{{shipped}} of {{count}} parcels on their way",
+    "status": {
+      "Paid": "Waiting",
+      "Preparing": "Being prepared",
+      "Shipped": "Shipped"
+    }
   }
 }

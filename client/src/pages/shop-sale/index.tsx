@@ -1,19 +1,22 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
+import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { OrderLines } from '@/components/order/order-lines'
+import { SaleActions } from '@/components/seller/sale-actions'
 import { Price } from '@/components/shared/price'
 import { LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSale } from '@/hooks/order'
-import { describeSaleStatus } from '@/pages/shop-sales/status'
+import { describeAddress } from '@/utils/address'
 
 /**
- * One sale: the seller's own lines of one order (specs/034).
+ * One sale: the seller's own lines of one order, and their part of shipping it (specs/034, 035).
  *
  * <p>
- * There is no customer, no address and no order total on this page because the server does not send
- * them - a seller who only looks has no use for them, and the address arrives with the job of
- * shipping, not ahead of it.
+ * The delivery address is on this page <b>only while the seller's part is waiting or being prepared</b>
+ * - the server stops sending it once their parcel is out (research D6), and the page draws what it is
+ * given rather than keeping a copy. The customer's identity and the rest of the order are never here.
  * </p>
  * <p>
  * An order that is not this seller's sale is refused exactly like one that does not exist, and the
@@ -26,9 +29,13 @@ export function ShopSalePage() {
   const sale = useSale(id)
 
   const back = (
-    <Link to="/shop/sales" className="text-muted-foreground text-sm hover:underline">
-      {t('sales.back')}
-    </Link>
+    <nav className="text-muted-foreground flex items-center gap-1 text-sm">
+      <Link to="/shop/sales" className="hover:text-foreground">
+        {t('sales.title')}
+      </Link>
+      <ChevronRightIcon className="size-4" />
+      <span className="text-foreground font-mono text-xs">{id.slice(0, 8)}…</span>
+    </nav>
   )
 
   if (sale.isError) {
@@ -47,24 +54,66 @@ export function ShopSalePage() {
   const { data } = sale
 
   return (
-    <section className="grid gap-4">
+    <section className="grid gap-6">
       {back}
       <header className="grid gap-1">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold tracking-tight">
           {t('sales.placedAt', { at: new Date(data.createdAt).toLocaleString(i18n.language) })}
         </h1>
-        <p className="text-muted-foreground text-sm">{describeSaleStatus(t, data.status)}</p>
       </header>
 
-      {/* The order's own currency, frozen at checkout - not whatever the seller is browsing in. */}
-      <OrderLines items={data.items} currency={data.currency} />
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
+        <div className="grid gap-6">
+          <Card className="rounded-3xl">
+            <CardHeader>
+              <CardTitle>{t('fulfil.title')}</CardTitle>
+              <CardDescription>{t('fulfil.hint')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SaleActions sale={data} />
+            </CardContent>
+          </Card>
 
-      <div className="grid justify-items-end gap-1">
-        <p className="text-sm">
-          {t('sales.subtotal')}:{' '}
-          <Price value={data.subtotal} currency={data.currency} className="font-semibold" />
-        </p>
-        <p className="text-muted-foreground max-w-prose text-right text-xs">{t('sales.subtotalHint')}</p>
+          <Card className="rounded-3xl">
+            <CardHeader>
+              <CardTitle>{t('sales.subtotal')}</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {/* The order's own currency, frozen at checkout - not whatever the seller is browsing in. */}
+              <OrderLines items={data.items} currency={data.currency} />
+              <div className="grid justify-items-end gap-1">
+                <p className="text-sm">
+                  {t('sales.subtotal')}:{' '}
+                  <Price value={data.subtotal} currency={data.currency} className="font-semibold" />
+                </p>
+                <p className="text-muted-foreground max-w-prose text-right text-xs">{t('sales.subtotalHint')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="rounded-3xl lg:sticky lg:top-28">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPinIcon className="size-4.5" /> {t('fulfil.shipTo')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-1.5 text-sm">
+            {data.shippingAddress ? (
+              <>
+                <p className="font-semibold">{data.shippingAddress.recipientName}</p>
+                <p>{describeAddress(data.shippingAddress)}</p>
+                {data.shippingAddress.phone && (
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <PhoneIcon className="size-3.5" /> {data.shippingAddress.phone}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-muted-foreground">{t('fulfil.addressGone')}</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </section>
   )

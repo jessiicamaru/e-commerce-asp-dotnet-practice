@@ -12,6 +12,6 @@ public class ShipOrderCommandHandler(IOrderRepository orders)
 
     public Task<OrderDetailResponse> Handle(ShipOrderCommand request, CancellationToken cancellationToken) =>
         FulfilmentStep.AdvanceAsync(
-            _orders, request.OrderId, OrderStatus.Preparing, OrderStatus.Shipped,
+            _orders, request.OrderId, ShipmentStatus.Preparing, ShipmentStatus.Shipped,
             request.TrackingReference.Trim(), cancellationToken);
 }

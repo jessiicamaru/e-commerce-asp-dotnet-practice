@@ -57,7 +57,10 @@ export function OrdersPage() {
                   <span className="font-semibold">{money(order.totalAmount, order.currency)}</span>
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {describeOrderStatus(t, order.status, order.failureReason)}
+                  {/* Partly sent says so (specs/035): "Preparing" alone reads as if nothing has left. */}
+                  {order.shipmentCount > 1 && order.shipmentsShipped > 0 && order.shipmentsShipped < order.shipmentCount
+                    ? t('parcels.partly', { shipped: order.shipmentsShipped, count: order.shipmentCount })
+                    : describeOrderStatus(t, order.status, order.failureReason)}
                 </span>
               </CardContent>
             </Card>

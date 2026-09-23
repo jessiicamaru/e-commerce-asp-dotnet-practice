@@ -12,5 +12,5 @@ public class PrepareOrderCommandHandler(IOrderRepository orders)
 
     public Task<OrderDetailResponse> Handle(PrepareOrderCommand request, CancellationToken cancellationToken) =>
         FulfilmentStep.AdvanceAsync(
-            _orders, request.OrderId, OrderStatus.Paid, OrderStatus.Preparing, null, cancellationToken);
+            _orders, request.OrderId, ShipmentStatus.Pending, ShipmentStatus.Preparing, null, cancellationToken);
 }

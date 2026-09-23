@@ -45,7 +45,9 @@ describe('CartPage', () => {
   it('shows the picture of the variant in the cart', async () => {
     renderAsSeller(<CartPage />, '/cart')
 
-    const picture = await screen.findByAltText('Sigma 18-50mm')
+    // Longer than findBy's default second: the picture needs a SECOND request (the product) after the
+    // cart, and under a full parallel run that took 2s - a timing failure, not a wrong picture.
+    const picture = await screen.findByAltText('Sigma 18-50mm', {}, { timeout: 5000 })
     await waitFor(() => expect(picture).toHaveAttribute('src', '/img/fuji-mount.png'))
   })
 

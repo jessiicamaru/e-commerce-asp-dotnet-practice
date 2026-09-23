@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { OrderLines } from '@/components/order/order-lines'
+import { OrderShipments } from '@/components/order/order-shipments'
 import { OrderStatus } from '@/components/order/order-status'
 import { OrderTotals } from '@/components/order/order-totals'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
@@ -63,6 +64,12 @@ export function OrderPage() {
       )}
       {order.trackingReference && (
         <p className="mt-3 text-sm">{t('order.tracking', { reference: order.trackingReference })}</p>
+      )}
+
+      {order.shipments && (
+        <div className="mt-6">
+          <OrderShipments shipments={order.shipments} />
+        </div>
       )}
 
       <div className="mt-4">

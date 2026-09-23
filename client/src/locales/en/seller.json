@@ -135,5 +135,25 @@
     "priceIn": "Price in {{currency}}",
     "save": "Save variant",
     "saved": "Variant saved."
+  },
+  "fulfil": {
+    "title": "Your parcel",
+    "hint": "You ship your own part of this order. The customer sees each parcel and its tracking reference.",
+    "progress": "Where your parcel has got to",
+    "step": {
+      "Paid": "Waiting",
+      "Preparing": "Being prepared",
+      "Shipped": "Shipped"
+    },
+    "prepare": "Start preparing",
+    "prepared": "Marked as being prepared.",
+    "ship": "Mark as shipped",
+    "shipHint": "Enter the carrier's tracking reference. The customer follows it, and it cannot be changed afterwards.",
+    "tracking": "Tracking reference",
+    "confirmShip": "Mark as shipped",
+    "shipped": "Marked as shipped.",
+    "trackingIs": "Tracking reference:",
+    "shipTo": "Ship to",
+    "addressGone": "Your parcel has been sent, so the delivery address is no longer shown."
   }
 }

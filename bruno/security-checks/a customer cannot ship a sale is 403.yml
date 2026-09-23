@@ -1,0 +1,35 @@
+info:
+  name: a customer cannot ship a sale is 403
+  type: http
+  seq: 34
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/sales/{{orderId}}/shipment"
+  body:
+    type: json
+    data: |-
+      {
+        "trackingReference": "VN-NOT-MINE"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  `[Authorize(Roles = "Seller")]` (specs/035) - the request that fails if the attribute is dropped,
+  which no unit test can see because they call the handler directly.

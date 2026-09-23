@@ -17,8 +17,17 @@ public record OrderSummaryResponse(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     string Currency = "",
-    string Language = ""
+    string Language = "",
+    int ShipmentCount = 0,
+    int ShipmentsShipped = 0
 );
+
+/// <summary>
+/// One part of an order - one parcel (specs/035). The customer sees each: what is in it, where it has
+/// got to, and its tracking reference. Status is <c>Paid</c> while nobody has started it.
+/// </summary>
+/// <param name="Items">What is in this parcel, in the words frozen on the order's lines.</param>
+public record ShipmentResponse(string Status, string? TrackingReference, List<string> Items);
 
 public record ShippingAddressResponse(
     string RecipientName,
@@ -81,7 +90,8 @@ public record OrderDetailResponse(
     decimal? DiscountTotal = null,
     decimal? TaxRate = null,
     string Currency = "",
-    string Language = ""
+    string Language = "",
+    List<ShipmentResponse>? Shipments = null
 );
 
 /// <summary>

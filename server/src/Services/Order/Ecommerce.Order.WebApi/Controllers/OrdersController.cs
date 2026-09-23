@@ -1,4 +1,5 @@
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
+using Ecommerce.Order.Application.Orders.Commands.SellerFulfilment;
 using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 using Ecommerce.Order.Application.Orders.Queries.GetCheckoutQuote;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrderById;
@@ -96,7 +97,27 @@ public class OrdersController : ApiControllerBase
         return Ok(await Mediator.Send(new GetMySaleQuery(id)));
     }
 
+    /// <summary>
+    /// A seller starts preparing THEIR part of this order (specs/035). 404 - one wording - when it is
+    /// not their sale, not there, not paid or failed; 409 when their part is not waiting.
+    /// </summary>
+    [Authorize(Roles = "Seller")]
+    [HttpPost("sales/{id:guid}/preparing")]
+    public async Task<IActionResult> PrepareMySale(Guid id)
+    {
+        return Ok(await Mediator.Send(new PrepareMySaleCommand(id)));
+    }
+
+    /// <summary>A seller has sent THEIR part, with a tracking reference. Repeating it is a no-op.</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpPost("sales/{id:guid}/shipment")]
+    public async Task<IActionResult> ShipMySale(Guid id, [FromBody] ShipmentRequest request)
+    {
+        return Ok(await Mediator.Send(new ShipMySaleCommand(id, request.TrackingReference ?? string.Empty)));
+    }
+
     // ------------------------------------------------------------------ fulfilment (staff)
+    // Since specs/035 these move the SHOP's part of the order - its own goods - and nothing a seller sold.
 
     /// <summary>Staff: every customer's orders in one fulfilment status - Paid, Preparing or Shipped.</summary>
     [Authorize(Roles = "Admin")]

@@ -134,5 +134,25 @@
     "priceIn": "Giá {{currency}}",
     "save": "Lưu phiên bản",
     "saved": "Đã lưu phiên bản."
+  },
+  "fulfil": {
+    "title": "Kiện hàng của bạn",
+    "hint": "Bạn tự gửi phần hàng của mình trong đơn này. Người mua thấy từng kiện và mã vận đơn của nó.",
+    "progress": "Tiến độ kiện hàng của bạn",
+    "step": {
+      "Paid": "Chờ xử lý",
+      "Preparing": "Đang chuẩn bị",
+      "Shipped": "Đã gửi"
+    },
+    "prepare": "Bắt đầu chuẩn bị",
+    "prepared": "Đã chuyển sang đang chuẩn bị.",
+    "ship": "Đánh dấu đã gửi",
+    "shipHint": "Nhập mã vận đơn của đơn vị vận chuyển. Người mua theo dõi bằng mã này, và không sửa được sau khi lưu.",
+    "tracking": "Mã vận đơn",
+    "confirmShip": "Xác nhận đã gửi",
+    "shipped": "Đã đánh dấu đã gửi.",
+    "trackingIs": "Mã vận đơn:",
+    "shipTo": "Giao tới",
+    "addressGone": "Kiện hàng đã được gửi, nên địa chỉ giao không còn hiển thị."
   }
 }
