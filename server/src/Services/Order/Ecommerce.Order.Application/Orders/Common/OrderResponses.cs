@@ -27,7 +27,14 @@ public record OrderSummaryResponse(
 /// got to, and its tracking reference. Status is <c>Paid</c> while nobody has started it.
 /// </summary>
 /// <param name="Items">What is in this parcel, in the words frozen on the order's lines.</param>
-public record ShipmentResponse(string Status, string? TrackingReference, List<string> Items);
+/// <param name="SellerName">Who sends it, as frozen at checkout (specs/036); null when not recorded.</param>
+/// <param name="IsShop">The shop's own parcel - named by the client in the reader's language.</param>
+public record ShipmentResponse(
+    string Status,
+    string? TrackingReference,
+    List<string> Items,
+    string? SellerName = null,
+    bool IsShop = false);
 
 public record ShippingAddressResponse(
     string RecipientName,
@@ -57,7 +64,8 @@ public record OrderItemDetailResponse(
     decimal? TaxAmount = null,
     Guid? VariantId = null,
     string? Sku = null,
-    string? OptionSummary = null
+    string? OptionSummary = null,
+    string? SellerName = null
 );
 
 /// <summary>

@@ -34,5 +34,8 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         // Both of a seller's reads start from "lines of this seller" (specs/034). Without this, every
         // page a seller opens scans every order line in the shop.
         builder.HasIndex(x => x.SellerId);
+
+        // A shop name, frozen at checkout (specs/036). Catalog's own column is 100 wide.
+        builder.Property(x => x.SellerName).HasMaxLength(100);
     }
 }

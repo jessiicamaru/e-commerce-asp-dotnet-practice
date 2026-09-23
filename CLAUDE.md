@@ -90,8 +90,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (98 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (132 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (103 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -373,7 +373,12 @@ stays `Paid` / `Preparing` / `Shipped`, and the customer learns "1 of 2" from th
 written at checkout **and created on demand** before every move, in the order's own state, because
 an older image writes orders without them during a rollback; the migration backfilled existing
 orders the same way. A seller sees the delivery address **only while their part is waiting or
-being prepared**. The delivery charge is not split between parts.
+being prepared**. The delivery charge is not split between parts. Since specs/036 each parcel and each order line
+also says **which shop** it comes from: `order_items.SellerName`, frozen at checkout from
+`PricedVariant.seller_name` (Catalog fills it from its `sellers` read model, one batched lookup per
+request), so a shop renamed afterwards does not rename an order. Unset for the shop's own goods and for
+a seller Catalog has not heard of yet - never an empty string or an id; the storefront words the shop's
+own parcel itself.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

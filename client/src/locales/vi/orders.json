@@ -38,6 +38,9 @@
       "Paid": "Chờ xử lý",
       "Preparing": "Đang chuẩn bị",
       "Shipped": "Đã gửi"
-    }
-  }
+    },
+    "from": "từ {{shop}}",
+    "theShop": "Cửa hàng"
+  },
+  "soldBy": "Bán bởi {{shop}}"
 }

@@ -32,6 +32,13 @@ public class OrderItem
     /// </remarks>
     public Guid? SellerId { get; set; }
 
+    /// <summary>
+    /// The shop's name as it was when this was bought (specs/036), FROZEN with the seller. Null: the
+    /// shop's own goods, a line from before names were recorded, or a shop Catalog had not heard of yet.
+    /// A rename later does not rewrite who the customer bought from.
+    /// </summary>
+    public string? SellerName { get; set; }
+
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public decimal TotalPrice => Quantity * UnitPrice;

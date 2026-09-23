@@ -85,7 +85,8 @@ public class GrpcCatalogPrices(
                     v.Sku,
                     v.OptionSummary,
                     v.Currency,
-                    SellerOf(v))).ToList();
+                    SellerOf(v),
+                    SellerNameOf(v))).ToList();
             }
             catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
             {
@@ -135,6 +136,13 @@ public class GrpcCatalogPrices(
     /// </remarks>
     public static Guid? SellerOf(PricedVariant variant) =>
         variant.HasSellerId && Guid.TryParse(variant.SellerId, out var seller) ? seller : null;
+
+    /// <summary>
+    /// The shop's name (specs/036), or null - for the shop's own goods, a name Catalog does not have,
+    /// and a Catalog too old to send one. An empty string is null too: it would print as a blank.
+    /// </summary>
+    public static string? SellerNameOf(PricedVariant variant) =>
+        variant.HasSellerName && !string.IsNullOrWhiteSpace(variant.SellerName) ? variant.SellerName : null;
 
     /// <summary>
     /// Says so when Catalog could not tell us whose a product is. Without this, a real seller's sale

@@ -170,4 +170,12 @@ message PricedVariant {
   // own product, and a real seller's sale would be written down as the shop's without a word. With
   // presence, "not sent" is HasSellerId == false: this Catalog cannot say.
   optional string seller_id = 9;
+
+  // The selling shop's name, as Catalog's read model of sellers knows it now (specs/036). Order freezes
+  // it onto the line, so a customer's order keeps saying who they bought from after a rename.
+  //
+  // Unset for the shop's own goods, and when the name is not known yet - the seller's registration
+  // event can still be in the broker. Unlike seller_id nothing needs to tell those two apart: the id
+  // already says whose it is, and a missing name is a missing label, not a misattributed sale.
+  optional string seller_name = 10;
 }

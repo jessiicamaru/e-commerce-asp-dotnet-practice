@@ -73,6 +73,7 @@ public interface ICatalogPrices
 /// Whose product it is (specs/034); null for the shop's own - and for a Catalog too old to say, which
 /// the transport has already logged. Frozen onto the order line.
 /// </param>
+/// <param name="SellerName">The shop's name, when there is a seller and Catalog knows it (specs/036).</param>
 public record CatalogPrice(
     Guid ProductId,
     string Name,
@@ -82,4 +83,5 @@ public record CatalogPrice(
     string Sku = "",
     string OptionSummary = "",
     string Currency = "",
-    Guid? SellerId = null);
+    Guid? SellerId = null,
+    string? SellerName = null);
