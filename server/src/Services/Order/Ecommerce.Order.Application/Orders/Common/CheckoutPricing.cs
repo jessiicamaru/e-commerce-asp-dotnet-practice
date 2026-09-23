@@ -136,7 +136,8 @@ public class CheckoutPricing(
                 item.SellableId,
                 variant.Sku,
                 variant.OptionSummary,
-                variant.SellerId);
+                variant.SellerId,
+                variant.SellerName);
         }).ToList();
 
         return new PricedCheckout(
@@ -157,7 +158,8 @@ public record PricedLine(
     Guid VariantId = default,
     string Sku = "",
     string OptionSummary = "",
-    Guid? SellerId = null)
+    Guid? SellerId = null,
+    string? SellerName = null)
 {
     public decimal TotalPrice => UnitPrice * Quantity;
 }

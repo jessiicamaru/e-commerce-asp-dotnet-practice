@@ -19,6 +19,8 @@ export interface OrderLine {
   unitPrice: number
   totalPrice: number
   taxAmount: number | null
+  /** The shop that sold it, frozen at purchase (specs/036). Null: the shop's own, or not recorded. */
+  sellerName?: string | null
 }
 
 /** The named parts of a total (specs/012): subtotal + shipping + tax - discount = total. */
@@ -52,6 +54,10 @@ export interface Shipment {
   trackingReference: string | null
   /** What is in it, in the words frozen on the order's lines. */
   items: string[]
+  /** Who sends it (specs/036); null when not recorded - an older order, or a name nobody had yet. */
+  sellerName: string | null
+  /** The shop's own parcel: named in the reader's language here, not frozen on the server. */
+  isShop: boolean
 }
 
 export interface Order extends Totals {

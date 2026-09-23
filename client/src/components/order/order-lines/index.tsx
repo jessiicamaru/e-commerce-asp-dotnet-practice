@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import { Price } from '@/components/shared/price'
 import type { OrderLine } from '@/services/order/types'
@@ -8,6 +9,8 @@ import type { OrderLine } from '@/services/order/types'
  * whatever the shopper is browsing in.
  */
 export function OrderLines({ items, currency }: { items: OrderLine[]; currency?: string }) {
+  const { t } = useTranslation('orders')
+
   return (
     <Table>
       <TableBody>
@@ -22,6 +25,10 @@ export function OrderLines({ items, currency }: { items: OrderLine[]; currency?:
                 <div className="text-muted-foreground text-xs">{item.optionSummary}</div>
               )}
               {item.sku && <div className="text-muted-foreground text-xs">SKU {item.sku}</div>}
+              {/* Who sold it (specs/036) - so an order from one seller says so, parcels or not. */}
+              {item.sellerName && (
+                <div className="text-muted-foreground text-xs">{t('soldBy', { shop: item.sellerName })}</div>
+              )}
             </TableCell>
             <TableCell className="text-muted-foreground">
               {item.quantity} × <Price value={item.unitPrice} currency={currency} />

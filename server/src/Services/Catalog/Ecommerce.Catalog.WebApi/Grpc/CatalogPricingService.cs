@@ -28,9 +28,11 @@ namespace Ecommerce.Catalog.WebApi.Grpc;
 public class CatalogPricingService(
     IProductRepository products,
     IOptions<CurrencyOptions> money,
-    ILogger<CatalogPricingService> logger) : CatalogPricing.CatalogPricingBase
+    ILogger<CatalogPricingService> logger,
+    ISellerRepository sellers) : CatalogPricing.CatalogPricingBase
 {
     private readonly IProductRepository _products = products;
+    private readonly ISellerRepository _sellers = sellers;
     private readonly CurrencyOptions _money = money.Value;
     private readonly ILogger<CatalogPricingService> _logger = logger;
 
@@ -194,10 +196,11 @@ public class CatalogPricingService(
         }
 
         var response = new PriceVariantsResponse();
+        var shopNames = await ShopNamesAsync(found, context.CancellationToken);
 
         foreach (var variant in found)
         {
-            response.Variants.Add(Describe(variant, request.Language, request.Currency));
+            response.Variants.Add(Describe(variant, request.Language, request.Currency, shopNames));
         }
 
         return response;
@@ -236,10 +239,11 @@ public class CatalogPricingService(
         }
 
         var found = await _products.GetVariantsByIdsAsync(requested, context.CancellationToken);
+        var shopNames = await ShopNamesAsync(found, context.CancellationToken);
 
         foreach (var variant in found)
         {
-            response.Variants.Add(Describe(variant, request.Language, request.Currency));
+            response.Variants.Add(Describe(variant, request.Language, request.Currency, shopNames));
         }
 
         foreach (var id in requested.Where(id => found.All(v => v.Id != id)))
@@ -256,7 +260,8 @@ public class CatalogPricingService(
     /// <param name="currency">
     /// Empty means the shop's default currency - what a caller built before specs/022 gets.
     /// </param>
-    private PricedVariant Describe(ProductVariant variant, string language, string currency)
+    private PricedVariant Describe(
+        ProductVariant variant, string language, string currency, IReadOnlyDictionary<Guid, string> shopNames)
     {
         var wanted = string.IsNullOrEmpty(currency) ? _money.DefaultCurrency : currency;
 
@@ -298,8 +303,25 @@ public class CatalogPricingService(
             described.SellerId = variant.Product.SellerId?.ToString() ?? string.Empty;
         }
 
+        // The shop's name (specs/036) - only when there is a seller AND the read model knows them. A
+        // seller whose registration is still in the broker is left unset: never an empty string or an
+        // id, which would be printed on a customer's order as if it were a name.
+        if (variant.Product?.SellerId is { } seller && shopNames.TryGetValue(seller, out var shopName))
+        {
+            described.SellerName = shopName;
+        }
+
         return described;
     }
+
+    /// <summary>
+    /// Every seller's shop name for these variants, in ONE query - a page of an order's lines must not
+    /// become a lookup per line (the same rule as specs/027 FR-003).
+    /// </summary>
+    private Task<Dictionary<Guid, string>> ShopNamesAsync(
+        IEnumerable<ProductVariant> variants, CancellationToken cancellationToken) =>
+        _sellers.GetNamesAsync(
+            variants.Select(v => v.Product?.SellerId).OfType<Guid>(), cancellationToken);
 
     private static List<Guid> ParseOrThrow(IEnumerable<string> raw)
     {

@@ -38,6 +38,9 @@
       "Paid": "Waiting",
       "Preparing": "Being prepared",
       "Shipped": "Shipped"
-    }
-  }
+    },
+    "from": "from {{shop}}",
+    "theShop": "the shop"
+  },
+  "soldBy": "Sold by {{shop}}"
 }

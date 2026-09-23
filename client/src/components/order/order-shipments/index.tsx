@@ -35,7 +35,16 @@ export function OrderShipments({ shipments }: { shipments: Shipment[] }) {
               <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 font-medium">
                   <Icon className="text-muted-foreground size-4.5" />
-                  {t('parcels.number', { index: index + 1, count: shipments.length })}
+                  <span className="grid">
+                    {t('parcels.number', { index: index + 1, count: shipments.length })}
+                    {/* Who is sending it (specs/036). The shop's own is worded here, in the reader's
+                        language; a seller's name was frozen at checkout. Neither known: nothing, not a guess. */}
+                    {(shipment.isShop || shipment.sellerName) && (
+                      <span className="text-muted-foreground text-xs font-normal">
+                        {t('parcels.from', { shop: shipment.isShop ? t('parcels.theShop') : shipment.sellerName })}
+                      </span>
+                    )}
+                  </span>
                 </span>
                 <Badge
                   variant="outline"

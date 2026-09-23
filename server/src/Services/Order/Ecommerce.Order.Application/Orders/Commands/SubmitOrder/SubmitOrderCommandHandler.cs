@@ -72,7 +72,11 @@ public class SubmitOrderCommandHandler(
             // ...and whose it was (specs/034). The only record that this sale was a seller's: nothing
             // can recover it later, because the answer lives in Catalog's database, and asking again
             // would answer with whoever owns the product by then.
-            SellerId = line.SellerId
+            SellerId = line.SellerId,
+
+            // ...and the shop's name as it is now (specs/036): who the customer bought from, which a
+            // rename next month must not change.
+            SellerName = line.SellerName
         }).ToList();
 
         // The grand total travels in OrderSubmittedEvent and the saga charges exactly that, so no contract
@@ -170,7 +174,8 @@ public class SubmitOrderCommandHandler(
             x.TaxAmount,
             x.VariantId,
             x.Sku,
-            x.OptionSummary
+            x.OptionSummary,
+            x.SellerName
         )).ToList();
 
         return new OrderResponse(

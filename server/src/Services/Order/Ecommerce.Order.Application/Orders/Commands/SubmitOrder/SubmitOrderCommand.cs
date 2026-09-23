@@ -30,7 +30,8 @@ public record OrderItemResponse(
     decimal? TaxAmount = null,
     Guid? VariantId = null,
     string? Sku = null,
-    string? OptionSummary = null
+    string? OptionSummary = null,
+    string? SellerName = null
 );
 
 public record OrderResponse(

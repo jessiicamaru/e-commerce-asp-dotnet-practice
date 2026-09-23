@@ -37,7 +37,11 @@ public static class OrderMapping
                 order.Items
                     .Where(i => i.SellerId == s.SellerId)
                     .Select(i => string.IsNullOrEmpty(i.OptionSummary) ? i.ProductName : $"{i.ProductName} · {i.OptionSummary}")
-                    .ToList()))
+                    .ToList(),
+                // Who sends it (specs/036): the name frozen on its lines. Every line of one part is the
+                // same seller's, so any recorded one will do; none recorded is null, not a guess.
+                order.Items.Where(i => i.SellerId == s.SellerId).Select(i => i.SellerName).FirstOrDefault(n => n is not null),
+                IsShop: s.SellerId is null))
             .ToList();
 
     public static ShippingAddressResponse? ToResponse(Domain.Entities.ShippingAddress? a) =>
@@ -55,7 +59,7 @@ public static class OrderMapping
         order.Items
             .Select(x => new OrderItemDetailResponse(
                 x.ProductId, x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, x.TaxAmount,
-                x.VariantId, x.Sku, x.OptionSummary))
+                x.VariantId, x.Sku, x.OptionSummary, x.SellerName))
             .ToList(),
         ToResponse(order.ShipTo),
         order.ShippingOptionCode is null
