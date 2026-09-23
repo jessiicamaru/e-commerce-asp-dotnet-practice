@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using MassTransit;
 using Ecommerce.Application;
 using Ecommerce.Application.Common.Interfaces;
@@ -90,6 +91,7 @@ public class IdentityTestFixture : IAsyncLifetime
         // the fixture needs a bus. In-memory: the assertions here are about what Identity STORES and
         // returns - that Catalog hears about it is verified where Catalog consumes it.
         services.AddMassTransitTestHarness();
+        services.AddAuditTrail("identity");
 
         services.AddSingleton<ICurrentUser>(new FixedUser(userId));
         return services.BuildServiceProvider(validateScopes: true);

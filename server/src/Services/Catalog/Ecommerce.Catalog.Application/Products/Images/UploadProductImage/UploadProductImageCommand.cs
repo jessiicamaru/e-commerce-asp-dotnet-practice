@@ -7,6 +7,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
 
@@ -41,9 +42,12 @@ public class UploadProductImageCommandHandler(
     IProductRepository products,
     IProductImageStore store,
     ICurrentUser currentUser,
-    ILogger<UploadProductImageCommandHandler> logger)
+    ILogger<UploadProductImageCommandHandler> logger,
+    IAuditTrail audit)
     : IRequestHandler<UploadProductImageCommand, ProductResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly IProductImageStore _store = store;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -87,6 +91,10 @@ public class UploadProductImageCommandHandler(
             throw new ConflictException("The product's image was changed by someone else meanwhile. Try again.");
         }
 
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "ProductImageSet", "Product", product.Id.ToString(),
+            $"New photograph for \"{product.Name}\"", cancellationToken: cancellationToken);
+        await _products.SaveChangesAsync(cancellationToken);
         // 3. Delete what the row no longer names.
         if (previousKey is not null)
         {

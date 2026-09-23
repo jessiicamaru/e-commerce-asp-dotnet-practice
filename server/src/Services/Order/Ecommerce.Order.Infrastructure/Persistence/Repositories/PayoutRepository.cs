@@ -117,7 +117,31 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
         string currency,
         Guid recordedBy,
         DateTime at,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<PayoutResponse, CancellationToken, Task>? stage = null)
+    {
+        // The claim is one statement; its audit entry (specs/041) is saved in the same transaction with it.
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var payout = await ClaimAsync(payoutId, sellerId, currency, recordedBy, at, cancellationToken);
+
+            if (payout is not null && stage is not null)
+            {
+                await stage(payout, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return payout;
+        });
+    }
+
+    private async Task<PayoutResponse?> ClaimAsync(
+        Guid payoutId, Guid sellerId, string currency, Guid recordedBy, DateTime at, CancellationToken cancellationToken)
     {
         var statuses = Sales.Earning.Select(s => s.ToString()).ToArray();
         var shipped = ShipmentStatus.Shipped.ToString();

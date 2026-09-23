@@ -4,14 +4,18 @@ using Ecommerce.Domain.Entities;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Addresses.Commands.SaveAddress;
 
 public class SaveAddressCommandHandler(
     IAddressRepository addresses,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser) : IRequestHandler<SaveAddressCommand, AddressResponse>
+    ICurrentUser currentUser,
+    IAuditTrail audit) : IRequestHandler<SaveAddressCommand, AddressResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IAddressRepository _addresses = addresses;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -56,6 +60,9 @@ public class SaveAddressCommandHandler(
             };
 
             _addresses.Add(saved);
+            await _audit.RecordAsync(
+                AuditCategory.User, "AddressAdded", "Address", saved.Id.ToString(), "Added a delivery address",
+                cancellationToken: ct);
             await _addresses.SaveChangesAsync(ct);
         }, cancellationToken);
 

@@ -3,6 +3,7 @@ using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Addresses.Commands.UpdateAddress;
 
@@ -12,8 +13,11 @@ namespace Ecommerce.Application.Addresses.Commands.UpdateAddress;
 /// </remarks>
 public class UpdateAddressCommandHandler(
     IAddressRepository addresses,
-    ICurrentUser currentUser) : IRequestHandler<UpdateAddressCommand, AddressResponse>
+    ICurrentUser currentUser,
+    IAuditTrail audit) : IRequestHandler<UpdateAddressCommand, AddressResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IAddressRepository _addresses = addresses;
     private readonly ICurrentUser _currentUser = currentUser;
 
@@ -35,6 +39,9 @@ public class UpdateAddressCommandHandler(
         address.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
         address.UpdatedAt = DateTime.UtcNow;
 
+        await _audit.RecordAsync(
+            AuditCategory.User, "AddressUpdated", "Address", address.Id.ToString(), "Edited a delivery address",
+            cancellationToken: cancellationToken);
         await _addresses.SaveChangesAsync(cancellationToken);
 
         return AddressResponse.From(address);

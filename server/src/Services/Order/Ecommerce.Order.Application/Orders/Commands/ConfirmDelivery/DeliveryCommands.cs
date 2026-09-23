@@ -4,6 +4,7 @@ using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Order.Application.Orders.Commands.ConfirmDelivery;
 
@@ -19,9 +20,12 @@ public record ConfirmDeliveryCommand(Guid OrderId, Guid ShipmentId) : IRequest<O
 /// </summary>
 public record AutoConfirmDeliveriesCommand(DateTime ShippedBefore) : IRequest<int>;
 
-public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser currentUser)
+public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<ConfirmDeliveryCommand, OrderDetailResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IOrderRepository _orders = orders;
     private readonly ICurrentUser _currentUser = currentUser;
 
@@ -31,7 +35,12 @@ public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser
             ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
         var outcome = await _orders.TryConfirmDeliveryAsync(
-            request.OrderId, request.ShipmentId, userId, DateTime.UtcNow, cancellationToken);
+            request.OrderId, request.ShipmentId, userId, DateTime.UtcNow, cancellationToken,
+            ct => _audit.RecordAsync(
+                AuditCategory.Order, "ParcelReceived", "Order", request.OrderId.ToString(),
+                "The customer confirmed a parcel arrived",
+                after: new { Parcel = request.ShipmentId, ConfirmedBy = ParcelDelivery.ByCustomer },
+                cancellationToken: ct));
 
         switch (outcome)
         {
@@ -47,15 +56,24 @@ public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser
     }
 }
 
-public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogger<AutoConfirmDeliveriesCommandHandler> logger)
+public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogger<AutoConfirmDeliveriesCommandHandler> logger,
+    IAuditTrail audit)
     : IRequestHandler<AutoConfirmDeliveriesCommand, int>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IOrderRepository _orders = orders;
     private readonly ILogger<AutoConfirmDeliveriesCommandHandler> _logger = logger;
 
     public async Task<int> Handle(AutoConfirmDeliveriesCommand request, CancellationToken cancellationToken)
     {
-        var confirmed = await _orders.AutoConfirmDeliveriesAsync(request.ShippedBefore, DateTime.UtcNow, cancellationToken);
+        var confirmed = await _orders.AutoConfirmDeliveriesAsync(
+            request.ShippedBefore, DateTime.UtcNow, cancellationToken,
+            (count, ct) => _audit.RecordAsync(
+                AuditCategory.System, "DeliveriesAutoConfirmed", "Parcel", null,
+                $"Took {count} parcel(s) shipped before {request.ShippedBefore:u} as delivered; nobody had confirmed them",
+                after: new { Count = count, ShippedBefore = request.ShippedBefore },
+                cancellationToken: ct));
 
         if (confirmed > 0)
         {

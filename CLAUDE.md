@@ -89,8 +89,8 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (44 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (18 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (164 tests,
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (168 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -177,6 +177,7 @@ so.
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031); **puts a cancelled order's units back** (specs/039) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money**; records a refund for a cancelled order, moving none either (specs/039) |
+| Activity | 5063 | 5440 / `ecommerce_activity_db` | **The audit log** (specs/041): keeps `AuditEntryRecorded` from every service, one row per entry id, with a field-level diff; Admin-only reads at `/api/audit` |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`).
@@ -471,6 +472,20 @@ admin exists. Self-registration always grants `Customer`.
 mailbox. The migration that added it **stops** if accounts differing only by case already exist,
 rather than choosing which one survives; how to resolve that is in
 [troubleshooting §8](docs/guides/troubleshooting.md).
+
+**Everything that matters is in the audit log** (specs/041). Every service records through
+`Ecommerce.Shared/Audit` - `IAuditTrail.RecordAsync(category, action, subjectType, subjectId, summary,
+before, after)` - which publishes `AuditEntryRecorded` through the service's outbox, so ⚠️ **call it
+before the one `SaveChangesAsync`**, like any publish: the entry commits with its change or not at all.
+Where the change is a guarded statement in its own transaction (parcel moves, deliveries, payouts,
+cancellation) the repository method takes a `stage` callback and saves it inside that transaction. The
+actor comes from `ICurrentUser` (none: the system), the role is the most powerful one held, and
+snapshots are **redacted before they leave the service** - any property named like password, token,
+secret or hash. The **Activity** service (5063, db 5440) keeps them with `INSERT ... ON CONFLICT DO
+NOTHING` on the publisher's entry id and computes the diff once. Categories: System, Security, User,
+Catalog, Order, Payment, Moderation. Delivery addresses are recorded as "an address changed", never
+copied into a diff. Product images are the one place the entry is saved just after its change (the
+switch is its own guarded UPDATE, specs/019) rather than with it.
 
 ### Shared building blocks
 **Inventory owns stock; Catalog reports a read model of it.** `Product.Availability` is fed by `StockAvailabilityChangedEvent` and surfaces as `"InStock"` / `"OutOfStock"` — never a count. **Nothing may sell against it**: checkout reserves under `FOR UPDATE` against Inventory's row, and a read model fed by messages is seconds behind by design. A real number comes from `GET /api/stock/{productId}` on Inventory, which is public. Seven handlers move stock and every one must announce - the seventh, since specs/039, puts a cancelled order's units back - and an eighth must call `StockAvailabilityAnnouncer` too, and `Ecommerce.Inventory.Tests/AnnouncementTests.cs` is what catches the omission. Background in [specs/004-stock-single-source](specs/004-stock-single-source/).

@@ -4,6 +4,7 @@ using Ecommerce.Inventory.Domain.Enums;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Inventory.Application.Reservations.ExpireStock;
 
@@ -14,8 +15,11 @@ public class ExpireStockCommandHandler(
     IReservationRepository reservationRepository,
     IPublishEndpoint publishEndpoint,
     ILogger<ExpireStockCommandHandler> logger
-) : IRequestHandler<ExpireStockCommand, int>
+,
+    IAuditTrail audit) : IRequestHandler<ExpireStockCommand, int>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
     private readonly IReservationRepository _reservationRepository = reservationRepository;
@@ -62,6 +66,12 @@ public class ExpireStockCommandHandler(
             // movement and the announcement commit together.
             await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stockItems, ct);
 
+            // The sweeper changed stock nobody asked it to - exactly what the System log is for (specs/041).
+            await _audit.RecordAsync(
+                AuditCategory.System, "ReservationsExpired", "Reservation", null,
+                $"Returned {reservations.Count} expired hold(s) to the shelf",
+                after: new { Orders = reservations.Select(r => r.OrderId).Distinct(), Units = reservations.Sum(r => r.Quantity) },
+                cancellationToken: ct);
             await _reservationRepository.SaveChangesAsync(ct);
         }, cancellationToken);
 

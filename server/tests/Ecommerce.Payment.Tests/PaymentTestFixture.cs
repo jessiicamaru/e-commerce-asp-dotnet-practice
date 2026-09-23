@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Payment.Application;
 using Ecommerce.Payment.Application.Common.Interfaces;
 using Ecommerce.Payment.Infrastructure.Gateway;
@@ -99,6 +100,8 @@ public class PaymentTestFixture : IAsyncLifetime
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         services.AddMassTransitTestHarness();
+
+        services.AddAuditTrail("payment");
 
         return services.BuildServiceProvider(true);
     }

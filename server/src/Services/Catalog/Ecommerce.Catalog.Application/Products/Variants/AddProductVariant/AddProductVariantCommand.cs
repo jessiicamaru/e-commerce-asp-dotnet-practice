@@ -11,6 +11,7 @@ using Ecommerce.Shared.Money;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
 
@@ -54,9 +55,12 @@ public class AddProductVariantCommandValidator : AbstractValidator<AddProductVar
 public class AddProductVariantCommandHandler(
     IProductRepository products,
     IPublishEndpoint publishEndpoint,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<AddProductVariantCommand, VariantResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -124,6 +128,10 @@ public class AddProductVariantCommandHandler(
             new ProductVariantCreatedEvent(product.Id, variant.Id, variant.Sku, DateTime.UtcNow),
             cancellationToken);
 
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "VariantAdded", "Variant", variant.Id.ToString(),
+            $"Added {variant.Sku} ({variant.OptionSummary}) to \"{product.Name}\"",
+            after: CatalogAudit.Of(variant), cancellationToken: cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
 
         // The product's "from" price and availability follow its variants.

@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Catalog.Application;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Infrastructure.Images;
@@ -139,6 +140,7 @@ public class CatalogTestFixture : IAsyncLifetime
 
         // The real consumer, so at least one test proves the wiring and not only the handler.
         services.AddMassTransitTestHarness(x => x.AddConsumer<StockAvailabilityChangedConsumer>());
+        services.AddAuditTrail("catalog");
 
         return services.BuildServiceProvider(true);
     }

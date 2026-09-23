@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Inventory.Application.Common;
 using System.Security.Claims;
@@ -84,6 +85,8 @@ public class InventoryTestFixture : IAsyncLifetime
         services.AddSingleton<IProductOwnership>(Owners);
 
         services.AddMassTransitTestHarness();
+
+        services.AddAuditTrail("inventory");
 
         Services = services.BuildServiceProvider(true);
 

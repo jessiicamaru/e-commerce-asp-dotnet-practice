@@ -2,6 +2,7 @@ using Ecommerce.Catalog.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Images;
 
@@ -132,11 +133,16 @@ public class FindOrphanImagesQueryHandler(OrphanImageScan scan)
 public class RemoveOrphanImagesCommandHandler(
     OrphanImageScan scan,
     IProductImageStore store,
-    ILogger<RemoveOrphanImagesCommandHandler> logger)
+    IProductRepository products,
+    ILogger<RemoveOrphanImagesCommandHandler> logger,
+    IAuditTrail audit)
     : IRequestHandler<RemoveOrphanImagesCommand, OrphanImageReport>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly OrphanImageScan _scan = scan;
     private readonly IProductImageStore _store = store;
+    private readonly IProductRepository _products = products;
     private readonly ILogger<RemoveOrphanImagesCommandHandler> _logger = logger;
 
     public async Task<OrphanImageReport> Handle(
@@ -169,6 +175,16 @@ public class RemoveOrphanImagesCommandHandler(
                 "Reclaimed {Count} orphaned image(s), {Bytes} byte(s).", removed.Count, removed.Sum(o => o.Bytes));
         }
 
+// Destroying files is what the System log exists for (specs/041) - by whom, and how many.
+if (removed.Count > 0)
+{
+    await _audit.RecordAsync(
+        AuditCategory.System, "OrphanImagesReclaimed", "ImageStore", null,
+        $"Reclaimed {removed.Count} orphaned image(s), {removed.Sum(o => o.Bytes)} byte(s)",
+        after: new { Keys = removed.Select(o => o.Key), Failed = failed },
+        cancellationToken: cancellationToken);
+    await _products.SaveChangesAsync(cancellationToken);
+}
         return new OrphanImageReport(
             grace, scanned, live, removed, removed.Sum(o => o.Bytes), failed, OrphanImageScan.OneInstanceNote);
     }

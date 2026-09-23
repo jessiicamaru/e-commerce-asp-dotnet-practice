@@ -31,6 +31,11 @@ COPY src/BuildingBlocks/Ecommerce.Contracts.Grpc/*.csproj src/BuildingBlocks/Eco
 COPY src/BuildingBlocks/Ecommerce.Shared/*.csproj         src/BuildingBlocks/Ecommerce.Shared/
 COPY src/ApiGateway/Ecommerce.ApiGateway/*.csproj         src/ApiGateway/Ecommerce.ApiGateway/
 
+COPY src/Services/Activity/Ecommerce.Activity.Domain/*.csproj         src/Services/Activity/Ecommerce.Activity.Domain/
+COPY src/Services/Activity/Ecommerce.Activity.Application/*.csproj    src/Services/Activity/Ecommerce.Activity.Application/
+COPY src/Services/Activity/Ecommerce.Activity.Infrastructure/*.csproj src/Services/Activity/Ecommerce.Activity.Infrastructure/
+COPY src/Services/Activity/Ecommerce.Activity.WebApi/*.csproj         src/Services/Activity/Ecommerce.Activity.WebApi/
+
 COPY src/Services/Cart/Ecommerce.Cart.Domain/*.csproj                   src/Services/Cart/Ecommerce.Cart.Domain/
 COPY src/Services/Cart/Ecommerce.Cart.Application/*.csproj              src/Services/Cart/Ecommerce.Cart.Application/
 COPY src/Services/Cart/Ecommerce.Cart.Infrastructure/*.csproj           src/Services/Cart/Ecommerce.Cart.Infrastructure/

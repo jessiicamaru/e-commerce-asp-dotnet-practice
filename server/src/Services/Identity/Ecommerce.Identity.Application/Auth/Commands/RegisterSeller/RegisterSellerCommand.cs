@@ -1,3 +1,4 @@
+using Ecommerce.Application.Common;
 using System.Text;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Common;
@@ -10,6 +11,7 @@ using Ecommerce.Shared.Exceptions;
 using FluentValidation;
 using MassTransit;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Auth.Commands.RegisterSeller;
 
@@ -68,8 +70,11 @@ public class RegisterSellerCommandHandler(
     IRoleRepository roleRepository,
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
-    IPublishEndpoint publishEndpoint) : IRequestHandler<RegisterSellerCommand, AuthResponse>
+    IPublishEndpoint publishEndpoint,
+    IAuditTrail audit) : IRequestHandler<RegisterSellerCommand, AuthResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IRoleRepository _roleRepository = roleRepository;
     private readonly IPasswordHasher _passwordHasher = passwordHasher;
@@ -118,6 +123,10 @@ public class RegisterSellerCommandHandler(
         await _publishEndpoint.Publish(
             new SellerRegisteredEvent(user.Id, shopName, DateTime.UtcNow), cancellationToken);
 
+        await _audit.RecordAsync(
+            AuditCategory.User, "ShopOpened", "User", user.Id.ToString(), $"{user.Email} opened the shop \"{shopName}\"",
+            after: new { user.Email, user.FirstName, user.LastName, ShopName = shopName, Roles = user.Roles.Select(r => r.Name) },
+            actor: AuditActors.Of(user), cancellationToken: cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);

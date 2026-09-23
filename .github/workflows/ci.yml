@@ -68,6 +68,20 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Activity.Tests (specs/041) - the audit log's one-entry-per-id insert.
+      postgres-activity:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_activity_db
+        ports: ['5440:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       postgres-cart:
         image: postgres:16-alpine
         env:
@@ -349,6 +363,7 @@ jobs:
           inventory|src/Services/Inventory/Ecommerce.Inventory.WebApi
           payment|src/Services/Payment/Ecommerce.Payment.WebApi
           cart|src/Services/Cart/Ecommerce.Cart.WebApi
+          activity|src/Services/Activity/Ecommerce.Activity.WebApi
           gateway|src/ApiGateway/Ecommerce.ApiGateway
           SERVICES
 
@@ -382,7 +397,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SERVICES="identity catalog order orchestrator inventory payment cart gateway"
+          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway"
 
           # Does this name already refer to something?
           #
@@ -492,7 +507,7 @@ jobs:
           # Counted from the list rather than written down as a number. "7" was hardcoded
           # here and in three messages, and went stale the moment an eighth service arrived -
           # the same drift the Dockerfile's COPY list and this job's other two lists suffer.
-          SERVICES="identity catalog order orchestrator inventory payment cart gateway"
+          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway"
           total=$(set -- $SERVICES; echo $#)
 
           for service in $SERVICES; do

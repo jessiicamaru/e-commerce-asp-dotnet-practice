@@ -22,6 +22,7 @@ import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrdersPage } from '@/pages/admin-orders'
 import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminPayoutsPage } from '@/pages/admin-payouts'
+import { AdminAuditPage } from '@/pages/admin-audit'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -117,6 +118,7 @@ export function AppRoutes() {
             <Route index element={<AdminOrdersPage />} />
             <Route path="orders/:id" element={<AdminOrderPage />} />
             <Route path="payouts" element={<AdminPayoutsPage />} />
+            <Route path="audit" element={<AdminAuditPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

@@ -8,6 +8,7 @@ using Ecommerce.Shared.Money;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Options;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Prices;
 
@@ -91,9 +92,12 @@ public class RemoveVariantPriceCommandValidator : AbstractValidator<RemoveVarian
 public class SetVariantPriceCommandHandler(
     IProductRepository products,
     IOptions<CurrencyOptions> money,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<SetVariantPriceCommand, VariantResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly CurrencyOptions _money = money.Value;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -112,6 +116,7 @@ public class SetVariantPriceCommandHandler(
             ?? throw new NotFoundException($"Variant with ID '{request.VariantId}' was not found on this product.");
 
         var currency = request.Currency.ToUpperInvariant();
+        var before = CatalogAudit.Of(variant);
 
         if (IsDefault(currency))
         {
@@ -141,6 +146,10 @@ public class SetVariantPriceCommandHandler(
         }
 
         variant.UpdatedAt = DateTime.UtcNow;
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "PriceSet", "Variant", variant.Id.ToString(),
+            $"{variant.Sku} priced at {request.Amount} {currency}", before, CatalogAudit.Of(variant),
+            cancellationToken: cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
 
         // The product's "from" price is derived from its variants, so it is recomputed where they are.
@@ -156,9 +165,12 @@ public class SetVariantPriceCommandHandler(
 public class RemoveVariantPriceCommandHandler(
     IProductRepository products,
     IOptions<CurrencyOptions> money,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<RemoveVariantPriceCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly CurrencyOptions _money = money.Value;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -195,7 +207,12 @@ public class RemoveVariantPriceCommandHandler(
             return;
         }
 
+        var before = CatalogAudit.Of(variant);
         variant.Prices.Remove(price);
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "PriceRemoved", "Variant", variant.Id.ToString(),
+            $"{variant.Sku} no longer sold in {currency}", before, CatalogAudit.Of(variant),
+            cancellationToken: cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
     }
 }

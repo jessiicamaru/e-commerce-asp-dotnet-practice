@@ -3,7 +3,8 @@
   "title": "Running the shop",
   "menu": {
     "fulfilment": "Orders to ship",
-    "payouts": "Seller payouts"
+    "payouts": "Seller payouts",
+    "audit": "Audit log"
   },
   "queue": {
     "title": "Orders to ship",
@@ -50,5 +51,79 @@
     "confirmBody": "The shop records paying {{amount}} for {{count}} parcel(s). No money is moved by this system - it is a ledger entry, and it cannot be undone.",
     "confirm": "Record",
     "paid": "Recorded {{amount}} to {{seller}}."
+  },
+  "audit": {
+    "title": "Audit log",
+    "subtitle": "Who did what, when, and what it changed. Each action is recorded exactly once, together with the change.",
+    "category": {
+      "All": "All",
+      "Security": "Security",
+      "User": "Users",
+      "Moderation": "Moderation",
+      "Catalog": "Catalog",
+      "Order": "Orders",
+      "Payment": "Payments",
+      "System": "System"
+    },
+    "period": {
+      "day": "24 hours",
+      "week": "7 days",
+      "month": "30 days",
+      "all": "All time"
+    },
+    "actorFilter": "Filter by who did it (email)",
+    "loadFailed": "Could not load the audit log.",
+    "none": "Nothing matches.",
+    "columns": {
+      "when": "When",
+      "what": "What",
+      "who": "Who",
+      "changes": "Changes"
+    },
+    "system": "System",
+    "subject": "Subject",
+    "service": "Service",
+    "noChanges": "This entry records no field changes.",
+    "changes": "Changed fields",
+    "field": "Field",
+    "before": "Before",
+    "after": "After",
+    "action": {
+      "SignedIn": "Signed in",
+      "SignInRefused": "Sign-in refused",
+      "Registered": "Registered",
+      "ShopOpened": "Shop opened",
+      "ShopRenamed": "Shop renamed",
+      "AddressAdded": "Address added",
+      "AddressUpdated": "Address edited",
+      "AddressDeleted": "Address deleted",
+      "CategoryCreated": "Category created",
+      "CategoryDeleted": "Category deleted",
+      "ProductCreated": "Product listed",
+      "ProductDeleted": "Product withdrawn",
+      "ProductTextEdited": "Product text edited",
+      "PriceSet": "Price set",
+      "PriceRemoved": "Price removed",
+      "VariantAdded": "Variant added",
+      "VariantUpdated": "Variant edited",
+      "ProductImageSet": "Product photo set",
+      "ProductImageRemoved": "Product photo removed",
+      "VariantImageSet": "Variant photo set",
+      "VariantImageRemoved": "Variant photo removed",
+      "OrphanImagesReclaimed": "Orphan images reclaimed",
+      "StockSet": "Stock set",
+      "ReservationsExpired": "Expired holds returned",
+      "StockReturned": "Stock returned",
+      "OrderPlaced": "Order placed",
+      "OrderCancelled": "Order cancelled",
+      "ParcelPrepared": "Parcel being prepared",
+      "ParcelShipped": "Parcel shipped",
+      "ParcelReceived": "Parcel received",
+      "DeliveriesAutoConfirmed": "Deliveries auto-confirmed",
+      "PayoutRecorded": "Payout recorded",
+      "PaymentCharged": "Payment charged",
+      "PaymentRefused": "Payment refused",
+      "RefundRecorded": "Refund recorded"
+    }
   }
 }

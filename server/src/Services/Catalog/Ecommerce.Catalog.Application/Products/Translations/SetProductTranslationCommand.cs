@@ -8,6 +8,7 @@ using Ecommerce.Shared.Localization;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Options;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Translations;
 
@@ -79,9 +80,12 @@ public static class LanguageRules
 public class SetProductTranslationCommandHandler(
     IProductRepository products,
     IOptions<LanguageOptions> localization,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<SetProductTranslationCommand, ProductResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly LanguageOptions _localization = localization.Value;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -97,6 +101,7 @@ public class SetProductTranslationCommandHandler(
 
         var language = request.Language.ToLowerInvariant();
         var translation = product.Translations.FirstOrDefault(t => t.Language == language);
+        var before = translation is null ? null : new { translation.Name, translation.Description };
 
         if (translation is null)
         {
@@ -116,6 +121,11 @@ public class SetProductTranslationCommandHandler(
         }
 
         product.UpdatedAt = DateTime.UtcNow;
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "ProductTextEdited", "Product", product.Id.ToString(),
+            $"Edited the {language} name and description of \"{product.Name}\"",
+            before, new { Name = request.Name.Trim(), Description = request.Description?.Trim() },
+            cancellationToken: cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
 
         return ProductResponse.WithVariants(product, language, _localization.DefaultLanguage);

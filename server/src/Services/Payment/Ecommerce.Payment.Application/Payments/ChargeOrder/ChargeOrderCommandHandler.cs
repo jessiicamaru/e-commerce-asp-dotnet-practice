@@ -6,6 +6,7 @@ using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Payment.Application.Payments.ChargeOrder;
 
@@ -16,8 +17,11 @@ public class ChargeOrderCommandHandler(
     IPublishEndpoint publishEndpoint,
     IOptions<CurrencyOptions> money,
     ILogger<ChargeOrderCommandHandler> logger
-) : IRequestHandler<ChargeOrderCommand, ChargeOrderResult>
+,
+    IAuditTrail audit) : IRequestHandler<ChargeOrderCommand, ChargeOrderResult>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IPaymentRepository _paymentRepository = paymentRepository;
     private readonly IPaymentGateway _gateway = gateway;
@@ -98,6 +102,16 @@ public class ChargeOrderCommandHandler(
         // Publish BEFORE the single SaveChangesAsync, so the payment row and the outbox entry
         // commit together. Publishing afterwards would allow a reply describing a payment the
         // database never accepted, or a payment nobody is told about.
+// Money, recorded where it is decided (specs/041). The saga charges; nobody is signed in.
+await _audit.RecordAsync(
+    AuditCategory.Payment,
+    payment.Status == PaymentStatus.Approved ? "PaymentCharged" : "PaymentRefused",
+    "Order", payment.OrderId.ToString(),
+    payment.Status == PaymentStatus.Approved
+        ? $"Charged {payment.Amount} {payment.Currency} through {payment.Provider}"
+        : $"Refused {payment.Amount} {payment.Currency}: {payment.FailureReason}",
+    after: new { payment.Id, payment.Amount, payment.Currency, Status = payment.Status.ToString(), payment.Provider, payment.FailureReason },
+    cancellationToken: ct);
         await PublishAsync(payment, ct);
 
         await _paymentRepository.SaveChangesAsync(ct);

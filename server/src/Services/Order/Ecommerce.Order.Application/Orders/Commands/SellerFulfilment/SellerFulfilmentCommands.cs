@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Audit;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
 using Ecommerce.Order.Application.Orders.Common;
@@ -28,20 +29,26 @@ public class ShipMySaleCommandValidator : AbstractValidator<ShipMySaleCommand>
     }
 }
 
-public class PrepareMySaleCommandHandler(IOrderRepository orders, ICurrentUser currentUser)
+public class PrepareMySaleCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<PrepareMySaleCommand, SaleDetailResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     public Task<SaleDetailResponse> Handle(PrepareMySaleCommand request, CancellationToken cancellationToken) =>
         SellerStep.MoveAsync(orders, currentUser, request.OrderId,
-            ShipmentStatus.Pending, ShipmentStatus.Preparing, null, cancellationToken);
+            ShipmentStatus.Pending, ShipmentStatus.Preparing, null, cancellationToken, _audit);
 }
 
-public class ShipMySaleCommandHandler(IOrderRepository orders, ICurrentUser currentUser)
+public class ShipMySaleCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
+    IAuditTrail audit)
     : IRequestHandler<ShipMySaleCommand, SaleDetailResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     public Task<SaleDetailResponse> Handle(ShipMySaleCommand request, CancellationToken cancellationToken) =>
         SellerStep.MoveAsync(orders, currentUser, request.OrderId,
-            ShipmentStatus.Preparing, ShipmentStatus.Shipped, request.TrackingReference.Trim(), cancellationToken);
+            ShipmentStatus.Preparing, ShipmentStatus.Shipped, request.TrackingReference.Trim(), cancellationToken, _audit);
 }
 
 /// <summary>A seller's step on their own part, and what each outcome looks like from outside.</summary>
@@ -54,13 +61,15 @@ internal static class SellerStep
         ShipmentStatus from,
         ShipmentStatus to,
         string? trackingReference,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IAuditTrail? audit = null)
     {
         var sellerId = currentUser.Id
             ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
         var result = await orders.TryMoveShipmentAsync(
-            orderId, sellerId, from, to, trackingReference, DateTime.UtcNow, cancellationToken);
+            orderId, sellerId, from, to, trackingReference, DateTime.UtcNow, cancellationToken,
+            audit is null ? null : ct => ParcelAudit.RecordAsync(audit, orderId, sellerId, from, to, trackingReference, ct));
 
         switch (result.Outcome)
         {

@@ -7,6 +7,7 @@ using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MassTransit;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 
@@ -15,8 +16,11 @@ public class CreateProductCommandHandler(
     ICategoryRepository categoryRepository,
     IPublishEndpoint publishEndpoint,
     ICurrentUser currentUser
-) : IRequestHandler<CreateProductCommand, ProductResponse>
+,
+    IAuditTrail audit) : IRequestHandler<CreateProductCommand, ProductResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _productRepository = productRepository;
     private readonly ICategoryRepository _categoryRepository = categoryRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
@@ -107,6 +111,9 @@ public class CreateProductCommandHandler(
         ), cancellationToken);
 
         // Save BOTH Product entity and OutboxMessage in 1 single atomic DB transaction
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "ProductCreated", "Product", product.Id.ToString(), $"Listed \"{product.Name}\" ({product.Sku})",
+            after: CatalogAudit.Of(product), cancellationToken: cancellationToken);
         await _productRepository.SaveChangesAsync(cancellationToken);
 
         return ProductResponse.WithVariants(product);

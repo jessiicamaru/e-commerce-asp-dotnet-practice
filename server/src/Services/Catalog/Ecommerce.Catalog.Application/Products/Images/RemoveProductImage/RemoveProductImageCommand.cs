@@ -4,6 +4,7 @@ using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Images.RemoveProductImage;
 
@@ -18,9 +19,12 @@ public class RemoveProductImageCommandHandler(
     IProductRepository products,
     IProductImageStore store,
     ICurrentUser currentUser,
-    ILogger<RemoveProductImageCommandHandler> logger)
+    ILogger<RemoveProductImageCommandHandler> logger,
+    IAuditTrail audit)
     : IRequestHandler<RemoveProductImageCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly IProductImageStore _store = store;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -46,6 +50,10 @@ public class RemoveProductImageCommandHandler(
             throw new ConflictException("The product's image was changed by someone else meanwhile. Try again.");
         }
 
+await _audit.RecordAsync(
+    AuditCategory.Catalog, "ProductImageRemoved", "Product", product.Id.ToString(),
+    $"Removed the photograph of \"{product.Name}\"", cancellationToken: cancellationToken);
+await _products.SaveChangesAsync(cancellationToken);
         try
         {
             await _store.DeleteAsync(key, cancellationToken);

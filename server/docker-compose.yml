@@ -111,6 +111,25 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Activity (specs/041): the audit log, and in-app notifications.
+  postgres-activity:
+    image: postgres:16-alpine
+    container_name: ecommerce-activity-db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=ecommerce_activity_db
+    ports:
+      - "5440:5432"
+    volumes:
+      - postgres_activity_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
   postgres-order:
     image: postgres:16-alpine
     container_name: ecommerce-order-db
@@ -188,6 +207,7 @@ volumes:
   postgres_order_data:
   postgres_inventory_data:
   postgres_payment_data:
+  postgres_activity_data:
   postgres_cart_data:
   rabbitmq_data:
   seq_data:

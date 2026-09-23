@@ -7,6 +7,7 @@ using Ecommerce.Shared.Exceptions;
 using MassTransit;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 
@@ -41,8 +42,11 @@ public class DeleteProductCommandHandler(
     IPublishEndpoint publishEndpoint,
     IProductImageStore store,
     ICurrentUser currentUser,
-    ILogger<DeleteProductCommandHandler> logger) : IRequestHandler<DeleteProductCommand>
+    ILogger<DeleteProductCommandHandler> logger,
+    IAuditTrail audit) : IRequestHandler<DeleteProductCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IProductRepository _products = products;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly IProductImageStore _store = store;
@@ -84,6 +88,9 @@ public class DeleteProductCommandHandler(
         await _publishEndpoint.Publish(
             new ProductDeletedEvent(product.Id, variantIds, DateTime.UtcNow), cancellationToken);
 
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "ProductDeleted", "Product", product.Id.ToString(), $"Withdrew \"{product.Name}\" ({product.Sku})",
+            before: CatalogAudit.Of(product), cancellationToken: cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
 
         _logger.LogWarning(

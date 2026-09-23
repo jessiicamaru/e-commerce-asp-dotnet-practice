@@ -2,6 +2,7 @@ using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Addresses.Commands.DeleteAddress;
 
@@ -12,8 +13,11 @@ namespace Ecommerce.Application.Addresses.Commands.DeleteAddress;
 public class DeleteAddressCommandHandler(
     IAddressRepository addresses,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser) : IRequestHandler<DeleteAddressCommand>
+    ICurrentUser currentUser,
+    IAuditTrail audit) : IRequestHandler<DeleteAddressCommand>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IAddressRepository _addresses = addresses;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -36,6 +40,9 @@ public class DeleteAddressCommandHandler(
             // Two saves in one transaction, on purpose: the default is removed BEFORE another is
             // promoted. In one save EF may order the UPDATE first, and the partial unique index would
             // see two defaults for a moment and refuse.
+            await _audit.RecordAsync(
+                AuditCategory.User, "AddressDeleted", "Address", target.Id.ToString(), "Deleted a delivery address",
+                cancellationToken: ct);
             await _addresses.SaveChangesAsync(ct);
 
             if (target.IsDefault)

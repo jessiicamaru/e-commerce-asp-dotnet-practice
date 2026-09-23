@@ -5,6 +5,7 @@ using Ecommerce.Shared.Exceptions;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Order.Application.Orders.Commands.RecordPayout;
 
@@ -30,9 +31,12 @@ public class RecordPayoutCommandValidator : AbstractValidator<RecordPayoutComman
 public class RecordPayoutCommandHandler(
     IPayoutRepository payouts,
     ICurrentUser currentUser,
-    ILogger<RecordPayoutCommandHandler> logger)
+    ILogger<RecordPayoutCommandHandler> logger,
+    IAuditTrail audit)
     : IRequestHandler<RecordPayoutCommand, PayoutResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IPayoutRepository _payouts = payouts;
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly ILogger<RecordPayoutCommandHandler> _logger = logger;
@@ -46,7 +50,12 @@ public class RecordPayoutCommandHandler(
         var currency = request.Currency.Trim().ToUpperInvariant();
 
         var payout = await _payouts.TryRecordAsync(
-            Guid.CreateVersion7(), request.SellerId, currency, admin, DateTime.UtcNow, cancellationToken)
+            Guid.CreateVersion7(), request.SellerId, currency, admin, DateTime.UtcNow, cancellationToken,
+            (p, ct) => _audit.RecordAsync(
+                AuditCategory.Payment, "PayoutRecorded", "Seller", p.SellerId.ToString(),
+                $"Recorded paying {p.Amount} {p.Currency} to a seller for {p.PartCount} parcel(s)",
+                after: new { PayoutId = p.Id, p.Amount, p.Currency, p.PartCount },
+                cancellationToken: ct))
             ?? throw new ConflictException(Payouts.NothingDue(currency));
 
         _logger.LogInformation(

@@ -98,6 +98,10 @@ public interface IOrderRepository
     /// repeat affects no row and comes back <see cref="ShipmentMoveOutcome.AlreadyThere"/>.
     /// </para>
     /// </remarks>
+    /// <param name="stage">
+    /// Stages what goes with a successful move - the audit entry (specs/041) - inside the same transaction,
+    /// saved with it. Not called when nothing moved.
+    /// </param>
     Task<ShipmentMoveResult> TryMoveShipmentAsync(
         Guid orderId,
         Guid? sellerId,
@@ -105,7 +109,8 @@ public interface IOrderRepository
         ShipmentStatus to,
         string? trackingReference,
         DateTime at,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? stage = null);
 
     /// <summary>
     /// Cancels a paid order, if it may be cancelled, and stages the event that undoes it elsewhere - in ONE
@@ -131,18 +136,28 @@ public interface IOrderRepository
     /// Records that one parcel of the owner's order arrived (specs/040): one guarded statement, so a repeat,
     /// or a sweep at the same moment, sets it once. The owner is part of the query.
     /// </summary>
+    /// <param name="stage">
+    /// Stages what goes with a successful move - the audit entry (specs/041) - inside the same transaction,
+    /// saved with it. Not called when nothing moved.
+    /// </param>
     Task<DeliveryConfirmOutcome> TryConfirmDeliveryAsync(
         Guid orderId,
         Guid shipmentId,
         Guid ownerId,
         DateTime at,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? stage = null);
 
     /// <summary>
     /// Takes every parcel shipped before <paramref name="shippedBefore"/> and not yet confirmed as delivered,
     /// "Auto" (specs/040). One statement; returns how many it changed.
     /// </summary>
-    Task<int> AutoConfirmDeliveriesAsync(DateTime shippedBefore, DateTime at, CancellationToken cancellationToken = default);
+    /// <param name="stage">Stages the System audit entry with how many were confirmed, when any were.</param>
+    Task<int> AutoConfirmDeliveriesAsync(
+        DateTime shippedBefore,
+        DateTime at,
+        CancellationToken cancellationToken = default,
+        Func<int, CancellationToken, Task>? stage = null);
 
     /// <summary>
     /// Creates any part the order is missing, in the order's state, and nothing else. Idempotent:

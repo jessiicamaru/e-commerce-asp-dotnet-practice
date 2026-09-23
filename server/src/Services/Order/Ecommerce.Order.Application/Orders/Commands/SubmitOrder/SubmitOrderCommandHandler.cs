@@ -9,6 +9,7 @@ using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MassTransit;
 using MediatR;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 
@@ -19,8 +20,11 @@ public class SubmitOrderCommandHandler(
     CheckoutPricing pricing,
     ICommissionRate commission,
     ILogger<SubmitOrderCommandHandler> logger
-) : IRequestHandler<SubmitOrderCommand, OrderResponse>
+,
+    IAuditTrail audit) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
+    private readonly IAuditTrail _audit = audit;
+
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -184,6 +188,15 @@ public class SubmitOrderCommandHandler(
         ), cancellationToken);
 
         // 3. Save BOTH Order entity and OutboxMessage in 1 single atomic DB transaction
+        await _audit.RecordAsync(
+            AuditCategory.Order, "OrderPlaced", "Order", order.Id.ToString(),
+            $"Order placed: {order.TotalAmount} {order.Currency}, {orderItems.Count} line(s)",
+            after: new
+            {
+                order.TotalAmount, order.Currency, order.Subtotal, order.ShippingPrice, order.TaxTotal,
+                order.ShippingOptionCode, Lines = orderItems.Select(i => new { i.Sku, i.Quantity, i.UnitPrice, i.SellerId })
+            },
+            cancellationToken: cancellationToken);
         await _orderRepository.SaveChangesAsync(cancellationToken);
 
         // Where a checkout's trace begins to carry the order id (feature 013). Everything downstream -
