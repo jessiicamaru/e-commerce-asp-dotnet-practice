@@ -26,13 +26,13 @@ import { initialsOf } from './initials'
 export function UserMenu({
   user,
   isSeller,
-  isAdmin = false,
+  isStaff = false,
   onSignOut,
 }: {
   user: User
   isSeller: boolean
-  /** Draws the console entry (specs/038). Drawing only - the server refuses everyone else. */
-  isAdmin?: boolean
+  /** Draws the console entry for an administrator or moderator (specs/038, 043). Drawing only. */
+  isStaff?: boolean
   onSignOut: () => void
 }) {
   const { t } = useTranslation()
@@ -75,7 +75,7 @@ export function UserMenu({
               <StoreIcon /> {t('seller:nav')}
             </DropdownMenuItem>
           )}
-          {isAdmin && (
+          {isStaff && (
             <DropdownMenuItem onClick={() => navigate('/admin')}>
               <ShieldCheckIcon /> {t('admin:nav')}
             </DropdownMenuItem>

@@ -42,6 +42,11 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
                 "Resource Conflict",
                 null
             ),
+            ForbiddenException => (
+                StatusCodes.Status403Forbidden,
+                "Forbidden",
+                null
+            ),
             UnauthorizedAccessException => (
                 StatusCodes.Status401Unauthorized,
                 "Unauthorized",
@@ -105,5 +110,6 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
         is ValidationException
         or NotFoundException
         or ConflictException
+        or ForbiddenException
         or DependencyUnavailableException;
 }

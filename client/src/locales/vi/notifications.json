@@ -21,6 +21,8 @@
     "NewSale": "Bạn có đơn bán mới: {{order}}.",
     "SaleCancelled": "Đơn {{order}} có hàng của bạn đã bị huỷ - không cần gửi.",
     "ParcelReceived": "Khách đã nhận kiện của bạn trong đơn {{order}}.",
-    "PayoutRecorded": "Sàn đã ghi nhận trả cho bạn {{amount}}."
+    "PayoutRecorded": "Sàn đã ghi nhận trả cho bạn {{amount}}.",
+    "ModeratorGranted": "Bạn đã là kiểm duyệt viên. Trang quản trị nằm trong menu của bạn.",
+    "ModeratorRevoked": "Bạn không còn là kiểm duyệt viên."
   }
 }

@@ -4,7 +4,8 @@
   "menu": {
     "fulfilment": "Orders to ship",
     "payouts": "Seller payouts",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "users": "Users"
   },
   "queue": {
     "title": "Orders to ship",
@@ -125,7 +126,61 @@
       "PaymentRefused": "Payment refused",
       "RefundRecorded": "Refund recorded",
       "OrderPaid": "Order paid",
-      "OrderFailed": "Order failed"
+      "OrderFailed": "Order failed",
+      "RoleGranted": "Role granted",
+      "RoleRevoked": "Role revoked",
+      "AccountLocked": "Account locked",
+      "AccountUnlocked": "Account unlocked",
+      "AccountBanned": "Account banned",
+      "BanLifted": "Ban lifted"
     }
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Find a person by email or name. Make them a moderator, or stop an account that is causing harm.",
+    "search": "Email or name",
+    "none": "Nobody matches.",
+    "loadFailed": "Could not load users.",
+    "columns": {
+      "person": "Person",
+      "roles": "Roles",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "locked": "Locked until {{until}}",
+      "banned": "Banned"
+    },
+    "actions": "Actions for {{email}}",
+    "grant": "Make moderator",
+    "revoke": "Remove moderator",
+    "lock": "Lock…",
+    "unlock": "Unlock",
+    "ban": "Ban…",
+    "liftBan": "Lift ban",
+    "lockTitle": "Lock {{email}}",
+    "lockBody": "They are signed out now and cannot sign in until the lock ends or somebody lifts it.",
+    "days": "For how long",
+    "daysOption_one": "{{count}} day",
+    "daysOption_other": "{{count}} days",
+    "banTitle": "Ban {{email}}",
+    "banBody": "They are signed out now and cannot sign in until an administrator lifts the ban.",
+    "reason": "Reason",
+    "reasonHint": "The person sees this when they try to sign in.",
+    "confirmLock": "Lock",
+    "confirmBan": "Ban",
+    "granted": "{{email}} is now a moderator. It takes effect at their next sign-in.",
+    "revoked": "{{email}} is no longer a moderator.",
+    "locked": "{{email}} is locked.",
+    "unlocked": "{{email}} is unlocked.",
+    "banned": "{{email}} is banned.",
+    "banLifted": "{{email}}'s ban is lifted.",
+    "you": "you"
+  },
+  "roles": {
+    "Admin": "Administrator",
+    "Moderator": "Moderator",
+    "Seller": "Seller",
+    "Customer": "Customer"
   }
 }

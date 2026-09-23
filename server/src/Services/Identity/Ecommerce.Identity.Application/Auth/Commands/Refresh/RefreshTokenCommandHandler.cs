@@ -69,7 +69,9 @@ public class RefreshTokenCommandHandler(
             throw new UnauthorizedAccessException(NotValid);
         }
 
-        if (presented.IsExpired)
+        // Locked or banned (specs/043): their sessions were revoked when it happened, and this holds
+        // even for one that slipped through - the account row decides, not the token.
+        if (presented.IsExpired || user.IsBanned || user.IsLocked(now))
         {
             throw new UnauthorizedAccessException(NotValid);
         }

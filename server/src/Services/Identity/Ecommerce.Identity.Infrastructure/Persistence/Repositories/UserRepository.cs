@@ -72,6 +72,33 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
             .Where(t => t.UserId == userId && t.RevokedAt == null)
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedAt, now), cancellationToken);
 
+    public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
+    public async Task<(List<User> Items, int TotalCount)> SearchAsync(
+        string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var key = search.Trim().ToLower();
+            query = query.Where(u =>
+                u.Email.ToLower().Contains(key)
+                || (u.FirstName + " " + u.LastName).ToLower().Contains(key));
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Include(u => u.Roles)
+            .OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);

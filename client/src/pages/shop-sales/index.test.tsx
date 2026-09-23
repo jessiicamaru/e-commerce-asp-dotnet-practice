@@ -17,6 +17,7 @@ function render_(isSeller = true) {
     restoring: false,
     isSeller,
     isAdmin: false,
+    isStaff: false,
     signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
 

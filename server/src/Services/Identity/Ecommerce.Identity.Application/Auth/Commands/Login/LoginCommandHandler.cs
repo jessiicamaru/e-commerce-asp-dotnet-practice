@@ -5,6 +5,7 @@ using Ecommerce.Application.Common.Constants;
 using Ecommerce.Domain.Entities;
 using MediatR;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Exceptions;
 
 namespace Ecommerce.Application.Auth.Commands.Login;
 
@@ -35,6 +36,24 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
                 cancellationToken: cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);
             throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        // Stopped by staff (specs/043). Only now, after the right password: before it, a locked account
+        // and a wrong password must look the same (#28). After it, the person is who they say they are
+        // and is owed the reason.
+        var now = DateTime.UtcNow;
+        if (user.IsBanned || user.IsLocked(now))
+        {
+            var why = user.IsBanned
+                ? $"This account is banned: {user.BanReason}"
+                : $"This account is locked until {user.LockedUntil:yyyy-MM-dd HH:mm} UTC: {user.LockReason}";
+
+            await _audit.RecordAsync(
+                AuditCategory.Security, "SignInRefused", "User", user.Id.ToString(),
+                $"Sign-in refused for {user.Email}: {(user.IsBanned ? "banned" : "locked")}",
+                actor: AuditActors.Of(user), cancellationToken: cancellationToken);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+            throw new ForbiddenException(why);
         }
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);

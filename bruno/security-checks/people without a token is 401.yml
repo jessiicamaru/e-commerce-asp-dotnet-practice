@@ -1,0 +1,26 @@
+info:
+  name: people without a token is 401
+  type: http
+  seq: 45
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/users"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Looking people up needs a staff token (specs/043).

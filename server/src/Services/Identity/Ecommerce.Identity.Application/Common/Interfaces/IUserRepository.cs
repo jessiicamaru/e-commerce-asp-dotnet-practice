@@ -19,6 +19,15 @@ public interface IUserRepository
     /// <summary>Revokes every still-active refresh token of the user: all their sessions end.</summary>
     Task<int> RevokeAllRefreshTokensAsync(Guid userId, DateTime now, CancellationToken cancellationToken = default);
 
+    /// <summary>One user with their roles, tracked - for staff acting on them (specs/043).</summary>
+    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Users whose email or name contains <paramref name="search"/> (case- and accent-blind on email via
+    /// its lower-case form), newest first, with their roles (specs/043).
+    /// </summary>
+    Task<(List<User> Items, int TotalCount)> SearchAsync(string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+
     Task AddAsync(User user, CancellationToken cancellationToken = default);
 
     /// <summary>

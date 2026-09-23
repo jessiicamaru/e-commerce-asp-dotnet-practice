@@ -19,7 +19,7 @@ import { useAuth } from '@/context/auth/useAuth'
  * "forbidden" would also tell them the page is real.
  * </p>
  */
-export function RequireRole({ role, children }: { role: string; children: ReactNode }) {
+export function RequireRole({ role, children }: { role: string | string[]; children: ReactNode }) {
   const { t } = useTranslation()
   const { user, restoring } = useAuth()
   const location = useLocation()
@@ -32,7 +32,9 @@ export function RequireRole({ role, children }: { role: string; children: ReactN
     return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />
   }
 
-  if (!user.roles.includes(role)) {
+  // Any of them: the console is for an administrator OR a moderator (specs/043).
+  const allowed = Array.isArray(role) ? role : [role]
+  if (!user.roles.some((held) => allowed.includes(held))) {
     return <Navigate to="/" replace />
   }
 
