@@ -96,6 +96,17 @@ public interface IProductRepository
     Task<ProductVariant?> GetVariantAsync(Guid variantId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Switches one variant's image, only if nobody switched it since <paramref name="expectedUpdatedAt"/>
+    /// was read (specs/032). Returns the rows affected - zero means somebody else got there first.
+    /// </summary>
+    Task<int> TrySetVariantImageAsync(
+        Guid variantId,
+        DateTime? expectedUpdatedAt,
+        string? contentType,
+        DateTime? updatedAt,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Several variants at once, with their options and products - the pricing call answers a whole
     /// order in one query. Returns only those that exist, so the caller compares counts and decides.
     /// </summary>

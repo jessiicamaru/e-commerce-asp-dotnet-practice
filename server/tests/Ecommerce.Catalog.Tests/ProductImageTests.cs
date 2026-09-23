@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
+using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 using Ecommerce.Catalog.Application.Products.Common;
@@ -268,6 +270,143 @@ public class ProductImageTests(CatalogTestFixture fixture) : IDisposable
         _fixture.Images.FailDeletes = false;
         Assert.Single(FilesOf(productId));
     }
+
+    /// <summary>
+    /// A shape with its own photograph shows it; one without shows the product's (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// The fallback is resolved on the server, in <c>VariantResponse</c>, so it is decided once.
+    /// Two callers implementing it separately would be two chances to get it wrong, and the one
+    /// that got it wrong would show the previously chosen variant's picture - which looks exactly
+    /// like the feature working.
+    /// </remarks>
+    [Fact]
+    public async Task A_variant_without_its_own_photograph_falls_back_to_the_products()
+    {
+        var productId = await SeedProductAsync();
+        await UploadAsync(productId, Png);
+
+        // TWO shapes: SeedProductAsync creates none, so one would leave nothing to fall back with.
+        var photographed = await SendAsync(new AddProductVariantCommand(
+            productId, $"FB1-{Guid.NewGuid():N}"[..20], 1_500_000m,
+            [new VariantOptionInput("Colour", "Silver")]));
+        var bare = await SendAsync(new AddProductVariantCommand(
+            productId, $"FB2-{Guid.NewGuid():N}"[..20], 1_600_000m,
+            [new VariantOptionInput("Colour", "Black")]));
+        await UploadVariantAsync(productId, photographed.Id, Jpeg);
+
+        // GetProductByIdQuery, not ProductResponse.From: only the lookup fills Variants.
+        var product = await SendAsync(new GetProductByIdQuery(productId));
+        var variants = product.Variants!;
+
+        var withOwn = variants.Single(v => v.Id == photographed.Id);
+        var without = variants.Single(v => v.Id == bare.Id);
+
+        Assert.Contains($"/variants/{photographed.Id}/image", withOwn.ImageUrl);
+        Assert.Equal($"/api/products/{productId}/image", without.ImageUrl!.Split('?')[0]);
+    }
+
+    /// <summary>Neither the shape nor the product has one: null, not a made-up address.</summary>
+    [Fact]
+    public async Task A_variant_of_a_product_with_no_photograph_at_all_has_none()
+    {
+        var productId = await SeedProductAsync();
+        await SendAsync(new AddProductVariantCommand(
+            productId, $"NONE-{Guid.NewGuid():N}"[..20], 1_500_000m,
+            [new VariantOptionInput("Colour", "Black")]));
+
+        var product = await SendAsync(new GetProductByIdQuery(productId));
+
+        Assert.All(product.Variants!, v => Assert.Null(v.ImageUrl));
+    }
+
+    /// <summary>
+    /// Replacing a shape's photograph leaves exactly one file, like replacing a product's.
+    /// </summary>
+    [Fact]
+    public async Task Replacing_a_variants_photograph_leaves_one_file()
+    {
+        var productId = await SeedProductAsync();
+        var second = await SendAsync(new AddProductVariantCommand(
+            productId, $"RP-{Guid.NewGuid():N}"[..20], 1_500_000m,
+            [new VariantOptionInput("Colour", "Silver")]));
+
+        await UploadVariantAsync(productId, second.Id, Png);
+        await UploadVariantAsync(productId, second.Id, Jpeg);
+        await UploadVariantAsync(productId, second.Id, WebP);
+
+        Assert.Single(_fixture.Images.Files().Where(f => f.StartsWith($"variant-{second.Id:N}-")));
+    }
+
+    /// <summary>The bytes decide the type here too - an SVG renamed .png is refused.</summary>
+    [Fact]
+    public async Task A_variant_photograph_is_recognised_by_its_bytes()
+    {
+        var productId = await SeedProductAsync();
+        var variant = await SendAsync(new AddProductVariantCommand(
+            productId, $"SVG-{Guid.NewGuid():N}"[..20], 1_500_000m,
+            [new VariantOptionInput("Colour", "Black")]));
+        var svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"/>"u8.ToArray();
+
+        var error = await Assert.ThrowsAsync<ValidationException>(
+            () => UploadVariantAsync(productId, variant.Id, svg));
+
+        Assert.Contains("not a JPEG, PNG or WebP", error.Message);
+    }
+
+    /// <summary>
+    /// A deleted product takes EVERY shape's photograph with it (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// specs/029 closed exactly this leak for the product's own image. Variant images added without
+    /// extending that cleanup would reintroduce the same defect in the same month - the row goes,
+    /// the bytes stay on the volume forever, and nothing breaks so nobody notices.
+    /// </remarks>
+    [Fact]
+    public async Task Deleting_a_product_deletes_every_variants_image_too()
+    {
+        var productId = await SeedProductAsync();
+        await UploadAsync(productId, Png);
+
+        var second = await SendAsync(new AddProductVariantCommand(
+            productId, $"SECOND-{Guid.NewGuid():N}"[..20], 1_500_000m,
+            [new VariantOptionInput("Colour", "Silver")]));
+        await UploadVariantAsync(productId, second.Id, Jpeg);
+
+        Assert.Equal(2, _fixture.Images.Files().Count(f =>
+            f.Contains($"{productId:N}") || f.Contains($"{second.Id:N}")));
+
+        await SendAsync(new DeleteProductCommand(productId));
+
+        Assert.DoesNotContain(_fixture.Images.Files(), f =>
+            f.Contains($"{productId:N}") || f.Contains($"{second.Id:N}"));
+    }
+
+    /// <summary>
+    /// A product and its first variant must not name the same file (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>The first variant of a product REUSES the product's id</b> (specs/020) - 12 of 12
+    /// products in the live catalogue. Without the prefix, the two keys differ only by their two
+    /// <c>ImageUpdatedAt</c> values happening not to agree, so this test pins the ONE case where
+    /// they do agree: the same id and the same instant. That is the case a clock cannot save.
+    /// </remarks>
+    [Fact]
+    public void A_product_and_its_first_variant_never_name_the_same_file()
+    {
+        var shared = Guid.CreateVersion7();
+        var sameInstant = ProductImageKey.Truncate(DateTime.UtcNow);
+        var png = ImageFormat.FromContentType("image/png")!;
+
+        var productKey = ProductImageKey.For(shared, sameInstant, png);
+        var variantKey = ProductImageKey.ForVariant(shared, sameInstant, png);
+
+        Assert.NotEqual(productKey, variantKey);
+    }
+
+    private Task UploadVariantAsync(Guid productId, Guid variantId, byte[] content) =>
+        SendAsync(new UploadVariantImageCommand(
+            productId, variantId, new MemoryStream(content), content.Length));
 
     private Task<ProductResponse> UploadAsync(Guid productId, byte[] content) =>
         SendAsync(new UploadProductImageCommand(productId, new MemoryStream(content), content.Length));

@@ -67,6 +67,15 @@ public class DeleteProductCommandHandler(
         // accident.
         var imageKey = ProductImageKey.For(product);
 
+        // ...and every SHAPE's own photograph (specs/032). Collected in the same breath, because
+        // adding variant images without extending this cleanup would have reintroduced the exact
+        // leak specs/029 closed - the row goes, the bytes stay forever, and nothing breaks so
+        // nobody notices.
+        var variantImageKeys = product.Variants
+            .Select(ProductImageKey.ForVariant)
+            .OfType<string>()
+            .ToList();
+
         _products.Remove(product);
 
         // Staged, then published, then saved - one transaction holding the deletion and the
@@ -92,16 +101,16 @@ public class DeleteProductCommandHandler(
         // should never have existed (specs/024); a product that cannot be removed from the catalogue
         // because of a leftover PNG is a worse defect than the leak, and a read-only volume cannot be
         // retried into success. Same bargain, and the same wording, as RemoveProductImage.
-        if (imageKey is not null)
+        foreach (var key in variantImageKeys.Prepend(imageKey).OfType<string>())
         {
             try
             {
-                await _store.DeleteAsync(imageKey, cancellationToken);
+                await _store.DeleteAsync(key, cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(
-                    ex, "Could not delete image {Key} of deleted product; it is left behind as an orphan.", imageKey);
+                    ex, "Could not delete image {Key} of deleted product; it is left behind as an orphan.", key);
             }
         }
     }

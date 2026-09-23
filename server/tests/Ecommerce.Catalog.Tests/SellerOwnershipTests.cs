@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 using Ecommerce.Catalog.Application.Products.Common;
@@ -252,6 +253,38 @@ public class SellerOwnershipTests(CatalogTestFixture fixture) : IDisposable
 
     private async Task Refused<T>(IRequest<T> request) =>
         await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(request));
+
+    /// <summary>
+    /// A shape's photograph is a write like any other: somebody else's is 404 (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// Three ways to be refused here - no such variant, a variant of a different product, and a
+    /// variant of somebody else's product - and all three answer with the same sentence. A
+    /// difference between them would let a caller map the catalogue by asking.
+    /// </remarks>
+    [Fact]
+    public async Task A_seller_cannot_photograph_another_sellers_variant()
+    {
+        await RecordShopAsync(_alice, "Alice Cameras");
+        var hers = await AsSeller(_alice, CreateProductAsync);
+
+        var png = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3 };
+
+        await AsSeller(_bob, async () =>
+        {
+            var refused = await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(
+                new UploadVariantImageCommand(hers.Id, hers.Id, new MemoryStream(png), png.Length)));
+            Assert.Contains("was not found", refused.Message);
+
+            var alsoRefused = await Assert.ThrowsAsync<NotFoundException>(
+                () => SendAsync(new RemoveVariantImageCommand(hers.Id, hers.Id)));
+            Assert.Contains("was not found", alsoRefused.Message);
+        });
+
+        // ...and Alice can photograph her own.
+        await AsSeller(_alice, () => SendAsync(
+            new UploadVariantImageCommand(hers.Id, hers.Id, new MemoryStream(png), png.Length)));
+    }
 
     private Task RecordShopAsync(Guid sellerId, string shopName, DateTime? at = null) =>
         AsAdmin(() => SendAsync(new RecordSellerCommand(sellerId, shopName, at ?? DateTime.UtcNow)));

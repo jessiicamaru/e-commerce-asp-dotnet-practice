@@ -62,6 +62,23 @@ public class ProductVariant
     /// <summary>When Inventory observed it. Null means it has never said anything.</summary>
     public DateTime? AvailabilityObservedAt { get; set; }
 
+    /// <summary>
+    /// This shape's own photograph type, decided from its bytes at upload; <c>null</c> when the
+    /// variant has none, which is the normal case (specs/032).
+    /// </summary>
+    /// <remarks>
+    /// A variant is the exact thing being sold, so a variant is what a photograph is of. Attaching
+    /// it to an option VALUE instead was rejected on measured data: Fujifilm X-T5 has two black
+    /// variants that do not look alike, because one has a lens mounted.
+    /// </remarks>
+    public string? ImageContentType { get; set; }
+
+    /// <summary>
+    /// When this shape's photograph was set - also its version, in its address and in its store key.
+    /// Set together with <see cref="ImageContentType"/> or not at all; the database enforces it.
+    /// </summary>
+    public DateTime? ImageUpdatedAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
