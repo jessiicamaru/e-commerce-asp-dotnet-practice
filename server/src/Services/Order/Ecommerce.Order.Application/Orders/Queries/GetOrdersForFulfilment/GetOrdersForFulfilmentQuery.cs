@@ -7,7 +7,7 @@ using MediatR;
 namespace Ecommerce.Order.Application.Orders.Queries.GetOrdersForFulfilment;
 
 /// <summary>Staff: every customer's orders in one fulfilment status.</summary>
-public record GetOrdersForFulfilmentQuery(string Status = "Paid", int Page = 1, int PageSize = 20)
+public record GetOrdersForFulfilmentQuery(string Status = "Paid", int Page = 1, int PageSize = 12)
     : IRequest<PagedResponse<OrderSummaryResponse>>;
 
 public class GetOrdersForFulfilmentQueryValidator : AbstractValidator<GetOrdersForFulfilmentQuery>

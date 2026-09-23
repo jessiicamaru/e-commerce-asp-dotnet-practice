@@ -1,7 +1,17 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { BanknoteIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { CURRENCIES, currentCurrency, setCurrentCurrency, type Currency } from '@/config/money'
 
 /**
@@ -22,8 +32,6 @@ export function CurrencySwitcher() {
   // Held in state as well as in storage, because reading storage does not re-render.
   const [currency, setCurrency] = useState<Currency>(currentCurrency)
 
-  const items = Object.fromEntries(CURRENCIES.map((code) => [code, t(`currency.${code}`)]))
-
   async function choose(next: Currency) {
     setCurrentCurrency(next)
     setCurrency(next)
@@ -31,21 +39,26 @@ export function CurrencySwitcher() {
   }
 
   return (
-    <Select
-      items={items}
-      value={currency}
-      onValueChange={(value) => value && void choose(String(value) as Currency)}
-    >
-      <SelectTrigger size="sm" className="w-28" aria-label={t('currency.label')}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {CURRENCIES.map((code) => (
-          <SelectItem key={code} value={code}>
-            {t(`currency.${code}`)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="sm" className="h-9 gap-1.5 rounded-full px-3" />}
+        aria-label={t('currency.label')}
+      >
+        <BanknoteIcon className="size-4" />
+        <span className="text-xs font-semibold">{currency}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t('currency.label')}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={currency} onValueChange={(value) => void choose(value as Currency)}>
+            {CURRENCIES.map((code) => (
+              <DropdownMenuRadioItem key={code} value={code}>
+                {t(`currency.${code}`)}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

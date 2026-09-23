@@ -1,45 +1,49 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '@/config/axios'
 import { ErrorMessage } from '@/components/shared/query-state'
+import { SearchableSelect } from '@/components/shared/searchable-select'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { AddressFields } from '@/services/address/types'
 import { normaliseAddress } from '@/utils/address'
+import { countryChoices } from '@/utils/address/countries'
+import { cn } from '@/utils/shared'
 
-const FIELDS: { name: keyof AddressFields; required?: boolean; hint?: boolean }[] = [
+/** The fields, in the order a person writes an address, and which of them take a whole row. */
+const FIELDS: { name: Exclude<keyof AddressFields, 'country'>; required?: boolean; wide?: boolean; type?: string }[] = [
   { name: 'recipientName', required: true },
-  { name: 'line1', required: true },
-  { name: 'line2' },
+  { name: 'phone', type: 'tel' },
+  { name: 'line1', required: true, wide: true },
+  { name: 'line2', wide: true },
   { name: 'city', required: true },
   { name: 'region' },
   { name: 'postalCode', required: true },
-  { name: 'country', required: true, hint: true },
-  { name: 'phone' },
 ]
 
 /**
  * Add or edit an address. Validation is Identity's: its per-field messages are shown next to the field
  * they belong to, so the form never has to repeat the rules.
+ *
+ * The country is chosen by name from a searchable list, and the two-letter code it stands for is what
+ * is sent - the code decides the tax rate at checkout (ADR-002), so it must be exact.
  */
 export function AddressForm({
   initial,
-  title,
   onSave,
   onCancel,
 }: {
   initial: AddressFields
-  title: string
   onSave: (fields: AddressFields) => Promise<void>
   onCancel: () => void
 }) {
-  const { t } = useTranslation('auth')
-  const [fields, setFields] = useState<AddressFields>(initial)
+  const { t, i18n } = useTranslation('auth')
+  const [fields, setFields] = useState<AddressFields>({ ...initial, country: initial.country || 'VN' })
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const countries = useMemo(() => countryChoices(i18n.language), [i18n.language])
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -62,37 +66,49 @@ export function AddressForm({
   }
 
   return (
-    <Card className="max-w-md">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="flex flex-col gap-4">
-          {FIELDS.map((field) => (
-            <div key={field.name} className="grid gap-1.5">
-              <Label htmlFor={field.name}>{t(`addresses.fields.${field.name}`)}</Label>
-              {field.hint && <span className="text-muted-foreground text-xs">{t('addresses.countryHint')}</span>}
-              <Input
-                id={field.name}
-                required={field.required}
-                maxLength={field.name === 'country' ? 2 : undefined}
-                value={fields[field.name] ?? ''}
-                onChange={(event) => setFields({ ...fields, [field.name]: event.target.value })}
-              />
-              {fieldErrors[field.name] && <span className="text-destructive text-xs">{fieldErrors[field.name]}</span>}
-            </div>
-          ))}
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={busy}>
-              {busy ? t('action.saving', { ns: 'common' }) : t('action.save', { ns: 'common' })}
-            </Button>
-            <Button type="button" variant="ghost" onClick={onCancel}>
-              {t('action.cancel', { ns: 'common' })}
-            </Button>
+    <form onSubmit={submit} className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {FIELDS.map((field) => (
+          <div key={field.name} className={cn('grid gap-1.5', field.wide && 'sm:col-span-2')}>
+            <Label htmlFor={field.name}>
+              {t(`addresses.fields.${field.name}`)}
+              {!field.required && <span className="text-muted-foreground font-normal"> ({t('addresses.optional')})</span>}
+            </Label>
+            <Input
+              id={field.name}
+              type={field.type}
+              required={field.required}
+              className="h-10 rounded-xl"
+              value={fields[field.name] ?? ''}
+              onChange={(event) => setFields({ ...fields, [field.name]: event.target.value })}
+            />
+            {fieldErrors[field.name] && <span className="text-destructive text-xs">{fieldErrors[field.name]}</span>}
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        ))}
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="country">{t('addresses.fields.country')}</Label>
+          <SearchableSelect
+            id="country"
+            required
+            choices={countries}
+            value={fields.country || null}
+            onChange={(value) => setFields({ ...fields, country: value ?? '' })}
+          />
+          {fieldErrors.country && <span className="text-destructive text-xs">{fieldErrors.country}</span>}
+        </div>
+      </div>
+
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" className="rounded-full" onClick={onCancel}>
+          {t('action.cancel', { ns: 'common' })}
+        </Button>
+        <Button type="submit" className="rounded-full px-5" disabled={busy}>
+          {busy ? t('action.saving', { ns: 'common' }) : t('action.save', { ns: 'common' })}
+        </Button>
+      </div>
+    </form>
   )
 }

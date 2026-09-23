@@ -20,5 +20,8 @@
     "tax": "Tax",
     "discount": "Discount",
     "total": "Total"
-  }
+  },
+  "newAddress": "Add a new address",
+  "summary": "Your order",
+  "addressFirst": "Choose or add a delivery address to see the total."
 }

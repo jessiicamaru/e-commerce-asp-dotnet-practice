@@ -5,7 +5,7 @@ import { CatalogHero } from '@/components/catalog/catalog-hero'
 import { ProductCard } from '@/components/product/product-card'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Pager } from '@/components/shared/pager'
-import { PRODUCTS_PER_PAGE } from '@/constants/shared'
+import { PAGE_SIZE } from '@/constants/shared'
 import { useCategories } from '@/hooks/category'
 import { useProducts } from '@/hooks/product'
 import type { SortBy } from '@/services/product/types'
@@ -20,7 +20,7 @@ export function CatalogPage() {
   const pageNumber = Number(params.get('page') ?? '1') || 1
 
   const categories = useCategories()
-  const products = useProducts({ pageNumber, pageSize: PRODUCTS_PER_PAGE, searchTerm, categoryId, sortBy })
+  const products = useProducts({ pageNumber, pageSize: PAGE_SIZE, searchTerm, categoryId, sortBy })
 
   // The hero belongs to the landing view only. Once somebody has searched or filtered, the results
   // are what they came for and a hero is in the way of them.
@@ -91,10 +91,9 @@ export function CatalogPage() {
 
             <Pager
               page={page.pageNumber}
-              totalPages={page.totalPages}
+              pageSize={PAGE_SIZE}
+              totalCount={page.totalCount}
               onChange={(next) => update({ page: String(next) })}
-              previousLabel={t('pager.previous')}
-              nextLabel={t('pager.next')}
             />
           </>
         )}

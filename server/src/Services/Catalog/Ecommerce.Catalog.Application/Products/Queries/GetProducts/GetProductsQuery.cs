@@ -6,7 +6,7 @@ namespace Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 
 public record GetProductsQuery(
     int PageNumber = 1,
-    int PageSize = 10,
+    int PageSize = 12,
     Guid? CategoryId = null,
     string? SearchTerm = null,
     string? SortBy = null

@@ -49,5 +49,13 @@
     "browse": "Xem tất cả sản phẩm",
     "categories": "Danh mục",
     "featured": "Nổi bật"
+  },
+  "stock": {
+    "checking": "Đang kiểm tra kho…",
+    "unknown": "Chưa có số tồn kho",
+    "out": "Hết hàng",
+    "low_other": "Chỉ còn {{count}}",
+    "in_other": "Còn {{count}} sản phẩm",
+    "reserved_other": "{{count}} đang được giữ cho đơn"
   }
 }

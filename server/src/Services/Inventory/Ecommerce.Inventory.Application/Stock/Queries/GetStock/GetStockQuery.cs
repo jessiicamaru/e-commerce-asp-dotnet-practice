@@ -6,6 +6,6 @@ namespace Ecommerce.Inventory.Application.Stock.Queries.GetStock;
 
 public record GetStockQuery(
     int PageNumber = 1,
-    int PageSize = 20,
+    int PageSize = 12,
     string? Sku = null
 ) : IRequest<PaginatedList<StockResponse>>;

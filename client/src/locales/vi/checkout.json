@@ -20,5 +20,8 @@
     "tax": "Thuế",
     "discount": "Giảm giá",
     "total": "Tổng cộng"
-  }
+  },
+  "newAddress": "Thêm địa chỉ mới",
+  "summary": "Đơn hàng của bạn",
+  "addressFirst": "Chọn hoặc thêm địa chỉ nhận hàng để xem tổng tiền."
 }

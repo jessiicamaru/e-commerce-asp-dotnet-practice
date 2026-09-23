@@ -6,7 +6,10 @@
     "orders": "Đơn hàng",
     "signIn": "Đăng nhập",
     "signUp": "Tạo tài khoản",
-    "signOut": "Đăng xuất"
+    "signOut": "Đăng xuất",
+    "account": "Tài khoản",
+    "addresses": "Sổ địa chỉ",
+    "menu": "Menu"
   },
   "language": {
     "label": "Ngôn ngữ",
@@ -34,5 +37,26 @@
     "delete": "Xoá",
     "search": "Tìm"
   },
-  "searchPlaceholder": "Tìm máy ảnh…"
+  "searchPlaceholder": "Tìm máy ảnh…",
+  "pager": {
+    "showing": "Hiển thị {{from}}–{{to}} / {{total}}",
+    "previous": "Trước",
+    "next": "Sau",
+    "page": "Trang {{page}}"
+  },
+  "dropzone": {
+    "prompt": "Kéo ảnh vào đây",
+    "or": "hoặc bấm để chọn ảnh",
+    "hint": "JPG, PNG hoặc WebP, tối đa 2 MB.",
+    "uploading": "Đang tải lên…",
+    "badType": "Ảnh phải là JPG, PNG hoặc WebP.",
+    "tooBig": "Ảnh lớn hơn 2 MB."
+  },
+  "quantity": {
+    "decrease": "Giảm số lượng",
+    "increase": "Tăng số lượng"
+  },
+  "searchable": {
+    "none": "Không có kết quả phù hợp."
+  }
 }

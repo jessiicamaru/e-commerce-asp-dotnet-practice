@@ -1,89 +1,95 @@
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { Trash2Icon } from 'lucide-react'
+import { ProductImage } from '@/components/product/product-image'
+import { QuantityStepper } from '@/components/shared/quantity-stepper'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Separator } from '@/components/ui/separator'
 import type { Cart } from '@/services/cart/types'
 import { lineProblem } from '@/utils/cart'
 import { money } from '@/utils/shared'
 
 /**
- * The cart's lines. Quantity is sent on blur and the cart is then re-read, so the numbers shown are
- * always the server's.
+ * The cart's lines, each with its picture: somebody who does not follow cameras will not remember
+ * which "X-T5 kit" they added, and a photograph settles it where a name cannot.
+ *
+ * Every change is sent at once and the cart is then re-read, so the numbers shown are always the
+ * server's - the names and prices on a cart come from Catalog at read time (specs/010).
  */
 export function CartLines({
   cart,
+  images,
   busy,
   onQuantityChange,
   onRemove,
 }: {
   cart: Cart
+  /** The picture per variant id, from `useCartImages`. Missing means the tile. */
+  images: Record<string, string | null>
   busy: boolean
-  onQuantityChange: (productId: string, quantity: number) => void
-  onRemove: (productId: string) => void
+  onQuantityChange: (variantId: string, quantity: number) => void
+  onRemove: (variantId: string) => void
 }) {
   const { t } = useTranslation('cart')
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t('columns.product')}</TableHead>
-          <TableHead>{t('columns.price')}</TableHead>
-          <TableHead className="w-28">{t('columns.quantity')}</TableHead>
-          <TableHead>{t('columns.total')}</TableHead>
-          <TableHead />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {cart.lines.map((line) => {
-          const problem = lineProblem(t, line.status)
+    <ul className="grid gap-4">
+      {cart.lines.map((line, index) => {
+        const problem = lineProblem(t, line.status)
+        const name = line.name ?? t('unknownProduct')
 
-          return (
-            <TableRow key={line.variantId}>
-              <TableCell className="align-top">
-                <Link to={`/products/${line.productId}`} className="hover:underline">
-                  {line.name ?? t('unknownProduct')}
-                </Link>
-                {line.optionSummary && (
-                  <div className="text-muted-foreground text-xs">{line.optionSummary}</div>
-                )}
-                {problem && <div className="text-destructive text-xs">{problem}</div>}
-              </TableCell>
-              <TableCell className="align-top">
-                {line.unitPrice === null ? '-' : money(line.unitPrice, cart.currency)}
-              </TableCell>
-              <TableCell className="align-top">
-                <Input
-                  key={line.quantity} // re-read from the server after every change
-                  type="number"
-                  min={1}
-                  className="w-20"
-                  aria-label={`${t('columns.quantity')}: ${line.name ?? ''}`}
-                  defaultValue={line.quantity}
-                  disabled={busy}
-                  onBlur={(event) => {
-                    const next = Number(event.target.value)
-                    if (Number.isInteger(next) && next > 0 && next !== line.quantity) {
-                      onQuantityChange(line.variantId, next)
-                    } else {
-                      event.target.value = String(line.quantity)
-                    }
-                  }}
+        return (
+          <Fragment key={line.variantId}>
+            {index > 0 && <Separator />}
+            <li className="grid grid-cols-[5rem_1fr] gap-4 sm:grid-cols-[6rem_1fr]">
+              <Link to={`/products/${line.productId}`} tabIndex={-1} aria-hidden="true">
+                <ProductImage
+                  product={{ id: line.productId, name, imageUrl: images[line.variantId] ?? null }}
+                  thumb
                 />
-              </TableCell>
-              <TableCell className="align-top">
-                {line.lineTotal === null ? '-' : money(line.lineTotal, cart.currency)}
-              </TableCell>
-              <TableCell className="align-top">
-                <Button variant="ghost" size="sm" disabled={busy} onClick={() => onRemove(line.variantId)}>
-                  {t('remove')}
-                </Button>
-              </TableCell>
-            </TableRow>
-          )
-        })}
-      </TableBody>
-    </Table>
+              </Link>
+
+              <div className="grid min-w-0 gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="grid min-w-0 gap-0.5">
+                    <Link to={`/products/${line.productId}`} className="font-medium hover:underline">
+                      {name}
+                    </Link>
+                    {line.optionSummary && <span className="text-muted-foreground text-sm">{line.optionSummary}</span>}
+                    {line.unitPrice !== null && (
+                      <span className="text-muted-foreground text-sm">{money(line.unitPrice, cart.currency)}</span>
+                    )}
+                    {problem && <span className="text-destructive text-sm">{problem}</span>}
+                  </div>
+                  <span className="shrink-0 font-semibold">
+                    {line.lineTotal === null ? '-' : money(line.lineTotal, cart.currency)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <QuantityStepper
+                    size="sm"
+                    label={`${t('columns.quantity')}: ${name}`}
+                    value={line.quantity}
+                    disabled={busy}
+                    onChange={(quantity) => onQuantityChange(line.variantId, quantity)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive rounded-full"
+                    disabled={busy}
+                    onClick={() => onRemove(line.variantId)}
+                  >
+                    <Trash2Icon /> {t('remove')}
+                  </Button>
+                </div>
+              </div>
+            </li>
+          </Fragment>
+        )
+      })}
+    </ul>
   )
 }

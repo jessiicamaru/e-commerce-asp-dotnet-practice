@@ -1,97 +1,86 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
-import { AuthContext } from '@/context/auth/useAuth'
-import type { AuthState } from '@/context/auth/types'
+import { Order } from '@/services/order'
+import type { SaleSummary } from '@/services/order/types'
 import { Product } from '@/services/product'
-import { Seller } from '@/services/seller'
+import type { Product as ProductModel } from '@/services/product/types'
+import { renderAsSeller } from '@/test/render'
 import { ShopPage } from '.'
 
 const emptyPage = {
   items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false,
 }
 
-function renderAsSeller(children: ReactNode = <ShopPage />) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const value = {
-    user: { id: 's1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles: ['Seller', 'Customer'] },
-    restoring: false,
-    isSeller: true,
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
-  } as AuthState
+function listing(id: string, name: string, availability: string): ProductModel {
+  return {
+    id, name, description: null, price: 5190000, currency: 'VND', availability, sku: `SKU-${id}`,
+    categoryId: 'c1', isActive: true, imageUrl: null, sellerId: 's1', sellerName: 'Mai Lens',
+    priceVaries: false, variantCount: 1, variants: null,
+  }
+}
 
-  return render(
-    <AuthContext.Provider value={value}>
-      <QueryClientProvider client={client}>
-        <MemoryRouter>{children}</MemoryRouter>
-      </QueryClientProvider>
-    </AuthContext.Provider>,
-  )
+function sale(orderId: string, subtotal: number, currency: string): SaleSummary {
+  return {
+    orderId, status: 'Paid', createdAt: '2026-09-23T08:00:00Z', updatedAt: '2026-09-23T08:00:00Z',
+    lineCount: 1, units: 1, subtotal, currency,
+  }
 }
 
 beforeEach(async () => {
+  // Pinned: the page would otherwise assert English on one machine and Vietnamese on another.
   await i18n.changeLanguage('en')
-  vi.spyOn(Seller, 'me').mockResolvedValue({ sellerId: 's1', shopName: 'Alice Cameras' })
+  vi.spyOn(Order, 'sales').mockResolvedValue({ items: [], page: 1, pageSize: 100, totalCount: 0 })
 })
 
-describe('ShopPage', () => {
-  it('shows the shop name and an empty state that says what to do', async () => {
+describe('ShopPage (overview)', () => {
+  it('shows an empty shop what to do next', async () => {
     vi.spyOn(Product, 'mine').mockResolvedValue(emptyPage)
-    renderAsSeller()
+    renderAsSeller(<ShopPage />)
 
-    await waitFor(() => expect(screen.getByText(/have not listed anything/i)).toBeInTheDocument())
-    expect(screen.getByRole('link', { name: /List your first product/i })).toHaveAttribute(
-      'href',
-      '/shop/products/new',
-    )
+    expect(await screen.findByText(/have not listed anything/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /List your first product/i })).toHaveAttribute('href', '/shop/products/new')
   })
 
-  it('links each listing to the seller page for it, never to a seller-scoped address', async () => {
+  /**
+   * Dong and dollars are never added together - the shop converts nothing (specs/022). A single
+   * revenue number over both would be a sum of two different units, and look perfectly plausible.
+   */
+  it('shows takings per currency instead of adding dong to dollars', async () => {
+    vi.spyOn(Product, 'mine').mockResolvedValue({ ...emptyPage, totalCount: 1, items: [listing('p1', 'Viltrox 56', 'InStock')] })
+    vi.mocked(Order.sales).mockResolvedValue({
+      items: [sale('o1', 5190000, 'VND'), sale('o2', 2380000, 'VND'), sale('o3', 54.99, 'USD')],
+      page: 1, pageSize: 100, totalCount: 3,
+    })
+    renderAsSeller(<ShopPage />)
+
+    const card = (await screen.findByText('Your takings')).closest('[data-slot="card"]') as HTMLElement
+    expect(card.textContent).toMatch(/7[.,\s]?570[.,\s]?000/) // 5,190,000 + 2,380,000
+    expect(card.textContent).toMatch(/\$54\.99/)
+  })
+
+  it('lists what has run out, linking to the listing by its id alone', async () => {
     vi.spyOn(Product, 'mine').mockResolvedValue({
       ...emptyPage,
-      totalCount: 1,
-      totalPages: 1,
-      items: [{
-        id: 'p1', name: 'Sony A7 IV', description: null, price: 52000000, currency: 'VND',
-        availability: 'OutOfStock', sku: 'SONY-A7M4', categoryId: 'c1', isActive: true,
-        imageUrl: null, sellerId: 's1', sellerName: 'Alice Cameras', priceVaries: false,
-        variantCount: 1, variants: null,
-      }],
+      totalCount: 2,
+      items: [listing('p1', 'Viltrox 56', 'InStock'), listing('p2', 'Sony FE 50', 'OutOfStock')],
     })
-    renderAsSeller()
+    renderAsSeller(<ShopPage />)
 
-    const link = await screen.findByRole('link', { name: /Sony A7 IV/i })
-    expect(link).toHaveAttribute('href', '/shop/products/p1')
-    // No address anywhere on this page names a seller: the token decides whose shop this is.
+    const restock = (await screen.findByText('Needs restocking')).closest('[data-slot="card"]') as HTMLElement
+    const link = within(restock).getByRole('link', { name: /Sony FE 50/ })
+    expect(link).toHaveAttribute('href', '/shop/products/p2')
+    // No address on a seller page names a seller: the token decides whose shop this is.
     expect(link.getAttribute('href')).not.toMatch(/seller|s1/i)
+    expect(within(restock).queryByText('Viltrox 56')).not.toBeInTheDocument()
   })
 
-  /** A listing with no stock reads out of stock, and the page says so rather than looking broken. */
-  it('says when a listing has no stock yet', async () => {
-    vi.spyOn(Product, 'mine').mockResolvedValue({
-      ...emptyPage,
-      totalCount: 1,
-      totalPages: 1,
-      items: [{
-        id: 'p1', name: 'Sony A7 IV', description: null, price: 52000000, currency: 'VND',
-        availability: 'OutOfStock', sku: 'SONY-A7M4', categoryId: 'c1', isActive: true,
-        imageUrl: null, sellerId: 's1', sellerName: 'Alice Cameras', priceVaries: false,
-        variantCount: 1, variants: null,
-      }],
-    })
-    renderAsSeller()
+  /** It asks for the caller's own listings and sales, and neither request can name somebody else. */
+  it('reads both through endpoints that take no seller', async () => {
+    const mine = vi.spyOn(Product, 'mine').mockResolvedValue(emptyPage)
+    renderAsSeller(<ShopPage />)
 
-    expect(await screen.findByText(/No stock yet/i)).toBeInTheDocument()
-  })
-
-  /** One row changes every listing, so the page says so before somebody presses the button. */
-  it('warns that renaming the shop changes every listing', async () => {
-    vi.spyOn(Product, 'mine').mockResolvedValue(emptyPage)
-    renderAsSeller()
-
-    expect(await screen.findByText(/every one of your listings/i)).toBeInTheDocument()
+    await screen.findByText(/have not listed anything/i)
+    expect(JSON.stringify(mine.mock.calls[0][0])).not.toMatch(/seller|owner|userId/i)
   })
 })

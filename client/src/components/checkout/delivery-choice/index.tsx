@@ -1,8 +1,9 @@
-import { useTranslation } from 'react-i18next'
+import { TruckIcon } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { ShippingOption } from '@/services/order/types'
 import { Price } from '@/components/shared/price'
+import { cn } from '@/utils/shared'
 
 /** The delivery options and what each costs - decided by Order, never by the client. */
 export function DeliveryChoice({
@@ -14,21 +15,27 @@ export function DeliveryChoice({
   shippingOption: string | null
   onChange: (code: string) => void
 }) {
-  const { t } = useTranslation('checkout')
-
   return (
-    <fieldset className="rounded-lg border p-4">
-      <legend className="px-1 text-sm font-medium">{t('delivery')}</legend>
-      <RadioGroup value={shippingOption ?? ''} onValueChange={onChange} className="gap-3">
-        {options.map((option) => (
-          <div key={option.code} className="flex items-center gap-3">
-            <RadioGroupItem value={option.code} id={`shipping-${option.code}`} />
-            <Label htmlFor={`shipping-${option.code}`} className="font-normal">
-              {option.name} · <Price value={option.price} currency={option.currency} />
-            </Label>
-          </div>
-        ))}
-      </RadioGroup>
-    </fieldset>
+    <RadioGroup value={shippingOption ?? ''} onValueChange={onChange} className="gap-2">
+      {options.map((option) => {
+        const chosen = option.code === shippingOption
+
+        return (
+          <Label
+            key={option.code}
+            htmlFor={`shipping-${option.code}`}
+            className={cn(
+              'flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-3 font-normal ring-1 transition-colors',
+              chosen ? 'bg-accent ring-primary' : 'bg-card ring-border/60 hover:ring-primary/50',
+            )}
+          >
+            <RadioGroupItem value={option.code} id={`shipping-${option.code}`} className="shrink-0" />
+            <TruckIcon className="text-muted-foreground size-4.5" />
+            <span className="flex-1 font-medium">{option.name}</span>
+            <Price value={option.price} currency={option.currency} className="font-semibold" />
+          </Label>
+        )
+      })}
+    </RadioGroup>
   )
 }

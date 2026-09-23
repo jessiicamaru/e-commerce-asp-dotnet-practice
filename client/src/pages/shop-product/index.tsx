@@ -1,38 +1,45 @@
-import { useState } from 'react'
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ChevronRightIcon, ExternalLinkIcon, Trash2Icon } from 'lucide-react'
+import { toast } from 'sonner'
+import { Availability } from '@/components/product/availability'
 import { ProductImage } from '@/components/product/product-image'
+import { VariantEditor } from '@/components/seller/variant-editor'
+import { ImageDropzone } from '@/components/shared/image-dropzone'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { CURRENCIES } from '@/config/money'
-import { useSetStock, useVariantStock } from '@/hooks/stock'
 import {
-  useDeleteProduct,
-  useProductInEveryCurrency,
-  useRemoveVariantImage,
-  useSetVariantPrice,
-  useUploadProductImage,
-  useUploadVariantImage,
-} from '@/hooks/product'
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { useDeleteProduct, useProductInEveryCurrency, useUploadProductImage } from '@/hooks/product'
+import { useVariantStock } from '@/hooks/stock'
+import { cn } from '@/utils/shared'
 
 /**
- * One of the seller's own listings, and the three things they can do to it (specs/028).
+ * One of the seller's own listings (specs/028, 031, 032): its photograph, and every variant's prices,
+ * stock and picture.
  *
  * <p>
- * <b>It is read through the ordinary product endpoint</b>, the same one a shopper uses. There is no
- * seller-scoped read of a single product and there should not be: the writes below are what is
- * guarded, by `SellerOwnership`, which answers <b>404</b> for somebody else's listing - the same
- * answer as a product that does not exist, on purpose. So a seller who opens another seller's id
- * sees the page and is refused the moment they try to change anything, which is the behaviour the
- * server is deliberately specifying.
+ * <b>It is read through the ordinary product endpoint</b>, the same one a shopper uses. The writes are
+ * what is guarded, by `SellerOwnership`, which answers <b>404</b> for somebody else's listing - the same
+ * answer as a product that does not exist, on purpose. A seller who opens another seller's id sees the
+ * page and is refused the moment they change anything, in the server's own words.
  * </p>
  * <p>
- * The price editor shows <b>every</b> currency the shop prices in, not just the active one, because
- * this is the page where the missing second price from the create form gets filled in - and a price
- * that exists in one currency and not the other is the single most confusing state specs/022 can
- * produce.
+ * The prices are read <b>once per currency</b>, because a response carries one currency's prices
+ * (specs/022) and the person setting them needs to see both.
  * </p>
  */
 export function SellerProductPage() {
@@ -40,248 +47,120 @@ export function SellerProductPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const product = useProductInEveryCurrency(id)
-
-  const setPrice = useSetVariantPrice(id)
   const upload = useUploadProductImage(id)
   const remove = useDeleteProduct(id)
-  const setStock = useSetStock(id)
-  const uploadVariant = useUploadVariantImage(id)
-  const removeVariant = useRemoveVariantImage(id)
-
-  const [amounts, setAmounts] = useState<Record<string, string>>({})
-  const [quantities, setQuantities] = useState<Record<string, string>>({})
+  const variants = product.product?.variants ?? []
+  const stock = useVariantStock(variants.map((variant) => variant.id))
 
   if (product.isError) {
     return <ErrorMessage>{t('listing.loadFailed')}</ErrorMessage>
   }
 
   if (product.isPending || !product.product) {
-    return <LoadingRows />
+    return <LoadingRows rows={4} />
   }
 
   const item = product.product
-  const variants = item.variants ?? []
 
   return (
-    <section className="mx-auto grid max-w-3xl gap-6">
-      <header className="grid gap-1">
-        <Link to="/shop" className="text-muted-foreground text-sm underline">
-          {t('title')}
+    <section className="grid gap-6">
+      <nav aria-label={t('menu.products')} className="text-muted-foreground flex items-center gap-1 text-sm">
+        <Link to="/shop/products" className="hover:text-foreground">
+          {t('menu.products')}
         </Link>
-        <h1 className="text-2xl font-bold">{item.name}</h1>
-        <p className="text-muted-foreground text-sm">{item.sku}</p>
-      </header>
+        <ChevronRightIcon className="size-4" />
+        <span className="text-foreground truncate">{item.name}</span>
+      </nav>
 
-      {/* minmax(0, 220px), not 220px: a fixed track does not shrink, and a file input has a large
-          intrinsic width - it pushed this column to 313px and drew the image straight over the
-          price editor. Seen in a screenshot, which is the only way this kind of thing is seen. */}
-      <div className="bg-card ring-border/60 grid gap-4 rounded-3xl p-6 ring-1 sm:grid-cols-[minmax(0,220px)_1fr]">
-        <div className="grid min-w-0 gap-2">
-          <ProductImage product={item} />
-          <label className="text-sm font-semibold" htmlFor="image">
-            {t('edit.image')}
-          </label>
-          <input
-            id="image"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="w-full min-w-0 text-sm"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) {
-                upload.mutate(file)
-              }
-            }}
-          />
-          <ServerError error={upload.error} fallback={t('listing.loadFailed')} />
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="grid gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-balance">{item.name}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-foreground font-mono text-xs">{item.sku}</span>
+            <Availability value={item.availability} />
+          </div>
         </div>
 
-        <div className="grid min-w-0 content-start gap-4">
-          <h2 className="font-semibold">{t('edit.price')}</h2>
-
-          {variants.map((variant) => (
-            <div key={variant.id} className="grid gap-2">
-              {variant.optionSummary && (
-                <p className="text-muted-foreground text-xs">{variant.optionSummary}</p>
-              )}
-              {CURRENCIES.map((currency) => {
-                const key = `${variant.id}:${currency}`
-                // The price in THIS currency, read from that currency's own response - not from the
-                // one the seller happens to be browsing in. A variant nobody priced here is null,
-                // which is a real state and not a zero.
-                const current = product.byCurrency[currency]?.[variant.id] ?? null
-
-                return (
-                  <div key={currency} className="flex flex-wrap items-center gap-2">
-                    <span className="w-12 text-sm font-semibold">{currency}</span>
-                    <Input
-                      inputMode="decimal"
-                      className="h-9 w-40 rounded-full"
-                      aria-label={`${currency} ${variant.sku}`}
-                      value={amounts[key] ?? (current ?? '')}
-                      onChange={(event) => setAmounts((p) => ({ ...p, [key]: event.target.value }))}
-                    />
-                    <Button
-                      size="sm"
-                      className="rounded-full"
-                      disabled={setPrice.isPending}
-                      onClick={() =>
-                        setPrice.mutate({ variantId: variant.id, currency, amount: Number(amounts[key] ?? current ?? 0) })
-                      }
-                    >
-                      {t('edit.savePrice')}
-                    </Button>
-                    {current === null && (
-                      <span className="text-muted-foreground text-xs">{t('listing.noPrice')}</span>
-                    )}
-                  </div>
-                )
-              })}
-
-              {/* This shape's own photograph (specs/032). Absent is normal - it then shows the
-                  product's, which the server has already folded into variant.imageUrl. */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold">{t('variantImage.title')}</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  aria-label={`${t('variantImage.title')} ${variant.sku}`}
-                  className="min-w-0 text-sm"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0]
-                    if (file) {
-                      uploadVariant.mutate({ variantId: variant.id, file })
-                    }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full"
-                  disabled={removeVariant.isPending}
-                  onClick={() => removeVariant.mutate(variant.id)}
-                >
-                  {t('variantImage.remove')}
-                </Button>
-              </div>
-              <p className="text-muted-foreground text-xs">{t('variantImage.hint')}</p>
-            </div>
-          ))}
-
-          <ServerError error={setPrice.error} fallback={t('listing.loadFailed')} />
-          <ServerError error={uploadVariant.error ?? removeVariant.error} fallback={t('listing.loadFailed')} />
-
-          <StockEditor
-            variants={variants}
-            quantities={quantities}
-            onChange={(key, value) => setQuantities((p) => ({ ...p, [key]: value }))}
-            onSave={(variantId, quantityOnHand) => setStock.mutate({ variantId, quantityOnHand })}
-            saving={setStock.isPending}
-            error={setStock.error}
-          />
-
-          <Link to={`/products/${item.id}`} className="text-sm underline">
-            {t('edit.view')}
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={`/products/${item.id}`} className={cn(buttonVariants({ variant: 'outline' }), 'h-9 rounded-full px-4')}>
+            <ExternalLinkIcon /> {t('edit.view')}
           </Link>
-        </div>
-      </div>
 
-      <div className="grid justify-items-start gap-2">
-        <Button
-          variant="destructive"
-          className="rounded-full"
-          disabled={remove.isPending}
-          onClick={() => {
-            if (window.confirm(t('edit.withdrawConfirm', { name: item.name }))) {
-              remove.mutate(undefined as never, { onSuccess: () => navigate('/shop') })
-            }
-          }}
-        >
-          {t('edit.withdraw')}
-        </Button>
-        <ServerError error={remove.error} fallback={t('listing.loadFailed')} />
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={<Button variant="destructive" className="h-9 rounded-full px-4" disabled={remove.isPending} />}
+            >
+              <Trash2Icon /> {t('edit.withdraw')}
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t('edit.withdraw')}</AlertDialogTitle>
+                <AlertDialogDescription>{t('edit.withdrawConfirm', { name: item.name })}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('action.cancel', { ns: 'common' })}</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() =>
+                    remove.mutate(undefined as never, {
+                      onSuccess: () => {
+                        toast.success(t('edit.withdrawn', { name: item.name }))
+                        navigate('/shop/products')
+                      },
+                    })
+                  }
+                >
+                  {t('edit.withdraw')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </header>
+      <ServerError error={remove.error} fallback={t('listing.loadFailed')} />
+
+      <div className="grid items-start gap-6 lg:grid-cols-[18rem_1fr]">
+        <Card className="rounded-3xl lg:sticky lg:top-28">
+          <CardHeader>
+            <CardTitle>{t('edit.image')}</CardTitle>
+            <CardDescription>{t('edit.imageHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2">
+            <ImageDropzone
+              label={t('edit.image')}
+              busy={upload.isPending}
+              onFile={(file) => upload.mutate(file, { onSuccess: () => toast.success(t('edit.imageSaved')) })}
+              preview={item.imageUrl ? <ProductImage product={item} large /> : undefined}
+            />
+            <ServerError error={upload.error} fallback={t('listing.loadFailed')} />
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-3xl">
+          <CardHeader>
+            <CardTitle>{t('edit.variants')}</CardTitle>
+            <CardDescription>{t('edit.variantsHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6">
+            {variants.map((variant, index) => (
+              <Fragment key={variant.id}>
+                {index > 0 && <Separator />}
+                <VariantEditor
+                  product={item}
+                  variant={variant}
+                  index={index}
+                  count={variants.length}
+                  prices={Object.fromEntries(
+                    Object.entries(product.byCurrency).map(([currency, byVariant]) => [currency, byVariant[variant.id] ?? null]),
+                  )}
+                  stock={stock.byVariant[variant.id] ?? null}
+                  stockPending={stock.isPending}
+                />
+              </Fragment>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </section>
-  )
-}
-
-/**
- * How many the seller has (specs/031).
- *
- * <p>
- * It shows <b>reserved</b> as well as on hand, because "I have 3 but only 1 is available" reads as
- * a bug until you know two of them are inside somebody's checkout. The server refuses a value below
- * what is reserved, and says so in words this repeats rather than paraphrases.
- * </p>
- * <p>
- * A variant with <b>no stock row yet</b> is a real state on a freshly listed product: the row is
- * created off the broker and arrives a moment later. That is said out loud instead of being shown
- * as a zero, which would be a lie, or as an error, which would be alarming.
- * </p>
- */
-function StockEditor({
-  variants,
-  quantities,
-  onChange,
-  onSave,
-  saving,
-  error,
-}: {
-  variants: { id: string; sku: string; optionSummary: string }[]
-  quantities: Record<string, string>
-  onChange: (variantId: string, value: string) => void
-  onSave: (variantId: string, quantityOnHand: number) => void
-  saving: boolean
-  error: unknown
-}) {
-  const { t } = useTranslation('seller')
-  const stock = useVariantStock(variants.map((v) => v.id))
-
-  return (
-    <div className="grid gap-3">
-      <h2 className="font-semibold">{t('stock.title')}</h2>
-
-      {variants.map((variant) => {
-        const current = stock.byVariant[variant.id]
-        const typed = quantities[variant.id]
-        const value = typed ?? (current ? String(current.quantityOnHand) : '')
-
-        return (
-          <div key={variant.id} className="grid gap-1">
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Not w-12: that was copied from the currency row, where the label is "VND". The
-                  Vietnamese for "on hand" is three words and wrapped onto three lines. */}
-              <span className="text-sm font-semibold">{t('stock.onHand')}</span>
-              <Input
-                inputMode="numeric"
-                className="h-9 w-40 rounded-full"
-                aria-label={`${t('stock.onHand')} ${variant.sku}`}
-                value={value}
-                onChange={(event) => onChange(variant.id, event.target.value)}
-              />
-              <Button
-                size="sm"
-                className="rounded-full"
-                disabled={saving || !current}
-                onClick={() => onSave(variant.id, Number(value || 0))}
-              >
-                {t('stock.save')}
-              </Button>
-              {current && current.quantityReserved > 0 && (
-                <span className="text-muted-foreground text-xs">
-                  {t('stock.reserved', { count: current.quantityReserved })}
-                </span>
-              )}
-            </div>
-            {!current && !stock.isPending && (
-              <p className="text-muted-foreground text-xs">{t('stock.notRegisteredYet')}</p>
-            )}
-          </div>
-        )
-      })}
-
-      <p className="text-muted-foreground text-xs">{t('stock.hint')}</p>
-      <ServerError error={error} fallback={t('listing.loadFailed')} />
-    </div>
   )
 }

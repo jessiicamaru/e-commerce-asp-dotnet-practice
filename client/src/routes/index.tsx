@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/auth/require-auth'
 import { RequireRole } from '@/components/auth/require-role'
 import { MainLayout } from '@/layouts/main-layout'
+import { SellerLayout } from '@/layouts/seller-layout'
 import { AccountPage } from '@/pages/account'
 import { AddressesPage } from '@/pages/addresses'
 import { CartPage } from '@/pages/cart'
@@ -12,6 +13,7 @@ import { OrdersPage } from '@/pages/orders'
 import { ProductPage } from '@/pages/product'
 import { ShopPage } from '@/pages/shop'
 import { SellerProductPage } from '@/pages/shop-product'
+import { ShopProductsPage } from '@/pages/shop-products'
 import { NewProductPage } from '@/pages/shop-product-new'
 import { ShopSalePage } from '@/pages/shop-sale'
 import { ShopSalesPage } from '@/pages/shop-sales'
@@ -78,48 +80,24 @@ export function AppRoutes() {
               </RequireAuth>
             }
           />
-          {/* The seller's own pages (specs/028). RequireRole decides what to DRAW; the server
-              decides what to allow, and answers the token rather than the route. */}
+          {/* The seller's own pages (specs/028), all inside one frame with the same way around.
+              RequireRole decides what to DRAW; the server decides what to allow, and answers the
+              token rather than the route. */}
           <Route
             path="/shop"
             element={
               <RequireRole role="Seller">
-                <ShopPage />
+                <SellerLayout />
               </RequireRole>
             }
-          />
-          <Route
-            path="/shop/products/new"
-            element={
-              <RequireRole role="Seller">
-                <NewProductPage />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/shop/products/:id"
-            element={
-              <RequireRole role="Seller">
-                <SellerProductPage />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/shop/sales"
-            element={
-              <RequireRole role="Seller">
-                <ShopSalesPage />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/shop/sales/:id"
-            element={
-              <RequireRole role="Seller">
-                <ShopSalePage />
-              </RequireRole>
-            }
-          />
+          >
+            <Route index element={<ShopPage />} />
+            <Route path="products" element={<ShopProductsPage />} />
+            <Route path="products/new" element={<NewProductPage />} />
+            <Route path="products/:id" element={<SellerProductPage />} />
+            <Route path="sales" element={<ShopSalesPage />} />
+            <Route path="sales/:id" element={<ShopSalePage />} />
+          </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>
       </Routes>

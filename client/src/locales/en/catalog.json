@@ -49,5 +49,16 @@
     "browse": "Browse everything",
     "categories": "Categories",
     "featured": "Featured"
+  },
+  "stock": {
+    "checking": "Checking stock…",
+    "unknown": "Stock not known yet",
+    "out": "Out of stock",
+    "low_one": "Only {{count}} left",
+    "low_other": "Only {{count}} left",
+    "in_one": "{{count}} in stock",
+    "in_other": "{{count}} in stock",
+    "reserved_one": "{{count}} held in checkouts",
+    "reserved_other": "{{count}} held in checkouts"
   }
 }

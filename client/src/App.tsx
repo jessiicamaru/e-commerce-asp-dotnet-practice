@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/config/query-client'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/context/auth'
 import { AppRoutes } from '@/routes'
 
@@ -12,7 +13,11 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppRoutes />
+        {/* One provider for every tooltip, so hovering from one icon to the next opens instantly
+            instead of waiting out the delay again. */}
+        <TooltipProvider delay={300}>
+          <AppRoutes />
+        </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

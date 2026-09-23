@@ -24,5 +24,9 @@
     "priceUnavailable": "Hiện chưa kiểm tra được giá.",
     "unavailable": "Hiện không mua được sản phẩm này.",
     "notSoldInCurrency": "Chưa có giá bằng tiền tệ đang chọn. Đổi tiền tệ để mua món này."
-  }
+  },
+  "count_other": "{{count}} sản phẩm",
+  "summary": "Tóm tắt đơn hàng",
+  "subtotal": "Tạm tính",
+  "keepShopping": "Tiếp tục mua sắm"
 }
