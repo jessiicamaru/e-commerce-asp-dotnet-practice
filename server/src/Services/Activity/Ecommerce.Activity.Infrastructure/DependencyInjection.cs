@@ -20,6 +20,7 @@ public static class DependencyInjection
                     errorCodesToAdd: null)));
 
         services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         return services;
     }

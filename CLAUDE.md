@@ -90,9 +90,10 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (168 tests,
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (174 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435) and
+`Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -177,7 +178,7 @@ so.
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031); **puts a cancelled order's units back** (specs/039) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money**; records a refund for a cancelled order, moving none either (specs/039) |
-| Activity | 5063 | 5440 / `ecommerce_activity_db` | **The audit log** (specs/041): keeps `AuditEntryRecorded` from every service, one row per entry id, with a field-level diff; Admin-only reads at `/api/audit` |
+| Activity | 5063 | 5440 / `ecommerce_activity_db` | **The audit log** (specs/041): keeps `AuditEntryRecorded` from every service, one row per entry id, with a field-level diff; Admin-only reads at `/api/audit`; **everyone's in-app notifications** (specs/042) at `/api/notifications` |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
 pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`).
@@ -486,6 +487,23 @@ NOTHING` on the publisher's entry id and computes the diff once. Categories: Sys
 Catalog, Order, Payment, Moderation. Delivery addresses are recorded as "an address changed", never
 copied into a diff. Product images are the one place the entry is saved just after its change (the
 switch is its own guarded UPDATE, specs/019) rather than with it.
+
+**People are told what happened to them** (specs/042). A service calls `INotifier.NotifyAsync(recipient,
+kind, data, link)` from `Ecommerce.Shared/Notifications`, which publishes `UserNotificationRequested`
+through the outbox - so, like the audit, **before the one save**, or through the same `stage` callback.
+A notice stores a **kind and data, never a sentence**: the storefront words it in whoever reads it
+*now*, so one notice reads Vietnamese on one visit and English on the next, and a kind the storefront
+does not know yet still shows as "a new update" rather than vanishing. Activity keeps them (idempotent on
+the publisher's id), and `/api/notifications` only ever reads **the caller's own** - somebody else's id
+is 404. The bell asks for the unread **count** every 30 seconds (`NOTIFICATION_POLL_MS`), not in a
+background tab, and loads the list only when opened. Order tells the buyer (paid, failed, shipped,
+cancelled) and each seller (a new sale, a cancelled sale, a parcel received, a payout).
+⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
+the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
+transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent
+the command outside a consumer. `NotificationTests.Settling_inside_a_consumer_transaction_joins_it`
+opens the transaction the way MassTransit does. A new `stage` method called from a consumer needs the
+same branch.
 
 ### Shared building blocks
 **Inventory owns stock; Catalog reports a read model of it.** `Product.Availability` is fed by `StockAvailabilityChangedEvent` and surfaces as `"InStock"` / `"OutOfStock"` — never a count. **Nothing may sell against it**: checkout reserves under `FOR UPDATE` against Inventory's row, and a read model fed by messages is seconds behind by design. A real number comes from `GET /api/stock/{productId}` on Inventory, which is public. Seven handlers move stock and every one must announce - the seventh, since specs/039, puts a cancelled order's units back - and an eighth must call `StockAvailabilityAnnouncer` too, and `Ecommerce.Inventory.Tests/AnnouncementTests.cs` is what catches the omission. Background in [specs/004-stock-single-source](specs/004-stock-single-source/).

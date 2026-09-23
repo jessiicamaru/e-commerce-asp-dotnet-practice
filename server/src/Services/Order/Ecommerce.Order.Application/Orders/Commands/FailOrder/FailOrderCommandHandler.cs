@@ -1,5 +1,8 @@
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Domain.Enums;
+using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -7,9 +10,14 @@ namespace Ecommerce.Order.Application.Orders.Commands.FailOrder;
 
 public class FailOrderCommandHandler(
     IOrderRepository orderRepository,
+    INotifier notifier,
+    IAuditTrail audit,
     ILogger<FailOrderCommandHandler> logger
 ) : IRequestHandler<FailOrderCommand, bool>
 {
+    private readonly INotifier _notifier = notifier;
+    private readonly IAuditTrail _audit = audit;
+
     /// <summary>
     /// The width of <c>orders.FailureReason</c>. The reason on the announcement is unbounded, and a
     /// settlement that fails because the explanation was long is worse than a settlement with a
@@ -29,7 +37,15 @@ public class FailOrderCommandHandler(
             OrderStatus.Failed,
             failureReason: reason,
             settledAt: request.FailedAt,
-            cancellationToken);
+            cancellationToken,
+            ct => OrderNotices.WithFactsAsync(_orderRepository, request.OrderId, async facts =>
+            {
+                await OrderNotices.FailedAsync(_notifier, facts, ct);
+                await _audit.RecordAsync(
+                    AuditCategory.Order, "OrderFailed", "Order", request.OrderId.ToString(),
+                    $"Order failed: {reason}", new { Status = "Submitted" }, new { Status = "Failed", FailureReason = reason },
+                    cancellationToken: ct);
+            }, ct));
 
         if (rowsAffected > 0)
         {

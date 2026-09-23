@@ -1,0 +1,198 @@
+using Ecommerce.Contracts.Activity;
+using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Orders.Commands.CancelOrder;
+using Ecommerce.Order.Application.Orders.Commands.CompleteOrder;
+using Ecommerce.Order.Application.Orders.Commands.ConfirmDelivery;
+using Ecommerce.Order.Application.Orders.Commands.FailOrder;
+using Ecommerce.Order.Application.Orders.Commands.RecordPayout;
+using Ecommerce.Order.Application.Orders.Commands.SellerFulfilment;
+using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
+using Ecommerce.Order.Infrastructure.Persistence;
+using Ecommerce.Shared.Money;
+using MassTransit.Testing;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Ecommerce.Order.Tests;
+
+/// <summary>
+/// Who is told what as an order moves (specs/042) - the right people, once each, and nobody else.
+/// </summary>
+[Collection(nameof(OrderTestCollection))]
+public class NotificationTests
+{
+    private readonly OrderTestFixture _fixture;
+
+    private static readonly AddressCopy Home =
+        new("Nguyen Van A", "12 Ly Thuong Kiet", null, "Ha Noi", null, "100000", "VN", "+84 912 345 678");
+
+    public NotificationTests(OrderTestFixture fixture)
+    {
+        _fixture = fixture;
+        _fixture.Currency = new Currency("VND", 0);
+        _fixture.Commission.Current = 0.10m;
+    }
+
+    [Fact]
+    public async Task A_paid_order_tells_its_buyer_and_each_seller_once()
+    {
+        var alice = Guid.CreateVersion7();
+        var bob = Guid.CreateVersion7();
+        var (order, buyer) = await PlacedAsync(alice, bob, null);
+
+        await SendAsync(new CompleteOrderCommand(order, DateTime.UtcNow));
+        await SendAsync(new CompleteOrderCommand(order, DateTime.UtcNow));   // redelivered: nobody told twice
+
+        var sent = Sent(order);
+        var paid = Assert.Single(sent, n => n.Kind == "OrderPaid");
+        Assert.Equal(buyer, paid.RecipientId);
+        Assert.Equal("VND", paid.Data["currency"]);
+        Assert.Equal($"/orders/{order}", paid.Link);
+        Assert.Equal(new HashSet<Guid> { alice, bob }, sent.Where(n => n.Kind == "NewSale").Select(n => n.RecipientId).ToHashSet());
+        Assert.Equal(2, sent.Count(n => n.Kind == "NewSale"));
+    }
+
+    /// <summary>
+    /// The saga's outcome arrives at a consumer, and MassTransit's consumer outbox has already opened a
+    /// transaction on the context by then. Settling must join it, not open a second one - which threw,
+    /// left every order Submitted, and passed every test that sent the command outside a consumer.
+    /// </summary>
+    [Fact]
+    public async Task Settling_inside_a_consumer_transaction_joins_it()
+    {
+        var (order, _) = await PlacedAsync(Guid.CreateVersion7());
+
+        await using (var scope = _fixture.NewScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+            await using var consumer = await db.Database.BeginTransactionAsync();
+            await scope.ServiceProvider.GetRequiredService<ISender>().Send(new CompleteOrderCommand(order, DateTime.UtcNow));
+            await consumer.CommitAsync();
+        }
+
+        await using var read = _fixture.NewScope();
+        var status = await read.ServiceProvider.GetRequiredService<OrderDbContext>()
+            .Orders.Where(o => o.Id == order).Select(o => o.Status).SingleAsync();
+        Assert.Equal(Ecommerce.Order.Domain.Enums.OrderStatus.Paid, status);
+        Assert.Single(Sent(order), n => n.Kind == "OrderPaid");
+    }
+
+    [Fact]
+    public async Task A_failed_order_tells_its_buyer_and_no_seller()
+    {
+        var (order, buyer) = await PlacedAsync(Guid.CreateVersion7());
+
+        await SendAsync(new FailOrderCommand(order, "Payment declined", DateTime.UtcNow));
+
+        var only = Assert.Single(Sent(order));
+        Assert.Equal(("OrderFailed", buyer), (only.Kind, only.RecipientId));
+    }
+
+    [Fact]
+    public async Task Shipping_tells_the_buyer_with_the_tracking_and_receiving_tells_the_seller()
+    {
+        var alice = Guid.CreateVersion7();
+        var (order, buyer) = await PaidAsync(alice);
+
+        await As(alice, () => SendAsync(new PrepareMySaleCommand(order)));
+        await As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-NOTE")));
+        var parcel = await PartIdAsync(order, alice);
+        await As(buyer, () => SendAsync(new ConfirmDeliveryCommand(order, parcel)));
+
+        var shipped = Assert.Single(Sent(order), n => n.Kind == "ParcelShipped");
+        Assert.Equal(buyer, shipped.RecipientId);
+        Assert.Equal("VNPOST-NOTE", shipped.Data["tracking"]);
+        Assert.Equal("Shop of " + alice.ToString("N")[..6], shipped.Data["shop"]);
+
+        var received = Assert.Single(Sent(order), n => n.Kind == "ParcelReceived");
+        Assert.Equal(alice, received.RecipientId);
+        Assert.Equal($"/shop/sales/{order}", received.Link);
+    }
+
+    [Fact]
+    public async Task A_cancellation_tells_the_buyer_and_every_seller()
+    {
+        var alice = Guid.CreateVersion7();
+        var (order, buyer) = await PaidAsync(alice, null);
+
+        await As(buyer, () => SendAsync(new CancelMyOrderCommand(order)));
+
+        var sent = Sent(order);
+        var cancelled = Assert.Single(sent, n => n.Kind == "OrderCancelled");
+        Assert.Equal(("Customer", buyer), (cancelled.Data["by"], cancelled.RecipientId));
+        Assert.Equal(alice, Assert.Single(sent, n => n.Kind == "SaleCancelled").RecipientId);
+    }
+
+    [Fact]
+    public async Task A_payout_tells_its_seller_how_much()
+    {
+        var alice = Guid.CreateVersion7();
+        var (order, buyer) = await PaidAsync(alice);
+        await As(alice, () => SendAsync(new PrepareMySaleCommand(order)));
+        await As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-PAY")));
+        var parcel = await PartIdAsync(order, alice);
+        await As(buyer, () => SendAsync(new ConfirmDeliveryCommand(order, parcel)));
+
+        var payout = await As(Guid.CreateVersion7(), () => SendAsync(new RecordPayoutCommand(alice, "VND")));
+
+        var told = _fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message)
+            .Single(n => n.Kind == "PayoutRecorded" && n.RecipientId == alice);
+        Assert.Equal(payout.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), told.Data["amount"]);
+        Assert.Equal("/shop/payouts", told.Link);
+    }
+
+    // ------------------------------------------------------------------ helpers
+
+    private List<UserNotificationRequested> Sent(Guid order) =>
+        _fixture.Harness.Published.Select<UserNotificationRequested>()
+            .Select(x => x.Context.Message)
+            .Where(n => n.Data.TryGetValue("orderId", out var id) && id == order.ToString())
+            .ToList();
+
+    private async Task<T> As<T>(Guid user, Func<Task<T>> body)
+    {
+        _fixture.CurrentUser.Id = user;
+        return await body();
+    }
+
+    private async Task<T> SendAsync<T>(IRequest<T> request)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
+
+    private async Task<(Guid Order, Guid Buyer)> PlacedAsync(params Guid?[] sellers)
+    {
+        var buyer = Guid.CreateVersion7();
+        _fixture.CurrentUser.Id = buyer;
+        var cart = new List<CartItem>();
+        foreach (var seller in sellers)
+        {
+            var product = Guid.CreateVersion7();
+            var variant = Guid.CreateVersion7();
+            _fixture.Checkout.Prices[variant] = new CatalogPrice(
+                product, "Camera", 1000m, Sellable: true, variant, $"SKU-{variant:N}"[..12], "", "VND", seller,
+                seller is { } s ? "Shop of " + s.ToString("N")[..6] : null);
+            cart.Add(new CartItem(product, 1, variant));
+        }
+
+        _fixture.Checkout.Cart = cart;
+        _fixture.Checkout.Address = Home;
+        return ((await SendAsync(new SubmitOrderCommand(null, "standard"))).OrderId, buyer);
+    }
+
+    private async Task<(Guid Order, Guid Buyer)> PaidAsync(params Guid?[] sellers)
+    {
+        var placed = await PlacedAsync(sellers);
+        await SendAsync(new CompleteOrderCommand(placed.Order, DateTime.UtcNow));
+        return placed;
+    }
+
+    private async Task<Guid> PartIdAsync(Guid order, Guid seller)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<OrderDbContext>()
+            .OrderShipments.Where(s => s.OrderId == order && s.SellerId == seller).Select(s => s.Id).SingleAsync();
+    }
+}

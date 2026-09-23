@@ -2,6 +2,7 @@ using Ecommerce.Activity.Application;
 using Ecommerce.Activity.Application.Common.Interfaces;
 using Ecommerce.Activity.Infrastructure.Persistence;
 using Ecommerce.Activity.Infrastructure.Persistence.Repositories;
+using Ecommerce.Shared.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -24,6 +25,9 @@ public class ActivityTestFixture : IAsyncLifetime
 
     public ServiceProvider Services { get; private set; } = null!;
 
+    /// <summary>Whose inbox a request reads - settable per test (specs/042).</summary>
+    public TestUser CurrentUser { get; } = new();
+
     public async Task InitializeAsync()
     {
         var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
@@ -43,6 +47,8 @@ public class ActivityTestFixture : IAsyncLifetime
         services.AddApplication();
         services.AddDbContext<ActivityDbContext>(o => o.UseNpgsql(ConnectionString));
         services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddSingleton<ICurrentUser>(CurrentUser);
         Services = services.BuildServiceProvider(true);
 
         await using var scope = Services.CreateAsyncScope();
@@ -64,3 +70,11 @@ public class ActivityTestFixture : IAsyncLifetime
 
 [CollectionDefinition(nameof(ActivityTestCollection))]
 public class ActivityTestCollection : ICollectionFixture<ActivityTestFixture>;
+
+public class TestUser : ICurrentUser
+{
+    public Guid? Id { get; set; }
+    public string? Email { get; set; }
+    public bool IsAuthenticated => Id is not null;
+    public bool IsInRole(string role) => false;
+}

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { CurrencySwitcher } from '@/components/layout/currency-switcher'
 import { LanguageSwitcher } from '@/components/layout/language-switcher'
+import { NotificationBell } from '@/components/layout/notification-bell'
 import { UserMenu } from '@/components/layout/user-menu'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
@@ -90,6 +91,7 @@ export function TopBar() {
               <IconLink to="/cart" label={t('nav.cart')} badge={lines}>
                 <ShoppingBagIcon />
               </IconLink>
+              <NotificationBell />
               <span className="hidden md:contents">
                 <IconLink to="/orders" label={t('nav.orders')} end>
                   <PackageIcon />

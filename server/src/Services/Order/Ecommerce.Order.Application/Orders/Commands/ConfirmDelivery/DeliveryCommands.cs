@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Shared.Authentication;
@@ -21,9 +22,12 @@ public record ConfirmDeliveryCommand(Guid OrderId, Guid ShipmentId) : IRequest<O
 public record AutoConfirmDeliveriesCommand(DateTime ShippedBefore) : IRequest<int>;
 
 public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    INotifier notifier)
     : IRequestHandler<ConfirmDeliveryCommand, OrderDetailResponse>
 {
+    private readonly INotifier _notifier = notifier;
+
     private readonly IAuditTrail _audit = audit;
 
     private readonly IOrderRepository _orders = orders;
@@ -36,11 +40,16 @@ public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser
 
         var outcome = await _orders.TryConfirmDeliveryAsync(
             request.OrderId, request.ShipmentId, userId, DateTime.UtcNow, cancellationToken,
-            ct => _audit.RecordAsync(
-                AuditCategory.Order, "ParcelReceived", "Order", request.OrderId.ToString(),
-                "The customer confirmed a parcel arrived",
-                after: new { Parcel = request.ShipmentId, ConfirmedBy = ParcelDelivery.ByCustomer },
-                cancellationToken: ct));
+            async ct =>
+            {
+                await _audit.RecordAsync(
+                    AuditCategory.Order, "ParcelReceived", "Order", request.OrderId.ToString(),
+                    "The customer confirmed a parcel arrived",
+                    after: new { Parcel = request.ShipmentId, ConfirmedBy = ParcelDelivery.ByCustomer },
+                    cancellationToken: ct);
+                await OrderNotices.WithFactsAsync(_orders, request.OrderId,
+                    facts => OrderNotices.ReceivedAsync(_notifier, facts, request.ShipmentId, ct), ct);
+            });
 
         switch (outcome)
         {

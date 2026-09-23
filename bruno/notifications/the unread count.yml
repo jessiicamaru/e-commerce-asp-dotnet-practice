@@ -1,0 +1,31 @@
+info:
+  name: the unread count
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/notifications/unread-count"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("at least the two about the order", function() {
+          expect(res.body.count).to.be.at.least(2);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  What the bell asks every 30 seconds (specs/042) - one number, so the poll stays cheap.

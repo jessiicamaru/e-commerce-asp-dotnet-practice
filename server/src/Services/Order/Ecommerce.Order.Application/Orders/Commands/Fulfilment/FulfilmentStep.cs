@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
@@ -23,11 +24,12 @@ internal static class FulfilmentStep
         ShipmentStatus to,
         string? trackingReference,
         CancellationToken cancellationToken,
-        IAuditTrail? audit = null)
+        IAuditTrail? audit = null,
+        INotifier? notifier = null)
     {
         var result = await orders.TryMoveShipmentAsync(
             orderId, sellerId: null, from, to, trackingReference, DateTime.UtcNow, cancellationToken,
-            audit is null ? null : ct => ParcelAudit.RecordAsync(audit, orderId, null, from, to, trackingReference, ct));
+            audit is null ? null : ct => ParcelAudit.RecordMoveAsync(audit, notifier, orders, orderId, null, from, to, trackingReference, ct));
 
         switch (result.Outcome)
         {

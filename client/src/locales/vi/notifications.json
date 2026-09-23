@@ -1,0 +1,26 @@
+{
+  "bell": "Thông báo",
+  "bellUnread_one": "Thông báo, {{count}} chưa đọc",
+  "bellUnread_other": "Thông báo, {{count}} chưa đọc",
+  "title": "Thông báo",
+  "markAll": "Đánh dấu đã đọc hết",
+  "none": "Chưa có thông báo nào.",
+  "seeAll": "Xem tất cả",
+  "loadFailed": "Không tải được thông báo.",
+  "allTab": "Tất cả",
+  "unreadTab": "Chưa đọc ({{count}})",
+  "generic": "Bạn có một cập nhật mới.",
+  "theShop": "cửa hàng",
+  "byYou": "bạn",
+  "byShop": "cửa hàng",
+  "kind": {
+    "OrderPaid": "Đơn {{order}} đã thanh toán {{total}}. Chúng tôi sẽ sớm chuẩn bị hàng.",
+    "OrderFailed": "Đơn {{order}} chưa đặt được. Giỏ hàng của bạn vẫn còn nguyên.",
+    "ParcelShipped": "Một kiện của đơn {{order}} từ {{shop}} đã được gửi - mã vận đơn {{tracking}}.",
+    "OrderCancelled": "Đơn {{order}} đã bị huỷ bởi {{by}}. Số tiền đã trả được hoàn lại.",
+    "NewSale": "Bạn có đơn bán mới: {{order}}.",
+    "SaleCancelled": "Đơn {{order}} có hàng của bạn đã bị huỷ - không cần gửi.",
+    "ParcelReceived": "Khách đã nhận kiện của bạn trong đơn {{order}}.",
+    "PayoutRecorded": "Sàn đã ghi nhận trả cho bạn {{amount}}."
+  }
+}

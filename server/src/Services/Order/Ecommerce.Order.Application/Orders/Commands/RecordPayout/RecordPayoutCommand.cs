@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Shared.Authentication;
@@ -32,9 +33,12 @@ public class RecordPayoutCommandHandler(
     IPayoutRepository payouts,
     ICurrentUser currentUser,
     ILogger<RecordPayoutCommandHandler> logger,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    INotifier notifier)
     : IRequestHandler<RecordPayoutCommand, PayoutResponse>
 {
+    private readonly INotifier _notifier = notifier;
+
     private readonly IAuditTrail _audit = audit;
 
     private readonly IPayoutRepository _payouts = payouts;
@@ -51,11 +55,15 @@ public class RecordPayoutCommandHandler(
 
         var payout = await _payouts.TryRecordAsync(
             Guid.CreateVersion7(), request.SellerId, currency, admin, DateTime.UtcNow, cancellationToken,
-            (p, ct) => _audit.RecordAsync(
-                AuditCategory.Payment, "PayoutRecorded", "Seller", p.SellerId.ToString(),
-                $"Recorded paying {p.Amount} {p.Currency} to a seller for {p.PartCount} parcel(s)",
-                after: new { PayoutId = p.Id, p.Amount, p.Currency, p.PartCount },
-                cancellationToken: ct))
+            async (p, ct) =>
+            {
+                await _audit.RecordAsync(
+                    AuditCategory.Payment, "PayoutRecorded", "Seller", p.SellerId.ToString(),
+                    $"Recorded paying {p.Amount} {p.Currency} to a seller for {p.PartCount} parcel(s)",
+                    after: new { PayoutId = p.Id, p.Amount, p.Currency, p.PartCount },
+                    cancellationToken: ct);
+                await OrderNotices.PayoutAsync(_notifier, p.SellerId, p.Amount, p.Currency, ct);
+            })
             ?? throw new ConflictException(Payouts.NothingDue(currency));
 
         _logger.LogInformation(

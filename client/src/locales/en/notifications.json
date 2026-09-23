@@ -1,0 +1,26 @@
+{
+  "bell": "Notifications",
+  "bellUnread_one": "Notifications, {{count}} unread",
+  "bellUnread_other": "Notifications, {{count}} unread",
+  "title": "Notifications",
+  "markAll": "Mark all read",
+  "none": "No notifications yet.",
+  "seeAll": "See all",
+  "loadFailed": "Could not load your notifications.",
+  "allTab": "All",
+  "unreadTab": "Unread ({{count}})",
+  "generic": "You have a new update.",
+  "theShop": "the shop",
+  "byYou": "you",
+  "byShop": "the shop",
+  "kind": {
+    "OrderPaid": "Order {{order}} is paid ({{total}}). We will prepare it soon.",
+    "OrderFailed": "Order {{order}} could not be placed. Your cart is as you left it.",
+    "ParcelShipped": "A parcel of order {{order}} from {{shop}} is on its way - tracking {{tracking}}.",
+    "OrderCancelled": "Order {{order}} was cancelled by {{by}}. What you paid has been refunded.",
+    "NewSale": "You have a new sale: {{order}}.",
+    "SaleCancelled": "Order {{order}} with your goods was cancelled - nothing to send.",
+    "ParcelReceived": "The customer received your parcel of order {{order}}.",
+    "PayoutRecorded": "The shop recorded paying you {{amount}}."
+  }
+}

@@ -52,7 +52,51 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         OrderStatus settledStatus,
         string? failureReason,
         DateTime settledAt,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? stage = null)
+    {
+        if (stage is null)
+        {
+            return await SettleAsync(orderId, settledStatus, failureReason, settledAt, cancellationToken);
+        }
+
+        // Called from a consumer, this runs inside MassTransit's consumer outbox, which already holds a
+        // transaction on this context and commits it - with the staged messages - after the consumer.
+        // Join it: a second BeginTransaction throws, and clearing the tracker would drop the inbox row.
+        if (_context.Database.CurrentTransaction is not null)
+        {
+            var joined = await SettleAsync(orderId, settledStatus, failureReason, settledAt, cancellationToken);
+            if (joined > 0)
+            {
+                await stage(cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            return joined;
+        }
+
+        // The settlement and what announces it, in one transaction (specs/041, 042).
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var settled = await SettleAsync(orderId, settledStatus, failureReason, settledAt, cancellationToken);
+
+            if (settled > 0)
+            {
+                await stage(cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return settled;
+        });
+    }
+
+    private async Task<int> SettleAsync(
+        Guid orderId, OrderStatus settledStatus, string? failureReason, DateTime settledAt, CancellationToken cancellationToken)
     {
         return await _context.Orders
             .Where(x => x.Id == orderId && x.Status == OrderStatus.Submitted)
@@ -677,6 +721,37 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             await transaction.CommitAsync(cancellationToken);
             return CancelOutcome.Cancelled;
         });
+    }
+
+    public async Task<OrderNoticeFacts?> GetNoticeFactsAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        await EnsureShipmentsAsync(orderId, cancellationToken);
+
+        var order = await _context.Orders
+            .AsNoTracking()
+            .Where(o => o.Id == orderId)
+            .Select(o => new
+            {
+                o.UserId,
+                o.TotalAmount,
+                o.Currency,
+                Parts = o.Shipments.Select(s => new { s.Id, s.SellerId }).ToList(),
+                Names = o.Items.Where(i => i.SellerName != null).Select(i => new { i.SellerId, i.SellerName }).ToList()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (order is null)
+        {
+            return null;
+        }
+
+        return new OrderNoticeFacts(
+            orderId,
+            order.UserId,
+            order.TotalAmount,
+            order.Currency ?? string.Empty,
+            order.Parts.Select(p => new ParcelFact(
+                p.Id, p.SellerId, order.Names.FirstOrDefault(n => n.SellerId == p.SellerId)?.SellerName)).ToList());
     }
 
     public async Task<Domain.Entities.Order?> GetByIdForUserAsync(

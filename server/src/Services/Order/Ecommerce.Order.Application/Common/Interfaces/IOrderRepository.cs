@@ -29,12 +29,23 @@ public interface IOrderRepository
     /// affects zero rows rather than applying the effect twice.
     /// </para>
     /// </remarks>
+    /// <param name="stage">
+    /// Stages what goes with a settlement that happened - its audit entry and notifications (specs/041,
+    /// 042) - inside the same transaction. Not called for a repeat.
+    /// </param>
     Task<int> TrySettleAsync(
         Guid orderId,
         OrderStatus settledStatus,
         string? failureReason,
         DateTime settledAt,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? stage = null);
+
+    /// <summary>
+    /// What a notification about an order needs (specs/042): who bought it, what it cost, and its parcels
+    /// with who sends each. Null when there is no such order.
+    /// </summary>
+    Task<OrderNoticeFacts?> GetNoticeFactsAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Whether this service holds the order at all. Used only to explain a zero-row settle: an order

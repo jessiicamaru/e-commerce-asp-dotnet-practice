@@ -29,5 +29,7 @@ export const queryKeys = {
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   auditEntry: (id: string) => ['audit-entry', id] as const,
   auditSummary: (from: string) => ['audit-summary', from] as const,
+  unreadCount: () => ['notifications', 'unread-count'] as const,
+  notifications: (page: number, unreadOnly: boolean) => ['notifications', 'list', page, unreadOnly] as const,
   health: () => ['health'] as const,
 }

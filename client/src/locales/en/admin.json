@@ -123,7 +123,9 @@
       "PayoutRecorded": "Payout recorded",
       "PaymentCharged": "Payment charged",
       "PaymentRefused": "Payment refused",
-      "RefundRecorded": "Refund recorded"
+      "RefundRecorded": "Refund recorded",
+      "OrderPaid": "Order paid",
+      "OrderFailed": "Order failed"
     }
   }
 }
