@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Pager } from '@/components/shared/pager'
 import { Card, CardContent } from '@/components/ui/card'
-import { ORDERS_PER_PAGE } from '@/constants/shared'
+import { PAGE_SIZE } from '@/constants/shared'
 import { useMyOrders } from '@/hooks/order'
 import { describeOrderStatus } from '@/utils/order'
 import { money } from '@/utils/shared'
@@ -16,7 +16,7 @@ export function OrdersPage() {
   const { t, i18n } = useTranslation('orders')
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
-  const { data: result, isPending, isError } = useMyOrders(page, ORDERS_PER_PAGE)
+  const { data: result, isPending, isError } = useMyOrders(page, PAGE_SIZE)
 
   if (isError) {
     return <ErrorMessage>{t('loadFailed')}</ErrorMessage>
@@ -66,10 +66,9 @@ export function OrdersPage() {
       </ul>
       <Pager
         page={page}
-        totalPages={Math.max(1, Math.ceil(result.totalCount / ORDERS_PER_PAGE))}
+        pageSize={PAGE_SIZE}
+        totalCount={result.totalCount}
         onChange={(next) => setParams({ page: String(next) })}
-        previousLabel={t('newer')}
-        nextLabel={t('older')}
       />
     </section>
   )

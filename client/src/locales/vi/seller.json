@@ -35,7 +35,10 @@
       "language": "Chữ bạn nhập được lưu bằng {{language}}. Người xem bằng ngôn ngữ kia sẽ thấy đúng đoạn chữ này cho tới khi bạn dịch.",
       "currency": "Giá này chỉ áp cho {{currency}}. Người trả bằng đơn vị tiền kia vẫn thấy sản phẩm nhưng chưa mua được, cho tới khi nó có giá ở đó.",
       "stock": "Sản phẩm mới đăng chưa có tồn kho cho tới khi bạn nhập, ở trang của chính sản phẩm đó."
-    }
+    },
+    "details": "Thông tin sản phẩm",
+    "detailsHint": "Những gì người mua nhìn thấy. Phiên bản, loại tiền thứ hai và ảnh được thêm ở trang của sản phẩm sau khi đăng.",
+    "categoryPlaceholder": "Tìm danh mục…"
   },
   "edit": {
     "title": "Sản phẩm của bạn",
@@ -49,7 +52,10 @@
     "withdraw": "Gỡ sản phẩm này",
     "withdrawConfirm": "Gỡ “{{name}}”? Sản phẩm sẽ rời khỏi danh mục và không khôi phục lại được.",
     "withdrawn": "Đã gỡ “{{name}}”.",
-    "view": "Xem như người mua nhìn thấy"
+    "view": "Xem như người mua nhìn thấy",
+    "imageHint": "Hiện trên thẻ sản phẩm và ở mọi phiên bản chưa có ảnh riêng.",
+    "variants": "Phiên bản, giá và tồn kho",
+    "variantsHint": "Mỗi phiên bản có giá và tồn kho riêng. Để trống một loại tiền nếu không bán bằng loại tiền đó."
   },
   "stock": {
     "title": "Tồn kho",
@@ -88,5 +94,45 @@
       "preparing": "Đang chuẩn bị",
       "shipped": "Đã gửi đi"
     }
+  },
+  "menu": {
+    "overview": "Tổng quan",
+    "products": "Sản phẩm",
+    "sales": "Đơn đã bán"
+  },
+  "overview": {
+    "subtitle": "Tình hình gian hàng và những việc cần bạn xử lý.",
+    "listings": "Sản phẩm đang bán",
+    "soldOut": "Hết hàng",
+    "orders": "Đơn đã bán",
+    "revenue": "Doanh thu",
+    "revenueHint": "Chỉ phần hàng của bạn, chưa gồm thuế. Mỗi loại tiền tính riêng.",
+    "revenueWindow": "Tính trên {{count}} đơn gần nhất.",
+    "recentSales": "Đơn gần đây",
+    "all": "Xem tất cả",
+    "restock": "Cần nhập hàng",
+    "nothingSoldOut": "Chưa có sản phẩm nào hết hàng."
+  },
+  "products": {
+    "search": "Tìm sản phẩm theo tên hoặc SKU",
+    "noMatch": "Không có sản phẩm nào khớp “{{term}}”.",
+    "columns": {
+      "product": "Sản phẩm",
+      "variants": "Phiên bản",
+      "price": "Giá",
+      "stock": "Tồn kho"
+    },
+    "variantCount_other": "{{count}} phiên bản",
+    "from": "từ",
+    "actions": "Thao tác cho {{name}}",
+    "edit": "Chỉnh sửa"
+  },
+  "variant": {
+    "heading": "Phiên bản {{index}}/{{count}}",
+    "only": "Phiên bản duy nhất",
+    "photoOf": "Ảnh của {{name}}",
+    "priceIn": "Giá {{currency}}",
+    "save": "Lưu phiên bản",
+    "saved": "Đã lưu phiên bản."
   }
 }

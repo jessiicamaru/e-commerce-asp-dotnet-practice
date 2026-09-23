@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ShoppingBagIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { QuantityStepper } from '@/components/shared/quantity-stepper'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useAuth } from '@/context/auth/useAuth'
 import { useAddToCart } from '@/hooks/cart'
 import { ApiError } from '@/config/axios'
@@ -13,12 +14,15 @@ export function AddToCart({
   productId,
   variantId,
   disabledReason,
+  available,
 }: {
   productId: string
   /** Which shape to add. Undefined only while the customer has not chosen one yet. */
   variantId?: string
   /** Why the button is disabled, shown next to it - "Choose an option first". */
   disabledReason?: string
+  /** Inventory's available count, when known: the plus stops there, and none left disables adding. */
+  available?: number | null
 }) {
   const { t } = useTranslation('catalog')
   const { user, restoring } = useAuth()
@@ -43,6 +47,9 @@ export function AddToCart({
     )
   }
 
+  const soldOut = available !== undefined && available !== null && available <= 0
+  const reason = disabledReason ?? (soldOut ? t('stock.out') : undefined)
+
   const add = () =>
     addToCart.mutate([productId, quantity, variantId], {
       onSuccess: () =>
@@ -54,19 +61,18 @@ export function AddToCart({
     })
 
   return (
-    <div className="flex items-center gap-3">
-      <Input
-        type="number"
-        min={1}
-        aria-label={t('product.quantity')}
-        className="w-20"
+    <div className="flex flex-wrap items-center gap-3">
+      <QuantityStepper
+        label={t('product.quantity')}
         value={quantity}
-        onChange={(event) => setQuantity(Math.max(1, Math.floor(Number(event.target.value)) || 1))}
+        max={available && available > 0 ? available : undefined}
+        disabled={reason !== undefined}
+        onChange={setQuantity}
       />
-      <Button onClick={add} disabled={addToCart.isPending || disabledReason !== undefined}>
-        {addToCart.isPending ? t('product.adding') : t('product.addToCart')}
+      <Button className="h-10 rounded-full px-5 font-semibold" onClick={add} disabled={addToCart.isPending || reason !== undefined}>
+        <ShoppingBagIcon /> {addToCart.isPending ? t('product.adding') : t('product.addToCart')}
       </Button>
-      {disabledReason && <span className="text-muted-foreground text-sm">{disabledReason}</span>}
+      {reason && <span className="text-muted-foreground text-sm">{reason}</span>}
     </div>
   )
 }

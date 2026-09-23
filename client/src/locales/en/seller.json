@@ -35,7 +35,10 @@
       "language": "The text you type is stored in {{language}}. Shoppers reading the other language see this text until you translate it.",
       "currency": "The price is in {{currency}} only. Shoppers paying in the other currency will see the product but cannot buy it until it has a price there.",
       "stock": "A new listing has no stock until you set it, on the listing's own page."
-    }
+    },
+    "details": "Details",
+    "detailsHint": "What shoppers see. Variants, a second currency and photographs come next, on the listing's page.",
+    "categoryPlaceholder": "Search categories…"
   },
   "edit": {
     "title": "Your listing",
@@ -49,7 +52,10 @@
     "withdraw": "Withdraw this listing",
     "withdrawConfirm": "Withdraw “{{name}}”? It leaves the catalogue and cannot be undone.",
     "withdrawn": "“{{name}}” has been withdrawn.",
-    "view": "See it as a shopper does"
+    "view": "See it as a shopper does",
+    "imageHint": "Shown on the product card and wherever a variant has no photograph of its own.",
+    "variants": "Variants, prices and stock",
+    "variantsHint": "Each variant is priced and stocked on its own. Leave a currency empty to not sell in it."
   },
   "stock": {
     "title": "Stock",
@@ -88,5 +94,46 @@
       "preparing": "Being prepared",
       "shipped": "Shipped"
     }
+  },
+  "menu": {
+    "overview": "Overview",
+    "products": "Products",
+    "sales": "Sales"
+  },
+  "overview": {
+    "subtitle": "How your shop is doing, and what needs you.",
+    "listings": "Listings",
+    "soldOut": "Out of stock",
+    "orders": "Orders sold",
+    "revenue": "Your takings",
+    "revenueHint": "Your lines only, before tax. Each currency on its own.",
+    "revenueWindow": "Over your latest {{count}} sales.",
+    "recentSales": "Latest sales",
+    "all": "See all",
+    "restock": "Needs restocking",
+    "nothingSoldOut": "Nothing has run out."
+  },
+  "products": {
+    "search": "Search your listings by name or SKU",
+    "noMatch": "None of your listings match “{{term}}”.",
+    "columns": {
+      "product": "Product",
+      "variants": "Variants",
+      "price": "Price",
+      "stock": "Stock"
+    },
+    "variantCount_one": "{{count}} variant",
+    "variantCount_other": "{{count}} variants",
+    "from": "from",
+    "actions": "Actions for {{name}}",
+    "edit": "Edit"
+  },
+  "variant": {
+    "heading": "Variant {{index}} of {{count}}",
+    "only": "The only variant",
+    "photoOf": "Photograph of {{name}}",
+    "priceIn": "Price in {{currency}}",
+    "save": "Save variant",
+    "saved": "Variant saved."
   }
 }

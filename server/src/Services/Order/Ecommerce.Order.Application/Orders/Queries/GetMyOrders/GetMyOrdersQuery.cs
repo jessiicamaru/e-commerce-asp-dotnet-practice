@@ -14,5 +14,5 @@ namespace Ecommerce.Order.Application.Orders.Queries.GetMyOrders;
 /// </remarks>
 public record GetMyOrdersQuery(
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 12
 ) : IRequest<PagedResponse<OrderSummaryResponse>>;

@@ -1,13 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
+import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { useAuth } from '@/context/auth/useAuth'
 import { useMySales } from '@/hooks/order'
+import { PAGE_SIZE } from '@/constants/shared'
 import { describeSaleStatus } from './status'
 
-const PER_PAGE = 10
 
 /**
  * The orders that include something this seller listed (specs/034), newest first.
@@ -26,7 +27,7 @@ export function ShopSalesPage() {
   const { isSeller } = useAuth()
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
-  const sales = useMySales(page, PER_PAGE, isSeller)
+  const sales = useMySales(page, PAGE_SIZE, isSeller)
 
   if (sales.isError) {
     return <ErrorMessage>{t('sales.loadFailed')}</ErrorMessage>
@@ -40,13 +41,7 @@ export function ShopSalesPage() {
 
   return (
     <section className="grid gap-6">
-      <header className="grid gap-1">
-        <Link to="/shop" className="text-muted-foreground text-sm hover:underline">
-          ← {t('title')}
-        </Link>
-        <h1 className="text-2xl font-bold">{t('sales.title')}</h1>
-        <p className="text-muted-foreground max-w-prose text-sm">{t('sales.subtitle')}</p>
-      </header>
+      <PageTitle title={t('sales.title')} subtitle={t('sales.subtitle')} />
 
       {totalCount === 0 ? (
         <p className="bg-card ring-border/60 rounded-3xl p-8 text-sm ring-1">{t('sales.none')}</p>
@@ -74,10 +69,9 @@ export function ShopSalesPage() {
 
           <Pager
             page={page}
-            totalPages={Math.max(1, Math.ceil(totalCount / PER_PAGE))}
+            pageSize={PAGE_SIZE}
+            totalCount={totalCount}
             onChange={(next) => setParams({ page: String(next) })}
-            previousLabel={t('sales.newer')}
-            nextLabel={t('sales.older')}
           />
         </>
       )}

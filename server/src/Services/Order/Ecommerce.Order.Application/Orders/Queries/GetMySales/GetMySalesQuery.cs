@@ -13,7 +13,7 @@ namespace Ecommerce.Order.Application.Orders.Queries.GetMySales;
 /// There is no seller id here and there must never be one. The seller is the token's subject, for the
 /// same reason <c>SubmitOrderCommand</c> has no user id (Constitution IV).
 /// </remarks>
-public record GetMySalesQuery(int Page = 1, int PageSize = 20) : IRequest<PagedResponse<SaleSummaryResponse>>;
+public record GetMySalesQuery(int Page = 1, int PageSize = 12) : IRequest<PagedResponse<SaleSummaryResponse>>;
 
 public class GetMySalesQueryValidator : AbstractValidator<GetMySalesQuery>
 {

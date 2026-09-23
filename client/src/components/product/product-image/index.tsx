@@ -16,8 +16,10 @@ export function ProductImage({
   product,
   imageUrl,
   large = false,
+  thumb = false,
 }: {
-  product: Product
+  /** Only what the picture needs, so a cart line or an order line can use it too. */
+  product: Pick<Product, 'id' | 'name' | 'imageUrl'>
   /**
    * Shown instead of the product's — the chosen variant's picture (specs/032). Undefined means
    * "use the product's"; the server has already folded the fallback into it, so passing
@@ -25,14 +27,17 @@ export function ProductImage({
    */
   imageUrl?: string | null
   large?: boolean
+  /** A small square for tables and lists: the cart, the seller's products, the restock list. */
+  thumb?: boolean
 }) {
   const [failed, setFailed] = useState<string | null>(null)
   const shown = imageUrl === undefined ? product.imageUrl : imageUrl
   const missing = !shown || failed === shown
 
   const shape = cn(
-    'w-full overflow-hidden rounded-2xl',
-    large ? 'aspect-square' : 'aspect-[4/3]',
+    'w-full overflow-hidden',
+    thumb ? 'aspect-square rounded-xl' : 'rounded-2xl',
+    !thumb && (large ? 'aspect-square' : 'aspect-[4/3]'),
   )
 
   if (missing) {
@@ -50,7 +55,7 @@ export function ProductImage({
         }}
         aria-hidden="true"
       >
-        <Lens className={cn('opacity-25', large ? 'size-40' : 'size-20')} hue={hue} />
+        <Lens className={cn('opacity-25', thumb ? 'size-2/3' : large ? 'size-40' : 'size-20')} hue={hue} />
       </div>
     )
   }

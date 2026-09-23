@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
-import { Availability } from '@/components/product/availability'
+import { StockBadge } from '@/components/product/stock-badge'
 import { ProductImage } from '@/components/product/product-image'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct } from '@/hooks/product'
+import { useVariantStock } from '@/hooks/stock'
 import { Price } from '@/components/shared/price'
 
 export function ProductPage() {
@@ -15,6 +16,9 @@ export function ProductPage() {
   const { id = '' } = useParams()
   const { data: product, isPending, error } = useProduct(id)
   const [chosenVariantId, setChosenVariantId] = useState<string | null>(null)
+  // Inventory's real count for every shape, not Catalog's in-stock flag: "2 left" is the thing a
+  // shopper deciding between two kits wants to know, and the plus button stops there.
+  const stock = useVariantStock((product?.variants ?? []).filter((v) => v.isActive).map((v) => v.id))
 
   if (error) {
     const status = ApiError.from(error).status
@@ -68,13 +72,26 @@ export function ProductPage() {
             <span className="text-muted-foreground text-xs">{t('product.taxNote')}</span>
           </div>
 
-          <Availability value={variant?.availability ?? product.availability} />
+          {variant && (
+            <StockBadge
+              available={stock.byVariant[variant.id]?.quantityAvailable}
+              pending={stock.isPending}
+              className="-mt-1"
+            />
+          )}
 
-          <VariantChooser variants={sellable} selectedId={chosenVariantId} onSelect={setChosenVariantId} />
+          <VariantChooser
+            variants={sellable}
+            selectedId={chosenVariantId}
+            onSelect={setChosenVariantId}
+            stock={stock.byVariant}
+            stockPending={stock.isPending}
+          />
 
           <AddToCart
             productId={product.id}
             variantId={variant?.id}
+            available={variant ? stock.byVariant[variant.id]?.quantityAvailable : undefined}
             disabledReason={variant ? undefined : t('product.chooseFirst')}
           />
 

@@ -1,13 +1,12 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { MapPinIcon, PlusIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError } from '@/config/axios'
 import { AddressCard } from '@/components/address/address-card'
-import { AddressForm } from '@/components/address/address-form'
+import { AddressDialog } from '@/components/address/address-dialog'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Button } from '@/components/ui/button'
-import { useAddresses, useDeleteAddress, useMakeAddressDefault, useSaveAddress } from '@/hooks/address'
-import { emptyAddress } from '@/services/address/types'
+import { useAddresses, useDeleteAddress, useMakeAddressDefault } from '@/hooks/address'
 
 /**
  * The address book (#37). Identity keeps it and decides which one is the default; this page only asks,
@@ -16,12 +15,8 @@ import { emptyAddress } from '@/services/address/types'
 export function AddressesPage() {
   const { t } = useTranslation('auth')
   const { data: addresses, isPending, isError } = useAddresses()
-  const save = useSaveAddress()
   const remove = useDeleteAddress()
   const makeDefault = useMakeAddressDefault()
-
-  /** null = no form open; '' = adding a new one; otherwise the id being edited. */
-  const [editing, setEditing] = useState<string | null>(null)
 
   const failed = (error: unknown) => toast.error(ApiError.from(error).message)
 
@@ -33,46 +28,47 @@ export function AddressesPage() {
     return <LoadingRows />
   }
 
-  const current = editing ? addresses.find((address) => address.id === editing) : undefined
+  const add = (
+    <AddressDialog
+      trigger={
+        <Button className="h-10 rounded-full px-4 font-semibold">
+          <PlusIcon /> {t('addresses.add')}
+        </Button>
+      }
+    />
+  )
 
   return (
-    <section>
-      <h1 className="mb-4 text-2xl font-bold">{t('addresses.title')}</h1>
+    <section className="grid gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-bold tracking-tight">{t('addresses.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('addresses.subtitle')}</p>
+        </div>
+        {addresses.length > 0 && add}
+      </header>
 
-      {addresses.length === 0 && editing === null && (
-        <p className="text-muted-foreground mb-4">{t('addresses.none')}</p>
-      )}
-
-      <ul className="mb-4 grid gap-3">
-        {addresses.map((address) => (
-          <li key={address.id}>
-            <AddressCard
-              address={address}
-              onEdit={() => setEditing(address.id)}
-              onMakeDefault={() => makeDefault.mutate(address.id, { onError: failed })}
-              onDelete={() => {
-                if (confirm(t('addresses.confirmDelete', { name: address.recipientName }))) {
-                  remove.mutate(address.id, { onError: failed })
-                }
-              }}
-            />
-          </li>
-        ))}
-      </ul>
-
-      {editing === null ? (
-        <Button onClick={() => setEditing('')}>{t('addresses.add')}</Button>
+      {addresses.length === 0 ? (
+        <div className="bg-card ring-border/60 mx-auto grid max-w-md justify-items-center gap-3 rounded-3xl p-10 text-center ring-1">
+          <span className="bg-accent text-accent-foreground grid size-14 place-items-center rounded-2xl">
+            <MapPinIcon className="size-7" />
+          </span>
+          <h2 className="text-lg font-semibold">{t('addresses.none')}</h2>
+          <p className="text-muted-foreground text-sm">{t('addresses.noneHint')}</p>
+          {add}
+        </div>
       ) : (
-        <AddressForm
-          key={editing}
-          initial={current ?? emptyAddress}
-          title={current ? t('addresses.edit') : t('addresses.new')}
-          onCancel={() => setEditing(null)}
-          onSave={async (fields) => {
-            await save.mutateAsync({ id: current?.id, fields })
-            setEditing(null)
-          }}
-        />
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {addresses.map((address) => (
+            <li key={address.id}>
+              <AddressCard
+                address={address}
+                onMakeDefault={() => makeDefault.mutate(address.id, { onError: failed })}
+                onDelete={() => remove.mutate(address.id, { onError: failed })}
+              />
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   )

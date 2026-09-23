@@ -24,5 +24,10 @@
     "priceUnavailable": "The price could not be checked right now.",
     "unavailable": "This item cannot be bought right now.",
     "notSoldInCurrency": "Not priced in the currency you are browsing in. Switch currency to buy it."
-  }
+  },
+  "count_one": "{{count}} item",
+  "count_other": "{{count}} items",
+  "summary": "Order summary",
+  "subtotal": "Subtotal",
+  "keepShopping": "Keep shopping"
 }

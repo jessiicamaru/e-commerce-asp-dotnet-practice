@@ -6,7 +6,10 @@
     "orders": "Orders",
     "signIn": "Sign in",
     "signUp": "Create account",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "account": "Account",
+    "addresses": "Addresses",
+    "menu": "Menu"
   },
   "language": {
     "label": "Language",
@@ -34,5 +37,26 @@
     "delete": "Delete",
     "search": "Search"
   },
-  "searchPlaceholder": "Search cameras…"
+  "searchPlaceholder": "Search cameras…",
+  "pager": {
+    "showing": "Showing {{from}}–{{to}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}}"
+  },
+  "dropzone": {
+    "prompt": "Drop a photo here",
+    "or": "or click to choose one",
+    "hint": "JPG, PNG or WebP, up to 2 MB.",
+    "uploading": "Uploading…",
+    "badType": "That is not a JPG, PNG or WebP image.",
+    "tooBig": "That image is over 2 MB."
+  },
+  "quantity": {
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity"
+  },
+  "searchable": {
+    "none": "Nothing matches."
+  }
 }

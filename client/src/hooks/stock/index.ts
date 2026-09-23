@@ -1,5 +1,8 @@
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@/constants/query-keys'
+import { Product } from '@/services/product'
 import { Stock } from '@/services/stock'
+import { sumStock } from '@/utils/stock'
 
 /**
  * The stock of every variant of one product, for the seller's page.
@@ -22,6 +25,38 @@ export function useVariantStock(variantIds: string[]) {
       ),
     }),
   })
+}
+
+/**
+ * The stock of several listings at once, for the seller's product table.
+ *
+ * A listing in a page carries no variants (`variants: null`), and Inventory keys stock by variant, so
+ * this reads each product once - the same cached read its own page uses - and then each of its
+ * variants' stock. It is two waves of small requests for one page of one seller's listings, which is
+ * what the page size bounds.
+ */
+export function useListingStock(productIds: string[]) {
+  const details = useQueries({
+    queries: productIds.map((id) => ({
+      queryKey: queryKeys.product(id),
+      queryFn: () => Product.get(id),
+      retry: false,
+    })),
+  })
+
+  const variantsOf = Object.fromEntries(
+    productIds.map((id, index) => [id, (details[index].data?.variants ?? []).map((variant) => variant.id)]),
+  )
+  const allVariants = Object.values(variantsOf).flat()
+
+  const stock = useVariantStock(allVariants)
+
+  return {
+    isPending: details.some((detail) => detail.isPending) || stock.isPending,
+    byProduct: Object.fromEntries(
+      productIds.map((id) => [id, sumStock(variantsOf[id].map((variantId) => stock.byVariant[variantId]))]),
+    ),
+  }
 }
 
 export function useSetStock(productId: string) {

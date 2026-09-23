@@ -32,8 +32,9 @@ beforeEach(async () => {
 async function fillAndSubmit() {
   const user = userEvent.setup()
   await user.type(screen.getByLabelText(/Name/i), 'Sony A7 IV')
-  await waitFor(() => expect(screen.getByRole('option', { name: 'Mirrorless cameras' })).toBeInTheDocument())
-  await user.selectOptions(screen.getByLabelText(/Category/i), 'cat-1')
+  // A combobox now, the way a person uses it: type part of the name, pick the match.
+  await user.type(screen.getByLabelText(/Category/i), 'mirror')
+  await user.click(await screen.findByRole('option', { name: 'Mirrorless cameras' }))
   await user.type(screen.getByLabelText(/^SKU$/i), 'SONY-A7M4')
   await user.type(screen.getByLabelText(/Price in/i), '52000000')
   await user.click(screen.getByRole('button', { name: /List it/i }))

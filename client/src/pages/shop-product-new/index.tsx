@@ -1,9 +1,15 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
+import { ChevronRightIcon, InfoIcon } from 'lucide-react'
+import { SearchableSelect } from '@/components/shared/searchable-select'
 import { ServerError } from '@/components/shared/server-error'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { DEFAULT_CURRENCY } from '@/config/money'
 import { useCategories } from '@/hooks/category'
 import { useCreateProduct } from '@/hooks/product'
@@ -13,19 +19,14 @@ import { useCreateProduct } from '@/hooks/product'
  *
  * <p>
  * One form, one submission, one sellable product. `POST /api/products` creates the first variant
- * and reuses the product's id for it (specs/020), so this is the smallest honest create. Adding a
- * second shape, a translation or a second currency happens afterwards, on the listing's own page.
+ * and reuses the product's id for it (specs/020), so this is the smallest honest create. A second
+ * shape, a translation, a second currency and a photograph happen afterwards, on the listing's page.
  * </p>
  * <p>
  * <b>The price field is labelled with the shop's DEFAULT currency, not the one being browsed in.</b>
  * The server stores this number as the default currency's amount and validates it against that
  * currency; labelling it with the active currency would let somebody reading in dollars type 1999
  * and list a 1,999-dong camera with nothing to warn them.
- * </p>
- * <p>
- * The three consequences are stated on the form rather than discovered later: the text is stored in
- * one language, the price exists in one currency, and a new listing has no stock so it reads out of
- * stock until somebody stocks it.
  * </p>
  */
 export function NewProductPage() {
@@ -53,76 +54,91 @@ export function NewProductPage() {
   }
 
   const languageName = i18n.language.startsWith('vi') ? 'Tiếng Việt' : 'English'
+  const priceLabel = t('create.price', { currency: DEFAULT_CURRENCY })
 
   return (
-    <section className="mx-auto grid max-w-2xl gap-6">
-      <header className="grid gap-1">
-        <Link to="/shop" className="text-muted-foreground text-sm underline">
-          {t('title')}
+    <section className="grid gap-6">
+      <nav className="text-muted-foreground flex items-center gap-1 text-sm">
+        <Link to="/shop/products" className="hover:text-foreground">
+          {t('menu.products')}
         </Link>
-        <h1 className="text-2xl font-bold">{t('create.title')}</h1>
-      </header>
+        <ChevronRightIcon className="size-4" />
+        <span className="text-foreground">{t('create.title')}</span>
+      </nav>
 
-      <form onSubmit={submit} className="bg-card ring-border/60 grid gap-4 rounded-3xl p-6 ring-1">
-        <Field label={t('create.name')} htmlFor="name">
-          <Input id="name" required value={form.name} onChange={set('name')} />
-        </Field>
+      <h1 className="text-2xl font-bold tracking-tight">{t('create.title')}</h1>
 
-        <Field label={t('create.category')} htmlFor="categoryId">
-          <select
-            id="categoryId"
-            required
-            value={form.categoryId}
-            onChange={set('categoryId')}
-            className="border-input bg-background h-9 w-full rounded-full border px-4 text-sm"
-          >
-            <option value="">—</option>
-            {(categories.data ?? []).map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+      <form onSubmit={submit} className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
+        <Card className="rounded-3xl">
+          <CardHeader>
+            <CardTitle>{t('create.details')}</CardTitle>
+            <CardDescription>{t('create.detailsHint')}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <Field label={t('create.name')} htmlFor="name">
+              <Input id="name" required className="h-10 rounded-xl" value={form.name} onChange={set('name')} />
+            </Field>
 
-        <Field label={t('create.description')} htmlFor="description">
-          <textarea
-            id="description"
-            rows={4}
-            value={form.description}
-            onChange={set('description')}
-            className="border-input bg-background w-full rounded-2xl border px-4 py-2 text-sm"
-          />
-        </Field>
+            <Field label={t('create.category')} htmlFor="categoryId">
+              <SearchableSelect
+                id="categoryId"
+                required
+                placeholder={t('create.categoryPlaceholder')}
+                choices={(categories.data ?? []).map((category) => ({ value: category.id, label: category.name }))}
+                value={form.categoryId || null}
+                onChange={(value) => setForm((previous) => ({ ...previous, categoryId: value ?? '' }))}
+              />
+            </Field>
 
-        <Field label={t('create.sku')} htmlFor="sku" hint={t('create.skuHint')}>
-          <Input id="sku" required value={form.sku} onChange={set('sku')} />
-        </Field>
+            <Field label={t('create.description')} htmlFor="description">
+              <Textarea id="description" rows={5} className="rounded-xl" value={form.description} onChange={set('description')} />
+            </Field>
 
-        {/* DEFAULT_CURRENCY, deliberately - see the note on Product.create. */}
-        <Field label={t('create.price', { currency: DEFAULT_CURRENCY })} htmlFor="price">
-          <Input
-            id="price"
-            required
-            inputMode="decimal"
-            value={form.price}
-            onChange={set('price')}
-            aria-label={t('create.price', { currency: DEFAULT_CURRENCY })}
-          />
-        </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label={t('create.sku')} htmlFor="sku" hint={t('create.skuHint')}>
+                <Input id="sku" required className="h-10 rounded-xl font-mono" value={form.sku} onChange={set('sku')} />
+              </Field>
 
-        <div className="bg-secondary/50 grid gap-1.5 rounded-2xl p-4 text-sm">
-          <p className="font-semibold">{t('create.consequences.title')}</p>
-          <p className="text-muted-foreground">{t('create.consequences.language', { language: languageName })}</p>
-          <p className="text-muted-foreground">{t('create.consequences.currency', { currency: DEFAULT_CURRENCY })}</p>
-          <p className="text-muted-foreground">{t('create.consequences.stock')}</p>
+              {/* DEFAULT_CURRENCY, deliberately - see the note on Product.create. */}
+              <Field label={priceLabel} htmlFor="price">
+                <InputGroup className="h-10 rounded-xl">
+                  <InputGroupInput
+                    id="price"
+                    required
+                    inputMode="decimal"
+                    value={form.price}
+                    onChange={set('price')}
+                    aria-label={priceLabel}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>{DEFAULT_CURRENCY}</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+            </div>
+
+            <ServerError error={create.error} fallback={t('listing.loadFailed')} />
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 lg:sticky lg:top-28">
+          <Card className="bg-secondary/50 rounded-3xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <InfoIcon className="size-4.5" /> {t('create.consequences.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground grid gap-2 text-sm">
+              <p>{t('create.consequences.language', { language: languageName })}</p>
+              <p>{t('create.consequences.currency', { currency: DEFAULT_CURRENCY })}</p>
+              <p>{t('create.consequences.stock')}</p>
+            </CardContent>
+          </Card>
+
+          <Button type="submit" className="h-11 rounded-full text-base font-semibold" disabled={create.isPending}>
+            {create.isPending ? t('create.submitting') : t('create.submit')}
+          </Button>
         </div>
-
-        <ServerError error={create.error} fallback={t('listing.loadFailed')} />
-
-        <Button type="submit" className="rounded-full" disabled={create.isPending}>
-          {create.isPending ? t('create.submitting') : t('create.submit')}
-        </Button>
       </form>
     </section>
   )
@@ -140,10 +156,8 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-semibold">
-        {label}
-      </label>
+    <div className="grid content-start gap-2">
+      <Label htmlFor={htmlFor}>{label}</Label>
       {children}
       {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
     </div>
