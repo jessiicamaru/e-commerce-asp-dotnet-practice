@@ -106,10 +106,27 @@ export function useMoveSale(id: string) {
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.sale(id) })
     await queryClient.invalidateQueries({ queryKey: ['sales'] })
+    // Shipping moves the sale's earnings from "on the way" to "due" (specs/037).
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balance() })
   }
 
   return {
     prepare: useMutation({ mutationFn: () => Order.prepareSale(id), onSuccess: refresh }),
     ship: useMutation({ mutationFn: (trackingReference: string) => Order.shipSale(id, trackingReference), onSuccess: refresh }),
   }
+}
+
+/** The seller's money per currency (specs/037). Same `enabled` reasoning as `useMySales`. */
+export function useMyBalance(enabled: boolean) {
+  return useQuery({ queryKey: queryKeys.balance(), queryFn: () => Order.balance(), enabled })
+}
+
+/** The payouts made to the seller, a page at a time. */
+export function useMyPayouts(page: number, pageSize: number, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.payouts(page),
+    queryFn: () => Order.payouts(page, pageSize),
+    enabled,
+    placeholderData: (previous) => previous,
+  })
 }

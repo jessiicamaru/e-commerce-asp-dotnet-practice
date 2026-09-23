@@ -1,12 +1,16 @@
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
+using Ecommerce.Order.Application.Orders.Commands.RecordPayout;
 using Ecommerce.Order.Application.Orders.Commands.SellerFulfilment;
 using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 using Ecommerce.Order.Application.Orders.Queries.GetCheckoutQuote;
+using Ecommerce.Order.Application.Orders.Queries.GetMyBalance;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrderById;
 using Ecommerce.Order.Application.Orders.Queries.GetMyOrders;
+using Ecommerce.Order.Application.Orders.Queries.GetMyPayouts;
 using Ecommerce.Order.Application.Orders.Queries.GetMySale;
 using Ecommerce.Order.Application.Orders.Queries.GetMySales;
 using Ecommerce.Order.Application.Orders.Queries.GetOrdersForFulfilment;
+using Ecommerce.Order.Application.Orders.Queries.GetPayoutsDue;
 using Ecommerce.Order.Application.Orders.Queries.GetShippingOptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +28,9 @@ public class OrdersController : ApiControllerBase
     public record CheckoutRequest(Guid? AddressId, string? ShippingOption);
 
     public record ShipmentRequest(string? TrackingReference);
+
+    /// <summary>Whom to settle, in which currency. No amount - see <see cref="RecordPayoutCommand"/>.</summary>
+    public record PayoutRequest(Guid SellerId, string? Currency);
 
     /// <summary>Check out the caller's cart to one of their addresses (feature 011).</summary>
     [HttpPost]
@@ -114,6 +121,44 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> ShipMySale(Guid id, [FromBody] ShipmentRequest request)
     {
         return Ok(await Mediator.Send(new ShipMySaleCommand(id, request.TrackingReference ?? string.Empty)));
+    }
+
+    // ------------------------------------------------------------------ money (specs/037)
+
+    /// <summary>A seller's money per currency: on the way, due, paid out.</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("sales/balance")]
+    public async Task<IActionResult> GetMyBalance()
+    {
+        return Ok(await Mediator.Send(new GetMyBalanceQuery()));
+    }
+
+    /// <summary>The payouts made to a seller, newest first.</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("sales/payouts")]
+    public async Task<IActionResult> GetMyPayouts([FromQuery] GetMyPayoutsQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
+    /// <summary>Staff: every seller with something due now, per currency.</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpGet("payouts/due")]
+    public async Task<IActionResult> GetPayoutsDue()
+    {
+        return Ok(await Mediator.Send(new GetPayoutsDueQuery()));
+    }
+
+    /// <summary>
+    /// Staff: settle everything due to one seller in one currency. 201 with the payout; 409 when nothing
+    /// is due - including when another administrator has just settled it.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("payouts")]
+    public async Task<IActionResult> RecordPayout([FromBody] PayoutRequest request)
+    {
+        var payout = await Mediator.Send(new RecordPayoutCommand(request.SellerId, request.Currency ?? string.Empty));
+        return StatusCode(StatusCodes.Status201Created, payout);
     }
 
     // ------------------------------------------------------------------ fulfilment (staff)

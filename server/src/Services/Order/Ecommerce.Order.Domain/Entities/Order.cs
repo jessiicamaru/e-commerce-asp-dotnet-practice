@@ -27,6 +27,12 @@ public class Order
 
     /// <summary>The rate applied, e.g. 0.1000 for 10%. Stored so a later rate change never alters this order.</summary>
     public decimal? TaxRate { get; set; }
+
+    /// <summary>
+    /// The marketplace's commission rate when this order was placed (specs/037), e.g. 0.1000. Stored so a
+    /// rate changed later never alters what a seller earned on it. Null on orders placed before that.
+    /// </summary>
+    public decimal? CommissionRate { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

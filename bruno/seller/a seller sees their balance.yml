@@ -1,0 +1,36 @@
+info:
+  name: a seller sees their balance
+  type: http
+  seq: 16
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/sales/balance"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("one row per currency, with the three places money can be", function() {
+          expect(res.body).to.be.an("array");
+          res.body.forEach(function(row) {
+            expect(row).to.have.all.keys("currency", "onTheWay", "due", "paidOut");
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A seller's money per currency (specs/037): on the way (paid, not sent), due (sent, not paid out) and
+  paid out. No seller id anywhere - the token says whose. Empty for the seller registered in this folder,
+  who has sold nothing; `PayoutTests` proves the numbers move, and the quickstart shows it end to end.

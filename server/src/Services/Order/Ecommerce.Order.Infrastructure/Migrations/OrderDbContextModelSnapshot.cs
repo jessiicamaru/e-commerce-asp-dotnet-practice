@@ -28,6 +28,10 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("CommissionRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -100,6 +104,8 @@ namespace Ecommerce.Order.Infrastructure.Migrations
 
                     b.ToTable("orders", null, t =>
                         {
+                            t.HasCheckConstraint("CK_orders_commission_rate_range", "\"CommissionRate\" IS NULL OR (\"CommissionRate\" >= 0 AND \"CommissionRate\" < 1)");
+
                             t.HasCheckConstraint("CK_orders_no_discount_yet", "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" = 0");
 
                             t.HasCheckConstraint("CK_orders_parts_sum_to_total", "\"Subtotal\" IS NULL OR \"Subtotal\" + COALESCE(\"ShippingPrice\", 0) + \"TaxTotal\" - \"DiscountTotal\" = \"TotalAmount\"");
@@ -168,11 +174,26 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("Commission")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("GoodsTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("PayoutId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("SellerId")
                         .HasColumnType("uuid");
+
+                    b.Property<decimal?>("ShippingShare")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -188,6 +209,8 @@ namespace Ecommerce.Order.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PayoutId");
+
                     b.HasIndex("SellerId");
 
                     b.HasIndex("OrderId", "SellerId")
@@ -196,7 +219,46 @@ namespace Ecommerce.Order.Infrastructure.Migrations
 
                     NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("OrderId", "SellerId"), false);
 
-                    b.ToTable("order_shipments", (string)null);
+                    b.ToTable("order_shipments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_order_shipments_terms_all_or_none", "(\"GoodsTotal\" IS NULL AND \"Commission\" IS NULL AND \"ShippingShare\" IS NULL) OR (\"GoodsTotal\" IS NOT NULL AND \"Commission\" IS NOT NULL AND \"ShippingShare\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Payout", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("PartCount")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RecordedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SellerId", "CreatedAt");
+
+                    b.ToTable("payouts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_payouts_covers_something", "\"PartCount\" > 0");
+                        });
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -448,6 +510,11 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Ecommerce.Order.Domain.Entities.Payout", null)
+                        .WithMany()
+                        .HasForeignKey("PayoutId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Order");
                 });

@@ -5,6 +5,7 @@ import { countryChoices } from '@/utils/address/countries'
 import { summariseSales } from '@/utils/seller'
 import { fold, looselyIncludes } from '@/utils/shared'
 import { stockLevel, sumStock } from '@/utils/stock'
+import { noEarnings } from '@/test/fixtures'
 
 describe('looselyIncludes', () => {
   /** "đ" is its own letter, not an accent: NFD leaves it alone, so it is replaced by hand. */
@@ -18,7 +19,7 @@ describe('looselyIncludes', () => {
 
 describe('summariseSales', () => {
   const sale = (subtotal: number, currency: string, units = 1) => ({
-    orderId: 'o', status: 'Paid', createdAt: '', updatedAt: '', lineCount: 1, units, subtotal, currency,
+    orderId: 'o', status: 'Paid', createdAt: '', updatedAt: '', lineCount: 1, units, subtotal, currency, ...noEarnings,
   })
 
   /** The shop converts nothing (specs/022): dong and dollars are two totals, never one. */

@@ -40,6 +40,9 @@ public class OrderTestFixture : IAsyncLifetime
 
     public FakeCheckoutDependencies Checkout { get; } = new();
 
+    /// <summary>The marketplace's commission, 10% like the shop. Settable: SC-002 changes it mid-test.</summary>
+    public TestCommissionRate Commission { get; } = new();
+
     private TestLanguage LanguageHolder { get; } = new();
 
     private TestCurrency CurrencyHolder { get; } = new();
@@ -140,6 +143,8 @@ public class OrderTestFixture : IAsyncLifetime
 
         services.AddDbContext<OrderDbContext>(options => options.UseNpgsql(_connectionString));
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPayoutRepository, PayoutRepository>();
+        services.AddSingleton<ICommissionRate>(Commission);
 
         // The one substitution. It is what the query tests use to say "the caller is this shopper",
         // and it is also the limit of what they prove: that the owner filter is applied to whatever
@@ -260,6 +265,12 @@ public class OrderTestCollection : ICollectionFixture<OrderTestFixture>;
 public class TestLanguage : IRequestLanguage
 {
     public string Current { get; set; } = "vi";
+}
+
+/// <summary>A settable <see cref="ICommissionRate"/> (specs/037).</summary>
+public class TestCommissionRate : ICommissionRate
+{
+    public decimal Current { get; set; } = 0.10m;
 }
 
 /// <summary>A settable <see cref="IRequestCurrency"/>, for the same reason.</summary>

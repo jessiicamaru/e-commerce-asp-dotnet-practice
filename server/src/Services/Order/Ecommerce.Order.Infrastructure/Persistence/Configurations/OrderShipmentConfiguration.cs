@@ -8,7 +8,12 @@ public class OrderShipmentConfiguration : IEntityTypeConfiguration<OrderShipment
 {
     public void Configure(EntityTypeBuilder<OrderShipment> builder)
     {
-        builder.ToTable("order_shipments");
+        // Earnings are all recorded or none is (specs/037): a part with a commission and no goods total
+        // would be a sum nobody can explain.
+        builder.ToTable("order_shipments", t => t.HasCheckConstraint(
+            "CK_order_shipments_terms_all_or_none",
+            "(\"GoodsTotal\" IS NULL AND \"Commission\" IS NULL AND \"ShippingShare\" IS NULL)"
+            + " OR (\"GoodsTotal\" IS NOT NULL AND \"Commission\" IS NOT NULL AND \"ShippingShare\" IS NOT NULL)"));
 
         builder.HasKey(x => x.Id);
 
@@ -22,6 +27,17 @@ public class OrderShipmentConfiguration : IEntityTypeConfiguration<OrderShipment
             .IsRequired();
 
         builder.Property(x => x.TrackingReference).HasMaxLength(100);
+
+        builder.Property(x => x.GoodsTotal).HasPrecision(18, 2);
+        builder.Property(x => x.Commission).HasPrecision(18, 2);
+        builder.Property(x => x.ShippingShare).HasPrecision(18, 2);
+
+        // Restrict: a payout that has claimed parts is a record of money settled, and is never deleted
+        // out from under them.
+        builder.HasOne<Payout>()
+            .WithMany()
+            .HasForeignKey(x => x.PayoutId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Order)
             .WithMany(x => x.Shipments)

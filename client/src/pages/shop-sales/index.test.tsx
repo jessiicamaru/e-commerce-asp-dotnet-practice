@@ -8,6 +8,7 @@ import type { AuthState } from '@/context/auth/types'
 import { Order } from '@/services/order'
 import type { SalePage } from '@/services/order/types'
 import { ShopSalesPage } from '.'
+import { noEarnings } from '@/test/fixtures'
 
 function render_(isSeller = true) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -42,6 +43,7 @@ const onePaidSale: SalePage = {
     units: 2,
     subtotal: 104000000,
     currency: 'VND',
+    ...noEarnings,
   }],
 }
 

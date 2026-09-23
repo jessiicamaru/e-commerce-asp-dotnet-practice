@@ -2,9 +2,11 @@
 // class and an interface cannot share a name.
 import { http } from '@/config/axios'
 import type {
+  Balance,
   CheckoutChoice,
   Order as OrderModel,
   OrderPage,
+  PayoutPage,
   Quote,
   Sale,
   SalePage,
@@ -73,6 +75,18 @@ export class Order {
   /** The seller has sent THEIR part, with the carrier's tracking reference. */
   static async shipSale(id: string, trackingReference: string): Promise<Sale> {
     const { data } = await http.post<Sale>(`/orders/sales/${id}/shipment`, { trackingReference })
+    return data
+  }
+
+  /** The seller's money per currency (specs/037). The token says whose. */
+  static async balance(): Promise<Balance[]> {
+    const { data } = await http.get<Balance[]>('/orders/sales/balance')
+    return data
+  }
+
+  /** The payouts made to the seller, newest first. */
+  static async payouts(page: number, pageSize: number): Promise<PayoutPage> {
+    const { data } = await http.get<PayoutPage>(`/orders/sales/payouts?page=${page}&pageSize=${pageSize}`)
     return data
   }
 }

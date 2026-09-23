@@ -17,6 +17,7 @@ import { ShopProductsPage } from '@/pages/shop-products'
 import { NewProductPage } from '@/pages/shop-product-new'
 import { ShopSalePage } from '@/pages/shop-sale'
 import { ShopSalesPage } from '@/pages/shop-sales'
+import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -97,6 +98,7 @@ export function AppRoutes() {
             <Route path="products/:id" element={<SellerProductPage />} />
             <Route path="sales" element={<ShopSalesPage />} />
             <Route path="sales/:id" element={<ShopSalePage />} />
+            <Route path="payouts" element={<ShopPayoutsPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

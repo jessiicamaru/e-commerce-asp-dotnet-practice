@@ -30,3 +30,19 @@ describe('Order.sale', () => {
     expect(get.mock.calls[0][0]).toBe('/orders/sales/o-1')
   })
 })
+
+describe('Order.balance and Order.payouts', () => {
+  /** Whose money this is comes from the token (specs/037), exactly like the sales themselves. */
+  it('asks for the caller own, naming nobody', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: [] })
+
+    await Order.balance()
+    await Order.payouts(3, 12)
+
+    expect(get.mock.calls.map((call) => call[0])).toEqual([
+      '/orders/sales/balance',
+      '/orders/sales/payouts?page=3&pageSize=12',
+    ])
+    expect(get.mock.calls.every((call) => call[1] === undefined)).toBe(true)
+  })
+})
