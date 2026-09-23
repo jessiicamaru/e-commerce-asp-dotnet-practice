@@ -232,6 +232,43 @@ public class ProductsController : ApiControllerBase
     }
 
     /// <summary>
+    /// What the image store holds that the catalogue cannot name (specs/033). Changes nothing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Administrators only, not sellers.</b> An orphan's row is gone, so there is nothing left to
+    /// say whose it was - there is no ownership to check and nobody but an administrator has a
+    /// reason to ask.
+    /// </para>
+    /// <para>
+    /// <b>Nothing runs this on a timer.</b> It is the one part of the image feature whose failure
+    /// mode is destroying data somebody is using, so a person asks for it.
+    /// </para>
+    /// </remarks>
+    [Authorize(Roles = "Admin")]
+    [HttpGet("images/orphans")]
+    public async Task<IActionResult> GetOrphanImages()
+    {
+        return Ok(await Mediator.Send(new FindOrphanImagesQuery()));
+    }
+
+    /// <summary>
+    /// Reclaims them, and answers with what it removed.
+    /// </summary>
+    /// <remarks>
+    /// <b>It takes no list of keys.</b> A request naming keys would delete whatever it was told to,
+    /// and the caller's list is minutes old by the time somebody has read the report and decided -
+    /// long enough for an upload to make one of those keys live. This reconciles again and removes
+    /// what it finds; the report is advice, not an instruction.
+    /// </remarks>
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("images/orphans")]
+    public async Task<IActionResult> RemoveOrphanImages()
+    {
+        return Ok(await Mediator.Send(new RemoveOrphanImagesCommand()));
+    }
+
+    /// <summary>
     /// Give one SHAPE of a product its own photograph, or replace it (specs/032).
     /// </summary>
     /// <remarks>

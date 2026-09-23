@@ -1,0 +1,45 @@
+info:
+  name: orphan images report
+  type: http
+  seq: 60
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/images/orphans"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        // The single most dangerous failure this endpoint has: if the catalogue read went wrong and
+        // the code carried on with an empty live set, EVERY file would be a candidate and the
+        // reclaim would remove the whole catalogue's images. liveKeys is published so that a
+        // nonsensical answer is visible as one.
+        test("a full store with zero live keys would be the dangerous case", function() {
+          if (res.body.scanned > 0) {
+            expect(res.body.liveKeys).to.be.greaterThan(0);
+          }
+        });
+        test("it says which assumption makes it destructive if broken", function() {
+          expect(res.body.note).to.contain("One Catalog instance");
+        });
+        test("reporting changes nothing - there is no removed field", function() {
+          expect(res.body).to.not.have.property("removed");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Images the store holds that the catalogue cannot name (specs/033). Reporting only; DELETE on the
+  same address reclaims them, and is deliberately NOT exercised here - a collection run that
+  deletes files as a side effect of being run is the thing this endpoint exists to avoid.

@@ -1,0 +1,29 @@
+info:
+  name: a seller cannot read the orphan report
+  type: http
+  seq: 31
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/images/orphans"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("anyone who is not an administrator is refused with 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Admin only, not Seller (specs/033). An orphan's row is gone, so there is nothing left to say whose
+  it was - there is no ownership to check and nobody but an administrator has a reason to ask.

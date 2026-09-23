@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Observability;
@@ -158,6 +159,11 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
+
+// How old a file must be before the orphan report will call it one (specs/033). Configuration
+// rather than a constant, so lowering it is a deliberate act.
+builder.Services.Configure<OrphanImageOptions>(
+    builder.Configuration.GetSection(OrphanImageOptions.SectionName));
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
