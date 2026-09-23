@@ -90,7 +90,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (38 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (138 tests,
+`Ecommerce.Payment.Tests` (13 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (140 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (135 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439) and `Ecommerce.Identity.Tests` (54 tests, PostgreSQL on 5435). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
@@ -396,6 +396,15 @@ nothing and gets 409, and there is no amount in the request to disagree with the
 from before this have no terms and are owed nothing by this system** (nulls, never zeros; applying
 today's rate would be inventing yesterday's agreement), and neither are parts created on demand for an
 older image's order. Payment is still a stub: a payout is a ledger entry, not a transfer.
+
+**Administrators have a console** (specs/038): `/admin` in the storefront - the fulfilment queue per
+state, one order with the shop's parcel and its next step, and the payouts due with a confirmed "record
+payout". It needed one new endpoint, `GET /api/orders/fulfilment/{id}` (Admin): ⚠️ **the one read of an
+order that is not scoped to its owner** - the role on the route is the whole permission, so its handler
+(`GetOrderForStaffQuery`) must never sit behind any other route. The parcel steps are one component,
+`components/order/parcel-actions`, for a seller's parcel and the shop's. ⚠️ `AlertDialogAction` in this
+base-ui shadcn is a plain `Button` and **does not close the dialog**; the payouts page controls its dialog
+so a refusal is not hidden behind it.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

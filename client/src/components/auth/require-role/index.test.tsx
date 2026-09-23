@@ -15,6 +15,7 @@ function renderAt(state: Partial<AuthState>) {
     user: null,
     restoring: false,
     isSeller: false,
+    isAdmin: false,
     signIn: async () => {},
     signUp: async () => {},
     signOut: async () => {},

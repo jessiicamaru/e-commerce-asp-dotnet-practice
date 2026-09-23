@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { LogOutIcon, MapPinIcon, PackageIcon, StoreIcon, UserIcon } from 'lucide-react'
+import { LogOutIcon, MapPinIcon, PackageIcon, ShieldCheckIcon, StoreIcon, UserIcon } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -23,7 +23,18 @@ import { initialsOf } from './initials'
  * courtesy, not security: the endpoints behind it refuse anybody else on their own.
  * </p>
  */
-export function UserMenu({ user, isSeller, onSignOut }: { user: User; isSeller: boolean; onSignOut: () => void }) {
+export function UserMenu({
+  user,
+  isSeller,
+  isAdmin = false,
+  onSignOut,
+}: {
+  user: User
+  isSeller: boolean
+  /** Draws the console entry (specs/038). Drawing only - the server refuses everyone else. */
+  isAdmin?: boolean
+  onSignOut: () => void
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
@@ -62,6 +73,11 @@ export function UserMenu({ user, isSeller, onSignOut }: { user: User; isSeller: 
           {isSeller && (
             <DropdownMenuItem onClick={() => navigate('/shop')}>
               <StoreIcon /> {t('seller:nav')}
+            </DropdownMenuItem>
+          )}
+          {isAdmin && (
+            <DropdownMenuItem onClick={() => navigate('/admin')}>
+              <ShieldCheckIcon /> {t('admin:nav')}
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>

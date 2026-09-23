@@ -11,11 +11,11 @@ const user = { id: 'u1', email: 'mai@demo.test', firstName: 'Mai', lastName: 'Tr
  * Opens the menu and waits for it: base-ui opens asynchronously, so asserting synchronously right after
  * the click passes or fails depending on timing - it did both before this waited.
  */
-async function open(isSeller: boolean, onSignOut = vi.fn()) {
+async function open(isSeller: boolean, onSignOut = vi.fn(), isAdmin = false) {
   const clicker = userEvent.setup()
   render(
     <MemoryRouter>
-      <UserMenu user={user} isSeller={isSeller} onSignOut={onSignOut} />
+      <UserMenu user={user} isSeller={isSeller} isAdmin={isAdmin} onSignOut={onSignOut} />
     </MemoryRouter>,
   )
   await clicker.click(screen.getByRole('button', { name: 'Account' }))
@@ -33,6 +33,17 @@ describe('UserMenu', () => {
 
     expect(screen.getByText('mai@demo.test')).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /Orders/ })).toBeInTheDocument()
+  })
+
+  /** specs/038: the console is drawn for an administrator only - again courtesy, not the permission. */
+  it('offers the console to an administrator and nobody else', async () => {
+    await open(false, vi.fn(), true)
+    expect(screen.getByRole('menuitem', { name: /Admin/ })).toBeInTheDocument()
+  })
+
+  it('does not offer the console to a customer', async () => {
+    await open(true)
+    expect(screen.queryByRole('menuitem', { name: /Admin/ })).not.toBeInTheDocument()
   })
 
   /** Drawn for a seller only - and that is courtesy: the endpoints refuse anybody else on their own. */

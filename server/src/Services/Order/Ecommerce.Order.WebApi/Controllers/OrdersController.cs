@@ -9,6 +9,7 @@ using Ecommerce.Order.Application.Orders.Queries.GetMyOrders;
 using Ecommerce.Order.Application.Orders.Queries.GetMyPayouts;
 using Ecommerce.Order.Application.Orders.Queries.GetMySale;
 using Ecommerce.Order.Application.Orders.Queries.GetMySales;
+using Ecommerce.Order.Application.Orders.Queries.GetOrderForStaff;
 using Ecommerce.Order.Application.Orders.Queries.GetOrdersForFulfilment;
 using Ecommerce.Order.Application.Orders.Queries.GetPayoutsDue;
 using Ecommerce.Order.Application.Orders.Queries.GetShippingOptions;
@@ -170,6 +171,17 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> GetForFulfilment([FromQuery] GetOrdersForFulfilmentQuery query)
     {
         return Ok(await Mediator.Send(query));
+    }
+
+    /// <summary>
+    /// Staff: any order's detail, so they can see what to pack and where it goes (specs/038). The one
+    /// read of an order that is not scoped to its owner - the role is the permission.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpGet("fulfilment/{id:guid}")]
+    public async Task<IActionResult> GetForStaff(Guid id)
+    {
+        return Ok(await Mediator.Send(new GetOrderForStaffQuery(id)));
     }
 
     /// <summary>Staff: Paid → Preparing. Repeating it is a no-op; from any other state, 409.</summary>

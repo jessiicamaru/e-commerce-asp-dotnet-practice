@@ -1,0 +1,52 @@
+{
+  "nav": "Quản trị",
+  "title": "Quản trị cửa hàng",
+  "menu": {
+    "fulfilment": "Đơn cần giao",
+    "payouts": "Thanh toán người bán"
+  },
+  "queue": {
+    "title": "Đơn cần giao",
+    "subtitle": "Kiện hàng của chính cửa hàng. Kiện của người bán do họ tự gửi.",
+    "state": {
+      "Paid": "Chờ xử lý",
+      "Preparing": "Đang chuẩn bị",
+      "Shipped": "Đã gửi"
+    },
+    "none": "Không có đơn nào ở bước này.",
+    "loadFailed": "Không tải được danh sách đơn.",
+    "items_one": "{{count}} sản phẩm",
+    "items_other": "{{count}} sản phẩm",
+    "parcels": "Đã gửi {{shipped}}/{{count}} kiện",
+    "placedAt": "Đặt lúc {{at}}"
+  },
+  "order": {
+    "back": "Đơn cần giao",
+    "loadFailed": "Không tải được đơn.",
+    "shopParcel": "Kiện của cửa hàng",
+    "shopParcelHint": "Chuẩn bị và gửi phần hàng của cửa hàng. Khách thấy từng kiện và mã vận đơn của nó.",
+    "toPack": "Cần đóng gói",
+    "noShopGoods": "Đơn này không có hàng của cửa hàng - mỗi người bán tự gửi kiện của mình.",
+    "shipTo": "Giao tới",
+    "noAddress": "Đơn này không ghi địa chỉ giao.",
+    "lines": "Toàn bộ đơn",
+    "customer": "Khách hàng"
+  },
+  "payouts": {
+    "title": "Thanh toán người bán",
+    "subtitle": "Tiền đến hạn cho từng người bán: kiện đã gửi, chưa được thanh toán. Mỗi loại tiền tính riêng.",
+    "loadFailed": "Không tải được danh sách đến hạn.",
+    "none": "Không có khoản nào đến hạn.",
+    "columns": {
+      "seller": "Người bán",
+      "parts": "Số kiện",
+      "due": "Đến hạn"
+    },
+    "unnamed": "Người bán {{id}}",
+    "pay": "Ghi nhận đã trả",
+    "confirmTitle": "Ghi nhận đã trả cho {{seller}}?",
+    "confirmBody": "Sàn ghi nhận đã trả {{amount}} cho {{count}} kiện. Hệ thống không chuyển tiền - đây là ghi sổ, và không huỷ được.",
+    "confirm": "Ghi nhận",
+    "paid": "Đã ghi nhận {{amount}} cho {{seller}}."
+  }
+}

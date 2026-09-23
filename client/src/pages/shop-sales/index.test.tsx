@@ -16,6 +16,7 @@ function render_(isSeller = true) {
     user: { id: 's1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles: isSeller ? ['Seller'] : [] },
     restoring: false,
     isSeller,
+    isAdmin: false,
     signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
 

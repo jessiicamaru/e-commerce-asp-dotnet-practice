@@ -18,6 +18,10 @@ import { NewProductPage } from '@/pages/shop-product-new'
 import { ShopSalePage } from '@/pages/shop-sale'
 import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
+import { AdminLayout } from '@/layouts/admin-layout'
+import { AdminOrdersPage } from '@/pages/admin-orders'
+import { AdminOrderPage } from '@/pages/admin-order'
+import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -99,6 +103,20 @@ export function AppRoutes() {
             <Route path="sales" element={<ShopSalesPage />} />
             <Route path="sales/:id" element={<ShopSalePage />} />
             <Route path="payouts" element={<ShopPayoutsPage />} />
+          </Route>
+          {/* The administrator's console (specs/038). Same bargain as /shop: RequireRole draws, the
+              server decides. */}
+          <Route
+            path="/admin"
+            element={
+              <RequireRole role="Admin">
+                <AdminLayout />
+              </RequireRole>
+            }
+          >
+            <Route index element={<AdminOrdersPage />} />
+            <Route path="orders/:id" element={<AdminOrderPage />} />
+            <Route path="payouts" element={<AdminPayoutsPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
         </Route>

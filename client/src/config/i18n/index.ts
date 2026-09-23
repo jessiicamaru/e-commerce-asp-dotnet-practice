@@ -9,6 +9,7 @@ import viCheckout from '@/locales/vi/checkout.json'
 import viCommon from '@/locales/vi/common.json'
 import viOrders from '@/locales/vi/orders.json'
 import viSeller from '@/locales/vi/seller.json'
+import viAdmin from '@/locales/vi/admin.json'
 import viStatus from '@/locales/vi/status.json'
 
 import enAuth from '@/locales/en/auth.json'
@@ -18,6 +19,7 @@ import enCheckout from '@/locales/en/checkout.json'
 import enCommon from '@/locales/en/common.json'
 import enOrders from '@/locales/en/orders.json'
 import enSeller from '@/locales/en/seller.json'
+import enAdmin from '@/locales/en/admin.json'
 import enStatus from '@/locales/en/status.json'
 
 /** The languages this shop speaks. The server's list has to match (specs/021). */
@@ -53,6 +55,7 @@ void i18n
         checkout: viCheckout,
         orders: viOrders,
         seller: viSeller,
+        admin: viAdmin,
         auth: viAuth,
         status: viStatus,
       },
@@ -63,6 +66,7 @@ void i18n
         checkout: enCheckout,
         orders: enOrders,
         seller: enSeller,
+        admin: enAdmin,
         auth: enAuth,
         status: enStatus,
       },

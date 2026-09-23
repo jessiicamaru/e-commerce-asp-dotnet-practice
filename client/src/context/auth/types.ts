@@ -9,6 +9,11 @@ export interface AuthState {
    * a shop link at somebody whose session has not come back yet.
    */
   isSeller: boolean
+  /**
+   * Whether to offer the administrator's console (specs/038). For DRAWING only, like `isSeller`: every
+   * request behind the console is refused by the server for anybody else.
+   */
+  isAdmin: boolean
   signIn(email: string, password: string): Promise<void>
   signUp(input: SignUpInput): Promise<void>
   signOut(): Promise<void>
