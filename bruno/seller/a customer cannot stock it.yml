@@ -1,0 +1,41 @@
+info:
+  name: a customer cannot stock it
+  type: http
+  seq: 11
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/stock/{{sellerProductId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "quantityOnHand": 999
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("a customer is refused at the door with 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  In the `seller` folder, not `security-checks`: folders run in name order and `sellerProductId` is
+  set here, so in `security-checks` the URL would be `/api/stock/` and the 404 from routing would
+  look like a passing security test for the wrong reason. It measured exactly that before this moved.
+
+  ⚠️ The 403 here is the controller ATTRIBUTE refusing somebody with no role, not the ownership
+  check. A **seller** writing to another seller's product gets **404**, never 403, because a 403
+  would confirm the id is real and belongs to somebody. Bruno has one seller, so that case is
+  verified against the API with two real tokens instead - see specs/031.

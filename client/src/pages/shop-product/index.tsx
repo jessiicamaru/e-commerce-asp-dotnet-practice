@@ -7,6 +7,7 @@ import { ServerError } from '@/components/shared/server-error'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CURRENCIES } from '@/config/money'
+import { useSetStock, useVariantStock } from '@/hooks/stock'
 import {
   useDeleteProduct,
   useProductInEveryCurrency,
@@ -41,8 +42,10 @@ export function SellerProductPage() {
   const setPrice = useSetVariantPrice(id)
   const upload = useUploadProductImage(id)
   const remove = useDeleteProduct(id)
+  const setStock = useSetStock(id)
 
   const [amounts, setAmounts] = useState<Record<string, string>>({})
+  const [quantities, setQuantities] = useState<Record<string, string>>({})
 
   if (product.isError) {
     return <ErrorMessage>{t('listing.loadFailed')}</ErrorMessage>
@@ -135,6 +138,15 @@ export function SellerProductPage() {
 
           <ServerError error={setPrice.error} fallback={t('listing.loadFailed')} />
 
+          <StockEditor
+            variants={variants}
+            quantities={quantities}
+            onChange={(key, value) => setQuantities((p) => ({ ...p, [key]: value }))}
+            onSave={(variantId, quantityOnHand) => setStock.mutate({ variantId, quantityOnHand })}
+            saving={setStock.isPending}
+            error={setStock.error}
+          />
+
           <Link to={`/products/${item.id}`} className="text-sm underline">
             {t('edit.view')}
           </Link>
@@ -157,5 +169,86 @@ export function SellerProductPage() {
         <ServerError error={remove.error} fallback={t('listing.loadFailed')} />
       </div>
     </section>
+  )
+}
+
+/**
+ * How many the seller has (specs/031).
+ *
+ * <p>
+ * It shows <b>reserved</b> as well as on hand, because "I have 3 but only 1 is available" reads as
+ * a bug until you know two of them are inside somebody's checkout. The server refuses a value below
+ * what is reserved, and says so in words this repeats rather than paraphrases.
+ * </p>
+ * <p>
+ * A variant with <b>no stock row yet</b> is a real state on a freshly listed product: the row is
+ * created off the broker and arrives a moment later. That is said out loud instead of being shown
+ * as a zero, which would be a lie, or as an error, which would be alarming.
+ * </p>
+ */
+function StockEditor({
+  variants,
+  quantities,
+  onChange,
+  onSave,
+  saving,
+  error,
+}: {
+  variants: { id: string; sku: string; optionSummary: string }[]
+  quantities: Record<string, string>
+  onChange: (variantId: string, value: string) => void
+  onSave: (variantId: string, quantityOnHand: number) => void
+  saving: boolean
+  error: unknown
+}) {
+  const { t } = useTranslation('seller')
+  const stock = useVariantStock(variants.map((v) => v.id))
+
+  return (
+    <div className="grid gap-3">
+      <h2 className="font-semibold">{t('stock.title')}</h2>
+
+      {variants.map((variant) => {
+        const current = stock.byVariant[variant.id]
+        const typed = quantities[variant.id]
+        const value = typed ?? (current ? String(current.quantityOnHand) : '')
+
+        return (
+          <div key={variant.id} className="grid gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Not w-12: that was copied from the currency row, where the label is "VND". The
+                  Vietnamese for "on hand" is three words and wrapped onto three lines. */}
+              <span className="text-sm font-semibold">{t('stock.onHand')}</span>
+              <Input
+                inputMode="numeric"
+                className="h-9 w-40 rounded-full"
+                aria-label={`${t('stock.onHand')} ${variant.sku}`}
+                value={value}
+                onChange={(event) => onChange(variant.id, event.target.value)}
+              />
+              <Button
+                size="sm"
+                className="rounded-full"
+                disabled={saving || !current}
+                onClick={() => onSave(variant.id, Number(value || 0))}
+              >
+                {t('stock.save')}
+              </Button>
+              {current && current.quantityReserved > 0 && (
+                <span className="text-muted-foreground text-xs">
+                  {t('stock.reserved', { count: current.quantityReserved })}
+                </span>
+              )}
+            </div>
+            {!current && !stock.isPending && (
+              <p className="text-muted-foreground text-xs">{t('stock.notRegisteredYet')}</p>
+            )}
+          </div>
+        )
+      })}
+
+      <p className="text-muted-foreground text-xs">{t('stock.hint')}</p>
+      <ServerError error={error} fallback={t('listing.loadFailed')} />
+    </div>
   )
 }
