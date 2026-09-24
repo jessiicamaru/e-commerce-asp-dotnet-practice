@@ -185,6 +185,21 @@ builder.Services.AddMassTransit(x =>
 
 var app = builder.Build();
 
+// FIRST, before the seeding below reads the roles table: on an empty database the other order crashes
+// the container before it ever migrates (found reseeding a wiped stack).
+//
+// Applying migrations from inside the service exists for one reason: a runtime image has neither
+// the SDK nor the source, so `dotnet ef database update` - which is how start-dev.sh and CI create
+// these schemas - cannot run there. Off unless asked, because "started successfully" and "was
+// allowed to alter the schema" should not be the same event in a real deployment.
+if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
+{
+    await using var migrationScope = app.Services.CreateAsyncScope();
+    await migrationScope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>()
+        .Database.MigrateAsync();
+}
+
 // Seed roles and the bootstrap administrator before serving traffic.
 using (var scope = app.Services.CreateScope())
 {
@@ -245,17 +260,6 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 });
 
 
-// Applying migrations from inside the service exists for one reason: a runtime image has neither
-// the SDK nor the source, so `dotnet ef database update` - which is how start-dev.sh and CI create
-// these schemas - cannot run there. Off unless asked, because "started successfully" and "was
-// allowed to alter the schema" should not be the same event in a real deployment.
-if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
-{
-    await using var migrationScope = app.Services.CreateAsyncScope();
-    await migrationScope.ServiceProvider
-        .GetRequiredService<ApplicationDbContext>()
-        .Database.MigrateAsync();
-}
 
 // Where to listen was decided once, in ConfigureKestrel above. No URL here: a second opinion about
 // the address is how REST and gRPC end up disagreeing.
