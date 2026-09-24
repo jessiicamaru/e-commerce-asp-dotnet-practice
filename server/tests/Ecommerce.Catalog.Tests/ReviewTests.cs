@@ -122,7 +122,75 @@ public class ReviewTests(CatalogTestFixture fixture) : IDisposable
             .ReviewEligibility.Count(e => e.ProductId == product.Id && e.CustomerId == lan));
     }
 
+    /// <summary>
+    /// #127 (specs/057): a double-click or two tabs posting a first review at once. The unique index refused
+    /// the second insert and it reached the customer as a 500; now the loser edits the winner's review.
+    /// </summary>
+    [Fact]
+    public async Task First_reviews_posted_at_once_are_one_review_posted_once()
+    {
+        var product = await ProductAsync();
+        var lan = AsCustomer("Lan");
+        await ReceivedAsync(lan, product.Id);
+
+        var written = await Task.WhenAll(Enumerable.Range(1, 6).Select(i =>
+            SendAsync(new WriteReviewCommand(product.Id, i % 5 + 1, $"Take {i}"))));
+
+        var id = Assert.Single(written.Select(r => r.Id).Distinct());
+        Assert.Equal(1, (await RatingAsync(product.Id)).Item2);
+        Assert.Single(Audited(id), e => e.Action == "ReviewPosted");
+        Assert.Single(_fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message),
+            n => n.Kind == "NewReview" && n.Data["product"] == product.Name);
+    }
+
+    /// <summary>#127: two moderators hiding one review at once - one decision, one entry, and a 409 for the other.</summary>
+    [Fact]
+    public async Task A_review_is_hidden_once_and_restored_once_however_many_moderators_press_at_once()
+    {
+        var product = await ProductAsync();
+        AsCustomer("Lan");
+        var lan = Caller().Id!.Value;
+        await ReceivedAsync(lan, product.Id);
+        var review = await SendAsync(new WriteReviewCommand(product.Id, 1, "Spam"));
+
+        AsStaff();
+        var hides = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Outcome(() => SendAsync(new HideReviewCommand(review.Id, "Advertising")))));
+        Assert.Equal((1, 4), (hides.Count(ok => ok), hides.Count(ok => !ok)));
+        Assert.Single(Audited(review.Id), e => e.Action == "ReviewHidden");
+        Assert.Equal((null, 0), await RatingAsync(product.Id));
+
+        AsStaff();
+        var restores = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Outcome(() => SendAsync(new RestoreReviewCommand(review.Id)))));
+        Assert.Equal((1, 4), (restores.Count(ok => ok), restores.Count(ok => !ok)));
+        Assert.Single(Audited(review.Id), e => e.Action == "ReviewRestored");
+        Assert.Equal((1.00m, 1), await RatingAsync(product.Id));
+    }
+
+    /// <summary>#127: a seller who bought their own camera does not get to rate it.</summary>
+    [Fact]
+    public async Task A_seller_cannot_review_their_own_product()
+    {
+        var product = await ProductAsync();
+        await ReceivedAsync(_seller, product.Id);
+        var caller = Caller();
+        caller.Id = _seller;
+        caller.Roles.Clear();
+        caller.Roles.Add("Seller");
+        caller.Roles.Add("Customer");
+
+        var refused = await Assert.ThrowsAsync<ForbiddenException>(() => SendAsync(new WriteReviewCommand(product.Id, 5, "Best camera ever")));
+        Assert.Contains("your own product", refused.Message);
+        Assert.False((await SendAsync(new GetMyReviewQuery(product.Id))).Eligible);
+    }
+
     // ------------------------------------------------------------------ helpers
+
+    /// <summary>True when the request succeeded, false when it was refused as a conflict; anything else fails the test.</summary>
+    private static async Task<bool> Outcome(Func<Task> act)
+    {
+        try { await act(); return true; }
+        catch (ConflictException) { return false; }
+    }
 
     private TestCaller Caller() => _fixture.Services.GetRequiredService<TestCaller>();
 

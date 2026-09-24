@@ -91,7 +91,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (183 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (157 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (160 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (73 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -364,7 +364,8 @@ what is waiting in each queue and their own decisions (`GET /api/audit/mine`, St
 so Order publishes `ParcelDeliveredEvent` (the parcel's product ids) inside the transaction that marks a
 parcel delivered - the customer's confirmation and the sweep alike; the sweep now locks its rows first
 so the ids it announces are exactly the ones it set - and Catalog keeps `review_eligibility` from it.
-One review per customer per product (a second write edits the first), signed with the token's
+One review per customer per product (a second write edits the first; a concurrent first write inserts once
+through `ON CONFLICT DO NOTHING`, specs/057), never by the product's own seller, signed with the token's
 `given_name` - a claim Identity added for this, with `ICurrentUser.GivenName` defaulting to null so every
 test double still compiles. `products.RatingAverage` / `RatingCount` are **recomputed from the visible
 rows** in the transaction of every write, hide and restore, never incremented. Hidden, not deleted.
