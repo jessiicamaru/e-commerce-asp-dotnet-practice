@@ -91,7 +91,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (183 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (155 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (157 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (73 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -355,7 +355,8 @@ with no new check anywhere else. Staff approve, reject or take down (with a reas
 through a guarded `UPDATE ... WHERE "ReviewStatus" IN (...)`; a seller resubmits a rejected one.
 ⚠️ **A seller changing an approved product's name, description or any photograph - variant photographs
 included - sends it back to review and off the shelf** (decided with the user); prices and stock do not.
-That is `ProductReview.AfterSellerEditAsync`, called before the one save in six handlers - a seventh
+That is `ProductReview.AfterSellerEditAsync`, called before the one save in eight handlers (option translations
+and adding a variant joined in specs/056, #126) - a ninth
 edit of what a shopper reads must call it too. A moderator's console opens on `/admin/moderation`:
 what is waiting in each queue and their own decisions (`GET /api/audit/mine`, Staff).
 

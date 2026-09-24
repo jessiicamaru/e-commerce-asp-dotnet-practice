@@ -132,6 +132,9 @@ public class AddProductVariantCommandHandler(
             AuditCategory.Catalog, "VariantAdded", "Variant", variant.Id.ToString(),
             $"Added {variant.Sku} ({variant.OptionSummary}) to \"{product.Name}\"",
             after: CatalogAudit.Of(variant), cancellationToken: cancellationToken);
+        // New option words and a new shape on the listing: reviewed like any seller edit of what a shopper
+        // reads (#126, specs/056). Staff pass, as for the other edits.
+        await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
 
         // The product's "from" price and availability follow its variants.
