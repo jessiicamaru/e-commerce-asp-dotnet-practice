@@ -550,7 +550,11 @@ kind, data, link)` from `Ecommerce.Shared/Notifications`, which publishes `UserN
 through the outbox - so, like the audit, **before the one save**, or through the same `stage` callback.
 A notice stores a **kind and data, never a sentence**: the storefront words it in whoever reads it
 *now*, so one notice reads Vietnamese on one visit and English on the next, and a kind the storefront
-does not know yet still shows as "a new update" rather than vanishing. Activity keeps them (idempotent on
+does not know yet still shows as "a new update" rather than vanishing. ⚠️ **Each kind's data keys are
+declared in `Ecommerce.Shared/Notifications/notification-kinds.json`** (specs/048) - the server tests
+check every notice they publish against it and the storefront tests check every kind reads from it, so a
+new kind or key is a line there in the same change; five kinds read "{{product}}" to real people until
+it existed (#119). Activity keeps them (idempotent on
 the publisher's id), and `/api/notifications` only ever reads **the caller's own** - somebody else's id
 is 404. The bell asks for the unread **count** every 30 seconds (`NOTIFICATION_POLL_MS`), not in a
 background tab, and loads the list only when opened. Order tells the buyer (paid, failed, shipped,

@@ -7,6 +7,7 @@ using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Contracts.Activity;
 using Ecommerce.Shared.Exceptions;
+using Ecommerce.Shared.Notifications;
 using MassTransit.Testing;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,6 +105,7 @@ public class ReviewTests(CatalogTestFixture fixture) : IDisposable
         var told = _fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message)
             .Where(n => n.Kind == "NewReview" && n.Data["product"] == product.Name).ToList();
         Assert.Equal((_seller, "5"), (Assert.Single(told).RecipientId, told[0].Data["rating"]));
+        Assert.Empty(told.SelectMany(n => NotificationContract.Problems(n.Kind, n.Data)));
     }
 
     [Fact]

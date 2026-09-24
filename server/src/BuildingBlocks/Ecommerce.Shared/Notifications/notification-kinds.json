@@ -1,0 +1,21 @@
+{
+  "$comment": "What each notification kind carries in its data (specs/048). The one place both sides read: the server tests check every notice they publish against it, the storefront tests check every kind has words that use it. Change a kind's keys here and in its NotifyAsync call together.",
+  "kinds": {
+    "OrderPaid": { "required": ["orderId", "total", "currency"] },
+    "OrderFailed": { "required": ["orderId"] },
+    "ParcelShipped": { "required": ["orderId", "tracking"], "optional": ["shop"] },
+    "OrderCancelled": { "required": ["orderId", "by"] },
+    "NewSale": { "required": ["orderId"] },
+    "SaleCancelled": { "required": ["orderId"] },
+    "ParcelReceived": { "required": ["orderId"] },
+    "PayoutRecorded": { "required": ["amount", "currency"] },
+    "ModeratorGranted": { "required": [] },
+    "ModeratorRevoked": { "required": [] },
+    "ShopApproved": { "required": ["shop"] },
+    "ShopRejected": { "required": ["shop", "reason"] },
+    "ProductApproved": { "required": ["product"] },
+    "ProductRejected": { "required": ["product", "reason"] },
+    "ProductTakenDown": { "required": ["product", "reason"] },
+    "NewReview": { "required": ["product", "rating"] }
+  }
+}
