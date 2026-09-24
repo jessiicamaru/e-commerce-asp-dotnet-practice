@@ -7,6 +7,7 @@ using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
 using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 using Ecommerce.Catalog.Application.Products.Review;
 using Ecommerce.Catalog.Application.Products.Translations;
+using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Catalog.WebApi.Grpc;
@@ -138,6 +139,46 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
         Assert.Null(await SendAsync(new GetProductByIdQuery(product.Id)));
     }
 
+    /// <summary>
+    /// #126 (specs/056): adding a variant puts new words and a new shape on an approved listing - reviewed
+    /// like any other seller edit of what a shopper reads. A moderator doing it is not.
+    /// </summary>
+    [Fact]
+    public async Task A_seller_adding_a_variant_sends_an_approved_product_back_and_staff_do_not()
+    {
+        var product = await ApprovedAsync();
+
+        As(Guid.CreateVersion7(), "Admin");
+        await SendAsync(new AddProductVariantCommand(product.Id, $"ADM{Guid.NewGuid():N}"[..16], 41_000_000m, [new("Kit", "With lens")]));
+        Assert.Equal("Approved", (await SendAsync(new GetProductByIdQuery(product.Id)))!.ReviewStatus);
+
+        As(_alice, "Seller");
+        await SendAsync(new AddProductVariantCommand(product.Id, $"SEL{Guid.NewGuid():N}"[..16], 42_000_000m, [new("Kit", "Anything at all")]));
+        Assert.Equal("Pending", (await SendAsync(new GetProductByIdQuery(product.Id)))!.ReviewStatus);
+        Assert.Single(Audited(product.Id, "ProductSentForReview"));
+    }
+
+    /// <summary>
+    /// #126 (specs/056): an option's words are shown on the product page and frozen onto order lines - a
+    /// seller rewording one is reviewed, and it is on the record like every other translation.
+    /// </summary>
+    [Fact]
+    public async Task A_seller_translating_an_option_sends_an_approved_product_back_and_it_is_on_the_record()
+    {
+        var product = await ApprovedAsync();
+        As(Guid.CreateVersion7(), "Admin");
+        var variant = await SendAsync(new AddProductVariantCommand(product.Id, $"OPT{Guid.NewGuid():N}"[..16], 41_000_000m, [new("Kit", "Body only")]));
+        var option = Assert.Single(variant.Options);
+
+        As(_alice, "Seller");
+        await SendAsync(new SetOptionTranslationCommand(product.Id, option.Id, "en", "Kit", "Something else entirely"));
+
+        Assert.Equal("Pending", (await SendAsync(new GetProductByIdQuery(product.Id)))!.ReviewStatus);
+        var entry = Assert.Single(Audited(product.Id, "OptionTranslated"));
+        Assert.Contains("Something else entirely", entry.After);
+        Assert.Single(Audited(product.Id, "ProductSentForReview"));
+    }
+
     [Fact]
     public async Task Staff_see_the_queue_oldest_submission_first()
     {
@@ -216,6 +257,12 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
     private List<AuditEntryRecorded> Audited(Guid productId, string action) =>
         _fixture.Harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message)
             .Where(e => e.SubjectId == productId.ToString() && e.Action == action).ToList();
+
+    private async Task SendAsync(IRequest request)
+    {
+        await using var scope = _fixture.NewScope();
+        await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
 
     private async Task<T> SendAsync<T>(IRequest<T> request)
     {

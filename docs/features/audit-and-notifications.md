@@ -305,7 +305,7 @@ From [messages.md](../reference/messages.md).
 ## Known limits
 
 - **Some writes are not audited:** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) setting or removing a category translation, removing a product
-  translation (only `ProductSentForReview` is recorded when it applies), translating a variant option,
+  translation (only `ProductSentForReview` is recorded when it applies),
   changing the default address, signing out and refreshing a session. Cart records nothing.
 - **Some events notify nobody:** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) a lock or a ban, a parcel the sweeper takes as delivered (the seller
   gets `ParcelReceived` only when the customer confirms), a hidden review, and a product sent back to

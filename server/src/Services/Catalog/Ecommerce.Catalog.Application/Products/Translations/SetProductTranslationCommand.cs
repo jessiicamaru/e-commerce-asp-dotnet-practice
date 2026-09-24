@@ -166,11 +166,12 @@ public class RemoveProductTranslationCommandHandler(IProductRepository products,
     }
 }
 
-public class SetOptionTranslationCommandHandler(IProductRepository products, ICurrentUser currentUser)
+public class SetOptionTranslationCommandHandler(IProductRepository products, ICurrentUser currentUser, IAuditTrail audit)
     : IRequestHandler<SetOptionTranslationCommand>
 {
     private readonly IProductRepository _products = products;
     private readonly ICurrentUser _currentUser = currentUser;
+    private readonly IAuditTrail _audit = audit;
 
     public async Task Handle(SetOptionTranslationCommand request, CancellationToken cancellationToken)
     {
@@ -189,6 +190,7 @@ public class SetOptionTranslationCommandHandler(IProductRepository products, ICu
 
         var language = request.Language.ToLowerInvariant();
         var translation = option.Translations.FirstOrDefault(t => t.Language == language);
+        var before = translation is null ? null : new { translation.Language, translation.Name, translation.Value };
 
         if (translation is null)
         {
@@ -207,6 +209,14 @@ public class SetOptionTranslationCommandHandler(IProductRepository products, ICu
             translation.Value = request.Value.Trim();
         }
 
+        // On the record like every other translation, and - an option's words are shown on the product
+        // page and frozen onto order lines - reviewed like any seller edit of what a shopper reads (#126).
+        await _audit.RecordAsync(
+            AuditCategory.Catalog, "OptionTranslated", "Product", product.Id.ToString(),
+            $"Option of \"{product.Name}\" translated into {language}",
+            before, new { Language = language, Name = request.Name.Trim(), Value = request.Value.Trim() },
+            cancellationToken: cancellationToken);
+        await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
     }
 }
