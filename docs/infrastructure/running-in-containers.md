@@ -28,7 +28,8 @@ cd server
 docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 
-The overlay, [`docker-compose.app.yml`](../../server/docker-compose.app.yml), runs nine containers:
+The overlay, [`docker-compose.app.yml`](../../server/docker-compose.app.yml), runs ten containers - the
+eight services, the gateway and the storefront. Open **http://localhost:8088** for the storefront:
 
 | Container | Host port(s) | Inside | Health check | Waits for |
 | :--- | :--- | :--- | :--- | :--- |
@@ -41,6 +42,7 @@ The overlay, [`docker-compose.app.yml`](../../server/docker-compose.app.yml), ru
 | `ecommerce-payment` | `5061` | `8080` | `/health` | its database, RabbitMQ |
 | `ecommerce-cart` | `5062` REST, `6062` gRPC | `8080`, `8081` | `/health` | its database, RabbitMQ |
 | `ecommerce-activity` | `5063` | `8080` | `/health` | its database, RabbitMQ |
+| `ecommerce-storefront` | `8088` | `8080` | `/` answers | the gateway healthy |
 
 Ports are unchanged from the host path for REST. Inside their containers every service binds `8080`,
 and the three that serve gRPC also bind `8081`; callers inside the network use `http://catalog:8081`,
@@ -186,6 +188,36 @@ docker build --build-arg PROJECT=src/Services/Catalog/Ecommerce.Catalog.WebApi -
 One file per service would drift — a fix applied to all but one is invisible and nothing fails. The
 Dockerfile copies each `.csproj` by name before restoring, so **a new project needs a line there**,
 or the build fails at publish with a message about the project rather than about the list.
+
+### The storefront image
+
+The storefront has its own [Dockerfile](../../client/Dockerfile) (specs/051): Node builds the bundle,
+and an unprivileged nginx (uid 101, port 8080) serves it and forwards `/api` to the gateway - one origin,
+exactly as Vite's dev proxy gives in development, so there is no CORS and Identity's HttpOnly refresh
+cookie keeps working.
+
+```bash
+docker build -t ecommerce-storefront client
+docker run -p 8088:8080 -e GATEWAY_URL=http://gateway:8080 ecommerce-storefront
+.github/scripts/verify-storefront-image.sh ecommerce-storefront   # does it actually serve the storefront?
+```
+
+| What | Why |
+| :-- | :-- |
+| `GATEWAY_URL` is read when the container **starts** | nginx's image renders `/etc/nginx/templates/*.template` with `envsubst` at start, for defined variables only, so one image runs against any gateway |
+| Any path that is not a file serves `index.html` | a reload of `/orders/123` is a route the browser-side router knows and nginx does not |
+| `/assets/*` that does not exist is **404**, not `index.html` | a browser would run the HTML as JavaScript; a stale bundle must fail loudly |
+| `index.html`: `Cache-Control: no-cache`; `/assets/*`: a year, `immutable` | assets are named by content hash, so a new release is picked up at the next load |
+| `client_max_body_size 3m` | Catalog accepts a 2 MB photograph (`ProductImageKey.MaxBytes`); nginx's default 1 MB would answer 413 before Catalog saw it. Keep it above `MaxBytes` |
+| Build context `client/`, and the image runs `vite build` only | `npm run build` also type-checks the tests, one of which imports a file from `server/` (specs/048). Tests and type-checking are CI's `client` job, which `publish` waits for |
+
+⚠️ **Open it on `localhost`.** Identity's refresh cookie is `Secure`, and browsers accept a `Secure`
+cookie over plain HTTP only from `localhost`. From another machine by IP, signing in works until the first
+refresh and then the session is lost - that needs TLS in front, which is deployment and out of scope.
+
+`verify-storefront-image.sh` starts the image against a stand-in gateway and asks what a browser would:
+the app, a deep link, a missing asset, `/api` forwarded with its path and query, a 2 MB upload, and the
+cache headers. CI runs it on every change, in the `client` job.
 
 ### `.dockerignore` is not optional
 

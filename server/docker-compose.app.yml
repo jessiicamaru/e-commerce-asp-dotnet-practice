@@ -1,4 +1,4 @@
-# The seven services. An OVERLAY on docker-compose.yml, never a replacement:
+# The eight services, the gateway and the storefront. An OVERLAY on docker-compose.yml, never a replacement:
 #
 #   docker compose up -d                                          # infrastructure only, for start-dev.sh
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   # everything
@@ -298,6 +298,32 @@ services:
       inventory:
         condition: service_healthy
       payment:
+        condition: service_healthy
+
+  # The storefront (specs/051): nginx serving the built bundle and forwarding /api to the gateway, so the
+  # browser sees one origin exactly as it does behind Vite's dev proxy. http://localhost:8088
+  #
+  # localhost, not a LAN IP: Identity's refresh cookie is Secure, and browsers accept a Secure cookie over
+  # plain HTTP only from localhost. Anywhere else needs TLS in front of this - deployment, out of scope.
+  storefront:
+    container_name: ecommerce-storefront
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Read when the container starts, so one image runs against any gateway.
+      GATEWAY_URL: http://gateway:8080
+    ports:
+      - "8088:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    # nginx resolves the gateway's name once, at start; waiting for it healthy is what makes that safe.
+    depends_on:
+      gateway:
         condition: service_healthy
 
 volumes:

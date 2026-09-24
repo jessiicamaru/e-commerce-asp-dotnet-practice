@@ -1,0 +1,16 @@
+# Docker does not read .gitignore (see server/.dockerignore). The build context is client/.
+
+# --- secrets first ---
+**/.env
+**/.env.*
+
+# --- installed and built on the host: wrong platform, large, and rebuilt inside ---
+node_modules/
+dist/
+coverage/
+*.log
+
+# --- not needed to build the bundle ---
+.git/
+Dockerfile
+.dockerignore

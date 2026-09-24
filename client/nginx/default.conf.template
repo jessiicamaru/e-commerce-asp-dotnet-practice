@@ -1,0 +1,41 @@
+# The storefront, served as built (specs/051). A TEMPLATE: the image's entrypoint fills ${GATEWAY_URL}
+# when the container starts - only variables that are defined, so nginx's own $uri and $host are left
+# alone - which is what lets one image run against any gateway.
+#
+# One origin, as in development: the browser asks this server for /api and it forwards to the gateway,
+# so there is no CORS and Identity's HttpOnly refresh cookie is a same-origin cookie.
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    # Catalog accepts a photograph up to 2 MB (ProductImageKey.MaxBytes); nginx refuses anything over 1 MB
+    # by default and would answer 413 before Catalog ever saw it. 3 MB leaves room for the multipart
+    # envelope. Must stay above MaxBytes - the verify script uploads 2 MB through it.
+    client_max_body_size 3m;
+
+    location /api/ {
+        proxy_pass ${GATEWAY_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    # Named by content hash, so a file never changes under its name: cache it for good. A missing one is
+    # a 404 - never index.html, which a browser would try to run as JavaScript.
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # Everything else is the app: a reload of /orders/123 or a shared link is a route the browser-side
+    # router knows and this server does not. index.html is never cached, so a new release is picked up
+    # at the next load.
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri /index.html;
+    }
+}

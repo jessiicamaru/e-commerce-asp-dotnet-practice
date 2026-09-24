@@ -291,6 +291,10 @@ npm test             # unit tests (Vitest), no network
 `GATEWAY_URL=http://host:port npm run dev` points the proxy elsewhere. Conventions and the rest of the
 commands are in [client/README.md](../../client/README.md).
 
+**In containers** the storefront is already running: the overlay builds it with everything else, and it
+is at **http://localhost:8088** (specs/051). Open it on `localhost`, not by IP - the refresh cookie is
+`Secure` - see [running in containers](../infrastructure/running-in-containers.md#the-storefront-image).
+
 ---
 
 ## 4. Running the tests
