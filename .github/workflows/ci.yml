@@ -68,6 +68,20 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      # Orchestrator.Tests (specs/053) - the payment timeout sweeper's query over the saga table.
+      postgres-orchestrator:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_saga_db
+        ports: ['5436:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
       # Activity.Tests (specs/041) - the audit log's one-entry-per-id insert.
       postgres-activity:
         image: postgres:16-alpine

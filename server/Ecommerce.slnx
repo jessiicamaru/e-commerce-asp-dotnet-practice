@@ -57,6 +57,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Ecommerce.Catalog.Tests/Ecommerce.Catalog.Tests.csproj" />
     <Project Path="tests/Ecommerce.Inventory.Tests/Ecommerce.Inventory.Tests.csproj" />
+    <Project Path="tests/Ecommerce.Orchestrator.Tests/Ecommerce.Orchestrator.Tests.csproj" />
     <Project Path="tests/Ecommerce.Order.Tests/Ecommerce.Order.Tests.csproj" />
     <Project Path="tests/Ecommerce.Cart.Tests/Ecommerce.Cart.Tests.csproj" />
     <Project Path="tests/Ecommerce.Identity.Tests/Ecommerce.Identity.Tests.csproj" />

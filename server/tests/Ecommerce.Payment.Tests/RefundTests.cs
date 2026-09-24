@@ -99,6 +99,27 @@ public class RefundTests(PaymentTestFixture fixture)
         Assert.Empty(await RefundsAsync(orderId));
     }
 
+    /// <summary>
+    /// specs/053: the saga gave up on the payment and failed the order, then Payment approved it. The same
+    /// once-only refund, and the audit log says why.
+    /// </summary>
+    [Fact]
+    public async Task A_payment_approved_after_the_order_failed_is_refunded_once_and_says_why()
+    {
+        var orderId = Guid.CreateVersion7();
+        await ChargeAsync(orderId, 2_450_000m, "VND");
+        const string why = "The payment was approved after the order had failed waiting for it.";
+
+        Assert.True(await SendAsync(new RefundOrderCommand(orderId, why)));
+        Assert.False(await SendAsync(new RefundOrderCommand(orderId, why)));
+
+        var refund = Assert.Single(await RefundsAsync(orderId));
+        Assert.Equal((2_450_000m, "VND"), (refund.Amount, refund.Currency));
+        var entry = Assert.Single(_fixture.Harness.Published.Select<Ecommerce.Contracts.Activity.AuditEntryRecorded>()
+            .Select(x => x.Context.Message).Where(e => e.SubjectId == orderId.ToString() && e.Action == "RefundRecorded"));
+        Assert.Contains(why, entry.Summary);
+    }
+
     [Fact]
     public async Task An_order_this_service_never_charged_is_a_no_op()
     {

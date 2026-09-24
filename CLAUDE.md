@@ -93,7 +93,9 @@ Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, Postgre
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (179 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (152 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (73 tests, PostgreSQL on 5435) and
-`Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440). They run against a **real PostgreSQL** — the guarantees under test are the
+`Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
+the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
+5436; specs/053, the first tests the saga has had). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -216,6 +218,19 @@ Services that publish events register `AddEntityFrameworkOutbox<TDbContext>` wit
 [OrderStateMachine.cs](server/src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/StateMachines/OrderStateMachine.cs) drives `OrderSubmitted → ReserveInventory → ProcessPayment → OrderCompleted`, with `ReleaseInventoryCommand` compensation on payment failure. All events correlate on `OrderId`; the instance is `OrderStateData` persisted through `SagaDbContext` with `ConcurrencyMode.Optimistic`.
 
 **The saga now runs end to end.** Submit → reserve → pay → complete, with stock permanently deducted, and no message published by hand. Both branches are reachable: setting `PAYMENT_OUTCOME=Reject` exercises the compensation path, which releases the held stock.
+
+**The saga stops waiting for Payment** (specs/053, #123). Until then it waited without limit while
+Inventory's hold expires after 15 minutes: a late payment completed an order whose stock was back on the
+shelf, and a silent Payment left it `Submitted` for ever. Now an order waiting longer than
+`ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS` (600) is failed - stock released, `OrderFailedEvent` - and the
+instance waits in `PaymentTimedOut`: a late approval sends `RefundPaymentCommand` (Payment's
+`RefundLatePaymentConsumer`, the same once-only refund as a cancellation), a late rejection needs nothing.
+⚠️ The timer is `PaymentTimeoutSweeper` reading the saga table, **not** MassTransit's `Schedule` - durable
+scheduling needs RabbitMQ's delayed-message plugin, which compose and CI do not have, and the in-memory
+scheduler forgets on restart. ⚠️ The timeout plus one sweep must be shorter than
+`INVENTORY_RESERVATION_TTL_MINUTES`; the orchestrator **refuses to start** otherwise when both are set.
+`PaymentTimeouts.AwaitingPayment` is the state's NAME as stored - rename `InventoryReservedState` and a
+test says so.
 
 **The orchestrator publishes through the transactional outbox, like everything else** (`AddEntityFrameworkOutbox<OrchestratorDbContext>` + `UseBusOutbox()`, with `AddTransactionalOutboxEntities()` in its `OnModelCreating`). It did not until `20260921104437_AddTransactionalOutbox`, and the consequence was that the first order after a cold start never settled — see the gotcha below. Principle III applies to the state machine exactly as it applies to a command handler.
 
