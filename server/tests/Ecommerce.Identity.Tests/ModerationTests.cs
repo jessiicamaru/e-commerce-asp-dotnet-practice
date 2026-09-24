@@ -109,6 +109,55 @@ public class ModerationTests(IdentityTestFixture fixture)
         await SendAsync(Admin, new LockUserCommand(other, 1, "Admin decides"), RoleNames.Admin);
     }
 
+    /// <summary>
+    /// Unlocking obeys what locking does (#121, specs/050): it had no target rule, so a moderator could lift
+    /// an administrator's year-long lock or free a moderator - themselves included.
+    /// </summary>
+    [Fact]
+    public async Task Nobody_unlocks_themselves_even_with_a_token_that_outlived_the_lock()
+    {
+        var (moderator, _) = await NewUserAsync(RoleNames.Moderator);
+        await SendAsync(Admin, new LockUserCommand(moderator, 7, "Abused the queue"), RoleNames.Admin);
+
+        var (audit, _) = await PublishedAsync(moderator, new UnlockUserCommand(moderator), RoleNames.Moderator, expect: typeof(ConflictException));
+
+        Assert.Empty(audit);
+        Assert.NotNull(await LockedUntilAsync(moderator));
+    }
+
+    [Fact]
+    public async Task Only_an_administrator_unlocks_a_moderator()
+    {
+        var (moderator, _) = await NewUserAsync(RoleNames.Moderator);
+        await SendAsync(Admin, new LockUserCommand(moderator, 2, "Cooling off"), RoleNames.Admin);
+
+        await Assert.ThrowsAsync<ForbiddenException>(() =>
+            SendAsync(Guid.CreateVersion7(), new UnlockUserCommand(moderator), RoleNames.Moderator));
+        Assert.NotNull(await LockedUntilAsync(moderator));
+
+        await SendAsync(Admin, new UnlockUserCommand(moderator), RoleNames.Admin);
+        Assert.Null(await LockedUntilAsync(moderator));
+    }
+
+    [Fact]
+    public async Task A_moderator_lifts_only_a_lock_they_could_have_set()
+    {
+        var (longer, _) = await NewUserAsync();
+        var (shorter, _) = await NewUserAsync();
+        await SendAsync(Admin, new LockUserCommand(longer, 365, "An administrator decided"), RoleNames.Admin);
+        await SendAsync(Admin, new LockUserCommand(shorter, ModerationRules.ModeratorMaxLockDays, "Within reach"), RoleNames.Moderator);
+
+        var (audit, _) = await PublishedAsync(Guid.CreateVersion7(), new UnlockUserCommand(longer), RoleNames.Moderator, expect: typeof(ForbiddenException));
+        Assert.Empty(audit);
+        Assert.NotNull(await LockedUntilAsync(longer));
+
+        await SendAsync(Guid.CreateVersion7(), new UnlockUserCommand(shorter), RoleNames.Moderator);
+        Assert.Null(await LockedUntilAsync(shorter));
+
+        await SendAsync(Admin, new UnlockUserCommand(longer), RoleNames.Admin);
+        Assert.Null(await LockedUntilAsync(longer));
+    }
+
     [Fact]
     public async Task A_ban_holds_until_lifted()
     {
@@ -179,6 +228,14 @@ public class ModerationTests(IdentityTestFixture fixture)
         return (registered.Id, email);
     }
 
+    private async Task<DateTime?> LockedUntilAsync(Guid id)
+    {
+        await using var provider = _fixture.For(Guid.Empty);
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        return await db.Users.Where(u => u.Id == id).Select(u => u.LockedUntil).SingleAsync();
+    }
+
     private async Task<T> SendAsync<T>(Guid caller, IRequest<T> request, params string[] roles)
     {
         await using var provider = _fixture.For(caller, roles);
@@ -186,14 +243,24 @@ public class ModerationTests(IdentityTestFixture fixture)
         return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
     }
 
+    private Task<(List<AuditEntryRecorded>, List<UserNotificationRequested>)> PublishedAsync<T>(
+        Guid caller, IRequest<T> request, params string[] roles) => PublishedAsync(caller, request, roles[0], expect: null);
+
+    /// <summary>What a request published - or, with <paramref name="expect"/>, what a refused one did not.</summary>
     private async Task<(List<AuditEntryRecorded>, List<UserNotificationRequested>)> PublishedAsync<T>(
-        Guid caller, IRequest<T> request, params string[] roles)
+        Guid caller, IRequest<T> request, string role, Type? expect)
     {
-        await using var provider = _fixture.For(caller, roles);
+        await using var provider = _fixture.For(caller, [role]);
         var harness = provider.GetRequiredService<ITestHarness>();
         await harness.Start();
         await using (var scope = provider.CreateAsyncScope())
-            await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+        {
+            var send = scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+            if (expect is null)
+                await send;
+            else
+                Assert.IsType(expect, await Record.ExceptionAsync(() => send));
+        }
 
         var notices = harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message).ToList();
         Assert.Empty(notices.SelectMany(n => NotificationContract.Problems(n.Kind, n.Data))); // specs/048

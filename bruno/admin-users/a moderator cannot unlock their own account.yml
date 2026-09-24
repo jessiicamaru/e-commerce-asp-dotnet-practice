@@ -1,0 +1,33 @@
+info:
+  name: a moderator cannot unlock their own account
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users/{{modId}}/unlock"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("says why", function() {
+          expect(res.body.detail).to.contain("your own account");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Unlocking obeys what locking does (#121, specs/050). A locked moderator's access token outlives the lock
+  by up to 15 minutes (#112), so without this rule they could free themselves. Refused whether or not the
+  account is locked, so the answer says nothing about its state.
