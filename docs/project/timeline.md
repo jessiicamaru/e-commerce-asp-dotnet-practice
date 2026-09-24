@@ -102,6 +102,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [047](../../specs/047-admin-insights/) | Admin insights | #99, #101 | Revenue per currency, top selling, top viewed, top buyers |
 | - | Fresh-container fix | #100 | Identity applies migrations before seeding, so an empty database starts |
 | [048](../../specs/048-notification-wording/) | Notification wording | #129 | Fixes #119; each notification kind's data keys declared once and tested on both server and storefront |
+| [049](../../specs/049-sign-in-refusal/) | Sign-in refusal | #130 | Fixes #120; a locked or banned person is told why and until when, in their language and time |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.
