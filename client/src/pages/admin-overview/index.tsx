@@ -9,6 +9,8 @@ import { useReviewQueue } from '@/hooks/moderation'
 import { useShopApplications } from '@/hooks/shop-applications'
 import { PERIODS, type Period, type Revenue } from '@/services/insights/types'
 import { cn, money } from '@/utils/shared'
+import { periodDays } from '@/utils/insights'
+import { DailyRevenueChart } from './daily-chart'
 
 /**
  * How the shop is doing (specs/047), for administrators: people, what waits for review, revenue per
@@ -71,7 +73,7 @@ export function AdminOverviewPage() {
         ) : data.revenue.data.totals.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('overview.noRevenue')}</p>
         ) : (
-          <RevenuePanel revenue={data.revenue.data} currency={currency} onCurrency={setCurrency} />
+          <RevenuePanel revenue={data.revenue.data} days={periodDays(to, period)} currency={currency} onCurrency={setCurrency} />
         )}
       </Panel>
 
@@ -111,12 +113,19 @@ export function AdminOverviewPage() {
   )
 }
 
-function RevenuePanel({ revenue, currency, onCurrency }: { revenue: Revenue; currency: string; onCurrency: (c: string) => void }) {
+function RevenuePanel({
+  revenue,
+  days,
+  currency,
+  onCurrency,
+}: {
+  revenue: Revenue
+  days: string[]
+  currency: string
+  onCurrency: (c: string) => void
+}) {
   const { t } = useTranslation('admin')
   const shown = revenue.totals.some((r) => r.currency === currency) ? currency : revenue.totals[0].currency
-  const days = revenue.days.filter((d) => d.currency === shown)
-  const top = Math.max(...days.map((d) => d.revenue), 1)
-
   return (
     <div className="grid gap-5">
       <div className="grid gap-3 sm:grid-cols-2">
@@ -139,21 +148,7 @@ function RevenuePanel({ revenue, currency, onCurrency }: { revenue: Revenue; cur
         ))}
       </div>
 
-      <div className="grid gap-2">
-        <p className="text-sm font-medium">{t('overview.daily')}</p>
-        <div className="flex h-36 items-end gap-1 overflow-x-auto" role="list" aria-label={t('overview.daily')}>
-          {days.map((d) => (
-            <div
-              key={d.day}
-              role="listitem"
-              title={`${d.day}: ${money(d.revenue, d.currency)}`}
-              aria-label={`${d.day}: ${money(d.revenue, d.currency)}`}
-              className="bg-primary min-w-3 flex-1 rounded-t-md"
-              style={{ height: `${Math.max(4, (d.revenue / top) * 100)}%` }}
-            />
-          ))}
-        </div>
-      </div>
+      <DailyRevenueChart days={days} rows={revenue.days} currency={shown} />
     </div>
   )
 }
