@@ -24,7 +24,6 @@ disagrees with its own rules. Fix these before building anything new.
 
 | Issue | Title |
 | :-- | :-- |
-| [#122](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/122) | An order can remove the wrong cart line when two variants of one product are in the cart |
 | [#123](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/123) | A payment answered after the stock hold expired still pays the order |
 | [#124](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/124) | A variant's availability can be overwritten by an older announcement |
 | [#125](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/125) | The insights' period rules differ between endpoints, and the chart drops the first day |
@@ -81,6 +80,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#122](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/122) | An order can remove the wrong cart line when two variants of one product are in the cart | [#134](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/134) (specs/052) |
 | [#132](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/132) | The storefront has no image and cannot be served as built | [#133](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/133) (specs/051) |
 | [#121](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/121) | A moderator can unlock any account, including one an administrator locked | [#131](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/131) (specs/050) |
 | [#120](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/120) | The sign-in page hides why a locked or banned account was refused | [#130](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/130) (specs/049) |
@@ -88,6 +88,5 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 ## Suggested order
 
-The defects first - #122 and #123 can remove the wrong cart line or sell stock the shop no longer
-holds, then #124 to #128. Then email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
+The defects first - #123 can sell stock the shop no longer holds, then #124 to #128. Then email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
 #107 -> #108 -> #111, and the rest as they become pressing.
