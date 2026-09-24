@@ -107,6 +107,8 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [051](../../specs/051-storefront-image/) | Storefront image | #133 | Fixes #132; the storefront is the tenth published image - nginx serving the bundle on :8088 and forwarding `/api` to the gateway |
 | [052](../../specs/052-cart-removal-by-variant/) | Cart removal by variant | #134 | Fixes #122; a completed order takes out the variant it bought, not its sibling |
 | [053](../../specs/053-saga-payment-timeout/) | Saga payment timeout | #135 | Fixes #123; the saga stops waiting for Payment before the stock hold expires, and refunds a late approval; the saga's first test project |
+| - | OpenAPI advisory | #136 | `Microsoft.AspNetCore.OpenApi` 10.0.12, off a vulnerable `Microsoft.OpenApi` (GHSA-v5pm-xwqc-g5wc) |
+| [054](../../specs/054-variant-availability-guard/) | Variant availability guard | #137 | Fixes #124; a variant's availability follows Inventory's latest word, whatever order it arrives in |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.
