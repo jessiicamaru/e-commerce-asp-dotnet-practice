@@ -43,8 +43,9 @@ Three problems in the ratings and reviews of specs/046:
 
 ## Requirements
 
-- **FR-001**: A unique violation on the first insert discards the failed write and retries once as an
-  edit. The failed attempt's staged audit entry and notification are discarded with it.
+- **FR-001**: The first review is inserted with `INSERT ... ON CONFLICT DO NOTHING`. Only a row that
+  was actually inserted stages its audit entry and the seller's notice. A write that inserted nothing
+  edits the review that won.
 - **FR-002**: Hide and restore are `IReviewRepository.TryHideAsync` and `TryRestoreAsync`: one guarded
   `UPDATE`, with the audit entry staged inside its transaction, and the rating recomputed there too.
 - **FR-003**: The own-product rule compares the product's `SellerId` with the caller, in the command

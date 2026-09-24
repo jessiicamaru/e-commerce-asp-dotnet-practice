@@ -29,4 +29,23 @@ public interface IReviewRepository
     /// transaction - so the stars on a listing always agree with the reviews under them.
     /// </summary>
     Task SaveAndRecomputeAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Inserts a customer's FIRST review of a product unless they already have one (specs/057, #127): one
+    /// <c>INSERT ... ON CONFLICT DO NOTHING</c>, and only if it inserted, <paramref name="stage"/> (the audit
+    /// entry, the seller's notice) and the rating recompute - one transaction. Returns the rows inserted: 0
+    /// means a concurrent write got there first, and the caller edits that review instead.
+    /// </summary>
+    Task<int> TryAddFirstAsync(Review review, Func<CancellationToken, Task> stage, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hides a visible review in ONE guarded statement (specs/057, #127), and in the same transaction runs
+    /// <paramref name="stage"/> (the audit entry) and recomputes the rating. Returns the rows changed: 0 means
+    /// somebody hid it first.
+    /// </summary>
+    Task<int> TryHideAsync(Guid reviewId, Guid productId, string reason, Guid hiddenBy, DateTime now,
+        Func<CancellationToken, Task> stage, CancellationToken cancellationToken = default);
+
+    /// <summary>Shows a hidden review again, guarded the same way; 0 means somebody restored it first.</summary>
+    Task<int> TryRestoreAsync(Guid reviewId, Guid productId, Func<CancellationToken, Task> stage, CancellationToken cancellationToken = default);
 }

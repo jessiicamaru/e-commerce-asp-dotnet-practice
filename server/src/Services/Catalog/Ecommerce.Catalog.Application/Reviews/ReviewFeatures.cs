@@ -88,6 +88,7 @@ public class ReviewHandlers(
     IRequestHandler<RestoreReviewCommand, ReviewResponse>
 {
     public const string NotEligible = "Only a customer who has received this product can review it.";
+    public const string OwnProduct = "You cannot review your own product.";
 
     private readonly IReviewRepository _reviews = reviews;
     private readonly IProductRepository _products = products;
@@ -108,7 +109,9 @@ public class ReviewHandlers(
     public async Task<MyReviewResponse> Handle(GetMyReviewQuery request, CancellationToken cancellationToken)
     {
         var me = Caller();
-        var eligible = await _reviews.IsEligibleAsync(request.ProductId, me, cancellationToken);
+        var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
+        // The page says what the command would: a seller is never eligible for their own product (#127).
+        var eligible = product?.SellerId != me && await _reviews.IsEligibleAsync(request.ProductId, me, cancellationToken);
         var mine = await _reviews.GetMineAsync(request.ProductId, me, cancellationToken);
         return new MyReviewResponse(eligible, mine is null ? null : ReviewResponse.From(mine));
     }
@@ -119,17 +122,21 @@ public class ReviewHandlers(
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
 
+        // A seller who bought their own camera does not rate it: the one signal a shopper reads as
+        // independent (#127, specs/057).
+        if (product.SellerId == me)
+            throw new ForbiddenException(OwnProduct);
+
         // Received it, or no review - a 403 in words rather than a quiet refusal (the issue's acceptance).
         if (!await _reviews.IsEligibleAsync(product.Id, me, cancellationToken))
             throw new ForbiddenException(NotEligible);
 
         var now = DateTime.UtcNow;
         var body = string.IsNullOrWhiteSpace(request.Body) ? null : request.Body.Trim();
-        var review = await _reviews.GetMineAsync(product.Id, me, cancellationToken);
 
-        if (review is null)
+        if (await _reviews.GetMineAsync(product.Id, me, cancellationToken) is null)
         {
-            review = new Review
+            var first = new Review
             {
                 ProductId = product.Id,
                 CustomerId = me,
@@ -139,29 +146,38 @@ public class ReviewHandlers(
                 CreatedAt = now,
                 UpdatedAt = now,
             };
-            await _reviews.AddAsync(review, cancellationToken);
-            await _audit.RecordAsync(AuditCategory.Catalog, "ReviewPosted", "Review", review.Id.ToString(),
-                $"{request.Rating}-star review of \"{product.Name}\"", after: new { review.Rating, review.Body },
-                cancellationToken: cancellationToken);
 
-            // The seller hears about a new review, not about every edit of it.
-            if (product.SellerId is { } seller)
+            // Guarded (#127): two first reviews at once (a double-click, two tabs) both got here. One inserts
+            // and is recorded and announced; the other inserts nothing and edits it below - where before the
+            // unique index refused it with a 500. Nothing is staged for an insert that did not happen.
+            var inserted = await _reviews.TryAddFirstAsync(first, async ct =>
             {
-                await _notifier.NotifyAsync(seller, NotificationKind.NewReview,
-                    new Dictionary<string, string> { ["product"] = product.Name, ["rating"] = request.Rating.ToString() },
-                    $"/products/{product.Id}", cancellationToken);
-            }
+                await _audit.RecordAsync(AuditCategory.Catalog, "ReviewPosted", "Review", first.Id.ToString(),
+                    $"{request.Rating}-star review of \"{product.Name}\"", after: new { first.Rating, first.Body },
+                    cancellationToken: ct);
+
+                // The seller hears about a new review, not about every edit of it.
+                if (product.SellerId is { } seller)
+                {
+                    await _notifier.NotifyAsync(seller, NotificationKind.NewReview,
+                        new Dictionary<string, string> { ["product"] = product.Name, ["rating"] = request.Rating.ToString() },
+                        $"/products/{product.Id}", ct);
+                }
+            }, cancellationToken);
+
+            if (inserted == 1)
+                return ReviewResponse.From(first);
         }
-        else
-        {
-            var before = new { review.Rating, review.Body };
-            review.Rating = request.Rating;
-            review.Body = body;
-            review.UpdatedAt = now;
-            await _audit.RecordAsync(AuditCategory.Catalog, "ReviewEdited", "Review", review.Id.ToString(),
-                $"Review of \"{product.Name}\" edited", before, new { review.Rating, review.Body },
-                cancellationToken: cancellationToken);
-        }
+
+        var review = await _reviews.GetMineAsync(product.Id, me, cancellationToken)
+            ?? throw new InvalidOperationException("A review that refused a second insert must exist.");
+        var before = new { review.Rating, review.Body };
+        review.Rating = request.Rating;
+        review.Body = body;
+        review.UpdatedAt = now;
+        await _audit.RecordAsync(AuditCategory.Catalog, "ReviewEdited", "Review", review.Id.ToString(),
+            $"Review of \"{product.Name}\" edited", before, new { review.Rating, review.Body },
+            cancellationToken: cancellationToken);
 
         await _reviews.SaveAndRecomputeAsync(product.Id, cancellationToken);
         return ReviewResponse.From(review);
@@ -178,33 +194,35 @@ public class ReviewHandlers(
     public async Task<ReviewResponse> Handle(HideReviewCommand request, CancellationToken cancellationToken)
     {
         var review = await _reviews.GetAsync(request.ReviewId, cancellationToken) ?? throw new NotFoundException("Review not found.");
-        if (review.HiddenAt is not null)
+        var reason = request.Reason.Trim();
+        var by = Caller();
+        var now = DateTime.UtcNow;
+
+        // One guarded statement decides (#127): two moderators at once, one hides and the other is told.
+        var hidden = await _reviews.TryHideAsync(review.Id, review.ProductId, reason, by, now, ct =>
+            _audit.RecordAsync(AuditCategory.Moderation, "ReviewHidden", "Review", review.Id.ToString(),
+                $"A {review.Rating}-star review hidden: {reason}",
+                new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct), cancellationToken);
+        if (hidden == 0)
             throw new ConflictException("This review is already hidden.");
 
-        review.HiddenAt = DateTime.UtcNow;
-        review.HiddenReason = request.Reason.Trim();
-        review.HiddenBy = Caller();
-        await _audit.RecordAsync(AuditCategory.Moderation, "ReviewHidden", "Review", review.Id.ToString(),
-            $"A {review.Rating}-star review hidden: {review.HiddenReason}",
-            new { Hidden = false }, new { Hidden = true, Reason = review.HiddenReason }, cancellationToken: cancellationToken);
-        await _reviews.SaveAndRecomputeAsync(review.ProductId, cancellationToken);
+        (review.HiddenAt, review.HiddenReason, review.HiddenBy) = (now, reason, by);
         return ReviewResponse.From(review);
     }
 
     public async Task<ReviewResponse> Handle(RestoreReviewCommand request, CancellationToken cancellationToken)
     {
         var review = await _reviews.GetAsync(request.ReviewId, cancellationToken) ?? throw new NotFoundException("Review not found.");
-        if (review.HiddenAt is null)
+        var reason = review.HiddenReason;
+
+        var restored = await _reviews.TryRestoreAsync(review.Id, review.ProductId, ct =>
+            _audit.RecordAsync(AuditCategory.Moderation, "ReviewRestored", "Review", review.Id.ToString(),
+                $"A {review.Rating}-star review shown again",
+                new { Hidden = true, Reason = reason }, new { Hidden = false }, cancellationToken: ct), cancellationToken);
+        if (restored == 0)
             throw new ConflictException("This review is not hidden.");
 
-        var reason = review.HiddenReason;
-        review.HiddenAt = null;
-        review.HiddenReason = null;
-        review.HiddenBy = null;
-        await _audit.RecordAsync(AuditCategory.Moderation, "ReviewRestored", "Review", review.Id.ToString(),
-            $"A {review.Rating}-star review shown again",
-            new { Hidden = true, Reason = reason }, new { Hidden = false }, cancellationToken: cancellationToken);
-        await _reviews.SaveAndRecomputeAsync(review.ProductId, cancellationToken);
+        (review.HiddenAt, review.HiddenReason, review.HiddenBy) = (null, null, null);
         return ReviewResponse.From(review);
     }
 
