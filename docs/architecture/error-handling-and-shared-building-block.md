@@ -162,9 +162,19 @@ password, or a moderator reaching past what moderators may do.
   "status": 403,
   "detail": "This account is locked until 2026-10-01 00:00 UTC: repeated spam reviews",
   "instance": "/api/auth/login",
-  "traceId": "00-2c1f0e9a77b34da6a3ce929d0e0e4736-00"
+  "traceId": "00-2c1f0e9a77b34da6a3ce929d0e0e4736-00",
+  "code": "AccountLocked",
+  "until": "2026-10-01T00:00:00Z",
+  "reason": "repeated spam reviews"
 }
 ```
+
+**A refusal can carry its facts** (specs/049). `ForbiddenException(message, facts)` takes an optional
+dictionary, and the handler writes each entry as an extension beside `detail`, in every environment, as
+the message already is. A client can then word the refusal in its reader's language and time zone instead
+of showing an English sentence in UTC; the sign-in page does exactly that. The handler's own keys win: a
+fact named `traceId` or `errors` is dropped, never allowed to hide them. Only put in facts what the
+message may already say.
 
 **403 is not for "this is not yours".** Somebody else's order, address, product, sale or variant is a
 **404**, worded exactly like one that does not exist, because a 403 confirms the id is real and

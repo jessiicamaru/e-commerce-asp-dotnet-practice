@@ -63,6 +63,12 @@ public class ModerationTests(IdentityTestFixture fixture)
 
         var refused = await Assert.ThrowsAsync<ForbiddenException>(() => SendAsync(Guid.Empty, new LoginCommand(email, Password)));
         Assert.Contains("Spam in reviews", refused.Message);
+        // The facts beside the sentence, for the storefront to word in its reader's language (specs/049).
+        Assert.Equal("AccountLocked", refused.Facts["code"]);
+        Assert.Equal("Spam in reviews", refused.Facts["reason"]);
+        var until = Assert.IsType<DateTime>(refused.Facts["until"]);
+        Assert.Equal(DateTimeKind.Utc, until.Kind);
+        Assert.Equal(locked.LockedUntil!.Value, until, TimeSpan.FromMilliseconds(1)); // PostgreSQL keeps microseconds
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => SendAsync(Guid.Empty, new RefreshTokenCommand(session.RefreshToken)));
 
         // The wrong password still says only "wrong": the reason is for the account's owner (#28).
@@ -111,6 +117,8 @@ public class ModerationTests(IdentityTestFixture fixture)
         await SendAsync(Admin, new BanUserCommand(id, "Fraud"), RoleNames.Admin);
         var refused = await Assert.ThrowsAsync<ForbiddenException>(() => SendAsync(Guid.Empty, new LoginCommand(email, Password)));
         Assert.Contains("banned", refused.Message);
+        Assert.Equal(("AccountBanned", "Fraud"), (refused.Facts["code"], refused.Facts["reason"]));
+        Assert.False(refused.Facts.ContainsKey("until"));
 
         // Unlocking is not lifting a ban.
         await SendAsync(Admin, new UnlockUserCommand(id), RoleNames.Moderator);

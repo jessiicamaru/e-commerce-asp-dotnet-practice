@@ -69,7 +69,8 @@ sequenceDiagram
     I-->>U: 401 Invalid email or password
     U->>I: POST /api/auth/login with the right password
     I->>I: audit SignInRefused
-    I-->>U: 403 This account is locked until date and time UTC, reason
+    I-->>U: 403 detail, plus code AccountLocked, until (UTC), reason
+    U->>U: the sign-in page words it in the reader's language and time zone
     U->>I: POST /api/auth/refresh
     I-->>U: 401 The session is not valid
     Note over U,I: an access token already issued keeps working until it expires, at most 15 minutes
@@ -77,7 +78,11 @@ sequenceDiagram
 
 `LoginCommandHandler` checks the password **first**: an unknown email and a wrong password both answer
 401 with one message, and a locked or banned account is refused with `ForbiddenException` (403, message
-shown) only after the password matched. `RefreshTokenCommandHandler` refuses a locked or banned
+shown) only after the password matched. Since specs/049 the refusal also carries its facts as
+ProblemDetails extensions - `code` (`AccountLocked` or `AccountBanned`), `until` (ISO 8601 UTC, locks
+only) and `reason` - and `pages/sign-in` words them itself: "This account is locked until 1/10/2026,
+14:30:00: Spam in reviews", in the reader's language and local time, rather than the English sentence in
+UTC. A 403 it has no words for shows the server's `detail`. `RefreshTokenCommandHandler` refuses a locked or banned
 account with the ordinary 401 whatever the token, because the account row decides, not the token.
 Unlocking and lifting a ban clear the columns; the person signs in again.
 
@@ -229,19 +234,21 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | `pages/admin-orders`, `pages/admin-order`, `pages/admin-payouts` | Administrator: fulfilment and payouts ([fulfilment](fulfilment-and-delivery.md), [marketplace](marketplace.md)). |
 | `pages/admin-audit` | Administrator: the audit log ([audit and notifications](audit-and-notifications.md)). |
 | `pages/admin-overview` | Administrator: people, queues, revenue per currency, top products and buyers - see [admin insights](admin-insights.md). |
-| `pages/sign-in` | Shows "That email and password do not match an account." for a 401 and "Signing in failed. Try again in a moment." for anything else - including the 403 of a locked or banned account (see Known limits). |
+| `pages/sign-in` | A 401 is only "That email and password do not match an account." (#28). A 403 for a locked or banned account is worded from its `code`, `until` and `reason` (`pages/sign-in/refusal.ts`, specs/049); any other 403 shows the server's sentence; anything else is "Signing in failed. Try again in a moment." |
 
 ## Tests
 
 | Where | Proves |
 | :-- | :-- |
-| `Ecommerce.Identity.Tests/ModerationTests` | A grant arrives at the next refresh; only `Moderator` can be granted; a locked account cannot sign in or refresh until unlocked; the 30-day cap; nobody stops themselves or an administrator and a moderator does not stop a moderator; a ban holds until lifted and unlocking does not lift it; every action is recorded with its diff and a grant notifies; search by part of an email. |
+| `Ecommerce.Identity.Tests/ModerationTests` | A grant arrives at the next refresh; only `Moderator` can be granted; a locked account cannot sign in or refresh until unlocked; the 30-day cap; nobody stops themselves or an administrator and a moderator does not stop a moderator; a ban holds until lifted and unlocking does not lift it; the refusal carries `code`, `until` and `reason`; every action is recorded with its diff and a grant notifies; search by part of an email. |
 | `Ecommerce.Identity.Tests/ShopApplicationTests` | Approval and rejection, two simultaneous approvals open one shop, the queue order. |
 | `Ecommerce.Identity.Tests/AuthErrorTests` | Unknown email and wrong password give the same 401. |
+| `Ecommerce.Identity.Tests/ForbiddenProblemTests` | A 403's facts reach the response body in Production, a date as ISO 8601 UTC, and never hide `traceId`. |
 | `Ecommerce.Catalog.Tests/ProductReviewTests`, `ReviewTests` | Product review moves and review hiding ([catalog](catalog.md), [ratings and reviews](ratings-and-reviews.md)). |
 | `Ecommerce.Activity.Tests/AuditLogTests` | Filtering by actor and category, which `/api/audit/mine` relies on. |
+| client `pages/sign-in` | A locked person is told why and until when in their language and time; a banned one why; a wrong password only "wrong"; another 403 its sentence; no sentence the generic one. |
 | client `pages/admin-users`, `admin-shops`, `admin-moderation`, `admin-products`, `admin-reviews`, `layouts/admin-layout`, `components/auth/require-role` | What each role is offered and what each action sends. |
-| Bruno `admin-users/` | Grant, sign in holding the role, a moderator cannot grant, ban or lock beyond 30 days, lock, locked sign-in refused, unlock, sign in again, the audit log records it, revoke. |
+| Bruno `admin-users/` | Grant, sign in holding the role, a moderator cannot grant, ban or lock beyond 30 days, lock, locked sign-in refused with its `code`, `until` and `reason`, unlock, sign in again, the audit log records it, revoke. |
 | Bruno `seller/`, `reviews/`, `security-checks/` | Shop and product decisions, a second approval is 409, review hiding, 401 and 403 cases. |
 
 ## Known limits
@@ -254,10 +261,6 @@ No message is specific to moderation. Staff actions publish, through the acting 
   while their own access token lasts, their own. `ModerationTests` covers the locking rules only.
 - **Sign-in has no rate limit**, so a password can be guessed at without bound -
   [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
-- **The storefront does not show the reason for a lock or ban.** ([#120](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/120)) The server answers 403 with the reason
-  and the end date, but `pages/sign-in` maps every non-401 failure to "Signing in failed. Try again in
-  a moment.", so a locked person is invited to retry instead of being told why. The API behaves as
-  specs/043 requires; the page does not yet.
 - **A stopped person is told nothing until they try to sign in.** Locks and bans send no notification,
   and the system sends no email at all -
   [#102](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/102).
@@ -279,3 +282,4 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | [045-product-review](../../specs/045-product-review/) | [#97](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/97) | Product review before sale, the moderator's dashboard, `GET /api/audit/mine`. |
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | Hiding and restoring reviews. |
 | [047-admin-insights](../../specs/047-admin-insights/) | [#99](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/99) | `/admin/overview`, `/api/users/lookup`, `/api/users/stats`. |
+| [049-sign-in-refusal](../../specs/049-sign-in-refusal/) | [#130](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/130) | `ForbiddenException` facts as ProblemDetails extensions; the sign-in refusal's `code`, `until`, `reason`; the sign-in page words a lock or ban in the reader's language and time (#120). |

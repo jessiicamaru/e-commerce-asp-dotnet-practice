@@ -93,6 +93,16 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
             problemDetails.Extensions["errors"] = errors;
         }
 
+        // A refusal's facts, for a client to word it itself (specs/049). The handler's own keys win: a
+        // fact named traceId or errors is dropped rather than allowed to hide them.
+        if (exception is ForbiddenException { Facts: var facts })
+        {
+            foreach (var (key, value) in facts)
+            {
+                problemDetails.Extensions.TryAdd(key, value);
+            }
+        }
+
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 
