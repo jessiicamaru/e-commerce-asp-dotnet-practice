@@ -129,6 +129,30 @@ public static class ModerationRules
         if (!caller.IsInRole(RoleNames.Admin) && target.Roles.Any(r => r.Name == RoleNames.Moderator))
             throw new ForbiddenException("Only an administrator can lock a moderator.");
     }
+
+    /// <summary>
+    /// Unlocking obeys what locking does (#121, specs/050): nobody frees themselves - a lock ends every
+    /// session but not an access token already in hand (#112) - a moderator does not free a moderator, and
+    /// a lock with more time to run than a moderator could set is an administrator's to lift.
+    /// </summary>
+    /// <remarks>
+    /// "Could have set" is read from the time still to run, not from who set it: that needs no column,
+    /// and a long lock stays until an administrator decides (spec, Decision).
+    /// </remarks>
+    public static void EnsureMayRelease(ICurrentUser caller, User target, DateTime now)
+    {
+        if (target.Id == caller.Id)
+            throw new ConflictException("You cannot unlock your own account.");
+
+        if (caller.IsInRole(RoleNames.Admin))
+            return;
+
+        if (target.Roles.Any(r => r.Name == RoleNames.Moderator))
+            throw new ForbiddenException("Only an administrator can unlock a moderator.");
+
+        if (target.LockedUntil is { } until && until - now > TimeSpan.FromDays(ModeratorMaxLockDays))
+            throw new ForbiddenException($"Only an administrator can lift a lock with more than {ModeratorMaxLockDays} days to run.");
+    }
 }
 
 public class UserAdministrationHandlers(
@@ -220,6 +244,7 @@ public class UserAdministrationHandlers(
     {
         var user = await TargetAsync(request.UserId, cancellationToken);
         var now = DateTime.UtcNow;
+        ModerationRules.EnsureMayRelease(_currentUser, user, now);
 
         if (user.LockedUntil is not null)
         {

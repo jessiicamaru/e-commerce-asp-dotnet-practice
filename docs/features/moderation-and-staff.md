@@ -45,7 +45,21 @@ may do **to whom** depends on the target's row and is decided in the handler, by
 | Moderator | 409 | 409 | **403** `ForbiddenException` | allowed |
 
 A moderator asking for more than 30 days gets 403 (`ModerationRules.ModeratorMaxLockDays = 30`); the
-validator allows 1 to 365 days for anyone (`AdminMaxLockDays = 365`). Granting, revoking, banning and
+validator allows 1 to 365 days for anyone (`AdminMaxLockDays = 365`).
+
+**Unlocking obeys the same limits** (specs/050, `ModerationRules.EnsureMayRelease`), because it had none
+until #121 - a moderator could lift an administrator's year-long lock, free another moderator, or, with an
+access token that outlived the lock (#112), free themselves:
+
+| Caller \ target | Themselves | A moderator | A customer or seller, lock with at most 30 days to run | ... with more than 30 days to run |
+| :-- | :-- | :-- | :-- | :-- |
+| Administrator | 409 | allowed | allowed | allowed |
+| Moderator | 409 | **403** | allowed | **403** |
+
+"More than a moderator could have set" is read from the time **still to run**, not from who set the lock:
+that needs no column, and a long lock stays until an administrator decides. A lock an administrator set
+for 40 days is therefore a moderator's to lift once it has 30 days or fewer left - the same lock the
+moderator could have set that day. The users page shows "Unlock" disabled in exactly these cases. Granting, revoking, banning and
 lifting a ban are `[Authorize(Roles = RoleNames.Admin)]` on `UsersController`, whose class admits
 `Staff`.
 
@@ -146,7 +160,9 @@ on its own.
    shorter than 8 characters, and promotes an existing account rather than overwriting its password.
 4. **Nobody stops themselves or an administrator; a moderator does not stop a moderator.** Checked
    against the stored target row in `ModerationRules.EnsureMayStop`, whatever the client sends.
-   *Why:* an attribute runs before the target is read and cannot know who it is.
+   *Why:* an attribute runs before the target is read and cannot know who it is. **Unlocking obeys the
+   same limits** (`EnsureMayRelease`, specs/050), and a moderator lifts only a lock with 30 days or
+   fewer to run.
 5. **A moderator locks for at most 30 days; only an administrator bans.** A ban has no end date and
    lasts until an administrator lifts it.
 6. **A lock and a ban are columns, not a status.** *Why:* they can overlap, and an earlier image must
@@ -240,15 +256,16 @@ No message is specific to moderation. Staff actions publish, through the acting 
 
 | Where | Proves |
 | :-- | :-- |
-| `Ecommerce.Identity.Tests/ModerationTests` | A grant arrives at the next refresh; only `Moderator` can be granted; a locked account cannot sign in or refresh until unlocked; the 30-day cap; nobody stops themselves or an administrator and a moderator does not stop a moderator; a ban holds until lifted and unlocking does not lift it; the refusal carries `code`, `until` and `reason`; every action is recorded with its diff and a grant notifies; search by part of an email. |
+| `Ecommerce.Identity.Tests/ModerationTests` | A grant arrives at the next refresh; only `Moderator` can be granted; a locked account cannot sign in or refresh until unlocked; the 30-day cap; nobody stops themselves or an administrator and a moderator does not stop a moderator; a ban holds until lifted and unlocking does not lift it; nobody unlocks themselves, only an administrator unlocks a moderator, and a moderator lifts only a lock of 30 days or fewer still to run (a refused unlock records nothing); the refusal carries `code`, `until` and `reason`; every action is recorded with its diff and a grant notifies; search by part of an email. |
 | `Ecommerce.Identity.Tests/ShopApplicationTests` | Approval and rejection, two simultaneous approvals open one shop, the queue order. |
 | `Ecommerce.Identity.Tests/AuthErrorTests` | Unknown email and wrong password give the same 401. |
 | `Ecommerce.Identity.Tests/ForbiddenProblemTests` | A 403's facts reach the response body in Production, a date as ISO 8601 UTC, and never hide `traceId`. |
 | `Ecommerce.Catalog.Tests/ProductReviewTests`, `ReviewTests` | Product review moves and review hiding ([catalog](catalog.md), [ratings and reviews](ratings-and-reviews.md)). |
 | `Ecommerce.Activity.Tests/AuditLogTests` | Filtering by actor and category, which `/api/audit/mine` relies on. |
+| client `pages/admin-users` (specs/050) | "Unlock" is disabled for yourself, for a moderator seen by a moderator, and for a lock beyond a moderator's reach. |
 | client `pages/sign-in` | A locked person is told why and until when in their language and time; a banned one why; a wrong password only "wrong"; another 403 its sentence; no sentence the generic one. |
 | client `pages/admin-users`, `admin-shops`, `admin-moderation`, `admin-products`, `admin-reviews`, `layouts/admin-layout`, `components/auth/require-role` | What each role is offered and what each action sends. |
-| Bruno `admin-users/` | Grant, sign in holding the role, a moderator cannot grant, ban or lock beyond 30 days, lock, locked sign-in refused with its `code`, `until` and `reason`, unlock, sign in again, the audit log records it, revoke. |
+| Bruno `admin-users/` | Grant, sign in holding the role, a moderator cannot grant, ban or lock beyond 30 days, lock, locked sign-in refused with its `code`, `until` and `reason`, a moderator cannot unlock their own account (409), unlock, sign in again, the audit log records it, revoke. |
 | Bruno `seller/`, `reviews/`, `security-checks/` | Shop and product decisions, a second approval is 409, review hiding, 401 and 403 cases. |
 
 ## Known limits
@@ -256,9 +273,6 @@ No message is specific to moderation. Staff actions publish, through the acting 
 - **A lock or ban takes up to 15 minutes to reach a signed-in session**: the access token already
   issued stays valid until it expires -
   [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112).
-- **Unlocking has no target rule.** ([#121](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/121)) `UnlockUserCommand` applies no `ModerationRules` check, so a
-  moderator can unlock any locked account - including one an administrator locked for a year, and,
-  while their own access token lasts, their own. `ModerationTests` covers the locking rules only.
 - **Sign-in has no rate limit**, so a password can be guessed at without bound -
   [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
 - **A stopped person is told nothing until they try to sign in.** Locks and bans send no notification,

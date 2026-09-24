@@ -121,6 +121,40 @@ describe('AdminUsersPage (specs/043)', () => {
     expect(within(menu).getByRole('menuitem', { name: 'Lock…' })).toHaveAttribute('aria-disabled', 'true')
   })
 
+  /** Unlocking obeys what locking does (#121, specs/050) - drawn here, refused by the server on its own. */
+  it('does not offer a moderator to unlock a moderator, themselves, or a lock longer than theirs', async () => {
+    const soon = new Date(Date.now() + 7 * 86_400_000).toISOString()
+    const later = new Date(Date.now() + 200 * 86_400_000).toISOString()
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(
+      person({ id: 'm', email: 'mod@example.test', roles: ['Customer', 'Moderator'], lockedUntil: soon }),
+      person({ id: 'u1', email: 'me@example.test', roles: ['Customer', 'Moderator'], lockedUntil: soon }),
+      person({ id: 'long', email: 'long@example.test', lockedUntil: later }),
+      person({ id: 'short', email: 'short@example.test', lockedUntil: soon }),
+    ))
+    const user = userEvent.setup()
+    renderPage(renderAsModerator)
+
+    for (const email of ['mod@example.test', 'me@example.test', 'long@example.test']) {
+      const menu = await openActions(user, email)
+      expect(within(menu).getByRole('menuitem', { name: 'Unlock' }), email).toHaveAttribute('aria-disabled', 'true')
+      await user.keyboard('{Escape}')
+    }
+    const menu = await openActions(user, 'short@example.test')
+    expect(within(menu).getByRole('menuitem', { name: 'Unlock' })).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('offers an administrator to unlock anybody but themselves', async () => {
+    const later = new Date(Date.now() + 200 * 86_400_000).toISOString()
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(
+      person({ id: 'm', email: 'mod@example.test', roles: ['Customer', 'Moderator'], lockedUntil: later }),
+    ))
+    const user = userEvent.setup()
+    renderPage(renderAsAdmin)
+
+    const menu = await openActions(user, 'mod@example.test')
+    expect(within(menu).getByRole('menuitem', { name: 'Unlock' })).not.toHaveAttribute('aria-disabled')
+  })
+
   it('shows the server refusal in its words', async () => {
     vi.spyOn(Accounts, 'search').mockResolvedValue(page(person({ lockedUntil: '2026-09-27T10:00:00Z' })))
     vi.spyOn(Accounts, 'unlock').mockRejectedValue(refusal(404, 'User not found.'))

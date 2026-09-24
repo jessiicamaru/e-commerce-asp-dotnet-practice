@@ -518,7 +518,9 @@ person at `GET /api/users?search=` and grants or revokes **Moderator - the only 
 granted**; Admin stays seeded and Seller comes from opening a shop. A moderator may **lock** an account
 for at most 30 days (an administrator for up to a year); only an administrator **bans** or lifts a ban.
 Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
-depend on the target's row, so they live in `ModerationRules`, not in an attribute. A lock or ban ends
+depend on the target's row, so they live in `ModerationRules`, not in an attribute. **Unlocking obeys the
+same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody unlocks themselves, only an
+administrator unlocks a moderator, and a moderator lifts only a lock with at most 30 days still to run. A lock or ban ends
 every session at once, refresh refuses the account whatever its token, and sign-in answers **403 with
 the reason only after the right password** - before it, a locked account and a wrong password must
 look the same (#28). ⚠️ A grant or a lock reaches a token already issued only at its next refresh: an

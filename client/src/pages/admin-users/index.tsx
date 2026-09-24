@@ -43,6 +43,8 @@ export function AdminUsersPage() {
   const page = Number(params.get('page') ?? '1') || 1
   const [draft, setDraft] = useState(search)
   const [stopping, setStopping] = useState<{ kind: Stop; account: Account } | null>(null)
+  // When the page opened: what "days still to run" is measured from, fixed rather than read in render.
+  const [now] = useState(() => Date.now())
 
   const accounts = useAccounts(search, page, PAGE_SIZE)
   const act = useAccountActions()
@@ -118,6 +120,11 @@ export function AdminUsersPage() {
                   const moderator = a.roles.includes('Moderator')
                   // Nobody stops themselves or an administrator; a moderator does not stop a moderator.
                   const stoppable = !self && !admin && (isAdmin || !moderator)
+                  // Unlocking obeys the same limits (specs/050), and a moderator lifts only a lock they could
+                  // have set - no more than MODERATOR_MAX_LOCK_DAYS still to run.
+                  const withinReach =
+                    !!a.lockedUntil && new Date(a.lockedUntil).getTime() - now <= MODERATOR_MAX_LOCK_DAYS * 86_400_000
+                  const releasable = !self && (isAdmin || (!moderator && withinReach))
 
                   return (
                     <TableRow key={a.id}>
@@ -159,7 +166,10 @@ export function AdminUsersPage() {
                             )}
                             {isAdmin && <DropdownMenuSeparator />}
                             {a.lockedUntil ? (
-                              <DropdownMenuItem onClick={() => act.unlock.mutate(a.id, { onSuccess: done('users.unlocked', a) })}>
+                              <DropdownMenuItem
+                                disabled={!releasable}
+                                onClick={() => act.unlock.mutate(a.id, { onSuccess: done('users.unlocked', a) })}
+                              >
                                 {t('users.unlock')}
                               </DropdownMenuItem>
                             ) : (
