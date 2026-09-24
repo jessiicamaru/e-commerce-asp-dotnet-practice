@@ -24,7 +24,6 @@ disagrees with its own rules. Fix these before building anything new.
 
 | Issue | Title |
 | :-- | :-- |
-| [#126](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/126) | Some seller edits of what a shopper reads skip product review |
 | [#127](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/127) | Two first reviews at once give a 500, and hiding a review is not guarded |
 | [#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128) | Some writes record no audit entry and some events tell nobody |
 
@@ -77,6 +76,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#126](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/126) | Some seller edits of what a shopper reads skip product review | [#139](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/139) (specs/056) |
 | [#125](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/125) | The insights' period rules differ between endpoints, and the chart drops the first day | [#138](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/138) (specs/055) |
 | [#124](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/124) | A variant's availability can be overwritten by an older announcement | [#137](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/137) (specs/054) |
 | [#123](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/123) | A payment answered after the stock hold expired still pays the order | [#135](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/135) (specs/053) |
@@ -88,5 +88,5 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 ## Suggested order
 
-The defects first: #126 to #128. Then email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
+The defects first: #127 and #128. Then email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
 #107 -> #108 -> #111, and the rest as they become pressing.
