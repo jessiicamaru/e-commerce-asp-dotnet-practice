@@ -246,10 +246,9 @@ jobs:
       - name: This check never blocks
         run: echo "Informational only - see specs/006-release-and-rollback/research.md D5"
 
-  # The storefront (client/, feature 014): lint, TEST, type-check and build on every change. It
-  # publishes nothing yet - there is nowhere to deploy it - so the proof is that it is exercised and
-  # that it builds against the API it was written for. Independent of the backend jobs, so it runs
-  # alongside them.
+  # The storefront (client/, feature 014): lint, TEST, type-check and build on every change, then build
+  # its IMAGE and prove it serves the storefront (specs/051). Independent of the backend jobs, so it runs
+  # alongside them; `publish` waits for it, so a storefront whose tests failed is never published.
   #
   # The tests arrived with specs/028. Before that this job only linted and built, which means the
   # storefront could render nothing at all and still go green - the backend had 278 tests and the
@@ -281,6 +280,16 @@ jobs:
       - name: Type-check and build
         run: npm run build
 
+      # The image, built from the same source, and asked over HTTP what a browser would ask: the app,
+      # a deep link, /api forwarded, the cache headers, a 2 MB upload (specs/051). An image that builds
+      # but serves nothing fails here rather than after it is published.
+      - name: Build the storefront image
+        run: docker build -t ecommerce-storefront:ci .
+
+      - name: The image serves the storefront
+        working-directory: .
+        run: .github/scripts/verify-storefront-image.sh ecommerce-storefront:ci
+
   publish:
     name: Publish images
     runs-on: ubuntu-latest
@@ -289,7 +298,8 @@ jobs:
     # because the artifact exists and carries the implication that it passed. Without
     # the event guard every pull request would publish: this workflow triggers on
     # push AND pull_request to main.
-    needs: [build, auth-smoke, saga-e2e]
+    # `client` since specs/051: the storefront is published too, and must not be if its tests failed.
+    needs: [build, auth-smoke, saga-e2e, client]
     # A merge, or a deliberate manual run. Never a pull request - which is what this
     # guard was protecting against in the first place, and adding a third trigger is
     # exactly how that kind of guard gets loosened by accident.
@@ -340,7 +350,7 @@ jobs:
       # different artifacts and the guarantee would attach to the wrong one. This
       # repository is public: a credential in a published layer is readable by anyone,
       # and one that has been pulled must be ROTATED, not deleted.
-      - name: Build and scan every service
+      - name: Build and scan every image
         env:
           SHORT_SHA: ${{ steps.sha.outputs.short }}
         run: |
@@ -366,6 +376,12 @@ jobs:
           activity|src/Services/Activity/Ecommerce.Activity.WebApi
           gateway|src/ApiGateway/Ecommerce.ApiGateway
           SERVICES
+
+          # The storefront (specs/051): its own Dockerfile and context, scanned the same way.
+          echo "::group::storefront"
+          docker build             -t "$IMAGE_PREFIX-storefront:sha-$SHORT_SHA"             -t "$IMAGE_PREFIX-storefront:main"             client
+          .github/scripts/verify-image-has-no-secrets.sh "$IMAGE_PREFIX-storefront:sha-$SHORT_SHA"
+          echo "::endgroup::"
 
       - name: Log in to GHCR
         # No stored secret: GITHUB_TOKEN is minted per run, scoped by the permissions
@@ -397,7 +413,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway"
+          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront"
 
           # Does this name already refer to something?
           #
@@ -507,7 +523,7 @@ jobs:
           # Counted from the list rather than written down as a number. "7" was hardcoded
           # here and in three messages, and went stale the moment an eighth service arrived -
           # the same drift the Dockerfile's COPY list and this job's other two lists suffer.
-          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway"
+          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront"
           total=$(set -- $SERVICES; echo $#)
 
           for service in $SERVICES; do

@@ -683,7 +683,12 @@ docker compose up -d                                                           #
 ```
 
 Host ports are 5000 and 5056-5063; inside their containers every service binds 8080. One
-[Dockerfile](server/Dockerfile) builds all nine images, selected by a `PROJECT` build argument.
+[Dockerfile](server/Dockerfile) builds all nine server images, selected by a `PROJECT` build argument.
+**The storefront is the tenth** (specs/051): [client/Dockerfile](client/Dockerfile), nginx serving the
+bundle on **:8088** and forwarding `/api` to `GATEWAY_URL`, read at start. Open it on `localhost` - the
+refresh cookie is `Secure`. `.github/scripts/verify-storefront-image.sh` asks the image what a browser
+would (app, deep link, `/api`, 2 MB upload, cache headers); nginx's `client_max_body_size` must stay
+above Catalog's `ProductImageKey.MaxBytes`.
 
 Three traps, each of which cost time to find:
 
@@ -747,7 +752,8 @@ checks every layer, not the running container, and CI runs it.
 
 ## Published images
 
-A merge to `main` whose checks pass publishes nine images to GHCR, each built, scanned for
+A merge to `main` whose checks pass publishes ten images to GHCR - the nine server images and the
+storefront, which also waits for the `client` job - each built, scanned for
 credentials, and only then pushed:
 
 ```text

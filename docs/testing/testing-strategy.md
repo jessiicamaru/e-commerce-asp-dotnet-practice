@@ -128,12 +128,12 @@ mutated binary - `touch` the restored file.
 | Job | What it does |
 | :-- | :-- |
 | Build and test | Builds the solution, runs every service test project against PostgreSQL containers |
-| Storefront build | Lints (oxlint), tests, type-checks and builds `client/` |
+| Storefront build | Lints (oxlint), tests, type-checks and builds `client/`; builds the storefront image and runs `verify-storefront-image.sh` against it - the app, a deep link, `/api` forwarded, a 2 MB upload, cache headers (specs/051) |
 | Schema compatibility | Comments on a migration that drops, renames or narrows the schema (never blocks) |
 | Image carries no secret | Checks every layer of every image for credentials |
 | Auth smoke test | `verify-auth.sh` against three services |
 | Saga end-to-end | All services and RabbitMQ in containers; `verify-saga.sh` on both branches |
-| Publish images | On `main` only, after the checks: immutable `sha-` tags to GHCR |
+| Publish images | On `main` only, after the checks (the storefront's included): ten images - nine server images and the storefront - with immutable `sha-` tags to GHCR |
 
 A pull request is squash-merged only when every job is green.
 

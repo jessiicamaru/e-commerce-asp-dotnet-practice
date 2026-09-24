@@ -9,13 +9,16 @@ backend lacks - rather than as a polished product. How to run it and the folder 
 
 ```mermaid
 flowchart LR
-    Browser -->|/api/*| Vite[Vite dev server<br/>proxy]
-    Vite -->|same paths| Gateway[API Gateway :5000]
+    Browser -->|/api/*| Front[Vite dev proxy :5173<br/>or the storefront image's nginx :8088]
+    Front -->|same paths| Gateway[API Gateway :5000]
     Gateway --> Services[Identity, Catalog, Cart,<br/>Order, Inventory, Payment, Activity]
 ```
 
-- **It talks only to the gateway.** In development Vite proxies `/api` to `:5000`, so the page and the
-  API share one origin and there is no CORS to configure.
+- **It talks only to the gateway.** In development Vite proxies `/api` to `:5000`; in a container
+  (specs/051) nginx does the same, with the gateway's address given at start (`GATEWAY_URL`). Either way
+  the page and the API share one origin and there is no CORS to configure. The image is published with
+  the services' images, as `ecommerce-storefront` - see
+  [running in containers](../infrastructure/running-in-containers.md#the-storefront-image).
 - **Tokens:** the access token lives in memory only; the refresh token is Identity's HttpOnly cookie,
   which no script can read. On a reload, and whenever a request gets a 401, the client asks for a new
   access token once (concurrent 401s share one refresh) and retries.
