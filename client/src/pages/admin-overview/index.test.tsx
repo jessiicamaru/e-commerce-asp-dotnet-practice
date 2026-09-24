@@ -7,6 +7,7 @@ import { Insights } from '@/services/insights'
 import { Moderation } from '@/services/moderation'
 import { ShopApplications } from '@/services/shop-applications'
 import { renderAsAdmin } from '@/test/render'
+import { periodDays } from '@/utils/insights'
 import { AdminOverviewPage } from '.'
 
 function renderPage() {
@@ -57,6 +58,26 @@ describe('AdminOverviewPage (specs/047)', () => {
     expect(screen.getByText('Fujifilm X-T5')).toBeInTheDocument()
     expect(screen.getByText('41 views')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Products to review\s*4/ })).toHaveAttribute('href', '/admin/products')
+  })
+
+  /**
+   * #125 (specs/055): the server counts whole UTC days, both ends included. "Last 7 days" asked from exactly
+   * 7 x 24 h ago touched EIGHT dates while the chart drew seven, so the earliest day's revenue was in the
+   * totals and had no bar.
+   */
+  it('asks for exactly the days the chart draws', async () => {
+    const revenue = vi.mocked(Insights.revenue)
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('button', { name: /₫84,000,000\s*2 orders/ })
+
+    await user.click(screen.getByRole('button', { name: 'Last 7 days' }))
+    await waitFor(() => expect(revenue).toHaveBeenCalledTimes(2))
+
+    const [from, to] = revenue.mock.calls[1]
+    const day = (iso: string) => Date.parse(iso.slice(0, 10))
+    expect((day(to) - day(from)) / 86_400_000 + 1).toBe(7)
+    expect(periodDays(to, 7)[0]).toBe(from.slice(0, 10))
   })
 
   it('asks again for a different period', async () => {

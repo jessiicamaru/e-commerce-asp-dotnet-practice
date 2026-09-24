@@ -13,7 +13,7 @@ The Overview at `/admin/overview` shows an administrator how the shop is doing. 
 
 ## How it works
 
-**The page.** `AdminOverviewPage` fixes `to` = now and `from` = now minus the chosen number of days when the period is chosen, not on every render. It then issues six reads through `useInsights`. Each is keyed by the period's start, so switching back to a period already seen shows it at once.
+**The page.** `AdminOverviewPage` fixes `to` = now and `from` = now minus the chosen number of days **less one** when the period is chosen, not on every render - today and the N - 1 days before it, exactly the N days the chart draws (specs/055). It then issues six reads through `useInsights`. Each is keyed by the period's start, so switching back to a period already seen shows it at once.
 
 ```mermaid
 sequenceDiagram
@@ -45,7 +45,7 @@ sequenceDiagram
 - `ProductSalesAsync` flattens order lines and groups by `ProductId` and `Currency`, summing `Quantity` and `Quantity * UnitPrice`. It keeps the most recently frozen `ProductName`.
 - `BuyersAsync` groups by `UserId` and `Currency`.
 
-`InsightsHandlers` (Application) shapes the rows into totals and series per currency. An order from before specs/022 has `Currency = null` and counts as `Money:DefaultCurrency`. The average order value is revenue divided by orders, rounded to 2 places half away from zero. A period defaults to the last 30 days, `from` inclusive and `to` exclusive. The revenue query refuses a period longer than 366 days (`InsightsPeriod.MaxDays`).
+`InsightsHandlers` (Application) shapes the rows into totals and series per currency. An order from before specs/022 has `Currency = null` and counts as `Money:DefaultCurrency`. The average order value is revenue divided by orders, rounded to 2 places half away from zero. **One period rule for all four insights** (`Ecommerce.Shared.Insights.InsightsPeriod`, specs/055): whole UTC days, from the day `from` falls on to the day `to` falls on, both included - a time is snapped to its day. The default is the last 30 days, today included; at most 366 days; `from` not after `to` (a single day is a period). Every insight query - revenue, top products, top buyers and Catalog's top viewed - validates it with the same `ValidPeriod` rule and the same words, and the revenue response's `from`/`to` report the whole-day bounds (`to` exclusive). Before #125 Order cut at instants, Catalog at days, and only revenue had a limit.
 
 **Catalog.** `POST /api/products/{id}/view` sends `RecordProductViewCommand`. The handler returns quietly unless the product exists and `IsListed`, and the caller is not an administrator, not a moderator, and not the product's seller. Otherwise `ProductViewRepository.RecordAsync` runs one upsert that increments `product_views."Views"` for (`ProductId`, today in UTC). `GET /api/products/insights/top-viewed` sums views per product between the dates of `from` and `to` (both days included), and joins `products` for the name.
 
@@ -86,7 +86,7 @@ All Admin only except the view. See the [API reference](../reference/api.md).
 
 | Method | Path | Who | Parameters |
 | :-- | :-- | :-- | :-- |
-| `GET` | `/api/orders/insights/revenue` | Admin | `from`, `to` (at most 366 days) |
+| `GET` | `/api/orders/insights/revenue` | Admin | `from`, `to` - whole UTC days, both included, at most 366 (the same on every insight) |
 | `GET` | `/api/orders/insights/top-products` | Admin | `from`, `to`, `by` = `units` or `revenue`, `currency`, `limit` 1-50 (default 10) |
 | `GET` | `/api/orders/insights/top-buyers` | Admin | `from`, `to`, `currency`, `limit` 1-50 (default 10) |
 | `GET` | `/api/products/insights/top-viewed` | Admin | `from`, `to`, `limit` 1-50 (default 10) |
@@ -118,7 +118,7 @@ None. The insights are reads, and the view counter is a single SQL statement. No
 | `Ecommerce.Order.Tests/InsightsTests` | `Revenue_counts_paid_orders_per_currency_and_nothing_else`: Paid, Shipped and Preparing count; Cancelled, Failed and Submitted do not; VND and USD are separate totals; one day row per currency per day. `Top_products_count_units_and_keep_revenue_per_currency`: a cancelled order's 50 units do not count. `Top_buyers_rank_by_spend_in_the_asked_currency`. |
 | `Ecommerce.Catalog.Tests/ProductViewTests` | `A_shopper_opening_a_product_page_counts_and_twenty_at_once_count_twenty`; `Staff_and_the_seller_do_not_count_and_neither_does_what_is_not_on_the_shelf`; `The_most_viewed_come_first`. |
 | `Ecommerce.Identity.Tests/UserReportTests` | `Ids_are_turned_into_emails_and_unknown_ones_are_left_out`; `The_counts_follow_the_roles`. |
-| `client/src/pages/admin-overview/index.test.tsx` | Revenue per currency, never added together; top buyers named by email; waiting counts shown; a different period asks again. |
+| `client/src/pages/admin-overview/index.test.tsx` | Revenue per currency, never added together; top buyers named by email; waiting counts shown; a different period asks again; the request covers exactly the days the chart draws. |
 | `client/src/pages/admin-overview/daily-chart.test.tsx` | One column per day with empty days included; bars scaled to the busiest day, which is named; one currency at a time; the hover text gives day, amount and orders. |
 | `client/src/utils/insights/index.test.ts` | `periodDays` lists every day oldest first, crosses a month end, and gives as many days as asked. |
 | `client/src/pages/product/index.test.tsx` (`ProductPage views`) | The page reports a view once, however often it renders. |
@@ -131,8 +131,6 @@ The plan records two mutation checks: counting cancelled orders as revenue, and 
 
 - **Revenue is counted on the day the order was placed, not the day it was paid** ([#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116)). An order placed before midnight and settled after it lands on the earlier day.
 - **Days are UTC days.** The shop's customers are mostly in Vietnam (UTC+7), so an order placed at 06:00 local time counts on the previous day.
-- **The chart can leave out the period's first, partial day.** ([#125](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/125)) The page asks for `from` = now minus N days, which touches N+1 UTC dates, and `periodDays` draws the N days ending today. Revenue on the earliest date is in the totals but has no bar.
-- **Periods are not measured the same way everywhere.** ([#125](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/125)) Order uses `from` inclusive and `to` exclusive, to the instant. Top viewed uses whole days with both ends included. Only the revenue endpoint enforces the 366-day maximum; top products and top buyers do not.
 - **Views are not deduplicated.** The endpoint is anonymous and has no rate limit, so repeated requests inflate a count. The storefront sends one per product opened, per page load.
 - **Headline counts are now, not for the period.** "Customers" includes sellers, who also hold `Customer`. "Stopped" adds locked and banned, so an account that is both counts twice.
 - **Revenue and product revenue measure different things** (with and without tax and delivery). The Overview shows units for top products and does not display product revenue.
