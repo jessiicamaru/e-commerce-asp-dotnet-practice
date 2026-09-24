@@ -72,6 +72,34 @@ public class SubmitOrderCommandHandler(ICurrentUser currentUser, ...)
 > **Never take the user id from the request body.** A field like `SubmitOrderCommand.UserId` lets any
 > caller place an order on behalf of anyone else. It has to come from the validated token.
 
+`ICurrentUser` exposes:
+
+| Member | Read from | Notes |
+| :--- | :--- | :--- |
+| `Id` | `sub` | `null` when absent or not a GUID. |
+| `Email` | `email` | |
+| `GivenName` | `given_name` | The name a review is signed with (specs/046). A default interface member returning `null`, so a token issued before the claim existed, and every test double, still works; Catalog then signs with the email's first letter. |
+| `IsAuthenticated` | the principal | |
+| `IsInRole(role)` | every `role` claim | Reads the short claim name that is actually in the token, not `ClaimsPrincipal.IsInRole`. For checks an attribute cannot make, because they depend on a row: "may this seller write to THIS product", "may this moderator lock THIS account". |
+
+### 3.0 What the access token carries
+
+[`JwtTokenGenerator`](../../../server/src/Services/Identity/Ecommerce.Identity.Infrastructure/Security/JwtTokenGenerator.cs)
+signs HMAC-SHA256 tokens that live `ExpiryMinutes` (15):
+
+| Claim | Value |
+| :--- | :--- |
+| `sub` | The user id. |
+| `email` | The email as the person typed it. |
+| `given_name` | The first name only - never the surname (specs/046). |
+| `jti` | A fresh GUID per token. |
+| `role` | One claim per role held: `Admin`, `Customer`, `Seller`, `Moderator`. |
+| `exp`, `iss`, `aud` | Expiry, `JwtSettings:Issuer`, `JwtSettings:Audience`. |
+
+The authentication response also returns the same roles as `roles`, so the storefront can decide what
+to **draw** without decoding the token. It is not a permission: authorization lives in the controller
+attributes and the handlers.
+
 ### 3.1 The secret must reach every service
 
 Each service loads `JWT_SECRET` from the environment and writes it into configuration, because the
@@ -142,22 +170,48 @@ In requests, clients must pass the token in the `Authorization` header:
 ### 4.1 Role-based authorization
 
 `[Authorize(Roles = "Admin")]` restricts an endpoint to a role. Roles are seeded on Identity startup
-(see [Database Schema Design](./db-design.md)) and travel inside the token.
+(see [Database Schema Design](./db-design.md)) and travel inside the token. There are four:
 
-| Endpoint | Access |
+| Role | Held by |
 | :--- | :--- |
-| `POST /api/auth/*` (register, login, refresh, logout) | Anonymous |
-| `GET /api/products`, `GET /api/products/{id}/image`, `GET /api/categories`, `GET /api/stock` | Anonymous (`[AllowAnonymous]`) |
-| `POST /api/products`, `PUT`/`DELETE /api/products/{id}/image`, `POST /api/categories`, `PUT /api/stock/{productId}` | `Admin` only |
-| `GET /api/reservations/{orderId}`, `GET /api/payments` | `Admin` only |
-| `/api/cart` (all), `/api/addresses` (all) | Any authenticated user — always **their own** cart / addresses; another customer's address is **404** |
-| `POST /api/orders`, `GET /api/orders/quote`, `GET /api/orders`, `GET /api/orders/{id}` | Any authenticated user — another customer's order is **404**, not 403 |
-| `GET /api/orders/shipping-options` | Anonymous |
-| `GET /api/orders/fulfilment`, `POST /api/orders/{id}/preparing`, `POST /api/orders/{id}/shipment` | `Admin` only |
+| `Customer` | Everybody who registers. |
+| `Seller` | A person whose shop application was approved - always together with `Customer`. |
+| `Moderator` | Somebody an administrator made a moderator. The only role the API can grant or revoke. |
+| `Admin` | The first administrator, seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. |
+
+Staff endpoints name both staff roles through one constant in `Ecommerce.Shared.Authentication`:
+
+```csharp
+[Authorize(Roles = StaffRoles.Staff)]   // "Admin,Moderator" - the comma means any of
+```
+
+Who reaches which endpoint (the full, generated list is [api.md](../../reference/api.md)):
+
+| Endpoints | Access |
+| :--- | :--- |
+| `POST /api/auth/*` (register, register-seller, login, refresh, logout) | Anonymous |
+| Catalogue reads - products, categories, images, a product's reviews, `GET /api/stock`, `GET /api/orders/shipping-options`, `POST /api/products/{id}/view` | Anonymous |
+| `/api/cart`, `/api/addresses`, `/api/notifications`, `POST /api/orders`, `GET /api/orders/quote`, `GET /api/orders`, `GET /api/orders/{id}`, cancelling one's own order, confirming a parcel arrived, `GET /api/shop-applications/mine` | Any signed-in user - always **their own**; somebody else's is **404** |
+| `POST /api/shop-applications`, `PUT /api/products/{id}/reviews/mine` | `Customer` |
+| Product writes (`POST /api/products`, variants, prices, translations, images, delete), `PUT /api/stock/{variantId}` | `Seller`, `Admin` - a seller's write to somebody else's product is **404** (checked in the handler) |
+| `GET /api/products/mine`, `/api/sellers/me`, `/api/orders/sales/*` | `Seller` |
+| `GET /api/users`, lock and unlock, the shop-application queue and decisions, the product review queue and decisions, review hiding, `GET /api/audit/mine` | `Admin`, `Moderator` |
+| Granting and revoking `Moderator`, ban and lift, `/api/users/lookup` and `/stats`, categories, fulfilment, the staff order read and cancel, payouts, reservations, payments, the audit log, insights, orphan images | `Admin` |
 
 The [Bruno collection](../../../bruno/) exercises every row, including the 401 / 403 / 404 cases in
 `security-checks/`.
 
-> Because roles live inside the token, granting someone a role does **not** take effect until their
-> current access token expires (15 minutes) or is refreshed. That is inherent to stateless JWT;
-> instant revocation would need a token blacklist or much shorter lifetimes.
+Two kinds of refusal come from handlers rather than attributes: **404** when the thing is not the
+caller's (a 403 would confirm it exists), and **403 with a readable sentence** through
+`Ecommerce.Shared.Exceptions.ForbiddenException` when the caller is known and the answer is no - a
+locked account after the right password, a moderator asking to lock another moderator or for more than
+30 days.
+
+> Because roles live inside the token, a granted or revoked role, an approved shop and a lock or ban
+> reach a session only when it is **refreshed** - `RefreshTokenCommandHandler` re-reads the account and
+> its roles every time. An access token already issued stays valid until it expires (at most 15
+> minutes). A lock or ban revokes every refresh token at once, and refresh refuses a locked or banned
+> account whatever token it presents, so the session cannot be renewed; the remaining minutes of the
+> access token are tracked in
+> [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112). Closing that gap
+> would need a lookup on every request in every service, or much shorter lifetimes.

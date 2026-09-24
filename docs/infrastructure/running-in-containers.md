@@ -11,8 +11,8 @@ There are two ways to run this system, and both are supported.
 | **Containers** | `docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build` | Everything in containers |
 | **Host** (the original) | `docker compose up -d` then `./start-dev.sh` | Infrastructure in containers, services on your machine |
 
-`docker compose up -d` on its own still brings up **infrastructure only** — seven PostgreSQL
-containers, RabbitMQ and pgAdmin. That is deliberate: the services live in an *overlay* file so that
+`docker compose up -d` on its own still brings up **infrastructure only** — eight PostgreSQL
+containers, RabbitMQ, Seq and pgAdmin. That is deliberate: the services live in an *overlay* file so that
 `start-dev.sh` keeps working untouched. Merging the two would force every contributor down the
 container path.
 
@@ -28,9 +28,24 @@ cd server
 docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 
-Ports are unchanged from the host path: gateway on `5000`, services on `5056`–`5062`, and gRPC on
-`6057` (Catalog) and `6062` (Cart). Inside their
-containers every service binds `8080`; compose maps it.
+The overlay, [`docker-compose.app.yml`](../../server/docker-compose.app.yml), runs nine containers:
+
+| Container | Host port(s) | Inside | Health check | Waits for |
+| :--- | :--- | :--- | :--- | :--- |
+| `ecommerce-gateway` | `5000` | `8080` | `/health` | Identity, Catalog, Order, Inventory, Payment healthy |
+| `ecommerce-identity` | `5056` REST, `6056` gRPC | `8080`, `8081` | `/health` | its database |
+| `ecommerce-catalog` | `5057` REST, `6057` gRPC | `8080`, `8081` | `/health` | its database, RabbitMQ |
+| `ecommerce-orchestrator` | `5058` | `8080` | **disabled** - no controllers, no `/health` | its database, RabbitMQ |
+| `ecommerce-order` | `5059` | `8080` | `/health` | its database, RabbitMQ |
+| `ecommerce-inventory` | `5060` | `8080` | `/health` | its database, RabbitMQ, Catalog healthy |
+| `ecommerce-payment` | `5061` | `8080` | `/health` | its database, RabbitMQ |
+| `ecommerce-cart` | `5062` REST, `6062` gRPC | `8080`, `8081` | `/health` | its database, RabbitMQ |
+| `ecommerce-activity` | `5063` | `8080` | `/health` | its database, RabbitMQ |
+
+Ports are unchanged from the host path for REST. Inside their containers every service binds `8080`,
+and the three that serve gRPC also bind `8081`; callers inside the network use `http://catalog:8081`,
+`http://cart:8081` and `http://identity:8081` (`CATALOG_GRPC_ADDRESS`, `CART_GRPC_ADDRESS`,
+`IDENTITY_GRPC_ADDRESS`). Under `start-dev` the gRPC ports are `5156`, `5157` and `5162` instead.
 
 ```bash
 # What is running, and whether it is actually healthy
@@ -96,7 +111,7 @@ behaved identically everywhere no matter what it was told.
 
 | Setting | In containers | Why it bites |
 | :--- | :--- | :--- |
-| `*_DB_PORT` | **`5432`** | The 5433–5439 in `.env` are *host* publications. Inside the container network every PostgreSQL listens on 5432. Getting this wrong looks exactly like a dead database |
+| `*_DB_PORT` | **`5432`** | The 5433–5440 in `.env` are *host* publications. Inside the container network every PostgreSQL listens on 5432. Getting this wrong looks exactly like a dead database |
 | `JWT_SECRET` | identical for every service | Identity signs with it, everyone else validates with it. A mismatch is a **401 that looks like a permissions bug** |
 | `RABBITMQ_PASS` **and** `RABBITMQ_PASSWORD` | both, same value | The services read the first; `docker-compose.yml` and `.env.example` use the second. A non-default password needs both |
 
@@ -115,6 +130,46 @@ The host path is unchanged: `start-dev.sh` runs `dotnet ef database update` once
 launching anything. A runtime image has neither the SDK nor the source, so that route does not exist
 inside a container — which is why this setting had to exist at all. Before 2026-09-17 **nothing**
 called `Database.Migrate()`, so a container stack would have come up healthy and empty.
+
+**Order matters in Identity**, the one service that seeds at startup: the migration must run before
+the seeding reads the `roles` table. It did not until
+[#100](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/100), so a fresh Identity
+container on an empty volume crash-looped with `relation "roles" does not exist` - see
+[troubleshooting §10.1](../guides/troubleshooting.md#101-a-fresh-identity-container-crash-loops-with-relation-roles-does-not-exist).
+
+---
+
+## 4.5 Volumes, and starting from empty
+
+| Volume | Defined in | Holds |
+| :--- | :--- | :--- |
+| `postgres_identity_data`, `postgres_catalog_data`, `postgres_order_data`, `postgres_orchestrator_data`, `postgres_inventory_data`, `postgres_payment_data`, `postgres_cart_data`, `postgres_activity_data` | `docker-compose.yml` | one PostgreSQL data directory each |
+| `rabbitmq_data` | `docker-compose.yml` | the broker's queues and messages |
+| `seq_data` | `docker-compose.yml` | logs and traces |
+| `catalog_images` | `docker-compose.app.yml` | product and variant photographs (specs/019, 032) |
+
+`catalog_images` is mounted on `/app/data`, **not** on the `product-images` subdirectory
+(`ProductImages__Root` is `/app/data/product-images`): a mount point the image lacks is created
+root-owned, and the non-root service then fails its startup write check. The store creates the
+subdirectory itself. A directory on one volume assumes **one** Catalog instance - two instances would
+each see only their own images, and the orphan reclaim (specs/033) would report the other's images as
+orphans.
+
+Compose prefixes volume names with the project name - `server_` when run from `server/` - so
+`docker volume ls` shows `server_postgres_catalog_data`, `server_catalog_images` and so on.
+
+**To start from empty**, stop the stack and remove the volumes; the migrations recreate every schema
+at the next start:
+
+```bash
+cd server
+docker compose -f docker-compose.yml -f docker-compose.app.yml down -v   # -v removes the named volumes
+docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
+```
+
+`down -v` also removes `seq_data`; Seq then asks for its first-run password again. To keep the logs,
+remove the other volumes by name with `docker volume rm` instead. Reseeding is in
+[Getting Started](../guides/getting-started.md#seeding-a-demo-dataset).
 
 ---
 
@@ -191,7 +246,9 @@ explanation, so that whoever picks it up starts from what was actually tested. I
 
 ## 7. Published images
 
-Since 2026-09-19, a merge to `main` whose checks pass publishes these same images to GHCR:
+Since 2026-09-19, a merge to `main` whose checks pass publishes these same images to GHCR - nine of
+them: `identity`, `catalog`, `order`, `orchestrator`, `inventory`, `payment`, `cart`, `activity` and
+`gateway`:
 
 ```bash
 docker pull ghcr.io/jessiicamaru/ecommerce-catalog:sha-<short-sha>
@@ -216,6 +273,8 @@ adds such a migration — without blocking it.
 - **Introduce a secret manager.** It stops secrets being copied where they do not belong; it does
   not manage them.
 
-**Nothing in CI runs the compose stack.** CI builds one image and scans it for secrets; every other
-check in this document is something a person has to run. A regression in the container path will not
-be caught automatically.
+**Nothing in CI runs the compose stack.** CI builds one image and scans it for secrets, and its smoke
+jobs (`auth-smoke`, `saga-e2e`) start the services with `dotnet run` against service containers of
+their own; every other check in this document is something a person has to run. A regression in the
+container path will not be caught automatically - which is how the Identity startup-order defect
+(#100) went unnoticed until a stack was wiped.

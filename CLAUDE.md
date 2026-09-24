@@ -42,11 +42,11 @@ README lists exactly what. Reach for a shadcn component before writing one, and 
 All commands run from `server/` (the solution root; solution file is `Ecommerce.slnx`).
 
 ```bash
-# One-click: docker compose up + migrations + launch all 5 services in separate windows
+# One-click: docker compose up + migrations + launch every service and the gateway in separate windows
 ./start-dev.ps1        # Windows PowerShell
 ./start-dev.sh         # Git Bash / Linux
 
-# Infrastructure only (4 Postgres containers, RabbitMQ, pgAdmin)
+# Infrastructure only (8 Postgres containers, RabbitMQ, pgAdmin, Seq)
 docker compose up -d
 
 dotnet build                                          # whole solution
@@ -193,7 +193,7 @@ with **no saga instance at Warning** — the thing the 2026-09-21 stall hid for 
 admin password (`SEQ_ADMIN_PASSWORD`) is required by compose, and Seq forces a change at the first
 login. Guide: [docs/guides/observability.md](docs/guides/observability.md).
 
-Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` — except Identity, Catalog and Cart, which serve gRPC too and therefore declare **both** Kestrel endpoints (REST on `50XX`, gRPC on `51XX` on the host, `8080`/`8081` in a container) and have no `app.Run(url)`. Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
+Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` — except Identity, Catalog and Cart, which serve gRPC too and therefore declare **both** Kestrel endpoints (REST on `50XX`; gRPC on `5156`/`5157`/`5162` when run with `start-dev`, published by compose as `6056`/`6057`/`6062`, `8080`/`8081` inside a container) and have no `app.Run(url)`. Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
 
 ## Architecture
 
@@ -299,8 +299,8 @@ the **variant** (`variant_prices`), with `product_variants.Price` holding the de
 amount; a request asks with `?currency=` then `X-Currency`, read through `IRequestCurrency` beside
 `IRequestLanguage`, and responses carry `X-Currency` **and `Vary: X-Currency`**.
 ⚠️ **A missing price does NOT fall back the way a missing translation does.** A variant nobody priced
-in the currency being asked about comes back with a **null price** and `sellable: false`, and checkout
-refuses it with a 409 naming the currency. Falling back would sell a 40,000,000₫ camera for 1,600₫ or
+in the currency being asked about comes back with a **null price** over HTTP (and `Sellable = false` in
+Catalog's gRPC pricing answer), and checkout refuses it with a 409 naming the currency. Falling back would sell a 40,000,000₫ camera for 1,600₫ or
 charge $40,000,000 for it; the two designs look alike and the difference is the whole feature.
 **Currency is chosen separately from language** - most of this shop's customers read English and pay
 in dong. Amounts are rounded to the currency's minor unit (**dong has none**), and every command that
@@ -427,8 +427,9 @@ a seller Catalog has not heard of yet - never an empty string or an id; the stor
 own parcel itself.
 
 **The shop knows what it owes each seller** (specs/037). At checkout the order freezes
-`orders.CommissionRate` (`Marketplace:CommissionRate`, one rate for everybody; Order refuses to start
-without it rather than read it as zero) and each part freezes `GoodsTotal`, `Commission` and
+`orders.CommissionRate` (`Marketplace:CommissionRate`, one rate for everybody; `ConfiguredCommissionRate`
+throws rather than read a missing or out-of-range rate as zero - on first use, so a missing rate is a 500 at
+the first checkout rather than a refusal to start; `appsettings.json` ships 0.1) and each part freezes `GoodsTotal`, `Commission` and
 `ShippingShare` - the delivery charge split **equally** between the parts in the currency's smallest
 unit, the remainder to the first (shop first, then by seller id), pure code in `Earnings`. Commission is
 on goods **before tax**; tax stays with the shop, which charged it. The shop's own part takes no
@@ -451,8 +452,8 @@ order that is not scoped to its owner** - the role on the route is the whole per
 `components/order/parcel-actions`, for a seller's parcel and the shop's.
 
 **A paid order can be cancelled** (specs/039) - by its customer while every parcel still waits
-(`POST /api/orders/{id}/cancel`), by staff until the first parcel ships (`POST
-/api/orders/fulfilment/{id}/cancel`); whole orders only. Order takes the **same row lock as every parcel
+(`POST /api/orders/{id}/cancel`), by an administrator until the first parcel ships (`POST
+/api/orders/fulfilment/{id}/cancel` - the fulfilment endpoints are `Admin`, not `Staff`); whole orders only. Order takes the **same row lock as every parcel
 move**, reads the parts, runs the guarded `UPDATE` to `Cancelled` and stages `OrderCancelledEvent` in one
 transaction - so a cancel and a ship on one order serialise and exactly one wins (`CancellationTests`
 fails without the lock). The event carries no items and no amount: **Inventory** puts back what its own
@@ -530,8 +531,8 @@ mailbox. The migration that added it **stops** if accounts differing only by cas
 rather than choosing which one survives; how to resolve that is in
 [troubleshooting §8](docs/guides/troubleshooting.md).
 
-**Everything that matters is in the audit log** (specs/041). Every service records through
-`Ecommerce.Shared/Audit` - `IAuditTrail.RecordAsync(category, action, subjectType, subjectId, summary,
+**Everything that matters is in the audit log** (specs/041). Identity, Catalog, Order, Inventory and Payment
+record through `Ecommerce.Shared/Audit` - `IAuditTrail.RecordAsync(category, action, subjectType, subjectId, summary,
 before, after)` - which publishes `AuditEntryRecorded` through the service's outbox, so ⚠️ **call it
 before the one `SaveChangesAsync`**, like any publish: the entry commits with its change or not at all.
 Where the change is a guarded statement in its own transaction (parcel moves, deliveries, payouts,
@@ -664,7 +665,7 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
 ## Running in containers
 
 `docker compose up -d` still brings up **infrastructure only**, which is what `start-dev.sh`
-expects. The seven services live in an overlay:
+expects. The eight services and the gateway live in an overlay:
 
 ```bash
 cd server
@@ -672,8 +673,8 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   #
 docker compose up -d                                                           # infra only
 ```
 
-Host ports are unchanged (5000, 5056-5061); inside their containers every service binds 8080. One
-[Dockerfile](server/Dockerfile) builds all seven, selected by a `PROJECT` build argument.
+Host ports are 5000 and 5056-5063; inside their containers every service binds 8080. One
+[Dockerfile](server/Dockerfile) builds all nine images, selected by a `PROJECT` build argument.
 
 Three traps, each of which cost time to find:
 
@@ -737,7 +738,7 @@ checks every layer, not the running container, and CI runs it.
 
 ## Published images
 
-A merge to `main` whose checks pass publishes seven images to GHCR, each built, scanned for
+A merge to `main` whose checks pass publishes nine images to GHCR, each built, scanned for
 credentials, and only then pushed:
 
 ```text
@@ -754,7 +755,7 @@ release asks the registry whether it already resolves and skips it if so, so re-
 never rewrites an existing one — and re-running is therefore the *correct* way to finish a release
 that stopped partway, rather than the way to corrupt it. It was not always so: on 2026-09-21 a
 re-run silently changed what `sha-2cee71a` meant for three services. The job ends by asking the
-registry whether all seven names exist, so a green publish means the release is whole rather than
+registry whether every name exists, so a green publish means the release is whole rather than
 that the steps ran. Overwriting on purpose is possible only through a manual `workflow_dispatch`
 with `force_republish`, which no merge can reach. Details and the one remaining hole —
 `denied` cannot distinguish "no such package" from "no permission to read it" — are in
@@ -778,7 +779,16 @@ Complexity Tracking with a justification and the rejected simpler alternative �
 
 ## Documentation
 
-[docs/](docs/) is substantial and kept current — [docs/README.md](docs/README.md) is the index. Consult the architecture docs before design changes, and update the relevant one alongside the code (recent commits do this consistently).
+[docs/](docs/) is substantial and kept current — [docs/README.md](docs/README.md) is the index, and it
+will be the basis of a written project report, so treat it as a deliverable. It is organised as
+`overview/` (project, glossary), `architecture/`, `features/` (one page per business area: rules and
+why, data, API, tests, history), `reference/` (**generated**), `testing/`, `project/` (timeline, decision
+log, backlog), `guides/`, `infrastructure/` and `concepts/`. Consult the architecture docs before design
+changes. In the same change as the code: ⚠️ **run `python docs/tools/generate_reference.py`** whenever an
+endpoint, message, table or gateway route changes (never hand-edit `docs/reference/`), update the
+feature's page, add a row to `docs/project/timeline.md` for a merged feature, and keep
+`docs/project/backlog.md` in step with open issues. The full list is "Keeping it current" in the docs
+README.
 
 `.agents/` is a vendored third-party agent kit (AG Kit) targeting Gemini CLI / Antigravity, not instructions for this codebase. The one convention from it worth honoring: branch names as `feature/<task-slug>` or `fix/<bug-slug>`.
 

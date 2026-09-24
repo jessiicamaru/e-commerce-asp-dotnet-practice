@@ -1,6 +1,6 @@
 # Troubleshooting & Common Compile Errors
 
-This guide documents common compile-time errors encountered during C# and .NET multi-project development (such as Clean Architecture) and how to diagnose and resolve them.
+This guide documents common compile-time errors encountered during C# and .NET multi-project development (such as Clean Architecture) and how to diagnose and resolve them, and - from §6 on - the runtime, container and test traps this codebase has actually sprung, each with its symptom, cause and fix.
 
 ---
 
@@ -221,7 +221,7 @@ PostgreSQL.
 
 **PostgreSQL — already handled.** The Identity database publishes on **`5435`**, not `5432`, so it
 no longer collides with a local PostgreSQL install. `server/.env` sets `IDENTITY_DB_PORT=5435` to
-match. Keep those two in sync if you change either. The other databases (`5433`, `5434`, `5436`–`5439`)
+match. Keep those two in sync if you change either. The other databases (`5433`, `5434`, `5436`–`5440`)
 never collided.
 
 **RabbitMQ — stop the local install.** The services call `cfg.Host(rabbitHost, "/", ...)` and pass
@@ -284,7 +284,7 @@ Added 2026-09-17 with [Running in Containers](../infrastructure/running-in-conta
 
 ### 7.2 A service times out reaching a database that is clearly healthy
 
-`*_DB_PORT` is almost certainly 5433–5439. Those are **host publications**; inside the container
+`*_DB_PORT` is almost certainly 5433–5440. Those are **host publications**; inside the container
 network every PostgreSQL listens on **5432**. This looks like a dead database and is not one.
 
 ### 7.3 Every authenticated request returns 401 across services
@@ -372,3 +372,131 @@ If your IDE reports red errors but your code looks correct:
 2. **Inspect `.csproj` Files**: Treat `.csproj` files as the source-of-truth configuration for dependencies. Ensure both `<ProjectReference>` (other projects) and `<PackageReference>` (NuGet packages) are correct.
 3. **Check Namespaces**: Ensure the files have the correct `using` statements at the top. Extension methods often require importing the core namespace (e.g., `using Microsoft.EntityFrameworkCore;`).
 4. **Confirm which service you are actually talking to**: when data "disappears", or when CI fails on something that works locally, check whether a natively installed PostgreSQL or RabbitMQ is holding the port instead of the container (see section 6).
+
+---
+
+## 10. Traps found since 2026-09-22
+
+### 10.1 A fresh Identity container crash-loops with `relation "roles" does not exist`
+
+**Symptom.** On a stack started with empty database volumes, `docker compose ... ps` shows
+`ecommerce-identity` restarting over and over, and its log ends with:
+
+```text
+Npgsql.PostgresException: 42P01: relation "roles" does not exist
+Database seeding failed. Have the EF Core migrations been applied?
+```
+
+Every other service comes up; the gateway, which waits for Identity to be healthy, never does.
+
+**Cause.** With `RUN_MIGRATIONS_ON_STARTUP=true`, Identity ran its startup seeding (`DataInitializer`:
+the roles and the first administrator) **before** applying its migrations. On an empty database the
+seeding read a `roles` table that did not exist yet, the process exited, and it never reached the
+migration that would have created the table. Nobody saw it earlier because every container start
+until then found a database that already had its schema; it surfaced when a stack was wiped and
+reseeded. Identity is the only service that seeds at startup.
+
+**Fix.** Fixed in [#100](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/100):
+`Program.cs` now migrates first and seeds second. Rebuild the Identity image
+(`up -d --build`). If you are running an image from before #100, apply Identity's migrations once
+from the host against port `5435` and the container will start:
+
+```bash
+cd server
+dotnet ef database update --project src/Services/Identity/Ecommerce.Identity.Infrastructure/ --startup-project src/Services/Identity/Ecommerce.Identity.WebApi/
+```
+
+### 10.2 Bruno: a request using `{{sellerToken}}` gets 401 with a setup that looks right
+
+**Symptom.** A new request placed in any folder other than `bruno/seller/` sends
+`Authorization: Bearer {{sellerToken}}` and gets **401**, although the collection signs a seller in
+and the same request works when sent by hand afterwards. Decoding the token in a test shows it is an
+empty string.
+
+**Cause.** The Bruno CLI runs the `seller` folder **after every other folder**, whatever its `seq`
+says. Its `folder.yml` is in the old format (`meta:` with `name` and `seq: 9`), while every other
+folder uses `info:`; the CLI orders it last. `sellerToken` and `sellerId` are set inside that folder,
+so any request elsewhere runs before they exist. It also means the `seller` folder runs after
+`security-checks`.
+
+**Fix.** Put every request that uses the seller's token or id **inside `bruno/seller/`**, with a
+`seq` after the request that signs the seller in. Found while adding reviews (specs/046).
+
+### 10.3 Bruno: `search without diacritics` fails after many runs
+
+**Symptom.** `product/search without diacritics` fails its second test - `"may anh" finds "Máy ảnh"` -
+while the search itself answers 200 and returns products that all look right.
+
+**Cause.** Debris. Every collection run creates a product called `Máy ảnh Bruno` (and
+`verify-saga.sh` and `verify-auth.sh` create products of their own), and nothing removes them. The
+request asks for `searchTerm=may anh bruno&pageSize=20` and the listing sorts by name, so once more
+than twenty earlier runs' products share that name, the one created by *this* run can fall off the
+first page and the test cannot find its id.
+
+**Fix.** Delete the test products. Through the API, an administrator removes each one with
+`DELETE /api/products/{id}`, which also tells Inventory to drop its stock rows. On a catalogue that
+should hold only the seeded cameras, `server/seed/clean-test-debris.py` does it in bulk - but it
+deletes **everything** `cameras.json` does not name, sellers' products and any demo data included, so
+do not point it at a catalogue that holds anything else. Run it without `--yes` first; it only says
+what it would delete.
+
+### 10.4 After a mutation check, unrelated tests fail - or a mutation seems to break everything
+
+**Symptom.** After checking that a test catches a deliberate defect - copy the file to `.bak`, edit
+it, `dotnet test`, then `mv file.bak file` - the next `dotnet test` still behaves as if the defect
+were there: tests unrelated to the change fail consistently, or the next mutation appears to break
+tests it cannot touch.
+
+**Cause.** `mv` restores the `.bak` file with its **old modification time**, from before the mutated
+edit. The restored source now looks older than the assembly built from the mutated source, so
+MSBuild's incremental build decides nothing changed and the next run tests the **mutated** binary.
+
+**Fix.** Touch the restored file, or restore with `cp` rather than `mv`:
+
+```bash
+mv src/.../Thing.cs.bak src/.../Thing.cs && touch src/.../Thing.cs
+```
+
+After the last restore, run the whole suite once more before committing. `dotnet build --no-incremental`
+also forces the rebuild.
+
+### 10.5 Client tests time out only in the full run
+
+**Symptom.** `npm test` in `client/` fails one or more tests with a Testing Library timeout from
+`findBy...` or `waitFor`, different ones on different runs, while each failing file passes when run on
+its own (`npx vitest run src/path/to/file.test.tsx`).
+
+**Cause.** Testing Library waits one second by default. The first render in each test file pays for
+initialising i18n and loading the module graph, and Vitest runs the suite's 51 files in parallel, so on
+a busy machine that first wait sometimes crossed a second.
+
+**Fix.** [#101](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/101) raised the
+wait to three seconds for the whole suite, in `client/src/test/setup.ts`:
+
+```ts
+configure({ asyncUtilTimeout: 3000 })
+```
+
+If a test needs more than that, look for a real problem (a query that never resolves, a network call
+the setup file refuses) before raising it again.
+
+### 10.6 Every order stays `Submitted` after a change to settlement or notifications
+
+**Symptom.** Checkout answers 200, the saga completes (Inventory confirms, Payment records the
+payment), but `GET /api/orders/{id}` stays `Submitted` for good. Order's log, or its
+`OrderSvc...` error queue in RabbitMQ, shows
+`InvalidOperationException: The connection is already in a transaction`. Every unit test passes.
+
+**Cause.** The saga's outcome reaches Order through a consumer, and MassTransit's consumer outbox has
+already opened a transaction on the `DbContext` before the consumer runs. When notifications were
+added (specs/042), `OrderRepository.TrySettleAsync` began opening a transaction of its own to stage
+the notice with the settlement - a second transaction on the same connection, which throws. The unit
+tests sent the command directly, outside a consumer, so none of them saw it.
+
+**Fix.** Found and fixed before
+[#94](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/94) merged:
+`TrySettleAsync` checks `_context.Database.CurrentTransaction` and, when one is open, **joins** it
+instead of starting another. `NotificationTests.Settling_inside_a_consumer_transaction_joins_it` opens
+the transaction the way MassTransit does and fails without the branch. Any new repository method that
+takes a `stage` callback and can be reached from a consumer needs the same branch - see
+[reliable messaging §2.3](../architecture/reliable-messaging-and-outbox-pattern.md#23-the-trap-a-consumer-already-holds-a-transaction).

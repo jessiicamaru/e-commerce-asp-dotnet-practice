@@ -6,23 +6,34 @@ This guide explains how to set up, run, and manage isolated PostgreSQL databases
 
 ## 1. Database per Service Isolation
 
-Each microservice in our architecture owns a dedicated, isolated PostgreSQL database:
+Each of the eight services owns a dedicated, isolated PostgreSQL 16 database, in its own container
+with its own volume. No service reads another's database; a value that crosses a boundary (a product
+id on an order line, say) is a copy, not a foreign key.
 
-| Microservice | Container Name | Port | Database Name | Primary Purpose |
-| :--- | :--- | :--- | :--- | :--- |
-| **Identity Service** | `ecommerce-identity-db` | `5435` | `ecommerce_identity_db` | Users, Roles, Refresh Tokens |
-| **Catalog Service** | `ecommerce-catalog-db` | `5433` | `ecommerce_catalog_db` | Categories, Products, Outbox Messages |
-| **Order Service** | `ecommerce-order-db` | `5434` | `ecommerce_order_db` | Orders, Order Items, Outbox Messages |
-| **Orchestrator Service** | `ecommerce-orchestrator-db` | `5436` | `ecommerce_saga_db` | Order Saga State Machine Persistence |
-| **Inventory Service** | `ecommerce-inventory-db` | `5437` | `ecommerce_inventory_db` | Stock Items, Reservations, Outbox and Inbox |
-| **Payment Service** | `ecommerce-payment-db` | `5438` | `ecommerce_payment_db` | Payments, Outbox and Inbox |
-| **Cart Service** | `ecommerce-cart-db` | `5439` | `ecommerce_cart_db` | Carts, Cart Lines, Checkout Outcomes |
+| Microservice | Container Name | Host port | Database Name | Volume | Tables |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Identity** | `ecommerce-identity-db` | `5435` | `ecommerce_identity_db` | `postgres_identity_data` | users, roles, user roles, refresh tokens, delivery addresses, seller profiles, shop applications |
+| **Catalog** | `ecommerce-catalog-db` | `5433` | `ecommerce_catalog_db` | `postgres_catalog_data` | products, variants, options, prices per currency, translations, categories, sellers (read model), reviews, review eligibility, product views |
+| **Order** | `ecommerce-order-db` | `5434` | `ecommerce_order_db` | `postgres_order_data` | orders, order items, order shipments (parcels), payouts |
+| **Orchestrator** | `ecommerce-orchestrator-db` | `5436` | `ecommerce_saga_db` | `postgres_orchestrator_data` | the saga's state (`order_state_data`) |
+| **Inventory** | `ecommerce-inventory-db` | `5437` | `ecommerce_inventory_db` | `postgres_inventory_data` | stock items, reservations |
+| **Payment** | `ecommerce-payment-db` | `5438` | `ecommerce_payment_db` | `postgres_payment_data` | payments, refunds |
+| **Cart** | `ecommerce-cart-db` | `5439` | `ecommerce_cart_db` | `postgres_cart_data` | carts, cart lines, checkout outcomes |
+| **Activity** | `ecommerce-activity-db` | `5440` | `ecommerce_activity_db` | `postgres_activity_data` | audit entries, notifications |
+
+Every database that publishes or consumes messages also holds MassTransit's `InboxState`,
+`OutboxMessage` and `OutboxState` tables. Every column of every table is in the generated
+[reference/data-model.md](../reference/data-model.md).
+
+Product **images** are not in any database: Catalog keeps them on the `catalog_images` volume
+(specs/019), which only the container path mounts - under `start-dev` they go to the directory named by
+`ProductImages:Root`.
 
 ---
 
 ## 2. Docker Compose Configuration
 
-We use [`docker-compose.yml`](../../server/docker-compose.yml) to run every database container, RabbitMQ and pgAdmin. The excerpt below shows the pattern; the file itself is the full list:
+We use [`docker-compose.yml`](../../server/docker-compose.yml) to run every database container, RabbitMQ, Seq and pgAdmin. Every database container has a `pg_isready` health check. The excerpt below shows the pattern; the file itself is the full list:
 
 ```yaml
 services:
@@ -87,7 +98,7 @@ docker compose ps
 
 ### Ports: host vs container
 
-The `*_DB_PORT` values in `.env` — 5433 to 5439 — are **host publications**. Inside the container
+The `*_DB_PORT` values in `.env` — 5433 to 5440 — are **host publications**. Inside the container
 network every PostgreSQL listens on **5432**, so the compose overlay sets each service's
 `*_DB_PORT` to `5432`.
 
@@ -106,6 +117,30 @@ Always execute `dotnet ef` commands from the **`server/`** directory.
 > forever. A runtime image has neither the SDK nor the source, so `dotnet ef` cannot run inside one,
 > which is why the setting had to exist. Before 2026-09-17 nothing called `Database.Migrate()` at
 > all, so a container stack would have come up healthy and empty.
+>
+> On the host path, `start-dev.sh` / `start-dev.ps1` run `dotnet ef database update` for all eight
+> databases before launching anything.
+
+### Migrations at startup, and the order they run in
+
+With `RUN_MIGRATIONS_ON_STARTUP=true`, each service's `Program.cs` calls `Database.MigrateAsync()`
+on its own `DbContext` after `builder.Build()` and before it serves traffic. All eight services do.
+
+**Identity also seeds at startup** (`DataInitializer`: the four roles and, while no administrator
+exists, the first one from `ADMIN_EMAIL` / `ADMIN_PASSWORD`), and seeding reads the `roles` table. Until
+[#100](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/100) the seeding ran
+**before** the migration block, so on an empty database it failed with
+`relation "roles" does not exist`, the container exited and restarted, and it never reached the
+migration that would have created the table. It went unnoticed because every container start until
+then found a database that already had its schema; it surfaced when a stack was wiped and reseeded.
+The migration block now runs first. No other service seeds at startup, so only Identity was affected.
+See [troubleshooting §10.1](../guides/troubleshooting.md#101-a-fresh-identity-container-crash-loops-with-relation-roles-does-not-exist).
+
+### Starting from empty
+
+Because migrations run at startup in the container path, resetting every database is: stop the
+stack, remove the volumes, start it again. The steps are in
+[Getting Started](../guides/getting-started.md#seeding-a-demo-dataset).
 
 ### 4.1 Identity Microservice Migrations
 ```bash
@@ -149,6 +184,21 @@ dotnet ef migrations add <MigrationName> --project src/Services/Cart/Ecommerce.C
 dotnet ef database update --project src/Services/Cart/Ecommerce.Cart.Infrastructure/ --startup-project src/Services/Cart/Ecommerce.Cart.WebApi/
 ```
 
+### 4.8 Activity Microservice Migrations
+```bash
+dotnet ef migrations add <MigrationName> --project src/Services/Activity/Ecommerce.Activity.Infrastructure/ --startup-project src/Services/Activity/Ecommerce.Activity.WebApi/
+dotnet ef database update --project src/Services/Activity/Ecommerce.Activity.Infrastructure/ --startup-project src/Services/Activity/Ecommerce.Activity.WebApi/
+```
+
+### A migration must not strand an older image
+
+Dropping, renaming or narrowing a column means that redeploying a previous version takes the service
+down rather than restoring it. Split such a change into expand, then contract; the rule is in the
+[constitution](../../.specify/memory/constitution.md), and CI's `schema-compatibility` job comments on
+any pull request that adds a migration doing one of those, without blocking it. The same reasoning is
+why new states are often stored as columns rather than new enum values (a parcel's `DeliveredAt`, not
+a `Delivered` status): an older image cannot parse a value it has never seen.
+
 ---
 
 ## 5. Accessing pgAdmin (GUI Manager)
@@ -168,3 +218,4 @@ dotnet ef database update --project src/Services/Cart/Ecommerce.Cart.Infrastruct
    - **Inventory DB Connection**: Host `ecommerce-inventory-db`, Port `5432`, DB `ecommerce_inventory_db`
    - **Payment DB Connection**: Host `ecommerce-payment-db`, Port `5432`, DB `ecommerce_payment_db`
    - **Cart DB Connection**: Host `ecommerce-cart-db`, Port `5432`, DB `ecommerce_cart_db`
+   - **Activity DB Connection**: Host `ecommerce-activity-db`, Port `5432`, DB `ecommerce_activity_db`

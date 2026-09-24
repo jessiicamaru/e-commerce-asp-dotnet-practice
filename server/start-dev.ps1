@@ -4,7 +4,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Write-Host "🚀 Starting E-Commerce Microservices Infrastructure..." -ForegroundColor Cyan
 
 # 1. Start Docker Containers
-Write-Host "📦 Starting Docker containers (7 PostgreSQL databases, RabbitMQ, pgAdmin)..." -ForegroundColor Yellow
+Write-Host "📦 Starting Docker containers (8 PostgreSQL databases, RabbitMQ, pgAdmin, Seq)..." -ForegroundColor Yellow
 docker compose up -d
 
 # 2. Apply EF Core Migrations

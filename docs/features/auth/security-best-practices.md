@@ -12,9 +12,9 @@ Below is a comparison of storage options and their vulnerabilities:
 
 | Storage Type | Read access by JavaScript | Vulnerable to XSS? | Vulnerable to CSRF? | Best For |
 | :--- | :--- | :--- | :--- | :--- |
-| **Local Storage / Session Storage** | **Yes** (any JS script on the page can read it) | 🔴 **High** (If a hacker injects a script via XSS, they steal the token) | 🟢 **No** (Must be sent manually in headers) | Non-sensitive data, user preferences |
-| **In-Memory (JS Variables / State)** | **Yes** (but transient, lost on page refresh) | 🟡 **Medium** (Harder to scrape, but still extractable) | 🟢 **No** | Short-lived Access Tokens |
-| **HttpOnly, Secure Cookies** | 🚫 **No** (JS cannot read or access this cookie) | 🟢 **No** (XSS scripts cannot steal the token) | 🔴 **Yes** (Mitigated via `SameSite` & anti-forgery tokens) | Sensitive data, **Refresh Tokens** |
+| **Local Storage / Session Storage** | **Yes** (any JS script on the page can read it) | **High** (If a hacker injects a script via XSS, they steal the token) | **No** (Must be sent manually in headers) | Non-sensitive data, user preferences |
+| **In-Memory (JS Variables / State)** | **Yes** (but transient, lost on page refresh) | **Medium** (Harder to scrape, but still extractable) | **No** | Short-lived Access Tokens |
+| **HttpOnly, Secure Cookies** | **No** (JS cannot read or access this cookie) | **No** (XSS scripts cannot steal the token) | **Yes** (Mitigated via `SameSite` & anti-forgery tokens) | Sensitive data, **Refresh Tokens** |
 
 ---
 
@@ -130,7 +130,7 @@ public record RefreshTokenCommand(string RefreshToken) : IRequest<AuthResponse>;
 ### 4.2 The handler: rotate, and recognise reuse (#29)
 
 [`RefreshTokenCommandHandler`](../../../server/src/Services/Identity/Ecommerce.Identity.Application/Auth/Commands/Refresh/RefreshTokenCommandHandler.cs)
-does four things:
+does five things:
 
 1. **Finds the token.** An unknown token is a 401.
 2. **A revoked token coming back is reuse.** Two parties hold the same token, and the server cannot
@@ -140,14 +140,21 @@ does four things:
 3. **Except within 10 seconds of the rotation** (`ReuseGrace`). Two tabs share one HttpOnly cookie,
    so both can send the same token at once. The second gets an ordinary 401 and nothing else is
    revoked.
-4. **Rotates atomically.** In one transaction, a guarded
+4. **Asks the account, not the token.** An expired token, or any token of a **locked or banned**
+   account (specs/043), is a 401 with the same message. The lock or ban already revoked every session
+   when it happened; this holds even for one that slipped through.
+5. **Rotates atomically.** In one transaction, a guarded
    `UPDATE ... SET RevokedAt, ReplacedByToken WHERE Token = @t AND RevokedAt IS NULL AND ExpiresAt > now`
    decides the single winner, the successor is inserted, and the user's expired tokens are deleted.
    Ten simultaneous refreshes with one token mint exactly one successor. A revoked token that has not
    expired is **kept**, because it is what recognises a replay.
 
+A successful refresh returns a new access token built from the account as it is **now** - its
+current roles included - so a granted or revoked role, or an approved shop, arrives at the next
+refresh.
+
 The rows answer the questions afterwards: `RevokedAt` says when a token stopped working, and
-`ReplacedByToken` says what replaced it (null when it was revoked by a reuse). `RefreshTokenReuseTests`
+`ReplacedByToken` says what replaced it (null when it was revoked by a reuse or by a lock or ban). `RefreshTokenReuseTests`
 covers each case against a real PostgreSQL.
 
 ### 4.3 Add the Endpoint to AuthController
@@ -160,26 +167,22 @@ Add the refresh endpoint to `AuthController.cs` in the WebApi project:
         // 1. Read the Refresh Token from the secure cookie
         if (!Request.Cookies.TryGetValue("refreshToken", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
         {
-            return Unauthorized("No session cookie found.");
+            throw new UnauthorizedAccessException("No session. Sign in again.");   // -> 401
         }
 
-        try
-        {
-            // 2. Send the command to exchange it for a new access token + refresh token
-            var result = await Mediator.Send(new RefreshTokenCommand(refreshToken));
+        // 2. Exchange it for a new access token + refresh token. No catch-all (#28): a bad session is
+        //    a 401 from the handler; anything else goes through the shared ProblemDetails handler.
+        var result = await Mediator.Send(new RefreshTokenCommand(refreshToken));
 
-            // 3. Set the new Refresh Token in the secure cookie
-            SetRefreshTokenCookie(result.RefreshToken);
+        // 3. Set the new Refresh Token in the secure cookie
+        SetRefreshTokenCookie(result.RefreshToken);
 
-            // 4. Return only the new access token with refresh token hidden
-            return Ok(result with { RefreshToken = "" });
-        }
-        catch (Exception ex)
-        {
-            return Unauthorized(ex.Message);
-        }
+        // 4. Return only the new access token with refresh token hidden
+        return Ok(result with { RefreshToken = "" });
     }
 ```
+
+`register-seller` sets the cookie the same way as `register` and `login`.
 
 ---
 
@@ -192,11 +195,50 @@ token never stops someone signing out. The access token already issued keeps wor
 expires - stateless JWT; revoking it early would need a denylist.
 
 The storefront (`client/`) is the first consumer of this whole flow: access token in memory only,
-restored on reload through the cookie, one shared refresh for concurrent 401s.
+restored on reload through the cookie, one shared refresh for concurrent 401s. It also renews the
+session on purpose (`refreshSession` on `AuthState`) when it knows the roles have changed - after a
+shop application is approved, before sending the person to `/shop`.
+
+### 4.5 Stopping an account: locks and bans (specs/043)
+
+Staff can stop an account. A **lock** has an end date and a reason and may be set by a moderator (at
+most 30 days) or an administrator (up to 365); a **ban** has a reason and no end date, and only an
+administrator sets or lifts it. They are two pairs of nullable columns on `users` - `LockedUntil` /
+`LockReason` and `BannedAt` / `BanReason` - so they can overlap and an older image still reads the row.
+
+| Moment | What happens |
+| :--- | :--- |
+| Staff lock or ban | The columns are set and an audit entry is saved; then `RevokeAllRefreshTokensAsync` sets `RevokedAt` on every active refresh token of that user. |
+| Sign-in, wrong password or unknown email | **401** `Invalid email or password.` - identical for a stopped account, so the answer reveals nothing. |
+| Sign-in, right password, stopped account | **403** through `ForbiddenException`, with a sentence the person can read: `This account is locked until yyyy-MM-dd HH:mm UTC: <reason>` or `This account is banned: <reason>`. Recorded as `SignInRefused`. |
+| Refresh | **401** `The session is not valid. Sign in again.` - the account row decides, whatever the token. |
+| Requests with an access token already issued | Still accepted until it expires, at most 15 minutes ([#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112)). |
+| Unlock or lift | The columns are cleared; the person signs in again. |
+
+The order of the two sign-in checks is the point: before the password is verified, a locked account
+and a wrong password must look the same (the #28 rule); after it, the person has proved who they are
+and is owed the reason.
+
+A refresh token revoked by a lock has no `ReplacedByToken`, so when the stopped person's browser
+presents it again the handler takes it for **reuse** (§4.2): it revokes the (already revoked) sessions
+again and logs a reuse warning. The answer is the same 401; the warning in the log is misleading for
+this case.
 
 ## 5. Known weaknesses in the current implementation
 
-§4 describes what runs today. Three weaknesses were recorded here; all three are now fixed:
+§4 describes what runs today. Open weaknesses:
+
+1. **An access token outlives a lock or ban** by up to 15 minutes -
+   [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112).
+2. **Sign-in can be guessed at without any limit** - no rate limiting at the gateway or in Identity -
+   [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
+3. **An email address is never confirmed** to belong to whoever registered it -
+   [#106](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/106).
+4. **A forgotten password cannot be reset, and nobody can change their password or name** -
+   [#103](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/103),
+   [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104).
+
+Three earlier weaknesses were recorded here and are fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired

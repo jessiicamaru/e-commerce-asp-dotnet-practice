@@ -82,6 +82,8 @@ graph TD
     RabbitMQ -->|Replies| Orchestrator
     Orchestrator -->|Compensate: ReleaseInventoryCommand| InventoryService
     Orchestrator -->|OrderCompletedEvent / OrderFailedEvent| OrderService
+    Orchestrator -->|OrderCompletedEvent / OrderFailedEvent| CartService["Cart Service - Port 5062"]
+    Orchestrator -->|OrderCompletedEvent: confirm the reservation| InventoryService
 ```
 
 ### Microservice Specifications:
@@ -94,8 +96,13 @@ graph TD
   library), persisted with EF Core and optimistic concurrency.
 
 **There is no `SetOrderCancelled` step.** The saga never tells Order to cancel anything: it publishes
-`OrderCompletedEvent` or `OrderFailedEvent`, and Order settles its own row from those. `Cancelled`
-is one of four order statuses that no code path reaches.
+`OrderCompletedEvent` or `OrderFailedEvent`, and Order settles its own row from those. The saga has
+two states of its own, `Submitted` and `InventoryReservedState`, and finalizes on either outcome.
+
+`Cancelled` is reachable since [specs/039](../../specs/039-order-cancellation/), but **not through the
+saga**: the saga has already ended at payment by the time anybody can cancel. A cancellation is a
+request to Order, which publishes `OrderCancelledEvent`; Inventory and Payment each undo their own
+part from their own rows. See [After the saga](#-after-the-saga-what-happens-to-a-paid-order-completed).
 
 ---
 
@@ -104,6 +111,24 @@ is one of four order statuses that no code path reaches.
 The phases below are in the order they were built. The roadmap began with five and grew as each
 phase exposed what the next one needed; Phase 6.5 exists because Phase 6 was declared complete while
 the order record still disagreed with the saga.
+
+### Status today (2026-09-24)
+
+| Phase | What | Status |
+| :--- | :--- | :--- |
+| 1 | Shared error handling and validation | Done |
+| 2 | Event bus and transactional outbox | Done - every publishing service |
+| 3 | Standalone orchestrator (`OrderStateMachine`) | Done |
+| 4 | Order service and checkout | Done |
+| 5 | Inventory and reservations | Done |
+| 6 | Payment and the full saga | Done - **with a stub payment provider** |
+| 6.5 | Order learns the saga's outcome | Done |
+| 7 | Observability (Seq) and end-to-end verification | Done, except the real payment provider, deferred |
+| After | Checkout correctness, fulfilment, cancellation, delivery, seller payouts, audit and notifications | Done - outside the saga, below |
+
+The saga's own shape has not changed since Phase 6: reserve, pay, and release the stock if payment
+fails. Everything added since either happens before it (pricing, the cart, the address) or after it
+ends (fulfilment, cancellation, delivery, payouts).
 
 ---
 
@@ -121,7 +146,7 @@ the order record still disagreed with the saga.
 * **Goal**: Integrate asynchronous message bus and Outbox pattern into microservices.
 * **Deliverables**:
   1. Standardized `MassTransit.RabbitMQ` and `MassTransit.EntityFrameworkCore` across projects.
-  2. Configured MassTransit transactional outbox (`AddTransactionalOutboxEntities()`, `o.UsePostgres()`, `o.UseBusOutbox()`), first in `CatalogDbContext`; today in every service that publishes — Catalog, Order, Orchestrator, Inventory and Payment. **Identity has no MassTransit at all**, and Cart only consumes.
+  2. Configured MassTransit transactional outbox (`AddTransactionalOutboxEntities()`, `o.UsePostgres()`, `o.UseBusOutbox()`), first in `CatalogDbContext`; today in Identity, Catalog, Order, Orchestrator, Inventory, Payment and Activity. Identity gained MassTransit in specs/027, to announce sellers; Cart only consumes and has no outbox.
   3. Implemented domain event contracts in `Ecommerce.Contracts` (e.g., `ProductCreatedEvent`).
 
 ---
@@ -198,11 +223,16 @@ the order record still disagreed with the saga.
 > Order now sets an endpoint name prefix. Publish/subscribe fans out per **endpoint**, not per
 > service.
 
-Four `OrderStatus` values are deliberately unreachable: `Pending`, `StockReserved`, `Paid` and
-`Cancelled`. The saga passes through the middle two but announces neither, and adding an announcement
-means changing a shared contract every service deserializes; nothing cancels an order at all.
-Documented in [specs/003 data-model](../../specs/003-order-lifecycle/data-model.md) rather than left
-to be rediscovered.
+At the time, four `OrderStatus` values were deliberately unreachable: `Pending`, `StockReserved`,
+`Paid` and `Cancelled`. The saga passes through the middle two but announces neither, and adding an
+announcement means changing a shared contract every service deserializes. Documented in
+[specs/003 data-model](../../specs/003-order-lifecycle/data-model.md) rather than left to be
+rediscovered.
+
+> **Since then**: `Paid` is what a successful checkout settles to (feature 011), and `Cancelled` is
+> reached by a request (specs/039). `Pending` and `StockReserved` are still unreachable. `Completed`
+> stays in the enum so old rows and a rolled-back image still parse, and every read reports it as
+> `Paid`.
 
 ---
 
@@ -259,3 +289,70 @@ Two features that did not change the saga's shape but changed what it is trusted
   refuses parts that do not add up. Tax follows the destination; prices exclude it
   ([ADR-002](./adr-002-tax-exclusive-prices.md)). Still no contract change — the saga charges the
   stored grand total.
+* **[specs/020](../../specs/020-product-variants/) and [specs/022](../../specs/022-multi-currency-prices/) —
+  variants and currencies.** The variant is what is bought, reserved and priced
+  (`CatalogPricing.PriceVariants`), and the order's currency travels on `OrderSubmittedEvent` through
+  the saga into `ProcessPaymentCommand`, so a payment row says what its amount is in. ⚠️ A service
+  that only *relays* a contract must be rebuilt when it grows: an Orchestrator built before
+  `OrderItemDto` gained `VariantId` dropped the field while relaying, and the wrong variant's stock
+  moved.
+
+---
+
+### 🟢 After the saga: what happens to a paid order (Completed)
+
+The saga ends at payment and has no part in anything below. Each step is a request to Order (or a
+timer inside it), settled with a guarded single-statement `UPDATE` under a row lock, and announced
+through Order's outbox in the same transaction.
+
+```text
+                          saga ends here
+Submitted ──(saga)──▶ Paid ──▶ each parcel: Pending ──▶ Preparing ──▶ Shipped ──▶ delivered
+     │                  │                                                  (customer, or 7 days)
+     ▼                  ▼
+   Failed           Cancelled  (customer: while every parcel waits; staff: until the first ships)
+```
+
+* **The marketplace** ([specs/027](../../specs/027-seller-accounts/),
+  [034](../../specs/034-seller-sales/)). A product may belong to a seller; the order line freezes
+  the seller and the shop name at checkout.
+* **Fulfilment per seller** ([specs/035](../../specs/035-seller-shipments/)). One `order_shipments`
+  row per seller per order, plus one for the shop's own goods. Each seller moves their own parcel to
+  `Preparing` and `Shipped`; staff move the shop's. `orders.Status` is rewritten as a summary and
+  gained no new value, so a rolled-back image can still read it. Every move locks the order row first
+  (`FOR UPDATE`), which is what makes two sellers shipping at once leave the order `Shipped`.
+* **Cancellation** ([specs/039](../../specs/039-order-cancellation/)). Order takes the same row lock
+  as a parcel move, so a cancel and a ship on the same order serialise and exactly one wins. It
+  publishes `OrderCancelledEvent`, which carries no items and no amount: Inventory's
+  `RestockCancelledOrderConsumer` puts back what its own reservations say (a confirmed reservation
+  goes back on hand; a still-held one, when the cancellation overtook the completion, is released),
+  and Payment's `RefundCancelledOrderConsumer` records a refund of what its own payment row says, in
+  `refunds`, unique on `OrderId`. The refund moves no money - Payment is a stub.
+  This is compensation after the fact, not a saga step: there is nothing left to coordinate, because
+  each service can undo its own part from its own data. `verify-saga.sh` cancels a second order and
+  asserts the stock back and one full refund.
+* **Delivery** ([specs/040](../../specs/040-delivery-confirmation/)). A parcel is delivered when its
+  customer says so or when `DeliveryConfirmationSweeper` does so `Delivery:AutoConfirmDays` (7) after
+  it shipped. Delivered is columns on the parcel (`ShippedAt`, `DeliveredAt`, `DeliveryConfirmedBy`),
+  not a status. Order publishes `ParcelDeliveredEvent`, from which Catalog learns who may review what
+  ([specs/046](../../specs/046-product-reviews/)).
+* **Seller payouts** ([specs/037](../../specs/037-seller-payouts/)). Each parcel freezes its goods
+  total, commission and delivery share at checkout. A delivered parcel of a paid order is due; an
+  administrator records a payout that claims the due parcels in one statement. A payout is a ledger
+  entry, not a transfer.
+* **Audit and notifications** ([specs/041](../../specs/041-audit-log/),
+  [042](../../specs/042-in-app-notifications/)). Every step above, and settlement itself, records an
+  audit entry and tells the people concerned (the buyer: paid, failed, shipped, cancelled; each
+  seller: a new sale, a cancelled sale, a parcel received, a payout). Both are messages to the
+  **Activity** service (port `5063`, database `ecommerce_activity_db` on `5440`), staged in the same
+  transaction as the change they describe. Settling inside the saga's outcome consumer is where this
+  first went wrong - see
+  [reliable messaging §2.2](./reliable-messaging-and-outbox-pattern.md#22-a-guarded-statement-in-its-own-transaction-the-stage-callback).
+
+### ⬜ Not built
+
+* **A real payment provider.** `StubPaymentGateway` is the seam; payments, refunds and payouts all
+  record money that never moves.
+* **Automatic despatch.** Parcels move because a person says so.
+* **Partial cancellation or returns.** A cancellation is of a whole order, and only before the first
+  parcel ships.

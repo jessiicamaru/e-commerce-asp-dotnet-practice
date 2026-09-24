@@ -1,7 +1,14 @@
 # Observability — Following One Order
 
 Every service and the gateway ship structured logs and distributed traces to **Seq** over OpenTelemetry
-(feature 013, [specs/013-observability](../../specs/013-observability/)).
+(feature 013, [specs/013-observability](../../specs/013-observability/)) - nine processes: the gateway,
+Identity, Catalog, Cart, Order, Inventory, Payment, the Orchestrator and Activity. Each calls
+`AddObservability("<name>")` from `Ecommerce.Shared/Observability`, so a service's events carry its
+name as the OpenTelemetry service name (`ecommerce-order`, `ecommerce-activity`, ...).
+
+Seq holds **operational** logs. The record of who changed what - the audit log - is a different thing,
+kept by the Activity service in its own database and read at `/api/audit` (specs/041); it is not
+derived from these logs, and nothing here replaces it.
 
 ## Start it
 
@@ -15,7 +22,8 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
   `SEQ_ADMIN_PASSWORD` is only the initial one. Keep `.env` in step if scripts use it.
 - Containers export automatically (`OTLP_ENDPOINT` is set in `docker-compose.app.yml`).
 - Services on the host (`start-dev`) export only if `OTLP_ENDPOINT=http://localhost:5341/ingest/otlp`
-  is in `server/.env`. Unset, nothing is exported and nothing fails.
+  is in `server/.env`. Unset, nothing is exported and nothing fails. Seq itself is part of
+  `docker-compose.yml`, so `docker compose up -d` starts it on the host path too.
 
 ## The queries that matter
 
@@ -28,7 +36,9 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 | A reply that found no saga (the 2026-09-21 stall) | `@Message like '%no saga instance%'` |
 
 `OrderId` is added to every log line written while a service consumes a message about an order, by
-`OrderIdLogScopeFilter` — handlers do not have to remember it.
+`OrderIdLogScopeFilter` — handlers do not have to remember it. The filter is registered on every
+service that consumes messages (Catalog, Cart, Order, Inventory, Payment, the Orchestrator and
+Activity); Identity consumes none.
 
 ## How the pieces fit
 
@@ -40,7 +50,13 @@ client ──HTTP──▶ gateway  (new trace starts here; a client's tracepare
                     │ OrderSubmittedEvent + traceparent in headers
                     ▼
                RabbitMQ ──▶ Orchestrator ──▶ Inventory, Payment ──▶ Order, Cart   (same trace)
+                    │
+                    └──▶ Activity (the audit entries and notifications each step published)
 ```
+
+The same propagation covers the other synchronous edges - Cart asking Catalog to describe a cart,
+Inventory asking Catalog who owns a variant - and every other message, such as `OrderCancelledEvent`
+reaching Inventory and Payment.
 
 ## What is never recorded
 

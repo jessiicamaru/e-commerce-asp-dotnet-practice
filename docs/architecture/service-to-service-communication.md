@@ -1,6 +1,6 @@
 # How Services Talk to Each Other
 
-**Created**: 2026-09-21 | **Status**: the decision was taken and built — see [specs/009-catalog-owns-price](../../specs/009-catalog-owns-price/)
+**Created**: 2026-09-21 | **Updated**: 2026-09-24 | **Status**: the decision was taken and built — see [specs/009-catalog-owns-price](../../specs/009-catalog-owns-price/); later edges in specs/010, 011 and 031
 
 > **Resolved.** gRPC over h2c on a second port, built in feature 009. What follows describes the
 > system *before* that, which is still worth reading because it is why the decision went the way it
@@ -8,6 +8,47 @@
 > `Http1AndHttp2` on a plaintext endpoint does **not** serve h2c on .NET 10 (measured, with a
 > control), and calling `ListenAnyIP` at all **replaces** `ASPNETCORE_URLS` rather than adding to
 > it, which unbound REST the first time it was tried.
+
+## Today: four gRPC services, five edges
+
+Every synchronous call between services is gRPC over h2c on the serving service's second port. The
+generated list of methods is [reference/grpc.md](../reference/grpc.md).
+
+| gRPC service | Served by | Called by | Method in use | Since |
+| :-- | :-- | :-- | :-- | :-- |
+| `CatalogPricing` | Catalog | Order | `PriceVariants` - all-or-nothing, for a sale | feature 009, variants in specs/020 |
+| `CatalogPricing` | Catalog | Cart | `DescribeVariants` - per variant, for display | feature 010, variants in specs/020 |
+| `CartReading` | Cart | Order | `GetMyCart` - empty request, the customer's token forwarded | feature 010 |
+| `AddressReading` | Identity | Order | `GetMyAddress` - an address id, the customer's token forwarded | feature 011 |
+| `CatalogOwnership` | Catalog | Inventory | `GetVariantOwners` - who a variant belongs to | specs/031 |
+
+`CatalogPricing` also still serves `GetPrices` and `DescribeProducts`, the product-level methods from
+before variants existed. Nothing in the current code calls them; they stay so that an older Order or
+Cart image keeps working against a newer Catalog during a rollback.
+
+| Port | Identity | Catalog | Cart |
+| :-- | :-- | :-- | :-- |
+| gRPC under `start-dev` (host) | `5156` | `5157` | `5162` |
+| gRPC inside a container | `8081` | `8081` | `8081` |
+| gRPC published by compose on the host | `6056` | `6057` | `6062` |
+
+Callers find the address in `Catalog:GrpcAddress` / `CATALOG_GRPC_ADDRESS`, `Cart:GrpcAddress` /
+`CART_GRPC_ADDRESS` and `Identity:GrpcAddress` / `IDENTITY_GRPC_ADDRESS`, defaulting to the
+`start-dev` ports. Order's three clients and Inventory's make up to three attempts, each with a
+5-second deadline, on `Unavailable` or `DeadlineExceeded` (Inventory's also on `Internal`), and then
+throw `DependencyUnavailableException`, which the shared exception handler answers with **503**.
+Cart's client makes one attempt with a 3-second deadline and, when Catalog does not answer, shows the
+cart with prices marked unavailable instead of failing. None of the answers is cached.
+
+What each edge costs when its callee is down:
+
+| Callee down | Consequence |
+| :-- | :-- |
+| Catalog | nobody can check out; a seller cannot set stock; carts render with prices marked unavailable |
+| Cart | nobody can check out |
+| Identity | nobody can check out (and nobody can sign in) |
+
+The rest of this document is the history of how the system got here, in order.
 
 ## Before feature 009: nothing called anything
 
@@ -240,6 +281,72 @@ Catalog (how much). Each is retried a bounded number of times and then refused w
 
 ---
 
+## Specs/020: the same edges, asking about variants
+
+When a product came to be sold in variants, the thing being priced changed from a product to a
+variant. Rather than change `GetPrices` and `DescribeProducts`, Catalog gained two new methods,
+`PriceVariants` (Order) and `DescribeVariants` (Cart), and the old ones were left in place. A changed
+message would have broken an older image during a rollback; a new method breaks nothing. Since
+specs/034 and 036 the priced variant also carries `seller_id` and `seller_name`, which Order freezes
+onto the line. `seller_id` is proto3 `optional`: *empty* means the shop's own goods, *absent* means a
+Catalog too old to say, and Order then records no seller and logs a warning rather than refuse the
+checkout.
+
+---
+
+## Specs/031: the fourth service - who owns a variant
+
+Until specs/031 Inventory called nobody. Letting a seller set the stock of **their own** variants
+needed an answer Inventory does not hold: ownership is `products.SellerId`, a Catalog column, and
+Inventory's rows name only variant ids. So Catalog serves `CatalogOwnership.GetVariantOwners` on the
+same gRPC port, and Inventory asks it before `PUT /api/stock/{variantId}` writes anything.
+
+```text
+seller ──PUT /api/stock/{variantId} (bearer token)──▶ Inventory
+                                                        │ Admin? skip the question entirely
+                                                        │ gRPC GetVariantOwners([variantId])
+                                                        ├──────────────────────────────▶ Catalog
+                                                        │ owner == caller? otherwise 404
+                                                        ▼
+                                          FOR UPDATE on the stock row, write, announce
+```
+
+### Asked live, and deliberately never cached
+
+This codebase's usual answer to "service B needs a fact service A owns" is a read model fed by
+events - that is how Catalog knows shop names and availability. It is the **wrong** answer here,
+because **authorization must not be eventually consistent**. A copy even seconds behind refuses a
+seller her own newly listed product with exactly the 404 that means "not yours", and nothing on
+either side can tell that refusal apart from a real one. The read models this project keeps are for
+*display*, where stale costs a slightly old page; ownership is a *permission*, where stale costs a
+wrong decision.
+
+The same distinction explains why an order line *freezes* its seller at checkout (specs/034) while
+stock *asks* who owns a variant now: a sale records who owned it then, like the price; a permission is
+about now. Both are right, and neither should be "made consistent" with the other.
+
+### The details that make it correct
+
+- **Catalog answers, it does not decide.** The request carries variant ids, not the caller; the
+  response says who owns each one, and `StockOwnership.RequireCanStockAsync` in Inventory compares
+  that to `ICurrentUser`. A `MayStock(sellerId, variantId)` method would move an authorization rule
+  into the service that does not hold the row being written and would have to be told who is asking.
+- **Three 404s, two of which must look identical.** "Not yours" and "no such variant" have the same
+  wording, so a seller cannot probe for somebody else's ids. "Yours, but its stock row has not arrived
+  from the broker yet" says something else, because only that one is worth retrying.
+- **Catalog unreachable is a 503, never a 404.** "I could not find out whether this is yours" is not
+  "this is not yours".
+- **The question is asked before the transaction**, because a network call inside the `FOR UPDATE`
+  would hold a row lock open across a round trip.
+- **An administrator never reaches Catalog.** They pass the check anyway, and administering stock
+  should not fail while Catalog is down - which is when somebody is most likely to be fixing things.
+- **The cost, accepted**: Catalog unreachable means a seller cannot stock. Catalog unreachable also
+  means nobody can see the product, so little is lost.
+
+Design and research in [specs/031-seller-stock](../../specs/031-seller-stock/).
+
+---
+
 ## What none of this touches: messaging
 
 **Messages are completely unaffected by anything above.**
@@ -255,22 +362,20 @@ The only HTTP in this system is: each service's REST API, `/health`, and YARP.
 
 ---
 
-## Still to decide, and where
+## What was still to decide in 2026-09-21, and how it was decided
 
-These belong in #18's `research.md` when the feature runs, with the rejected alternatives, as the
-constitution requires of a recorded decision:
+When this document was written the questions below were open. All of them were settled in the
+features that followed, and the reasoning is in their `research.md`:
 
-- **REST or gRPC**, given the costs above.
-- **h2c on a second port, or TLS**, if gRPC.
-- ~~**Ask at submission, or price the cart**~~ — decided in feature 010: ask at submission, and the
-  cart stores no price at all. See above.
-- *(Original note)* **Ask at submission, or price the cart** ([#19](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/19)).
-  A priced cart matches what shops actually do — *the price you saw is the price you pay* — and it
-  moves the call off checkout's critical path. It does not remove the need to ask Catalog; it moves
-  when. And it raises its own question: what happens when the price changes between adding to the
-  cart and paying.
-- **What checkout does when Catalog does not answer.** Refusing is almost certainly right for a
-  money decision, and "almost certainly" is not the same as written down.
+- **REST or gRPC** - gRPC ([specs/009](../../specs/009-catalog-owns-price/)).
+- **h2c on a second port, or TLS** - h2c on a second port, as recommended above.
+- **Ask at submission, or price the cart**
+  ([#19](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/19)) - ask at
+  submission, and the cart stores no price at all ([specs/010](../../specs/010-customer-cart/)). A
+  priced cart would have moved the call off checkout's critical path without removing it, and raised
+  the question of what happens when the price changes between adding and paying; with no stored price
+  there is nothing to disagree with.
+- **What checkout does when Catalog does not answer** - it refuses with 503 after a bounded retry, and
+  never guesses a price.
 
-**#18 should not wait for a cart.** A live hole that lets somebody buy a 40,000,000 item for 1 is
-not a good reason to build a shopping basket first.
+#18 did not wait for a cart: a live hole that let somebody buy a 40,000,000 item for 1 was fixed first.
