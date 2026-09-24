@@ -109,6 +109,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [053](../../specs/053-saga-payment-timeout/) | Saga payment timeout | #135 | Fixes #123; the saga stops waiting for Payment before the stock hold expires, and refunds a late approval; the saga's first test project |
 | - | OpenAPI advisory | #136 | `Microsoft.AspNetCore.OpenApi` 10.0.12, off a vulnerable `Microsoft.OpenApi` (GHSA-v5pm-xwqc-g5wc) |
 | [054](../../specs/054-variant-availability-guard/) | Variant availability guard | #137 | Fixes #124; a variant's availability follows Inventory's latest word, whatever order it arrives in |
+| [055](../../specs/055-insights-period/) | One insights period | #138 | Fixes #125; every insight counts the same whole UTC days, and the chart draws the days the totals count |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

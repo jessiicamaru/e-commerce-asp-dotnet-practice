@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Insights;
 using Ecommerce.Shared.Money;
 using FluentValidation;
 using MediatR;
@@ -49,43 +50,17 @@ public record ProductSalesRow(Guid ProductId, string ProductName, string? Curren
 
 public record BuyerRow(Guid CustomerId, string? Currency, int Orders, decimal Spent);
 
-public static class InsightsPeriod
-{
-    public const int MaxDays = 366;
-
-    /// <summary>The last 30 days unless told otherwise; <c>to</c> is exclusive.</summary>
-    public static (DateTime From, DateTime To) Resolve(DateTime? from, DateTime? to)
-    {
-        var end = (to ?? DateTime.UtcNow).ToUniversalTime();
-        var start = (from ?? end.AddDays(-30)).ToUniversalTime();
-        return (start, end);
-    }
-
-    public static IRuleBuilderOptions<T, DateTime?> NotAfter<T>(this IRuleBuilder<T, DateTime?> rule, Func<T, DateTime?> to) =>
-        rule.Must((q, from) => from is null || to(q) is null || from < to(q)).WithMessage("The period must start before it ends.");
-}
-
 public class GetRevenueQueryValidator : AbstractValidator<GetRevenueQuery>
 {
-    public GetRevenueQueryValidator()
-    {
-        RuleFor(x => x.From).NotAfter(x => x.To);
-        RuleFor(x => x).Must(x => Span(x.From, x.To) <= InsightsPeriod.MaxDays)
-            .WithMessage($"The period can be at most {InsightsPeriod.MaxDays} days.");
-    }
-
-    internal static double Span(DateTime? from, DateTime? to)
-    {
-        var (start, end) = InsightsPeriod.Resolve(from, to);
-        return (end - start).TotalDays;
-    }
+    // One period rule for every insight, Catalog's included (specs/055, #125).
+    public GetRevenueQueryValidator() => this.ValidPeriod(x => x.From, x => x.To);
 }
 
 public class GetTopProductsQueryValidator : AbstractValidator<GetTopProductsQuery>
 {
     public GetTopProductsQueryValidator()
     {
-        RuleFor(x => x.From).NotAfter(x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To);
         RuleFor(x => x.By).Must(b => b is "units" or "revenue").WithMessage("By must be units or revenue.");
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
     }
@@ -95,7 +70,7 @@ public class GetTopBuyersQueryValidator : AbstractValidator<GetTopBuyersQuery>
 {
     public GetTopBuyersQueryValidator()
     {
-        RuleFor(x => x.From).NotAfter(x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To);
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
     }
 }
@@ -110,7 +85,8 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
 
     public async Task<RevenueResponse> Handle(GetRevenueQuery request, CancellationToken cancellationToken)
     {
-        var (from, to) = InsightsPeriod.Resolve(request.From, request.To);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var (from, to) = (period.Start, period.End);
         var rows = (await _insights.RevenueByDayAsync(from, to, cancellationToken))
             .Select(r => r with { Currency = r.Currency ?? _default })
             .ToList();
@@ -137,7 +113,8 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
 
     public async Task<List<TopProduct>> Handle(GetTopProductsQuery request, CancellationToken cancellationToken)
     {
-        var (from, to) = InsightsPeriod.Resolve(request.From, request.To);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var (from, to) = (period.Start, period.End);
         var currency = request.Currency ?? _default;
         var rows = await _insights.ProductSalesAsync(from, to, cancellationToken);
 
@@ -163,7 +140,8 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
 
     public async Task<List<TopBuyer>> Handle(GetTopBuyersQuery request, CancellationToken cancellationToken)
     {
-        var (from, to) = InsightsPeriod.Resolve(request.From, request.To);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var (from, to) = (period.Start, period.End);
         var currency = request.Currency ?? _default;
         var rows = await _insights.BuyersAsync(from, to, cancellationToken);
 

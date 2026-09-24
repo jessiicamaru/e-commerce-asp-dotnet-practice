@@ -72,6 +72,32 @@ public class ProductViewTests(CatalogTestFixture fixture) : IDisposable
         Assert.Equal(5, ours[0].Views);
     }
 
+    /// <summary>#125 (specs/055): the same whole-day period as Order's insights - a time snaps to its day.</summary>
+    [Fact]
+    public async Task Top_viewed_counts_whole_days_whatever_time_the_ends_name()
+    {
+        var product = await ListedAsync();
+        As(Guid.CreateVersion7(), "Customer");
+        await SendAsync(new RecordProductViewCommand(product.Id));
+
+        As(Guid.CreateVersion7(), "Admin");
+        var today = DateTime.UtcNow.Date;
+        var top = await SendAsync(new GetTopViewedQuery(today.AddHours(23).AddMinutes(59), today.AddMinutes(1), 50));
+
+        Assert.Contains(top, v => v.ProductId == product.Id);
+    }
+
+    [Fact]
+    public async Task Top_viewed_refuses_more_than_366_days_like_every_insight()
+    {
+        As(Guid.CreateVersion7(), "Admin");
+
+        var refused = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            SendAsync(new GetTopViewedQuery(DateTime.UtcNow.AddDays(-400), DateTime.UtcNow, 10)));
+
+        Assert.Contains("at most 366 days", refused.Message);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private void As(Guid id, string role)

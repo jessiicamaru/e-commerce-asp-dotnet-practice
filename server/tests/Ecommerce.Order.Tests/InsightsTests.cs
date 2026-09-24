@@ -83,7 +83,85 @@ public class InsightsTests(OrderTestFixture fixture)
         Assert.Equal(2, top[1].Orders);
     }
 
+    /// <summary>
+    /// #125 (specs/055): a period is WHOLE days. An order early on the first day and one late on the last
+    /// count whatever time of day <c>from</c> and <c>to</c> name; one late on the day before does not.
+    /// </summary>
+    [Fact]
+    public async Task A_period_is_whole_days_from_the_day_from_falls_on_to_the_day_to_falls_on()
+    {
+        var first = Day();
+        var last = first.AddDays(2);
+        var buyer = Guid.CreateVersion7();
+        var early = await PlaceAsync(buyer, "VND", 1_000m, OrderStatus.Paid, first);
+        var late = await PlaceAsync(buyer, "VND", 2_000m, OrderStatus.Paid, last);
+        var before = await PlaceAsync(buyer, "VND", 4_000m, OrderStatus.Paid, first);
+        await MoveAsync(early, first.AddMinutes(30));
+        await MoveAsync(late, last.AddHours(23).AddMinutes(30));
+        await MoveAsync(before, first.AddMinutes(-30));
+
+        var revenue = await SendAsync(new GetRevenueQuery(first.AddHours(15), last.AddHours(8)));
+
+        var dong = Assert.Single(revenue.Totals);
+        Assert.Equal(await TotalOfAsync(early) + await TotalOfAsync(late), dong.Revenue);
+        Assert.Equal((first, last.AddDays(1)), (revenue.From, revenue.To));   // the whole days, reported back
+        Assert.Equal(2, (await SendAsync(new GetTopBuyersQuery(first.AddHours(15), last.AddHours(8), "VND"))).Single(b => b.CustomerId == buyer).Orders);
+    }
+
+    [Fact]
+    public async Task A_single_day_is_a_period()
+    {
+        var day = Day();
+        var order = await PlaceAsync(Guid.CreateVersion7(), "VND", 1_000m, OrderStatus.Paid, day);
+
+        var revenue = await SendAsync(new GetRevenueQuery(day.AddHours(20), day.AddHours(20)));
+
+        Assert.Equal(await TotalOfAsync(order), Assert.Single(revenue.Totals).Revenue);
+    }
+
+    /// <summary>Only revenue had a limit; now every insight has the same one, and the same words.</summary>
+    [Fact]
+    public async Task Every_insight_refuses_more_than_366_days_and_a_period_that_ends_before_it_starts()
+    {
+        var to = Day();
+        var tooLong = to.AddDays(-366);   // 367 days, both ends counted
+        var backwards = to.AddDays(1);
+
+        foreach (var request in new IBaseRequest[]
+        {
+            new GetRevenueQuery(tooLong, to), new GetTopProductsQuery(tooLong, to), new GetTopBuyersQuery(tooLong, to, "VND"),
+        })
+        {
+            var refused = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() => SendObjectAsync(request));
+            Assert.Contains("at most 366 days", refused.Message);
+        }
+
+        foreach (var request in new IBaseRequest[]
+        {
+            new GetRevenueQuery(backwards, to), new GetTopProductsQuery(backwards, to), new GetTopBuyersQuery(backwards, to, "VND"),
+        })
+        {
+            var refused = await Assert.ThrowsAsync<FluentValidation.ValidationException>(() => SendObjectAsync(request));
+            Assert.Contains("must not start after it ends", refused.Message);
+        }
+
+        await SendAsync(new GetTopProductsQuery(to.AddDays(-365), to));   // exactly 366 is fine
+    }
+
     // ------------------------------------------------------------------ helpers
+
+    private async Task MoveAsync(Guid order, DateTime createdAt)
+    {
+        await using var scope = _fixture.NewScope();
+        await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders.Where(o => o.Id == order)
+            .ExecuteUpdateAsync(x => x.SetProperty(o => o.CreatedAt, createdAt));
+    }
+
+    private async Task<object?> SendObjectAsync(IBaseRequest request)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
 
     private static DateTime Day() =>
         new DateTime(2031, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(Random.Shared.Next(0, 3000));

@@ -90,8 +90,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (179 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (153 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (183 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (155 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (73 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -374,7 +374,7 @@ client from three services, each answering from its own data: Order (`/api/order
 `top-products`, `top-buyers`), Catalog (`/api/products/insights/top-viewed`) and Identity
 (`/api/users/lookup`, `/api/users/stats`), all Admin-only. ⚠️ **One definition of a sale** -
 `OrderInsights.Sold`: Paid, Completed, Preparing, Shipped - never failed, cancelled or still settling;
-and **money is never added across currencies**. A product view is its own request
+and **money is never added across currencies**. ⚠️ **One period rule** for all four (`Ecommerce.Shared.Insights.InsightsPeriod`, specs/055): whole UTC days, both ends included, at most 366 - a new insight validates with `ValidPeriod`, or its totals and the chart stop covering the same days (#125). A product view is its own request
 (`POST /api/products/{id}/view`, anonymous, always 204), counted per product per day by an upsert that
 increments in SQL, and only for a shopper looking at something on sale - not a side effect of
 `GET /products/{id}`, which the seller page and focus refetches call repeatedly.

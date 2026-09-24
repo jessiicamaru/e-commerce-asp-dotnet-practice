@@ -25,9 +25,11 @@ export function AdminOverviewPage() {
   const { t } = useTranslation('admin')
   const [period, setPeriod] = useState<Period>(30)
   // Fixed per choice, not per render: a "now" that moved every render would be a new query every time.
+  // The server counts WHOLE UTC days, both ends included (specs/055): today and the period - 1 days before
+  // it are exactly the days the chart draws. Asking from period x 24 h ago touched one day more (#125).
   const { from, to } = useMemo(() => {
     const end = new Date()
-    return { from: new Date(end.getTime() - period * 86_400_000).toISOString(), to: end.toISOString() }
+    return { from: new Date(end.getTime() - (period - 1) * 86_400_000).toISOString(), to: end.toISOString() }
   }, [period])
   const [currency, setCurrency] = useState('VND')
 

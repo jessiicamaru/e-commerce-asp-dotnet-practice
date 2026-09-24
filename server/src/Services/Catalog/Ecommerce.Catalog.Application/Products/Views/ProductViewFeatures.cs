@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Insights;
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Shared.Authentication;
@@ -21,7 +22,8 @@ public class GetTopViewedQueryValidator : AbstractValidator<GetTopViewedQuery>
     public GetTopViewedQueryValidator()
     {
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
-        RuleFor(x => x).Must(x => x.From is null || x.To is null || x.From < x.To).WithMessage("The period must start before it ends.");
+        // The same period rule as Order's insights (specs/055, #125).
+        this.ValidPeriod(x => x.From, x => x.To);
     }
 }
 
@@ -44,8 +46,7 @@ public class ProductViewHandlers(IProductViewRepository views, IProductRepositor
 
     public Task<List<ViewedProduct>> Handle(GetTopViewedQuery request, CancellationToken cancellationToken)
     {
-        var to = request.To ?? DateTime.UtcNow;
-        var from = request.From ?? to.AddDays(-30);
-        return views.TopAsync(DateOnly.FromDateTime(from), DateOnly.FromDateTime(to), request.Limit, cancellationToken);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        return views.TopAsync(period.FirstDay, period.LastDay, request.Limit, cancellationToken);
     }
 }

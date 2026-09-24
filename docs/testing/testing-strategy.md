@@ -8,8 +8,8 @@ works is a test that fails when it does not.
 
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
-| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 539 test cases in 8 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
-| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 281 tests in 52 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
+| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 544 test cases in 8 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
+| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 282 tests in 52 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
 | API collection | Bruno CLI | `bruno/` | 190 requests, 307 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
@@ -33,9 +33,9 @@ DB_PASSWORD=<your password> dotnet test
 | Project | Port | Test cases | Test classes |
 | :-- | :-- | :-- | :-- |
 | `Ecommerce.Identity.Tests` | 5435 | 79 | AddressBook, Audit, AuthError, EmailCase, ForbiddenProblem, JwtStartup, Moderation, RefreshTokenReuse, RegistrationValidation, SellerRoles, Session, ShopApplication, UserReport |
-| `Ecommerce.Catalog.Tests` | 5433 | 153 | Audit, Availability, CategoryTranslation, DeleteCategory, DeleteProduct, LanguageNegotiation, OrphanImage, ProductImage, ProductReview, ProductView, RequestCurrency, Review, SellerOwnership, Translation, VariantOwnership, VariantPrice, VariantSellerPricing, Variant |
+| `Ecommerce.Catalog.Tests` | 5433 | 155 | Audit, Availability, CategoryTranslation, DeleteCategory, DeleteProduct, LanguageNegotiation, OrphanImage, ProductImage, ProductReview, ProductView, RequestCurrency, Review, SellerOwnership, Translation, VariantOwnership, VariantPrice, VariantSellerPricing, Variant |
 | `Ecommerce.Cart.Tests` | 5439 | 18 | CheckoutOutcome, Validation, VariantLine |
-| `Ecommerce.Order.Tests` | 5434 | 180 | Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
+| `Ecommerce.Order.Tests` | 5434 | 183 | Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
 | `Ecommerce.Inventory.Tests` | 5437 | 46 | Announcement, Audit, ForgetProduct, ReserveStock, Restock, SellerStock, Settlement |
 | `Ecommerce.Payment.Tests` | 5438 | 20 | Audit, ChargeOrder, ConcurrentInsertRecovery, Refund |
 | `Ecommerce.Orchestrator.Tests` | 5436 | 15 | OrderStateMachine (the saga's transitions through MassTransit's harness - the first tests it has had, specs/053), PaymentTimeout (the sweeper's query, the options) |
