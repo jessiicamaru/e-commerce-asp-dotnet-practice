@@ -101,6 +101,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [046](../../specs/046-product-reviews/) | Ratings and reviews | #98 | Only somebody who received a product reviews it |
 | [047](../../specs/047-admin-insights/) | Admin insights | #99, #101 | Revenue per currency, top selling, top viewed, top buyers |
 | - | Fresh-container fix | #100 | Identity applies migrations before seeding, so an empty database starts |
+| [048](../../specs/048-notification-wording/) | Notification wording | #129 | Fixes #119; each notification kind's data keys declared once and tested on both server and storefront |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

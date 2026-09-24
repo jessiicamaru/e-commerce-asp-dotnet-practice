@@ -24,7 +24,6 @@ disagrees with its own rules. Fix these before building anything new.
 
 | Issue | Title |
 | :-- | :-- |
-| [#119](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/119) | Five notification kinds show their placeholders instead of words |
 | [#120](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/120) | The sign-in page hides why a locked or banned account was refused |
 | [#121](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/121) | A moderator can unlock any account, including one an administrator locked |
 | [#122](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/122) | An order can remove the wrong cart line when two variants of one product are in the cart |
@@ -78,8 +77,16 @@ Known and recorded; they hurt at scale or in operation, not today.
 | [#117](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/117) | No test drives the storefront in a browser |
 | [#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118) | Every Bruno and verify-saga run leaves products behind |
 
+## Fixed
+
+Closed since the backlog was written, newest first. The timeline has the full history.
+
+| Issue | Title | Fixed by |
+| :-- | :-- | :-- |
+| [#119](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/119) | Five notification kinds show their placeholders instead of words | [#129](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/129) (specs/048) |
+
 ## Suggested order
 
-The defects first - #119, #120 and #121 are small and visible, #122 and #123 can remove the wrong cart
+The defects first - #120 and #121 are small and visible, #122 and #123 can remove the wrong cart
 line or sell stock the shop no longer holds. Then email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
 #107 -> #108 -> #111, and the rest as they become pressing.

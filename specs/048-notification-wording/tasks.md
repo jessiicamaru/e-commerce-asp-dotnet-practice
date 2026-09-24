@@ -6,4 +6,4 @@
 - [X] T004 [US1] [US2] Client tests first, against the declaration, in `client/src/utils/notifications/index.test.ts` (they fail before T005)
 - [X] T005 [US1] Fill `product`, `reason` and `rating`, add the hole fallback, and make the English rating plural, in `client/src/utils/notifications/index.ts` and `client/src/locales/en/notifications.json`
 - [X] T006 Mutation check: drop one pass-through, then one declared key on the server; the tests must go red
-- [ ] T007 Docs: `docs/features/audit-and-notifications.md`, `docs/project/timeline.md`, `docs/project/backlog.md`
+- [X] T007 Docs: `docs/features/audit-and-notifications.md`, `docs/project/timeline.md`, `docs/project/backlog.md`
