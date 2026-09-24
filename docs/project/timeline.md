@@ -111,6 +111,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [054](../../specs/054-variant-availability-guard/) | Variant availability guard | #137 | Fixes #124; a variant's availability follows Inventory's latest word, whatever order it arrives in |
 | [055](../../specs/055-insights-period/) | One insights period | #138 | Fixes #125; every insight counts the same whole UTC days, and the chart draws the days the totals count |
 | [056](../../specs/056-review-on-every-seller-edit/) | Review on every seller edit | #139 | Fixes #126; translating an option or adding a variant sends an approved seller product back to review |
+| [057](../../specs/057-review-races/) | Review races | #140 | Fixes #127; a double-posted review is one review, a review is hidden once, nobody reviews what they sell |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.
