@@ -126,8 +126,8 @@ the order record still disagreed with the saga.
 | 7 | Observability (Seq) and end-to-end verification | Done, except the real payment provider, deferred |
 | After | Checkout correctness, fulfilment, cancellation, delivery, seller payouts, audit and notifications | Done - outside the saga, below |
 
-The saga's own shape has not changed since Phase 6: reserve, pay, and release the stock if payment
-fails. Everything added since either happens before it (pricing, the cart, the address) or after it
+The saga's own shape changed once since Phase 6: reserve, pay, and release the stock if payment fails -
+and, since specs/053, **stop waiting for a payment that does not answer** (below). Everything added since either happens before it (pricing, the cart, the address) or after it
 ends (fulfilment, cancellation, delivery, payouts).
 
 ---
@@ -298,6 +298,45 @@ Two features that did not change the saga's shape but changed what it is trusted
   moved.
 
 ---
+
+### 🟢 A payment that does not answer (Completed, specs/053)
+
+Until specs/053 the saga waited for Payment without limit, while Inventory's hold does not: after
+`INVENTORY_RESERVATION_TTL_MINUTES` (15) its sweeper puts the stock back on the shelf. A payment answered
+after that completed the order - Order settled it `Paid` - but found no held reservation to confirm, so
+the shop was paid for stock somebody else could now buy; and a Payment that never answered left the order
+`Submitted` for ever ([#123](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/123)).
+
+```mermaid
+stateDiagram-v2
+    [*] --> Submitted: OrderSubmitted / ReserveInventory
+    Submitted --> InventoryReserved: InventoryReserved / ProcessPayment
+    Submitted --> [*]: ReservationFailed / OrderFailed
+    InventoryReserved --> [*]: PaymentProcessed / OrderCompleted
+    InventoryReserved --> [*]: PaymentFailed / ReleaseInventory, OrderFailed
+    InventoryReserved --> PaymentTimedOut: timeout / ReleaseInventory, OrderFailed
+    PaymentTimedOut --> [*]: PaymentProcessed / RefundPayment
+    PaymentTimedOut --> [*]: PaymentFailed / nothing
+```
+
+* **The timeout** is `ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS` (600), counted from entering
+  `InventoryReservedState` - the moment the hold starts too. It must be shorter than the hold by more than
+  one sweep, so the order fails while its stock is still held and releasing it is immediate; the
+  orchestrator **refuses to start** otherwise, when both values are visible.
+* **The timer is a sweeper**, `PaymentTimeoutSweeper`, shaped like Inventory's and Order's: every 30 s it
+  reads the saga table for orders waiting too long and publishes `PaymentTimeoutExpired` to the saga,
+  through the outbox. Not MassTransit's `Schedule`: durable scheduling needs RabbitMQ's delayed-message
+  plugin or a Quartz store, and neither exists here; the in-memory scheduler forgets every pending
+  timeout on restart. Safe on several instances - a repeated timeout is ignored by state.
+* **A late approval is refunded**: the saga sends `RefundPaymentCommand`, and Payment's
+  `RefundLatePaymentConsumer` records the refund through the same once-only path as a cancellation
+  (`refunds.OrderId` unique). A late rejection needs nothing. The order stays `Failed`.
+* **Verified end to end** with Payment stopped past a 30-second timeout: the order failed after ~55 s with
+  the stock released, and when Payment came back and approved the queued charge, exactly one refund of the
+  full amount was recorded. `Ecommerce.Orchestrator.Tests` is the saga's first test project.
+* ⚠️ **Rollback:** `PaymentTimedOut` is a new value in `order_state_data.CurrentState` (text; no schema
+  change). An orchestrator image from before this cannot load such an instance, so a late answer to one
+  would fault into the error queue rather than be lost.
 
 ### 🟢 After the saga: what happens to a paid order (Completed)
 

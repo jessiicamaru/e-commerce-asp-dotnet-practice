@@ -1,6 +1,7 @@
 using Ecommerce.Contracts.Inventory;
 using Ecommerce.Contracts.Order;
 using Ecommerce.Contracts.Payment;
+using Ecommerce.Orchestrator.WebApi.Timeouts;
 using MassTransit;
 
 namespace Ecommerce.Orchestrator.WebApi.StateMachines;
@@ -11,12 +12,19 @@ public class OrderStateMachine : MassTransitStateMachine<OrderStateData>
     public State Submitted { get; private set; } = null!;
     public State InventoryReservedState { get; private set; } = null!;
 
+    /// <summary>
+    /// Payment did not answer in time, so the order failed and its stock was released (specs/053). Waits
+    /// here for a late answer: an approval must be refunded, a rejection needs nothing.
+    /// </summary>
+    public State PaymentTimedOut { get; private set; } = null!;
+
     // Events
     public Event<OrderSubmittedEvent> OrderSubmitted { get; private set; } = null!;
     public Event<InventoryReservedEvent> InventoryReserved { get; private set; } = null!;
     public Event<InventoryReservationFailedEvent> InventoryReservationFailed { get; private set; } = null!;
     public Event<PaymentProcessedEvent> PaymentProcessed { get; private set; } = null!;
     public Event<PaymentFailedEvent> PaymentFailed { get; private set; } = null!;
+    public Event<PaymentTimeoutExpired> PaymentTimeout { get; private set; } = null!;
 
     public OrderStateMachine()
     {
@@ -31,6 +39,9 @@ public class OrderStateMachine : MassTransitStateMachine<OrderStateData>
         Event(() => InventoryReservationFailed, x => { x.CorrelateById(m => m.Message.OrderId); x.OnMissingInstance(m => m.Execute(ctx => MissingInstance(nameof(InventoryReservationFailedEvent), ctx.Message.OrderId))); });
         Event(() => PaymentProcessed, x => { x.CorrelateById(m => m.Message.OrderId); x.OnMissingInstance(m => m.Execute(ctx => MissingInstance(nameof(PaymentProcessedEvent), ctx.Message.OrderId))); });
         Event(() => PaymentFailed, x => { x.CorrelateById(m => m.Message.OrderId); x.OnMissingInstance(m => m.Execute(ctx => MissingInstance(nameof(PaymentFailedEvent), ctx.Message.OrderId))); });
+        // A timeout that finds no instance is its ordinary fate - the payment answered and the order
+        // finished first - so it is discarded without a warning (specs/053).
+        Event(() => PaymentTimeout, x => { x.CorrelateById(m => m.Message.OrderId); x.OnMissingInstance(m => m.Discard()); });
 
         Initially(
             When(OrderSubmitted)
@@ -116,7 +127,53 @@ public class OrderStateMachine : MassTransitStateMachine<OrderStateData>
                     context.Message.Reason,
                     DateTime.UtcNow
                 ))
-                .Finalize()
+                .Finalize(),
+
+            // Payment has not answered in time (specs/053, #123). Inventory's hold is about to expire, and
+            // a payment taken after it would be for stock back on the shelf: fail the order NOW, while the
+            // stock is still held, and wait for a late answer rather than forget the order.
+            When(PaymentTimeout)
+                .Then(context =>
+                {
+                    context.Saga.FailureReason = "Payment did not answer in time.";
+                    context.Saga.UpdatedAt = DateTime.UtcNow;
+                    Transition(context.Message.OrderId, "payment did not answer in time; releasing inventory, order failed");
+                })
+                .Publish(context => new ReleaseInventoryCommand(
+                    context.Message.OrderId,
+                    "Payment did not answer in time"
+                ))
+                .Publish(context => new OrderFailedEvent(
+                    context.Message.OrderId,
+                    "Payment did not answer in time.",
+                    DateTime.UtcNow
+                ))
+                .TransitionTo(PaymentTimedOut)
+        );
+
+        During(PaymentTimedOut,
+            // Approved after the order failed: the money was taken for stock that is back on the shelf.
+            // Give it back - Payment refunds what its own row says it took, once.
+            When(PaymentProcessed)
+                .Then(context =>
+                {
+                    context.Saga.PaymentId = context.Message.PaymentId;
+                    context.Saga.UpdatedAt = DateTime.UtcNow;
+                    Transition(context.Message.OrderId, "payment approved after the order failed; refunding");
+                })
+                .Publish(context => new RefundPaymentCommand(
+                    context.Message.OrderId,
+                    "The payment was approved after the order had failed waiting for it."
+                ))
+                .Finalize(),
+
+            // Rejected after the order failed: nothing was taken, nothing to do.
+            When(PaymentFailed)
+                .Then(context => Transition(context.Message.OrderId, "payment rejected after the order failed; nothing to refund"))
+                .Finalize(),
+
+            // A second sweeper, or a second tick, announcing the same order.
+            Ignore(PaymentTimeout)
         );
 
         SetCompletedWhenFinalized();

@@ -43,7 +43,7 @@ public class RefundOrderCommandHandler(
         if (payment is null || payment.Status != PaymentStatus.Approved)
         {
             _logger.LogInformation(
-                "No approved payment for cancelled order {OrderId}; nothing to refund.", request.OrderId);
+                "No approved payment for order {OrderId}; nothing to refund ({Reason}).", request.OrderId, request.Reason);
             return false;
         }
 
@@ -68,8 +68,8 @@ public class RefundOrderCommandHandler(
 
             await _audit.RecordAsync(
                 AuditCategory.Payment, "RefundRecorded", "Order", payment.OrderId.ToString(),
-                $"Refunded {payment.Amount} {payment.Currency} through {payment.Provider} for a cancelled order",
-                after: new { PaymentId = payment.Id, payment.Amount, payment.Currency, payment.Provider },
+                $"Refunded {payment.Amount} {payment.Currency} through {payment.Provider}: {request.Reason}",
+                after: new { PaymentId = payment.Id, payment.Amount, payment.Currency, payment.Provider, request.Reason },
                 cancellationToken: cancellationToken);
             await _paymentRepository.SaveChangesAsync(cancellationToken);
         }
@@ -81,8 +81,8 @@ public class RefundOrderCommandHandler(
         }
 
         _logger.LogWarning(
-            "Refund of {Amount} {Currency} recorded for cancelled order {OrderId} through {Provider} - no money moved if Stub",
-            payment.Amount, payment.Currency, payment.OrderId, payment.Provider);
+            "Refund of {Amount} {Currency} recorded for order {OrderId} through {Provider} ({Reason}) - no money moved if Stub",
+            payment.Amount, payment.Currency, payment.OrderId, payment.Provider, request.Reason);
         return true;
     }
 

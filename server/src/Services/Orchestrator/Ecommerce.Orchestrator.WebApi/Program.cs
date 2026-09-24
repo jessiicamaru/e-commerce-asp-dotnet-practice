@@ -1,5 +1,6 @@
 using Ecommerce.Shared.Observability;
 using Ecommerce.Orchestrator.WebApi.StateMachines;
+using Ecommerce.Orchestrator.WebApi.Timeouts;
 using Ecommerce.Shared.Middlewares;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -75,6 +76,13 @@ builder.Services.AddDbContext<OrchestratorDbContext>(options =>
             errorCodesToAdd: null)));
 
 // Register MassTransit with OrderStateMachine Saga
+// How long an order waits for Payment once its stock is reserved (specs/053, #123). Read and checked now,
+// so a timeout that is not shorter than Inventory's hold stops the service here rather than taking money
+// for stock that went back on the shelf.
+builder.Services.AddSingleton(PaymentTimeoutOptions.From(Environment.GetEnvironmentVariable));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddHostedService<PaymentTimeoutSweeper>();
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddSagaStateMachine<OrderStateMachine, OrderStateData>()

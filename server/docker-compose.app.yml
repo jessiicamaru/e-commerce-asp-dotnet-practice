@@ -115,6 +115,11 @@ services:
       <<: *env-common
       DB_HOST: postgres-orchestrator
       ORCHESTRATOR_DB_PORT: "5432"
+      # How long an order waits for Payment once its stock is reserved (specs/053). Inventory's hold is
+      # passed too, so a timeout that is not shorter than it refuses to start instead of taking money for
+      # stock already back on the shelf.
+      ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS: ${ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS:-600}
+      INVENTORY_RESERVATION_TTL_MINUTES: ${INVENTORY_RESERVATION_TTL_MINUTES:-15}
     ports:
       - "5058:8080"
     depends_on:

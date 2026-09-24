@@ -96,6 +96,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<ProcessPaymentConsumer>();
     // specs/039: a cancelled order is refunded. Registered, or it never runs and never complains.
     x.AddConsumer<RefundCancelledOrderConsumer>();
+    // specs/053: a payment approved after the saga failed the order waiting for it is refunded.
+    x.AddConsumer<RefundLatePaymentConsumer>();
 
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
         cfg.UseEntityFrameworkOutbox<PaymentDbContext>(context));
