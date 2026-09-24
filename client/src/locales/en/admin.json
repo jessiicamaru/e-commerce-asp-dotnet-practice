@@ -307,6 +307,8 @@
     "views_one": "{{count}} view",
     "views_other": "{{count}} views",
     "none": "Nothing yet.",
-    "loadFailed": "Could not load this."
+    "loadFailed": "Could not load this.",
+    "noSales": "no sales",
+    "peak": "Highest day {{amount}}"
   }
 }

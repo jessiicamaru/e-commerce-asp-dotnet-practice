@@ -307,6 +307,8 @@
     "views_one": "{{count}} lượt xem",
     "views_other": "{{count}} lượt xem",
     "none": "Chưa có gì.",
-    "loadFailed": "Không tải được."
+    "loadFailed": "Không tải được.",
+    "noSales": "không có đơn",
+    "peak": "Ngày cao nhất {{amount}}"
   }
 }
