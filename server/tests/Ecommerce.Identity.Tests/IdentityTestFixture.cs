@@ -152,6 +152,15 @@ public class IdentityTestFixture : IAsyncLifetime
         return id;
     }
 
+    /// <summary>Moves a rotation into the past, beyond the reuse grace window, as a later replay would find it.</summary>
+    public async Task AgeRevocationAsync(string token)
+    {
+        await using var provider = For(Guid.Empty);
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().RefreshTokens.Where(t => t.Token == token)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow.AddMinutes(-5)));
+    }
+
     public async Task DisposeAsync()
     {
         NpgsqlConnection.ClearAllPools();

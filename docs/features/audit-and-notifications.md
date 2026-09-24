@@ -155,17 +155,21 @@ Found by searching every `RecordAsync(` call in `server/src`. **Actor** is who t
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | `SignedIn` | Security | User | Identity | A sign-in succeeds. | the user |
 | `SignInRefused` | Security | User | Identity | Wrong password or unknown email; or the right password on a locked or banned account. | the account, or nobody |
+| `SignedOut` | Security | User | Identity | A session is ended by signing out (specs/058). A routine refresh is deliberately not recorded. | the user |
+| `SessionReuseDetected` | Security | User | Identity | A rotated refresh token is presented again after the grace window; every session ends (specs/058). | the user |
 | `Registered` | User | User | Identity | `POST /api/auth/register`. | the new user |
 | `ShopApplied` | User | ShopApplication | Identity | `register-seller`, or `POST /api/shop-applications`. | the applicant |
 | `ShopRenamed` | User | Seller | Identity | A seller renames their shop. | caller |
-| `AddressAdded` / `AddressUpdated` / `AddressDeleted` | User | Address | Identity | The address book changes (no snapshot). | caller |
+| `AddressAdded` / `AddressUpdated` / `AddressDeleted` / `DefaultAddressChanged` | User | Address | Identity | The address book changes, or another address becomes the default (no snapshot). | caller |
 | `RoleGranted` / `RoleRevoked` | Security | User | Identity | An administrator grants or revokes `Moderator`. | caller |
 | `AccountLocked` / `AccountUnlocked` | Moderation | User | Identity | Staff lock or unlock an account. | caller |
 | `AccountBanned` / `BanLifted` | Moderation | User | Identity | An administrator bans or lifts a ban. | caller |
 | `ShopApproved` / `ShopRejected` | Moderation | ShopApplication | Identity | Staff decide an application (inside the guarded decision). | caller |
 | `CategoryCreated` / `CategoryDeleted` | Catalog | Category | Catalog | An administrator creates or deletes a category. | caller |
+| `CategoryTranslated` / `CategoryTranslationRemoved` | Catalog | Category | Catalog | A category's text in one language is set or removed (specs/058). | caller |
 | `ProductCreated` / `ProductDeleted` | Catalog | Product | Catalog | A product is listed or removed for good. | caller |
-| `ProductTextEdited` | Catalog | Product | Catalog | A product's name and description are set in one language. | caller |
+| `ProductTextEdited` / `ProductTranslationRemoved` | Catalog | Product | Catalog | A product's name and description are set, or removed, in one language. | caller |
+| `OptionTranslated` | Catalog | Product | Catalog | A variant option's words are set in one language (specs/056). | caller |
 | `PriceSet` / `PriceRemoved` | Catalog | Variant | Catalog | A variant's price in one currency is set or removed. | caller |
 | `VariantAdded` / `VariantUpdated` | Catalog | Variant | Catalog | A variant is added, re-priced or taken off sale. | caller |
 | `ProductImageSet` / `ProductImageRemoved` | Catalog | Product | Catalog | The product photograph changes (saved just after the switch). | caller |
@@ -304,9 +308,7 @@ From [messages.md](../reference/messages.md).
 
 ## Known limits
 
-- **Some writes are not audited:** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) setting or removing a category translation, removing a product
-  translation (only `ProductSentForReview` is recorded when it applies),
-  changing the default address, signing out and refreshing a session. Cart records nothing.
+- **Cart records nothing** in the audit log: a cart is a customer's scratch pad, and what they bought is recorded by Order.
 - **Some events notify nobody:** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) a lock or a ban, a parcel the sweeper takes as delivered (the seller
   gets `ParcelReceived` only when the customer confirms), a hidden review, and a product sent back to
   review by the seller's own edit.

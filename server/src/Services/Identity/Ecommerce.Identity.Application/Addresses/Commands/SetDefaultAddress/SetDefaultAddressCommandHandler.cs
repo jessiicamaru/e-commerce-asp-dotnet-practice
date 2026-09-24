@@ -1,4 +1,5 @@
 using Ecommerce.Application.Common.Interfaces;
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
@@ -8,11 +9,13 @@ namespace Ecommerce.Application.Addresses.Commands.SetDefaultAddress;
 public class SetDefaultAddressCommandHandler(
     IAddressRepository addresses,
     IUnitOfWork unitOfWork,
-    ICurrentUser currentUser) : IRequestHandler<SetDefaultAddressCommand>
+    ICurrentUser currentUser,
+    IAuditTrail audit) : IRequestHandler<SetDefaultAddressCommand>
 {
     private readonly IAddressRepository _addresses = addresses;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ICurrentUser _currentUser = currentUser;
+    private readonly IAuditTrail _audit = audit;
 
     public async Task Handle(SetDefaultAddressCommand request, CancellationToken cancellationToken)
     {
@@ -47,6 +50,9 @@ public class SetDefaultAddressCommandHandler(
 
             target.IsDefault = true;
             target.UpdatedAt = now;
+            // "Changed", never the address itself - like every address entry (specs/041, #128).
+            await _audit.RecordAsync(AuditCategory.User, "DefaultAddressChanged", "Address", target.Id.ToString(),
+                "Chose another default delivery address", cancellationToken: ct);
             await _addresses.SaveChangesAsync(ct);
         }, cancellationToken);
     }

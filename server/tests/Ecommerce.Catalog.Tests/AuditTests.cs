@@ -1,4 +1,6 @@
 using Ecommerce.Catalog.Application.Categories.Commands.CreateCategory;
+using Ecommerce.Catalog.Application.Categories.Translations;
+using Ecommerce.Catalog.Application.Products.Translations;
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 using Ecommerce.Catalog.Application.Products.Prices;
@@ -53,6 +55,27 @@ public class AuditTests(CatalogTestFixture fixture)
         await Assert.ThrowsAnyAsync<Exception>(() => SendAsync(new DeleteProductCommand(missing)));
 
         Assert.Empty(Entries(missing.ToString()));
+    }
+
+    /// <summary>#128 (specs/058): translations of categories and the removal of a product's were not on the record.</summary>
+    [Fact]
+    public async Task Translating_a_category_and_removing_translations_are_recorded()
+    {
+        var id = Guid.CreateVersion7();
+        var category = await SendAsync(new CreateCategoryCommand($"Tra {id:N}"[..20], null, $"tra-{id:N}"[..20], null));
+        await SendAsync(new SetCategoryTranslationCommand(category.Id, "en", "Mirrorless cameras", null));
+        await SendAsync(new RemoveCategoryTranslationCommand(category.Id, "en"));
+
+        var sku = $"TRA{Guid.NewGuid():N}"[..20];
+        var product = await SendAsync(new CreateProductCommand($"Camera {sku}", null, 1_000_000m, sku, category.Id));
+        await SendAsync(new SetProductTranslationCommand(product.Id, "en", "A camera", null));
+        await SendAsync(new RemoveProductTranslationCommand(product.Id, "en"));
+
+        Assert.Equal(["CategoryTranslated", "CategoryTranslationRemoved"],
+            Entries(category.Id.ToString()).Where(e => e.Action != "CategoryCreated").Select(e => e.Action));
+        var removed = Assert.Single(Entries(product.Id.ToString()), e => e.Action == "ProductTranslationRemoved");
+        Assert.Equal("Catalog", removed.Category);
+        Assert.Contains("A camera", removed.Before);
     }
 
     private List<AuditEntryRecorded> Entries(params string[] subjects) =>

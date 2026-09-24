@@ -91,8 +91,8 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (183 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (160 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (73 tests, PostgreSQL on 5435) and
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (83 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had). They run against a **real PostgreSQL** — the guarantees under test are the
