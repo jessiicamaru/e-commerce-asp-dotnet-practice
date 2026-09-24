@@ -9,6 +9,7 @@ using Ecommerce.Order.Application.Orders.Commands.SellerFulfilment;
 using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Shared.Money;
+using Ecommerce.Shared.Notifications;
 using MassTransit.Testing;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -140,15 +141,31 @@ public class NotificationTests
             .Single(n => n.Kind == "PayoutRecorded" && n.RecipientId == alice);
         Assert.Equal(payout.Amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), told.Data["amount"]);
         Assert.Equal("/shop/payouts", told.Link);
+        Assert.Empty(NotificationContract.Problems(told.Kind, told.Data));
+    }
+
+    /// <summary>
+    /// The kinds a service can send and the kinds the declaration the storefront reads names are one set
+    /// (specs/048) - a kind added to one and not the other is how #119 happened.
+    /// </summary>
+    [Fact]
+    public void Every_kind_in_code_is_declared_for_the_storefront_and_nothing_else_is()
+    {
+        Assert.Equal(NotificationContract.KindsInCode.Order(), NotificationContract.Kinds.Keys.Order());
     }
 
     // ------------------------------------------------------------------ helpers
 
-    private List<UserNotificationRequested> Sent(Guid order) =>
-        _fixture.Harness.Published.Select<UserNotificationRequested>()
+    /// <summary>What was sent about an order - each checked against what the storefront reads (specs/048).</summary>
+    private List<UserNotificationRequested> Sent(Guid order)
+    {
+        var sent = _fixture.Harness.Published.Select<UserNotificationRequested>()
             .Select(x => x.Context.Message)
             .Where(n => n.Data.TryGetValue("orderId", out var id) && id == order.ToString())
             .ToList();
+        Assert.Empty(sent.SelectMany(n => NotificationContract.Problems(n.Kind, n.Data)));
+        return sent;
+    }
 
     private async Task<T> As<T>(Guid user, Func<Task<T>> body)
     {

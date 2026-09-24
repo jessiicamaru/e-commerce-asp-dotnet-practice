@@ -7,6 +7,7 @@ using Ecommerce.Contracts.Identity;
 using Ecommerce.Domain.Constants;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Shared.Exceptions;
+using Ecommerce.Shared.Notifications;
 using MassTransit.Testing;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -86,8 +87,10 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
         await Assert.ThrowsAsync<ConflictException>(() =>
             SendAsync(registered.Id, new ApplyForShopCommand("Mai Lens 2", null, null)));
 
-        var rejected = await SendAsync(Moderator, new RejectShopApplicationCommand(id, "Tell us what you sell"), RoleNames.Moderator);
+        var (published, rejected) = await PublishedAsync(Moderator, new RejectShopApplicationCommand(id, "Tell us what you sell"), RoleNames.Moderator);
         Assert.Equal(("Rejected", "Tell us what you sell"), (rejected.Status, rejected.DecisionReason));
+        var notice = Assert.Single(published.OfType<UserNotificationRequested>());
+        Assert.Equal((registered.Id, "ShopRejected", "Tell us what you sell"), (notice.RecipientId, notice.Kind, notice.Data["reason"]));
 
         var again = await SendAsync(registered.Id, new ApplyForShopCommand("Mai Lens", "Used Fujifilm bodies", null));
         Assert.Equal("Pending", again.Status);
@@ -174,6 +177,8 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
         published.AddRange(harness.Published.Select<SellerRegisteredEvent>().Select(x => (object)x.Context.Message));
         published.AddRange(harness.Published.Select<UserNotificationRequested>().Select(x => (object)x.Context.Message));
         published.AddRange(harness.Published.Select<AuditEntryRecorded>().Select(x => (object)x.Context.Message));
+        var notices = published.OfType<UserNotificationRequested>();
+        Assert.Empty(notices.SelectMany(n => NotificationContract.Problems(n.Kind, n.Data))); // specs/048
         return (published, result);
     }
 }

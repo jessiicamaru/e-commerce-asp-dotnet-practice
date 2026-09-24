@@ -6,6 +6,7 @@ using Ecommerce.Contracts.Activity;
 using Ecommerce.Domain.Constants;
 using Ecommerce.Infrastructure.Persistence;
 using Ecommerce.Shared.Exceptions;
+using Ecommerce.Shared.Notifications;
 using FluentValidation;
 using MassTransit.Testing;
 using MediatR;
@@ -131,6 +132,9 @@ public class ModerationTests(IdentityTestFixture fixture)
         Assert.Contains(RoleNames.Moderator, entry.After);
         Assert.Equal((id, "ModeratorGranted"), (Assert.Single(notices).RecipientId, notices[0].Kind));
 
+        (_, notices) = await PublishedAsync(Admin, new RevokeRoleCommand(id, RoleNames.Moderator), RoleNames.Admin);
+        Assert.Equal((id, "ModeratorRevoked"), (Assert.Single(notices).RecipientId, notices[0].Kind));
+
         (audit, _) = await PublishedAsync(Admin, new LockUserCommand(id, 2, "Cooling off"), RoleNames.Admin);
         Assert.Equal(("Moderation", "AccountLocked"), (Assert.Single(audit).Category, audit[0].Action));
         Assert.Contains("Cooling off", audit[0].After);
@@ -183,7 +187,8 @@ public class ModerationTests(IdentityTestFixture fixture)
         await using (var scope = provider.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
 
-        return (harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message).ToList(),
-            harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message).ToList());
+        var notices = harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message).ToList();
+        Assert.Empty(notices.SelectMany(n => NotificationContract.Problems(n.Kind, n.Data))); // specs/048
+        return (harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message).ToList(), notices);
     }
 }

@@ -29,6 +29,7 @@
     "ProductApproved": "“{{product}}” is approved and on sale.",
     "ProductRejected": "“{{product}}” was not approved: {{reason}}",
     "ProductTakenDown": "“{{product}}” was taken off the shelf: {{reason}}",
-    "NewReview": "Somebody gave “{{product}}” {{rating}} stars."
+    "NewReview_one": "Somebody gave “{{product}}” {{rating}} star.",
+    "NewReview_other": "Somebody gave “{{product}}” {{rating}} stars."
   }
 }

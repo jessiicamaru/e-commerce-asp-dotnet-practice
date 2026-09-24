@@ -15,6 +15,7 @@ using Ecommerce.Contracts.Grpc;
 using Grpc.Core;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Money;
+using Ecommerce.Shared.Notifications;
 using MassTransit.Testing;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -112,6 +113,8 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
         As(Guid.CreateVersion7(), "Moderator");
 
         await SendAsync(new TakeDownProductCommand(product.Id, "Counterfeit"));
+        var told = Notices(product.Name).Single(n => n.Kind == "ProductTakenDown");
+        Assert.Equal((_alice, "Counterfeit"), (told.RecipientId, told.Data["reason"]));
 
         As(Guid.CreateVersion7(), "Customer");
         Assert.Null(await SendAsync(new GetProductByIdQuery(product.Id)));
@@ -201,9 +204,14 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
         return (await service.PriceVariants(request, new BareCallContext())).Variants.Single();
     }
 
-    private List<UserNotificationRequested> Notices(string productName) =>
-        _fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message)
+    /// <summary>What a product's seller was told - each checked against what the storefront reads (specs/048).</summary>
+    private List<UserNotificationRequested> Notices(string productName)
+    {
+        var told = _fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message)
             .Where(n => n.Data.TryGetValue("product", out var p) && p == productName).ToList();
+        Assert.Empty(told.SelectMany(n => NotificationContract.Problems(n.Kind, n.Data)));
+        return told;
+    }
 
     private List<AuditEntryRecorded> Audited(Guid productId, string action) =>
         _fixture.Harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message)

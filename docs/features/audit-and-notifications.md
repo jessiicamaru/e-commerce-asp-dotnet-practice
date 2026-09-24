@@ -93,7 +93,10 @@ the same transaction.
 The storefront words each notice with `describeNotification`
 (`client/src/utils/notifications`), looking up `notifications:kind.<Kind>` in the reader's current
 language and interpolating the data. A kind it has no words for is shown as "You have a new update."
-rather than hidden. The bell (`components/layout/notification-bell`) polls
+rather than hidden, and so is a notice missing a value its sentence needs (specs/048): the sentence's
+raw form is read first, and any placeholder that would come out empty means the generic sentence
+instead - never a sentence with a hole in it. The English review notice is plural by its rating
+("1 star", "5 stars"). The bell (`components/layout/notification-bell`) polls
 `GET /api/notifications/unread-count` every 30 seconds (`NOTIFICATION_POLL_MS`), only while the tab is
 visible, and loads the latest 8 only when opened; choosing one marks it read and follows its link.
 
@@ -195,6 +198,17 @@ records (before specs/044, `register-seller` opened a shop at once) but older en
 
 From `NotificationKind` in `Ecommerce.Shared/Notifications` and every `NotifyAsync` call.
 
+⚠️ **The data keys of each kind are declared once, in
+`Ecommerce.Shared/Notifications/notification-kinds.json`** (specs/048), and both sides are tested
+against that file. The server tests check every notice they publish carries exactly its declared keys
+(`NotificationContract.Problems`), and that the declared kinds are the `NotificationKind` constants. The
+storefront tests check every declared kind has a sentence in both languages that shows what it was sent.
+Before this, five kinds reached people as "“{{product}}” was not approved: {{reason}}" (#119): the
+server sent the words and the storefront never passed them on, and no test could see the two sides at
+once. **A new kind or key is a line in that file, in the same change as the `NotifyAsync` call and the
+sentence.** It is checked by the tests, never at run time - a mismatch that threw inside `Notifier`
+would roll back the payout or the decision it announces.
+
 | Kind | Recipient | Data | Link | Sent when (service) |
 | :-- | :-- | :-- | :-- | :-- |
 | `OrderPaid` | buyer | `orderId`, `total`, `currency` | `/orders/{id}` | The order settles as paid (Order). |
@@ -282,19 +296,14 @@ From [messages.md](../reference/messages.md).
 | `Ecommerce.Catalog.Tests/AuditTests` | Listing, pricing and withdrawing are each recorded once; a refused change is not. |
 | `Ecommerce.Inventory.Tests/AuditTests` | Setting stock records old and new counts; the sweeper records what it returned. |
 | `Ecommerce.Order.Tests/AuditTests` | An order's life one step at a time; who cancelled; a refused step leaves nothing; the delivery sweep is a System entry. |
-| `Ecommerce.Order.Tests/NotificationTests` | Paid, failed, shipped, received, cancelled and payout notices go to exactly the right people once; settling inside a consumer transaction joins it. |
+| `Ecommerce.Order.Tests/NotificationTests` | Paid, failed, shipped, received, cancelled and payout notices go to exactly the right people once; settling inside a consumer transaction joins it; every notice carries exactly its declared keys; the declared kinds are the `NotificationKind` constants. |
+| `Ecommerce.Catalog.Tests/ProductReviewTests`, `ReviewTests`; `Ecommerce.Identity.Tests/ShopApplicationTests`, `ModerationTests` | Every product, review, shop and moderator notice - approved, rejected, taken down, new review, granted, revoked - goes to the right person with exactly its declared keys. |
 | `Ecommerce.Payment.Tests/AuditTests` | A charge and its refund are each recorded once. |
-| client `components/layout/notification-bell`, `pages/notifications`, `utils/notifications`, `services/notifications`, `pages/admin-audit` (and `format.test.ts`), `services/audit` | Polling, wording per kind and language, the generic fallback, marking read, the audit filters and diff display. |
+| client `components/layout/notification-bell`, `pages/notifications`, `utils/notifications`, `services/notifications`, `pages/admin-audit` (and `format.test.ts`), `services/audit` | Polling, wording per kind and language (every declared kind, both languages, showing each value it was sent), the generic fallback for an unknown kind or a missing value, marking read, the audit filters and diff display. |
 | Bruno `notifications/`, `admin-audit/`, `admin-users/` | The customer is told the order was paid and shipped; marking read; another person's notice is 404; the audit log records the order it followed and the lock; the summary. |
 
 ## Known limits
 
-- **Five notification kinds are shown with their placeholders unfilled.** ([#119](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/119)) `describeNotification`
-  passes `order`, `total`, `amount`, `tracking`, `shop` and `by` to the translation, but not `product`,
-  `reason` or `rating`. i18next leaves a placeholder it is given no value for as literal text, so
-  `ShopRejected`, `ProductApproved`, `ProductRejected`, `ProductTakenDown` and `NewReview` read, for
-  example, "“{{product}}” was not approved: {{reason}}". The data is stored correctly; the storefront
-  does not use it. `utils/notifications/index.test.ts` covers only the order kinds.
 - **Some writes are not audited:** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) setting or removing a category translation, removing a product
   translation (only `ProductSentForReview` is recorded when it applies), translating a variant option,
   changing the default address, signing out and refreshing a session. Cart records nothing.
@@ -319,3 +328,4 @@ From [messages.md](../reference/messages.md).
 | [044-shop-applications](../../specs/044-shop-applications/) | [#96](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/96) | `ShopApplied`, `ShopApproved`, `ShopRejected`; the matching notices. |
 | [045-product-review](../../specs/045-product-review/) | [#97](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/97) | Product review actions and notices; `GET /api/audit/mine`. |
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | Review actions; `NewReview`. |
+| [048-notification-wording](../../specs/048-notification-wording/) | [#129](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/129) | `notification-kinds.json` and `NotificationContract`: each kind's data keys declared once and tested on both sides; the five kinds that showed placeholders read as sentences (#119). |
