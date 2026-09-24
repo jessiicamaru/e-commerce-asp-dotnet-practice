@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Ecommerce.Contracts.Order;
 using Ecommerce.Cart.Application.Common.Interfaces;
 using Ecommerce.Cart.Domain.Entities;
 
@@ -105,7 +107,9 @@ public class CheckoutOutcomes(
         {
             foreach (var item in items)
             {
-                var line = cart.Lines.FirstOrDefault(l => l.ProductId == item.ProductId);
+                // The VARIANT that was bought (#122): by product, two shapes of one lens in the cart meant
+                // the decrement could land on the one that was not.
+                var line = cart.Lines.FirstOrDefault(l => l.SellableId == item.Sellable);
 
                 if (line is null)
                 {
@@ -130,4 +134,17 @@ public class CheckoutOutcomes(
     }
 }
 
-public record OrderedItem(Guid ProductId, int Quantity);
+/// <summary>One line of an order, as Cart remembers it until the order completes.</summary>
+/// <param name="VariantId">
+/// What was bought (specs/020, #122). <c>Guid.Empty</c> - an item stored before specs/052, or sent by an
+/// Order older than specs/020 - means the product's first variant, whose id IS the product id.
+/// </param>
+public record OrderedItem(Guid ProductId, int Quantity, Guid VariantId = default)
+{
+    /// <summary>What to match a cart line's <see cref="CartLine.SellableId"/> against.</summary>
+    [JsonIgnore]
+    public Guid Sellable => VariantId == Guid.Empty ? ProductId : VariantId;
+
+    /// <summary>The one mapping from the event - where the variant used to be dropped.</summary>
+    public static OrderedItem From(OrderItemDto item) => new(item.ProductId, item.Quantity, item.VariantId);
+}

@@ -23,7 +23,7 @@ public class OrderSubmittedConsumer(CheckoutOutcomes outcomes) : IConsumer<Order
         return _outcomes.RecordSubmittedAsync(
             m.OrderId,
             m.UserId,
-            (m.Items ?? []).Select(i => new OrderedItem(i.ProductId, i.Quantity)).ToList(),
+            (m.Items ?? []).Select(OrderedItem.From).ToList(),
             context.CancellationToken);
     }
 }
