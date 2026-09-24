@@ -95,6 +95,30 @@ public class AvailabilityTests(CatalogTestFixture fixture)
         Assert.Equal(newer, product.AvailabilityObservedAt!.Value, TimeSpan.FromMilliseconds(1));
     }
 
+    /// <summary>
+    /// #124 (specs/054): a newer announcement that REPEATS the current value must still move the clock.
+    /// The variant guard used to also require the value to change, so "in stock" at t3 was ignored and an
+    /// "out of stock" from t2, overtaken in flight, won when it arrived last.
+    /// </summary>
+    [Fact]
+    public async Task A_repeated_value_still_moves_the_clock_so_an_older_contrary_one_loses()
+    {
+        var productId = await SeedProductAsync();
+
+        var t1 = new DateTime(2026, 9, 24, 10, 0, 0, DateTimeKind.Utc);
+        var t2 = t1.AddMinutes(1);
+        var t3 = t1.AddMinutes(2);
+
+        Assert.True(await SendAsync(new RecordStockAvailabilityCommand(productId, true, t1, productId)));
+        await SendAsync(new RecordStockAvailabilityCommand(productId, true, t3, productId));
+        Assert.False(await SendAsync(new RecordStockAvailabilityCommand(productId, false, t2, productId)));
+
+        var product = await ReadAsync(productId);
+
+        Assert.True(product.Availability);
+        Assert.Equal(t3, product.AvailabilityObservedAt!.Value, TimeSpan.FromMilliseconds(1));
+    }
+
     [Fact]
     public async Task A_newer_observation_does_win()
     {

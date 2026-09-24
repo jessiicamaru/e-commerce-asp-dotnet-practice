@@ -157,9 +157,11 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         DateTime observedAt,
         CancellationToken cancellationToken = default) =>
         _context.ProductVariants
+            // Time only, exactly as the product-level guard (#124, specs/054). A newer announcement that
+            // repeats the current value must still move the clock; requiring the value to change let an
+            // older, contrary announcement overtaken in flight win when it arrived last.
             .Where(v => v.Id == variantId
-                && (v.AvailabilityObservedAt == null || v.AvailabilityObservedAt < observedAt)
-                && (v.Availability != isAvailable || v.AvailabilityObservedAt == null))
+                && (v.AvailabilityObservedAt == null || v.AvailabilityObservedAt < observedAt))
             .ExecuteUpdateAsync(set => set
                 .SetProperty(v => v.Availability, isAvailable)
                 .SetProperty(v => v.AvailabilityObservedAt, observedAt)
