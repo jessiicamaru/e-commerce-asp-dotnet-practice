@@ -30,6 +30,10 @@
     "ProductRejected": "“{{product}}” was not approved: {{reason}}",
     "ProductTakenDown": "“{{product}}” was taken off the shelf: {{reason}}",
     "NewReview_one": "Somebody gave “{{product}}” {{rating}} star.",
-    "NewReview_other": "Somebody gave “{{product}}” {{rating}} stars."
+    "NewReview_other": "Somebody gave “{{product}}” {{rating}} stars.",
+    "ParcelAutoDelivered": "Your parcel of order {{order}} was taken as delivered a week after it shipped.",
+    "AccountLocked": "Your account was locked until {{until}}: {{reason}}",
+    "AccountBanned": "Your account was banned: {{reason}}",
+    "ReviewHidden": "Your review of “{{product}}” was hidden: {{reason}}"
   }
 }

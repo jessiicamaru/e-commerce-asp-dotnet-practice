@@ -90,7 +90,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (183 tests,
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (184 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (83 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
@@ -580,7 +580,9 @@ it existed (#119). Activity keeps them (idempotent on
 the publisher's id), and `/api/notifications` only ever reads **the caller's own** - somebody else's id
 is 404. The bell asks for the unread **count** every 30 seconds (`NOTIFICATION_POLL_MS`), not in a
 background tab, and loads the list only when opened. Order tells the buyer (paid, failed, shipped,
-cancelled) and each seller (a new sale, a cancelled sale, a parcel received, a payout).
+cancelled) and each seller (a new sale, a cancelled sale, a parcel received, a parcel the 7-day sweep took as
+delivered, a payout); Identity tells a person their account was locked or banned, and Catalog a reviewer that
+their review was hidden (specs/059).
 ⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
 the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
 transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent

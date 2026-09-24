@@ -111,6 +111,32 @@ public class NotificationTests
         Assert.Equal($"/shop/sales/{order}", received.Link);
     }
 
+    /// <summary>
+    /// #128 (specs/059): the seller was told when the CUSTOMER confirmed and not at all when the 7-day sweep
+    /// did - though that is the moment their money becomes due.
+    /// </summary>
+    [Fact]
+    public async Task The_sweep_taking_a_parcel_as_delivered_tells_its_seller()
+    {
+        var alice = Guid.CreateVersion7();
+        var (order, _) = await PaidAsync(alice);
+        await As(alice, () => SendAsync(new PrepareMySaleCommand(order)));
+        await As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-AUTO")));
+        var cutoff = DateTime.UtcNow.AddDays(-7);
+        await using (var scope = _fixture.NewScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<OrderDbContext>().OrderShipments
+                .Where(s => s.OrderId == order && s.SellerId == alice)
+                .ExecuteUpdateAsync(x => x.SetProperty(s => s.ShippedAt, cutoff.AddHours(-1)));
+        }
+
+        await SendAsync(new AutoConfirmDeliveriesCommand(cutoff));
+
+        var told = Assert.Single(Sent(order), n => n.Kind == "ParcelAutoDelivered");
+        Assert.Equal((alice, $"/shop/sales/{order}"), (told.RecipientId, told.Link));
+        Assert.DoesNotContain(Sent(order), n => n.Kind == "ParcelReceived");   // nobody clicked
+    }
+
     [Fact]
     public async Task A_cancellation_tells_the_buyer_and_every_seller()
     {

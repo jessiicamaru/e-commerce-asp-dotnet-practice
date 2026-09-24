@@ -70,10 +70,12 @@ public class ConfirmDeliveryCommandHandler(IOrderRepository orders, ICurrentUser
 
 public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogger<AutoConfirmDeliveriesCommandHandler> logger,
     IAuditTrail audit,
+    INotifier notifier,
     IPublishEndpoint publish)
     : IRequestHandler<AutoConfirmDeliveriesCommand, int>
 {
     private readonly IAuditTrail _audit = audit;
+    private readonly INotifier _notifier = notifier;
 
     private readonly IOrderRepository _orders = orders;
     private readonly ILogger<AutoConfirmDeliveriesCommandHandler> _logger = logger;
@@ -90,6 +92,13 @@ public class AutoConfirmDeliveriesCommandHandler(IOrderRepository orders, ILogge
                     after: new { Count = parcels.Count, ShippedBefore = request.ShippedBefore },
                     cancellationToken: ct);
                 await ParcelDeliveries.AnnounceAsync(_orders, publish, parcels, ct);
+
+                // Each seller whose parcel this was - in the sweep's transaction, like its entry and its event.
+                foreach (var parcel in await _orders.GetDeliveredParcelsAsync(parcels, ct))
+                {
+                    await OrderNotices.WithFactsAsync(_orders, parcel.OrderId,
+                        facts => OrderNotices.AutoDeliveredAsync(_notifier, facts, parcel.ShipmentId, ct), ct);
+                }
             });
 
         if (confirmed > 0)

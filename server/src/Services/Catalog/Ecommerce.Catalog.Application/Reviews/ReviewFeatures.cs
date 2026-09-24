@@ -198,11 +198,20 @@ public class ReviewHandlers(
         var by = Caller();
         var now = DateTime.UtcNow;
 
+        var product = await _products.GetByIdAsync(review.ProductId, cancellationToken);
+
         // One guarded statement decides (#127): two moderators at once, one hides and the other is told.
-        var hidden = await _reviews.TryHideAsync(review.Id, review.ProductId, reason, by, now, ct =>
-            _audit.RecordAsync(AuditCategory.Moderation, "ReviewHidden", "Review", review.Id.ToString(),
+        var hidden = await _reviews.TryHideAsync(review.Id, review.ProductId, reason, by, now, async ct =>
+        {
+            await _audit.RecordAsync(AuditCategory.Moderation, "ReviewHidden", "Review", review.Id.ToString(),
                 $"A {review.Rating}-star review hidden: {reason}",
-                new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct), cancellationToken);
+                new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct);
+
+            // Its author learns why it disappeared (#128, specs/059).
+            await _notifier.NotifyAsync(review.CustomerId, NotificationKind.ReviewHidden,
+                new Dictionary<string, string> { ["product"] = product?.Name ?? "", ["reason"] = reason },
+                $"/products/{review.ProductId}", ct);
+        }, cancellationToken);
         if (hidden == 0)
             throw new ConflictException("This review is already hidden.");
 

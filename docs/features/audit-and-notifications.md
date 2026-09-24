@@ -231,6 +231,10 @@ would roll back the payout or the decision it announces.
 | `ProductRejected` | seller | `product`, `reason` | `/shop/products/{id}` | Staff reject a product (Catalog). |
 | `ProductTakenDown` | seller | `product`, `reason` | `/shop/products/{id}` | Staff take an approved product down (Catalog). |
 | `NewReview` | seller | `product`, `rating` | `/products/{id}` | A customer's first review of the product - not its edits (Catalog). |
+| `ParcelAutoDelivered` | the parcel's seller (not for the shop's own) | `orderId` | `/shop/sales/{id}` | The 7-day sweep takes the parcel as delivered - nobody confirmed it (Order, specs/059). |
+| `AccountLocked` | the person | `until` (ISO 8601 UTC, worded in the reader's time), `reason` | none | Staff lock the account (Identity, specs/059). Unreadable while locked - the reason is shown at sign-in - and afterwards their record of why. |
+| `AccountBanned` | the person | `reason` | none | An administrator bans the account (Identity, specs/059). |
+| `ReviewHidden` | the review's author | `product`, `reason` | `/products/{id}` | A moderator hides the review (Catalog, specs/059). |
 
 The shop's own goods have nobody to tell: no `NewSale`, `SaleCancelled`, `ParcelReceived` or product
 notice goes out for them.
@@ -309,9 +313,8 @@ From [messages.md](../reference/messages.md).
 ## Known limits
 
 - **Cart records nothing** in the audit log: a cart is a customer's scratch pad, and what they bought is recorded by Order.
-- **Some events notify nobody:** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) a lock or a ban, a parcel the sweeper takes as delivered (the seller
-  gets `ParcelReceived` only when the customer confirms), a hidden review, and a product sent back to
-  review by the seller's own edit.
+- **A product sent back to review by the seller's own edit tells nobody**: the seller made the edit, and
+  the product page shows its status.
 - **No retention or archiving.** Both tables grow without bound; exporting is out of scope (specs/041).
 - **No email, push or SMS** - in-app only -
   [#102](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/102). No notification

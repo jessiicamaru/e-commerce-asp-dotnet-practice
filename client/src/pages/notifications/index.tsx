@@ -71,7 +71,7 @@ export function NotificationsPage() {
                 >
                   <span className={cn('text-sm', !n.readAt && 'font-semibold')}>
                     {!n.readAt && <span aria-hidden className="bg-primary mr-2 inline-block size-2 rounded-full" />}
-                    {describeNotification(t, n)}
+                    {describeNotification(t, n, i18n.language)}
                   </span>
                   <span className="text-muted-foreground text-xs">{new Date(n.createdAt).toLocaleString(i18n.language)}</span>
                 </button>

@@ -75,6 +75,17 @@ describe('the moderation and review kinds (#119)', () => {
       .toBe('Có người chấm “Sony A7 IV” 4 sao.')
   })
 
+  /** specs/059: the end of a lock is a moment in the reader's own language and time, never raw UTC. */
+  it('words a lock with its end in the reader language and the reason', () => {
+    const until = '2026-10-01T07:30:00Z'
+    const en = describeNotification(t('en'), n('AccountLocked', { until, reason: 'Spam in reviews' }), 'en')
+    expect(en).toContain(new Date(until).toLocaleString('en'))
+    expect(en).toContain('Spam in reviews')
+    expect(en).not.toContain('07:30:00Z')
+    expect(describeNotification(t('vi'), n('AccountLocked', { until, reason: 'Spam' }), 'vi'))
+      .toContain(new Date(until).toLocaleString('vi'))
+  })
+
   /** A sentence with a hole in it is worse than a vaguer one (spec FR-003). */
   it('falls back to the generic sentence rather than show a hole', () => {
     expect(describeNotification(t('en'), { ...n('ProductRejected', { product: 'X' }) })).toBe('You have a new update.')
@@ -100,6 +111,7 @@ const samples: Record<string, { value: string; shows: string | null }> = {
   product: { value: 'Sample Product', shows: 'Sample Product' },
   reason: { value: 'Sample reason', shows: 'Sample reason' },
   rating: { value: '4', shows: '4' },
+  until: { value: '2026-10-01T07:30:00Z', shows: '2026' },   // formatted in the reader's language (specs/059)
 }
 
 describe('every kind a service can send (specs/048)', () => {
@@ -121,7 +133,7 @@ describe('every kind a service can send (specs/048)', () => {
           expect(samples[key], `no sample for "${key}" - decide how it reads`).toBeDefined()
           return [key, samples[key].value]
         }))
-        const text = describeNotification(t(lang), { ...n(kind), data })
+        const text = describeNotification(t(lang), { ...n(kind), data }, lang)
 
         expect(text).not.toContain('{{')
         expect(text).not.toBe(t(lang)('generic'))
