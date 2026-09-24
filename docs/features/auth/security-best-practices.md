@@ -133,10 +133,13 @@ public record RefreshTokenCommand(string RefreshToken) : IRequest<AuthResponse>;
 does five things:
 
 1. **Finds the token.** An unknown token is a 401.
-2. **A revoked token coming back is reuse.** Two parties hold the same token, and the server cannot
+2. **A ROTATED token coming back is reuse.** Two parties hold the same token, and the server cannot
    tell which is the owner, so it revokes **every** active refresh token of that user (every device)
    and answers 401. This is the trade-off the OAuth 2.0 Security BCP recommends. A warning is logged
-   with the user id; the token itself is never logged.
+   with the user id, the token itself is never logged, and since specs/058 a `SessionReuseDetected`
+   audit entry records it under Security. A token revoked **without** rotation (by a lock, a ban or an
+   earlier reuse sweep; its `ReplacedByToken` is null) is a stale tab, not theft: the same 401, logged
+   at Information, and nothing else ends.
 3. **Except within 10 seconds of the rotation** (`ReuseGrace`). Two tabs share one HttpOnly cookie,
    so both can send the same token at once. The second gets an ordinary 401 and nothing else is
    revoked.
@@ -219,10 +222,12 @@ The order of the two sign-in checks is the point: before the password is verifie
 and a wrong password must look the same (the #28 rule); after it, the person has proved who they are
 and is owed the reason.
 
-A refresh token revoked by a lock has no `ReplacedByToken`, so when the stopped person's browser
-presents it again the handler takes it for **reuse** (§4.2): it revokes the (already revoked) sessions
-again and logs a reuse warning. The answer is the same 401; the warning in the log is misleading for
-this case.
+A refresh token revoked by a lock has no `ReplacedByToken`. Until specs/058 the handler took it for
+**reuse** when the stopped person's browser presented it again (§4.2): it logged a reuse warning and
+revoked every session. Once the account had been unlocked, that included the session the person had just
+signed in with. That was more than a misleading warning (#128). Now only a rotated token is reuse.
+`RefreshTokenReuseTests.A_stale_tab_from_before_a_lock_does_not_end_the_session_after_the_unlock`
+holds it.
 
 ## 5. Known weaknesses in the current implementation
 

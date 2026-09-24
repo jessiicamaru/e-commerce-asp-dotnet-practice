@@ -1,4 +1,8 @@
+using Ecommerce.Application.Addresses.Commands.SaveAddress;
+using Ecommerce.Application.Addresses.Commands.SetDefaultAddress;
 using Ecommerce.Application.Auth.Commands.Login;
+using Ecommerce.Application.Auth.Commands.Logout;
+using Ecommerce.Application.Auth.Commands.Refresh;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Commands.RegisterSeller;
 using Ecommerce.Application.Sellers;
@@ -70,7 +74,66 @@ public class AuditTests(IdentityTestFixture fixture)
         Assert.Contains("Mai Lens Ha Noi", renamed.After);
     }
 
-    private async Task<List<AuditEntryRecorded>> RecordedAsync<T>(Guid caller, IRequest<T> request, bool expectFailure = false)
+    /// <summary>#128 (specs/058): signing out was not on the record; an unknown token records nothing.</summary>
+    [Fact]
+    public async Task Signing_out_is_recorded_as_the_person_and_nothing_is_recorded_for_nothing()
+    {
+        var email = $"audit-{Guid.NewGuid():N}@example.test";
+        await RecordedAsync(Guid.Empty, new RegisterCommand(email, "Passw0rd!23", "Lan", "Pham"));
+        var session = await SendAsync(new LoginCommand(email, "Passw0rd!23"));
+
+        var signedOut = Assert.Single(await RecordedAsync(Guid.Empty, new LogoutCommand(session.RefreshToken)));
+        Assert.Equal(("Security", "SignedOut", (Guid?)session.Id), (signedOut.Category, signedOut.Action, signedOut.ActorId));
+        Assert.DoesNotContain(session.RefreshToken, signedOut.Summary + signedOut.After);
+
+        Assert.Empty(await RecordedAsync(Guid.Empty, new LogoutCommand("not-a-token")));
+    }
+
+    /// <summary>#128: the default address is on the record - as "changed", never as an address.</summary>
+    [Fact]
+    public async Task Changing_the_default_address_is_recorded_without_the_address()
+    {
+        var email = $"audit-{Guid.NewGuid():N}@example.test";
+        await RecordedAsync(Guid.Empty, new RegisterCommand(email, "Passw0rd!23", "Lan", "Pham"));
+        var me = (await SendAsync(new LoginCommand(email, "Passw0rd!23"))).Id;
+        await SendAsync(new SaveAddressCommand("Lan Pham", "12 Ly Thuong Kiet", null, "Ha Noi", null, "100000", "VN", null), me);
+        var second = await SendAsync(new SaveAddressCommand("Lan at work", "1 Trang Tien", null, "Ha Noi", null, "100000", "VN", null), me);
+
+        var entry = Assert.Single(await RecordedAsync(me, new SetDefaultAddressCommand(second.Id)));
+
+        Assert.Equal(("User", "DefaultAddressChanged"), (entry.Category, entry.Action));
+        Assert.DoesNotContain("Trang Tien", entry.Summary + entry.Before + entry.After);
+    }
+
+    /// <summary>#128: reuse is a security event worth keeping, not just a log line.</summary>
+    [Fact]
+    public async Task Detected_reuse_is_on_the_record()
+    {
+        var email = $"audit-{Guid.NewGuid():N}@example.test";
+        await RecordedAsync(Guid.Empty, new RegisterCommand(email, "Passw0rd!23", "Lan", "Pham"));
+        var first = await SendAsync(new LoginCommand(email, "Passw0rd!23"));
+        await SendAsync(new RefreshTokenCommand(first.RefreshToken));
+        await _fixture.AgeRevocationAsync(first.RefreshToken);
+
+        var entry = Assert.Single(await RecordedAsync(Guid.Empty, new RefreshTokenCommand(first.RefreshToken), expectFailure: true));
+
+        Assert.Equal(("Security", "SessionReuseDetected", (Guid?)first.Id), (entry.Category, entry.Action, entry.ActorId));
+    }
+
+    private async Task<T> SendAsync<T>(IRequest<T> request, Guid? caller = null)
+    {
+        await using var provider = _fixture.For(caller ?? Guid.Empty);
+        await using var scope = provider.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
+
+    private Task<List<AuditEntryRecorded>> RecordedAsync(Guid caller, IRequest request, bool expectFailure = false) =>
+        RecordedObjectAsync(caller, request, expectFailure);
+
+    private Task<List<AuditEntryRecorded>> RecordedAsync<T>(Guid caller, IRequest<T> request, bool expectFailure = false) =>
+        RecordedObjectAsync(caller, request, expectFailure);
+
+    private async Task<List<AuditEntryRecorded>> RecordedObjectAsync(Guid caller, object request, bool expectFailure)
     {
         await using var provider = _fixture.For(caller);
         var harness = provider.GetRequiredService<ITestHarness>();

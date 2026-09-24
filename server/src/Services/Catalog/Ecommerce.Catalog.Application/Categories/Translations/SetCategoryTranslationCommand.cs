@@ -2,6 +2,7 @@ using Ecommerce.Catalog.Application.Categories.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Products.Translations;
 using Ecommerce.Catalog.Domain.Entities;
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Localization;
 using FluentValidation;
@@ -46,11 +47,13 @@ public class RemoveCategoryTranslationCommandValidator : AbstractValidator<Remov
 
 public class SetCategoryTranslationCommandHandler(
     ICategoryRepository categories,
-    IOptions<LanguageOptions> localization)
+    IOptions<LanguageOptions> localization,
+    IAuditTrail audit)
     : IRequestHandler<SetCategoryTranslationCommand, CategoryResponse>
 {
     private readonly ICategoryRepository _categories = categories;
     private readonly LanguageOptions _localization = localization.Value;
+    private readonly IAuditTrail _audit = audit;
 
     public async Task<CategoryResponse> Handle(SetCategoryTranslationCommand request, CancellationToken cancellationToken)
     {
@@ -59,6 +62,7 @@ public class SetCategoryTranslationCommandHandler(
 
         var language = request.Language.ToLowerInvariant();
         var translation = category.Translations.FirstOrDefault(t => t.Language == language);
+        var before = translation is null ? null : new { translation.Name, translation.Description };
 
         if (translation is null)
         {
@@ -78,16 +82,22 @@ public class SetCategoryTranslationCommandHandler(
         }
 
         category.UpdatedAt = DateTime.UtcNow;
+        // On the record like every other catalogue edit (#128, specs/058).
+        await _audit.RecordAsync(AuditCategory.Catalog, "CategoryTranslated", "Category", category.Id.ToString(),
+            $"Category \"{category.Name}\" translated into {language}",
+            before, new { Name = request.Name.Trim(), Description = request.Description?.Trim() },
+            cancellationToken: cancellationToken);
         await _categories.SaveChangesAsync(cancellationToken);
 
         return CategoryResponse.From(category, language, _localization.DefaultLanguage);
     }
 }
 
-public class RemoveCategoryTranslationCommandHandler(ICategoryRepository categories)
+public class RemoveCategoryTranslationCommandHandler(ICategoryRepository categories, IAuditTrail audit)
     : IRequestHandler<RemoveCategoryTranslationCommand>
 {
     private readonly ICategoryRepository _categories = categories;
+    private readonly IAuditTrail _audit = audit;
 
     public async Task Handle(RemoveCategoryTranslationCommand request, CancellationToken cancellationToken)
     {
@@ -104,6 +114,10 @@ public class RemoveCategoryTranslationCommandHandler(ICategoryRepository categor
         }
 
         category.Translations.Remove(translation);
+        await _audit.RecordAsync(AuditCategory.Catalog, "CategoryTranslationRemoved", "Category", category.Id.ToString(),
+            $"The {language} text of category \"{category.Name}\" removed",
+            new { translation.Language, translation.Name, translation.Description }, null,
+            cancellationToken: cancellationToken);
         await _categories.SaveChangesAsync(cancellationToken);
     }
 }

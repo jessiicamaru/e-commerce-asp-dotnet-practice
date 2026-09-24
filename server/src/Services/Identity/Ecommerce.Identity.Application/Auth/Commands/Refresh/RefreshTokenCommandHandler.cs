@@ -1,9 +1,11 @@
+using Ecommerce.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Application.Common.Constants;
+using Ecommerce.Shared.Audit;
 
 namespace Ecommerce.Application.Auth.Commands.Refresh;
 
@@ -31,7 +33,8 @@ namespace Ecommerce.Application.Auth.Commands.Refresh;
 public class RefreshTokenCommandHandler(
     IUserRepository userRepository,
     IJwtTokenGenerator jwtTokenGenerator,
-    ILogger<RefreshTokenCommandHandler> logger
+    ILogger<RefreshTokenCommandHandler> logger,
+    IAuditTrail audit
 ) : IRequestHandler<RefreshTokenCommand, AuthResponse>
 {
     public static readonly TimeSpan ReuseGrace = TimeSpan.FromSeconds(10);
@@ -41,6 +44,7 @@ public class RefreshTokenCommandHandler(
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
     private readonly ILogger<RefreshTokenCommandHandler> _logger = logger;
+    private readonly IAuditTrail _audit = audit;
 
     public async Task<AuthResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
@@ -53,16 +57,31 @@ public class RefreshTokenCommandHandler(
 
         if (presented.RevokedAt is { } revokedAt)
         {
-            var concurrentRefresh = presented.ReplacedByToken is not null && now - revokedAt <= ReuseGrace;
+            // Reuse is a ROTATED token presented again after the grace window: two parties hold it. A token
+            // revoked WITHOUT rotation - by a lock, a ban, or an earlier reuse sweep - is a stale tab, not
+            // theft; treating it as reuse ended the session a person signed in with after an unlock (#128).
+            var reuse = presented.ReplacedByToken is not null && now - revokedAt > ReuseGrace;
 
-            if (!concurrentRefresh)
+            if (reuse)
             {
+                // On the record before the sessions end: a security event worth keeping, not just a log line.
+                await _audit.RecordAsync(AuditCategory.Security, "SessionReuseDetected", "User", user.Id.ToString(),
+                    $"A replaced session token of {user.Email} was presented again; every session ended",
+                    actor: AuditActors.Of(user), cancellationToken: cancellationToken);
+                await _userRepository.SaveChangesAsync(cancellationToken);
+
                 var revoked = await _userRepository.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
 
                 // No token value in the log: it is a credential, even a revoked one.
                 _logger.LogWarning(
                     "Refresh token reuse for user {UserId}: a token revoked at {RevokedAt:o} was presented again. Revoked {Count} active session(s).",
                     user.Id, revokedAt, revoked);
+            }
+            else if (presented.ReplacedByToken is null)
+            {
+                _logger.LogInformation(
+                    "A session of user {UserId} ended at {RevokedAt:o} (not rotated: a lock, a ban or a sign-out elsewhere) was presented again; refused.",
+                    user.Id, revokedAt);
             }
 
             // The same answer either way, so the caller learns nothing about which case this was.

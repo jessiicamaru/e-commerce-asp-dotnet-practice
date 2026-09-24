@@ -9,6 +9,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
+using Ecommerce.Application.Users;
+
 namespace Ecommerce.Identity.Tests;
 
 /// <summary>
@@ -49,6 +51,31 @@ public class RefreshTokenReuseTests(IdentityTestFixture fixture)
     private Task AgeRevocationAsync(string token) =>
         WithDbAsync(db => db.RefreshTokens.Where(t => t.Token == token)
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, DateTime.UtcNow.AddMinutes(-5))));
+
+    /// <summary>
+    /// #128 (specs/058): a token revoked by a LOCK was never rotated, so presenting it again is a stale tab,
+    /// not theft. Treated as reuse, it ended the session the person signed in with after the unlock.
+    /// </summary>
+    [Fact]
+    public async Task A_stale_tab_from_before_a_lock_does_not_end_the_session_after_the_unlock()
+    {
+        var before = await SignedInAsync();
+        var admin = Guid.CreateVersion7();
+        await AsAdminAsync(admin, new LockUserCommand(before.Id, 1, "Cooling off"));
+        await AsAdminAsync(admin, new UnlockUserCommand(before.Id));
+        var after = await SendAsync(new LoginCommand(before.Email, "Passw0rd!23"));
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => SendAsync(new RefreshTokenCommand(before.RefreshToken)));
+
+        await SendAsync(new RefreshTokenCommand(after.RefreshToken));   // still a session
+    }
+
+    private async Task AsAdminAsync<T>(Guid admin, IRequest<T> request)
+    {
+        await using var provider = _fixture.For(admin, "Admin");
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
 
     [Fact]
     public async Task Rotation_keeps_the_old_token_revoked_and_pointing_at_its_successor()

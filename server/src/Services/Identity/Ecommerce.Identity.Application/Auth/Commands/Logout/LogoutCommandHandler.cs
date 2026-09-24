@@ -1,4 +1,6 @@
+using Ecommerce.Application.Common;
 using Ecommerce.Application.Common.Interfaces;
+using Ecommerce.Shared.Audit;
 using MediatR;
 
 namespace Ecommerce.Application.Auth.Commands.Logout;
@@ -15,9 +17,10 @@ namespace Ecommerce.Application.Auth.Commands.Logout;
 /// Signing out must never fail in a way the person has to deal with.
 /// </para>
 /// </remarks>
-public class LogoutCommandHandler(IUserRepository users) : IRequestHandler<LogoutCommand>
+public class LogoutCommandHandler(IUserRepository users, IAuditTrail audit) : IRequestHandler<LogoutCommand>
 {
     private readonly IUserRepository _users = users;
+    private readonly IAuditTrail _audit = audit;
 
     public async Task Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
@@ -35,6 +38,9 @@ public class LogoutCommandHandler(IUserRepository users) : IRequestHandler<Logou
         }
 
         user.RefreshTokens.Remove(token);
+        // The person, from the row: sign-out may carry no access token, as sign-in carries none (#128).
+        await _audit.RecordAsync(AuditCategory.Security, "SignedOut", "User", user.Id.ToString(),
+            $"{user.Email} signed out", actor: AuditActors.Of(user), cancellationToken: cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
     }
 }

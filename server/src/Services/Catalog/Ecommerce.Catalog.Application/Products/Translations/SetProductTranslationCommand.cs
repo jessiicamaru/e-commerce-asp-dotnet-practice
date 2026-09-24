@@ -161,6 +161,10 @@ public class RemoveProductTranslationCommandHandler(IProductRepository products,
         }
 
         product.Translations.Remove(translation);
+        await _audit.RecordAsync(AuditCategory.Catalog, "ProductTranslationRemoved", "Product", product.Id.ToString(),
+            $"The {language} name and description of \"{product.Name}\" removed",
+            new { translation.Language, translation.Name, translation.Description }, null,
+            cancellationToken: cancellationToken);
         await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
         await _products.SaveChangesAsync(cancellationToken);
     }
