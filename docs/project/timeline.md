@@ -104,6 +104,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [048](../../specs/048-notification-wording/) | Notification wording | #129 | Fixes #119; each notification kind's data keys declared once and tested on both server and storefront |
 | [049](../../specs/049-sign-in-refusal/) | Sign-in refusal | #130 | Fixes #120; a locked or banned person is told why and until when, in their language and time |
 | [050](../../specs/050-unlock-rules/) | Unlock rules | #131 | Fixes #121; unlocking obeys the limits locking does |
+| [051](../../specs/051-storefront-image/) | Storefront image | #133 | Fixes #132; the storefront is the tenth published image - nginx serving the bundle on :8088 and forwarding `/api` to the gateway |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

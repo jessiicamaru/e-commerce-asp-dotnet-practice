@@ -62,3 +62,7 @@ record that says so.
 | 36 | Orphaned images are reclaimed only when a person asks | Its failure mode is deleting images somebody is using | [specs/033](../../specs/033-image-reconciliation/) |
 | 37 | A variant's photograph falls back to the product's on the server | A second place to decide the fallback is a second place to get it wrong | [specs/032](../../specs/032-variant-images/) |
 | 38 | The storefront draws by role but never decides by role | Every rule it shows is enforced by the server on its own | [specs/028](../../specs/028-seller-console/) |
+| 39 | A notification kind's data keys are declared once, and checked by tests on both sides - never at run time | A wording mismatch that threw would roll back the payout or decision it announces; five kinds had shown `{{placeholders}}` because nothing saw both sides | [specs/048](../../specs/048-notification-wording/) |
+| 40 | A 403 carries its facts beside its sentence, and the client words them | A reader deserves the reason in their language and time zone, as notifications are worded from data | [specs/049](../../specs/049-sign-in-refusal/) |
+| 41 | A moderator lifts only a lock with at most 30 days to run - read from the time left, not who set it | No column or migration, and a long lock stays until an administrator decides | [specs/050](../../specs/050-unlock-rules/) |
+| 42 | The storefront image is nginx forwarding `/api` to a gateway named at start | One origin as in development, one image for any gateway, no .NET image tied to a Node build | [specs/051](../../specs/051-storefront-image/) |
