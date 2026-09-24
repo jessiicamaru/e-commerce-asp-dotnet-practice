@@ -84,6 +84,12 @@ public class ReviewTests(CatalogTestFixture fixture) : IDisposable
         AsStaff();
         await SendAsync(new HideReviewCommand(spam.Id, "Advertising"));
         Assert.Equal((5.00m, 1), await RatingAsync(product.Id));
+
+        // #128 (specs/059): the author learns why it disappeared.
+        var told = Assert.Single(_fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message),
+            n => n.Kind == "ReviewHidden" && n.RecipientId == lan);
+        Assert.Equal((product.Name, "Advertising", $"/products/{product.Id}"), (told.Data["product"], told.Data["reason"], told.Link));
+        Assert.Empty(NotificationContract.Problems(told.Kind, told.Data));
         Assert.DoesNotContain((await SendAsync(new GetProductReviewsQuery(product.Id))).Items, r => r.Id == spam.Id);
         await Assert.ThrowsAsync<ConflictException>(() => SendAsync(new HideReviewCommand(spam.Id, "Again")));
 

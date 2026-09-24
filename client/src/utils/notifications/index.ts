@@ -11,7 +11,7 @@ import { money } from '@/utils/shared'
  * (specs/048): a vaguer sentence beats one with a hole in it. The keys each kind carries are declared in
  * `Ecommerce.Shared/Notifications/notification-kinds.json`, which the tests hold this against.
  */
-export function describeNotification(t: TFunction<'notifications'>, n: AppNotification): string {
+export function describeNotification(t: TFunction<'notifications'>, n: AppNotification, language?: string): string {
   const d = n.data
   const rating = Number(d.rating)
   const values: Record<string, string> = {
@@ -25,6 +25,8 @@ export function describeNotification(t: TFunction<'notifications'>, n: AppNotifi
     product: d.product ?? '',
     reason: d.reason ?? '',
     rating: d.rating ?? '',
+    // A moment, in the reader's language and time zone - never the stored UTC text (specs/059).
+    until: d.until ? new Date(d.until).toLocaleString(language) : '',
   }
   const key = `kind.${n.kind}`
   const options = { defaultValue: '', ...(d.rating && Number.isFinite(rating) ? { count: rating } : {}) }

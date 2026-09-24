@@ -19,10 +19,16 @@ public static class NotificationKind
     public const string SaleCancelled = "SaleCancelled";
     public const string ParcelReceived = "ParcelReceived";
     public const string PayoutRecorded = "PayoutRecorded";
+    public const string ParcelAutoDelivered = "ParcelAutoDelivered";
 
     // Somebody's account (specs/043)
     public const string ModeratorGranted = "ModeratorGranted";
     public const string ModeratorRevoked = "ModeratorRevoked";
+
+    // What staff did to somebody's account or words (specs/059)
+    public const string AccountLocked = "AccountLocked";
+    public const string AccountBanned = "AccountBanned";
+    public const string ReviewHidden = "ReviewHidden";
 
     // Somebody's application to sell (specs/044)
     public const string ShopApproved = "ShopApproved";

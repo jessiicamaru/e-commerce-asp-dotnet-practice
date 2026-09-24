@@ -70,6 +70,18 @@ public static class OrderNotices
             : notifier.NotifyAsync(seller.Value, NotificationKind.ParcelReceived, About(f.OrderId), $"/shop/sales/{f.OrderId}", ct);
     }
 
+    /// <summary>
+    /// The 7-day sweep took a seller's parcel as delivered (specs/059): worded apart from
+    /// <see cref="ReceivedAsync"/>, because nobody confirmed it - and it is when their money becomes due.
+    /// </summary>
+    public static Task AutoDeliveredAsync(INotifier notifier, OrderNoticeFacts f, Guid shipmentId, CancellationToken ct)
+    {
+        var seller = f.Parcels.FirstOrDefault(p => p.ShipmentId == shipmentId)?.SellerId;
+        return seller is null
+            ? Task.CompletedTask
+            : notifier.NotifyAsync(seller.Value, NotificationKind.ParcelAutoDelivered, About(f.OrderId), $"/shop/sales/{f.OrderId}", ct);
+    }
+
     public static Task PayoutAsync(INotifier notifier, Guid sellerId, decimal amount, string currency, CancellationToken ct) =>
         notifier.NotifyAsync(sellerId, NotificationKind.PayoutRecorded,
             new Dictionary<string, string> { ["amount"] = Money(amount), ["currency"] = currency }, "/shop/payouts", ct);

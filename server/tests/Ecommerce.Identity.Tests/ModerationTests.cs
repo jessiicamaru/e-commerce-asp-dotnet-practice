@@ -192,9 +192,18 @@ public class ModerationTests(IdentityTestFixture fixture)
         (_, notices) = await PublishedAsync(Admin, new RevokeRoleCommand(id, RoleNames.Moderator), RoleNames.Admin);
         Assert.Equal((id, "ModeratorRevoked"), (Assert.Single(notices).RecipientId, notices[0].Kind));
 
-        (audit, _) = await PublishedAsync(Admin, new LockUserCommand(id, 2, "Cooling off"), RoleNames.Admin);
+        (audit, notices) = await PublishedAsync(Admin, new LockUserCommand(id, 2, "Cooling off"), RoleNames.Admin);
         Assert.Equal(("Moderation", "AccountLocked"), (Assert.Single(audit).Category, audit[0].Action));
         Assert.Contains("Cooling off", audit[0].After);
+
+        // #128 (specs/059): the person is told - and once the lock ends, this is their record of why.
+        var locked = Assert.Single(notices);
+        Assert.Equal((id, "AccountLocked", "Cooling off"), (locked.RecipientId, locked.Kind, locked.Data["reason"]));
+        Assert.True(DateTime.Parse(locked.Data["until"]).ToUniversalTime() > DateTime.UtcNow.AddDays(1));
+
+        (_, notices) = await PublishedAsync(Admin, new BanUserCommand(id, "Fraud"), RoleNames.Admin);
+        var banned = Assert.Single(notices);
+        Assert.Equal((id, "AccountBanned", "Fraud"), (banned.RecipientId, banned.Kind, banned.Data["reason"]));
     }
 
     [Fact]

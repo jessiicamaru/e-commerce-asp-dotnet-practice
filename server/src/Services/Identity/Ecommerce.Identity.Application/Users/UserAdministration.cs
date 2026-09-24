@@ -233,6 +233,14 @@ public class UserAdministrationHandlers(
 
         await _audit.RecordAsync(AuditCategory.Moderation, "AccountLocked", "User", user.Id.ToString(),
             $"{user.Email} locked for {request.Days} day(s)", before, Snapshot(user), cancellationToken: cancellationToken);
+        // Unreadable while the lock lasts - the reason is shown at sign-in (specs/049) - and afterwards their
+        // record of what happened and why (#128, specs/059).
+        await _notifier.NotifyAsync(user.Id, NotificationKind.AccountLocked,
+            new Dictionary<string, string>
+            {
+                ["until"] = DateTime.SpecifyKind(user.LockedUntil.Value, DateTimeKind.Utc).ToString("o"),
+                ["reason"] = user.LockReason,
+            }, cancellationToken: cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
         // Every session ends now, not when its refresh token would have run out.
         await _users.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
@@ -274,6 +282,8 @@ public class UserAdministrationHandlers(
 
         await _audit.RecordAsync(AuditCategory.Moderation, "AccountBanned", "User", user.Id.ToString(),
             $"{user.Email} banned", before, Snapshot(user), cancellationToken: cancellationToken);
+        await _notifier.NotifyAsync(user.Id, NotificationKind.AccountBanned,
+            new Dictionary<string, string> { ["reason"] = user.BanReason! }, cancellationToken: cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
         await _users.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
 

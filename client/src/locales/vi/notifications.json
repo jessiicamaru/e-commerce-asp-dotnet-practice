@@ -29,6 +29,10 @@
     "ProductApproved": "“{{product}}” đã được duyệt và đang bán.",
     "ProductRejected": "“{{product}}” không được duyệt: {{reason}}",
     "ProductTakenDown": "“{{product}}” đã bị gỡ khỏi kệ: {{reason}}",
-    "NewReview": "Có người chấm “{{product}}” {{rating}} sao."
+    "NewReview": "Có người chấm “{{product}}” {{rating}} sao.",
+    "ParcelAutoDelivered": "Kiện hàng của đơn {{order}} được tính là đã giao sau một tuần kể từ khi gửi.",
+    "AccountLocked": "Tài khoản của bạn bị khoá đến {{until}}: {{reason}}",
+    "AccountBanned": "Tài khoản của bạn bị cấm: {{reason}}",
+    "ReviewHidden": "Đánh giá của bạn về “{{product}}” đã bị ẩn: {{reason}}"
   }
 }

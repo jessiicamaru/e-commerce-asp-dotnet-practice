@@ -16,6 +16,10 @@
     "ProductApproved": { "required": ["product"] },
     "ProductRejected": { "required": ["product", "reason"] },
     "ProductTakenDown": { "required": ["product", "reason"] },
-    "NewReview": { "required": ["product", "rating"] }
+    "NewReview": { "required": ["product", "rating"] },
+    "ParcelAutoDelivered": { "required": ["orderId"] },
+    "AccountLocked": { "required": ["until", "reason"] },
+    "AccountBanned": { "required": ["reason"] },
+    "ReviewHidden": { "required": ["product", "reason"] }
   }
 }
