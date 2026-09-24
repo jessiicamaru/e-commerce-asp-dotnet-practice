@@ -5,7 +5,7 @@ evidence it was found with (a search of the code, a request against the running 
 acceptance criteria. This page is the summary; the issue is the source of truth - close the issue and
 update this page in the same change.
 
-Last reviewed: 2026-09-24.
+Last reviewed: 2026-09-24 (after #119-#128 and #132).
 
 ## Deliberately deferred
 
@@ -20,11 +20,7 @@ Not issues, by decision:
 ## Priority 0 - defects in what is built
 
 Found while writing the feature documents, which describe the code as it is: places where the code
-disagrees with its own rules. Fix these before building anything new.
-
-| Issue | Title |
-| :-- | :-- |
-| [#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128) | Some writes record no audit entry and some events tell nobody |
+disagrees with its own rules. **All ten (#119-#128) are fixed** - see Fixed below.
 
 ## Priority 1 - accounts and security
 
@@ -75,6 +71,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128) | Some writes record no audit entry and some events tell nobody | [#141](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/141), [#142](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/142) (specs/058, 059) |
 | [#127](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/127) | Two first reviews at once give a 500, and hiding a review is not guarded | [#140](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/140) (specs/057) |
 | [#126](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/126) | Some seller edits of what a shopper reads skip product review | [#139](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/139) (specs/056) |
 | [#125](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/125) | The insights' period rules differ between endpoints, and the chart drops the first day | [#138](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/138) (specs/055) |
@@ -88,5 +85,5 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 ## Suggested order
 
-The defects first: #128. Then email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
+The defects are done. Next is email (#102), which unblocks two others: #102 -> #103 -> #104 -> #105 ->
 #107 -> #108 -> #111, and the rest as they become pressing.
