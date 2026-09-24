@@ -1,16 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ApiError } from '@/config/axios'
 import { ErrorMessage } from '@/components/shared/query-state'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/auth/useAuth'
+import { describeSignInFailure } from './refusal'
 
 export function SignInPage() {
-  const { t } = useTranslation('auth')
+  const { t, i18n } = useTranslation('auth')
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -28,9 +28,7 @@ export function SignInPage() {
       await signIn(email, password)
       navigate((location.state as { from?: string } | null)?.from ?? '/')
     } catch (caught) {
-      // Identity answers 401 with one message for "no such email" and "wrong password" (#28), so the
-      // page does too - it must not reveal which emails have accounts.
-      setError(ApiError.from(caught).status === 401 ? t('signIn.wrong') : t('signIn.failed'))
+      setError(describeSignInFailure(t, i18n.language, caught))
     } finally {
       setBusy(false)
     }

@@ -53,7 +53,16 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
                 $"Sign-in refused for {user.Email}: {(user.IsBanned ? "banned" : "locked")}",
                 actor: AuditActors.Of(user), cancellationToken: cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);
-            throw new ForbiddenException(why);
+            // The facts beside the sentence, so the storefront says it in the reader's language and time
+            // zone (specs/049); the sentence stays for anything that only reads `detail`.
+            throw new ForbiddenException(why, user.IsBanned
+                ? new Dictionary<string, object?> { ["code"] = "AccountBanned", ["reason"] = user.BanReason }
+                : new Dictionary<string, object?>
+                {
+                    ["code"] = "AccountLocked",
+                    ["until"] = DateTime.SpecifyKind(user.LockedUntil!.Value, DateTimeKind.Utc),
+                    ["reason"] = user.LockReason,
+                });
         }
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);

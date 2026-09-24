@@ -6,6 +6,11 @@ export interface ProblemDetails {
   status?: number
   detail?: string
   errors?: Record<string, string[]>
+  /** A 403's facts, beside its sentence (specs/049) - e.g. `AccountLocked` at sign-in. */
+  code?: string
+  /** ISO 8601, UTC. */
+  until?: string
+  reason?: string
 }
 
 /**

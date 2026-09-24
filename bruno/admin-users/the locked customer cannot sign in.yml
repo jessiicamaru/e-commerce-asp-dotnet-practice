@@ -25,6 +25,12 @@ runtime:
         test("told why, since the password was right", function() {
           expect(res.body.detail).to.contain("Bruno checks the lock");
         });
+        test("the facts come beside the sentence, for the storefront to word", function() {
+          expect(res.body.code).to.equal("AccountLocked");
+          expect(res.body.reason).to.contain("Bruno checks the lock");
+          expect(new Date(res.body.until).getTime()).to.be.greaterThan(Date.now());
+          expect(res.body.until).to.match(/Z$/);
+        });
 
 settings:
   encodeUrl: true
@@ -34,4 +40,5 @@ settings:
 
 docs: |-
   403 with the reason only after the right password (specs/043). A wrong one is still the plain 401 that
-  reveals nothing about the account.
+  reveals nothing about the account. Since specs/049 the 403 also carries `code`, `until` (UTC) and
+  `reason`, so the storefront says it in the reader's language and time zone.

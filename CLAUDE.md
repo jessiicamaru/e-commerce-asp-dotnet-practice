@@ -523,7 +523,10 @@ every session at once, refresh refuses the account whatever its token, and sign-
 the reason only after the right password** - before it, a locked account and a wrong password must
 look the same (#28). ⚠️ A grant or a lock reaches a token already issued only at its next refresh: an
 access token lives out its minutes. `ForbiddenException` (Shared) is the 403 whose message is shown; a
-"not yours" is still a 404.
+"not yours" is still a 404. It can also carry **facts**, written as ProblemDetails extensions in every
+environment (specs/049): the sign-in refusal sends `code` (`AccountLocked`/`AccountBanned`), `until` (UTC)
+and `reason`, and the sign-in page words them in the reader's language and time zone - the handler's own
+`traceId`/`errors` always win over a fact of the same name.
 
 **Emails are compared case-insensitively and stored as typed** (#49). Every lookup goes through
 `EmailKey.For` (trim, lower-case), and a unique index on `lower("Email")` enforces one account per
