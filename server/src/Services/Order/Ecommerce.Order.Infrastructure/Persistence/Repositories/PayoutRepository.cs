@@ -1,14 +1,63 @@
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
+using Ecommerce.Order.Application.Returns;
 using Ecommerce.Order.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Ecommerce.Order.Infrastructure.Persistence.Repositories;
 
 /// <summary>What the shop owes each seller, and the payouts that settle it (specs/037).</summary>
-public class PayoutRepository(OrderDbContext context) : IPayoutRepository
+public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> returns) : IPayoutRepository
 {
     private readonly OrderDbContext _context = context;
+    private readonly TimeSpan _returnWindow = returns.Value.Window;
+
+    /// <summary>
+    /// Each earning part with what it is owed and whether that is DUE now (specs/066) - the one place the
+    /// LINQ side says what "due" means; the payout claim says it in SQL, and a test holds the two together.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Due means delivered MORE THAN THE RETURN WINDOW AGO, with no return of it open. A return can start
+    /// only inside the window, so money is never paid for a parcel that can still come back - a hold, never
+    /// a debt. Open: requested, escalated or on its way back; or accepted or refused and still inside the
+    /// window the buyer has to act on it.
+    /// </remarks>
+    private IQueryable<PartMoney> Money(Guid? sellerId)
+    {
+        var cutoff = DateTime.UtcNow - _returnWindow;
+
+        // An object initializer, not a constructor: EF can group over the first and not the second.
+        return Earning(sellerId).Select(s => new PartMoney
+        {
+            SellerId = s.SellerId!.Value,
+            Currency = s.Order!.Currency,
+            Owed = s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value,
+            PaidOut = s.PayoutId != null,
+            Due = s.PayoutId == null
+                && s.Status == ShipmentStatus.Shipped
+                && s.DeliveredAt != null && s.DeliveredAt <= cutoff
+                && (s.Return == null
+                    || !(s.Return.Status == ReturnStatus.Requested
+                        || s.Return.Status == ReturnStatus.Escalated
+                        || s.Return.Status == ReturnStatus.SentBack
+                        || ((s.Return.Status == ReturnStatus.Accepted || s.Return.Status == ReturnStatus.Refused)
+                            && s.Return.DecidedAt > cutoff))),
+        });
+    }
+
+    private sealed class PartMoney
+    {
+        public Guid SellerId { get; init; }
+
+        public string? Currency { get; init; }
+
+        public decimal Owed { get; init; }
+
+        public bool PaidOut { get; init; }
+
+        public bool Due { get; init; }
+    }
 
     /// <summary>
     /// A seller's parts that are money at all: theirs, on a PAID order, with terms recorded at checkout.
@@ -26,25 +75,24 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
             .Where(s => s.SellerId != null
                 && (sellerId == null || s.SellerId == sellerId)
                 && s.GoodsTotal != null
-                && statuses.Contains(s.Order!.Status));
+                && statuses.Contains(s.Order!.Status)
+                // A returned parcel is no money at all (specs/066): not on the way, not due, never paid.
+                && (s.Return == null || s.Return.Status != ReturnStatus.Received));
     }
 
     public async Task<List<BalanceResponse>> GetBalanceAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
         // One GROUP BY with conditional sums: three figures per currency in one round trip, all over the
         // same rows, so they cannot disagree about which parts count.
-        var rows = await Earning(sellerId)
-            .GroupBy(s => s.Order!.Currency)
+        var rows = await Money(sellerId)
+            .GroupBy(m => m.Currency)
             .Select(g => new
             {
                 Currency = g.Key,
-                // Due means DELIVERED since specs/040 - shipped alone is still on the way.
-                OnTheWay = g.Sum(s => s.DeliveredAt == null
-                    ? s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value : 0m),
-                Due = g.Sum(s => s.DeliveredAt != null && s.PayoutId == null
-                    ? s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value : 0m),
-                PaidOut = g.Sum(s => s.PayoutId != null
-                    ? s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value : 0m)
+                // Not yet due - on its way, delivered but still returnable (specs/066), or held by a return.
+                OnTheWay = g.Sum(m => !m.PaidOut && !m.Due ? m.Owed : 0m),
+                Due = g.Sum(m => m.Due ? m.Owed : 0m),
+                PaidOut = g.Sum(m => m.PaidOut ? m.Owed : 0m)
             })
             .ToListAsync(cancellationToken);
 
@@ -72,14 +120,14 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
 
     public async Task<List<PayoutDueResponse>> GetDueAsync(CancellationToken cancellationToken = default)
     {
-        var due = await Earning(null)
-            .Where(s => s.Status == ShipmentStatus.Shipped && s.DeliveredAt != null && s.PayoutId == null)
-            .GroupBy(s => new { SellerId = s.SellerId!.Value, s.Order!.Currency })
+        var due = await Money(null)
+            .Where(m => m.Due)
+            .GroupBy(m => new { m.SellerId, m.Currency })
             .Select(g => new
             {
                 g.Key.SellerId,
                 g.Key.Currency,
-                Due = g.Sum(s => s.GoodsTotal!.Value - s.Commission!.Value + s.ShippingShare!.Value),
+                Due = g.Sum(m => m.Owed),
                 Parts = g.Count()
             })
             .ToListAsync(cancellationToken);
@@ -145,6 +193,11 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
     {
         var statuses = Sales.Earning.Select(s => s.ToString()).ToArray();
         var shipped = ShipmentStatus.Shipped.ToString();
+        // The same "due" as Money() (specs/066), in SQL: delivered more than the return window ago, and no
+        // return of the part open - or received, which makes it no money at all.
+        var cutoff = at - _returnWindow;
+        var holding = new[] { nameof(ReturnStatus.Requested), nameof(ReturnStatus.Escalated), nameof(ReturnStatus.SentBack), nameof(ReturnStatus.Received) };
+        var deciding = new[] { nameof(ReturnStatus.Accepted), nameof(ReturnStatus.Refused) };
 
         // ONE statement (research D5). The CTE claims the parts - its WHERE is the guard, re-evaluated by
         // PostgreSQL under each row's lock, so a concurrent payout that got there first leaves this one
@@ -160,6 +213,12 @@ public class PayoutRepository(OrderDbContext context) : IPayoutRepository
                    AND s."SellerId" = {sellerId}
                    AND s."Status" = {shipped}
                    AND s."DeliveredAt" IS NOT NULL
+                   AND s."DeliveredAt" <= {cutoff}
+                   AND NOT EXISTS (
+                       SELECT 1 FROM parcel_returns AS r
+                        WHERE r."ShipmentId" = s."Id"
+                          AND (r."Status" = ANY ({holding})
+                               OR (r."Status" = ANY ({deciding}) AND r."DecidedAt" > {cutoff})))
                    AND s."PayoutId" IS NULL
                    AND s."GoodsTotal" IS NOT NULL
                    AND o."Currency" = {currency}

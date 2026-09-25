@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `4e7cc2f`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `6149cdc`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**114 endpoints** across 7 services.
+**124 endpoints** across 7 services.
 
 ## Identity (34)
 
@@ -98,7 +98,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (23)
+## Order (33)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -107,17 +107,24 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/orders/fulfilment` | Admin | Staff: every customer's orders in one fulfilment status - Paid, Preparing or Shipped. |
 | `GET` | `/api/orders/fulfilment/{id}` | Admin | Staff: any order's detail, so they can see what to pack and where it goes (specs/038). The one read of an order that is not scoped to its owner - the role is the permission. |
 | `POST` | `/api/orders/fulfilment/{id}/cancel` | Admin | Staff: cancel any paid order until its first parcel has shipped (specs/039). |
+| `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/accept` | Admin |  |
+| `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/received` | Admin |  |
+| `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/refuse` | Admin |  |
 | `GET` | `/api/orders/insights/revenue` | Admin |  |
 | `GET` | `/api/orders/insights/top-buyers` | Admin |  |
 | `GET` | `/api/orders/insights/top-products` | Admin |  |
 | `POST` | `/api/orders/payouts` | Admin | Staff: settle everything due to one seller in one currency. 201 with the payout; 409 when nothing is due - including when another administrator has just settled it. |
 | `GET` | `/api/orders/payouts/due` | Admin | Staff: every seller with something due now, per currency. |
 | `GET` | `/api/orders/quote` | signed in | What checking out would cost now - the same parts, computed by the same code, as the order the same choices would place (#38). Places nothing. |
+| `GET` | `/api/orders/returns` | Admin | Returns by state, oldest waiting first - ?status=Escalated is the dispute queue. |
 | `GET` | `/api/orders/sales` | Seller | A seller's sales: paid orders holding at least one of their lines, with figures over those lines only. Seller, not Admin - an administrator sees every order through fulfilment already. |
 | `GET` | `/api/orders/sales/balance` | Seller | A seller's money per currency: on the way, due, paid out. |
 | `GET` | `/api/orders/sales/payouts` | Seller | The payouts made to a seller, newest first. |
 | `GET` | `/api/orders/sales/{id}` | Seller | One sale, the seller's own lines only. 404 - one wording - for no such order, nothing of theirs on it, failed, or still settling. |
 | `POST` | `/api/orders/sales/{id}/preparing` | Seller | A seller starts preparing THEIR part of this order (specs/035). 404 - one wording - when it is not their sale, not there, not paid or failed; 409 when their part is not waiting. |
+| `POST` | `/api/orders/sales/{id}/return/accept` | Seller |  |
+| `POST` | `/api/orders/sales/{id}/return/received` | Seller |  |
+| `POST` | `/api/orders/sales/{id}/return/refuse` | Seller |  |
 | `POST` | `/api/orders/sales/{id}/shipment` | Seller | A seller has sent THEIR part, with a tracking reference. Repeating it is a no-op. |
 | `GET` | `/api/orders/shipping-options` | anyone | The delivery options and what each costs. Public - prices are not a secret. |
 | `GET` | `/api/orders/{id}` | signed in | One of the caller's own orders. Answers 404 both when the order does not exist and when it belongs to another shopper. |
@@ -125,6 +132,9 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/{id}/preparing` | Admin | Staff: Paid → Preparing. Repeating it is a no-op; from any other state, 409. |
 | `POST` | `/api/orders/{id}/shipment` | Admin | Staff: Preparing → Shipped, with a tracking reference. |
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/received` | signed in | The customer says one parcel of their order arrived (specs/040). 404 for none or not theirs; 409 if it has not been shipped; repeating it is a no-op. |
+| `POST` | `/api/orders/{id}/shipments/{shipmentId}/return` | signed in | Ask to return a whole delivered parcel, within the return window. 404 not theirs; 409 too late, not delivered, or asked already. |
+| `POST` | `/api/orders/{id}/shipments/{shipmentId}/return/escalate` | signed in | Ask staff to look again at a refused return, within the window of the refusal. |
+| `POST` | `/api/orders/{id}/shipments/{shipmentId}/return/sent` | signed in | The accepted parcel is on its way back, with its tracking reference. |
 
 ## Inventory (4)
 

@@ -241,6 +241,72 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.ParcelReturn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("RefundAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("SentBackAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ShipmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("TrackingReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SellerId");
+
+                    b.HasIndex("ShipmentId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "RequestedAt");
+
+                    b.ToTable("parcel_returns", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Payout", b =>
                 {
                     b.Property<Guid>("Id")
@@ -535,6 +601,17 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.ParcelReturn", b =>
+                {
+                    b.HasOne("Ecommerce.Order.Domain.Entities.OrderShipment", "Shipment")
+                        .WithOne("Return")
+                        .HasForeignKey("Ecommerce.Order.Domain.Entities.ParcelReturn", "ShipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shipment");
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
                 {
                     b.HasOne("MassTransit.EntityFrameworkCoreIntegration.OutboxState", null)
@@ -552,6 +629,11 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Shipments");
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.OrderShipment", b =>
+                {
+                    b.Navigation("Return");
                 });
 #pragma warning restore 612, 618
         }

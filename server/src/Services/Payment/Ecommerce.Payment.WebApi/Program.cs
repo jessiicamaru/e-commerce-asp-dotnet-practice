@@ -102,6 +102,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<RefundCancelledOrderConsumer>();
     // specs/053: a payment approved after the saga failed the order waiting for it is refunded.
     x.AddConsumer<RefundLatePaymentConsumer>();
+    // specs/066: a returned parcel is refunded - its goods and their tax.
+    x.AddConsumer<RefundReturnedParcelConsumer>();
 
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
         cfg.UseEntityFrameworkOutbox<PaymentDbContext>(context));

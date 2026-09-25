@@ -113,6 +113,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<OrderCompletedConsumer>();
     // specs/039: a cancelled order puts its stock back. Registered, or it never runs and never complains.
     x.AddConsumer<RestockCancelledOrderConsumer>();
+    // specs/066: a returned parcel's units go back on the shelf.
+    x.AddConsumer<RestockReturnedParcelConsumer>();
     x.AddConsumer<ProductCreatedConsumer>();
 
     // A later shape of a product is a new sellable unit, and it needs somewhere to count (specs/020).

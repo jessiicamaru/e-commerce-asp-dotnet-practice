@@ -34,6 +34,11 @@
     "ParcelAutoDelivered": "Your parcel of order {{order}} was taken as delivered a week after it shipped.",
     "AccountLocked": "Your account was locked until {{until}}: {{reason}}",
     "AccountBanned": "Your account was banned: {{reason}}",
-    "ReviewHidden": "Your review of “{{product}}” was hidden: {{reason}}"
+    "ReviewHidden": "Your review of “{{product}}” was hidden: {{reason}}",
+    "ReturnRequested": "The buyer of order {{order}} asked to return your parcel.",
+    "ReturnAccepted": "Your return for order {{order}} was accepted - send the parcel back and add its tracking reference.",
+    "ReturnRefused": "Your return for order {{order}} was refused: {{reason}}",
+    "ReturnSentBack": "The returned parcel of order {{order}} is on its way back to you ({{tracking}}).",
+    "ReturnRefunded": "Your returned parcel of order {{order}} arrived; {{amount}} was refunded."
   }
 }

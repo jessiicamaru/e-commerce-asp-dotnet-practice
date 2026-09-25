@@ -35,7 +35,7 @@ Gaps a shopper or a seller would notice.
 
 | Issue | Title |
 | :-- | :-- |
-| [#107](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/107) | A delivered parcel cannot be returned |
+| [#107](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/107) | A delivered parcel cannot be returned - **server done in [#149](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/149); the storefront screens remain** |
 | [#108](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/108) | There is no way to give a discount |
 | [#111](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/111) | A seller cannot see how their shop is doing |
 | [#109](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/109) | A shopper cannot save a product for later |

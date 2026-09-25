@@ -148,6 +148,8 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
+        services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Order.Application.Returns.ReturnOptions()));
         services.AddSingleton<ICommissionRate>(Commission);
 
         // The one substitution. It is what the query tests use to say "the caller is this shopper",
@@ -272,6 +274,22 @@ public class OrderTestCollection : ICollectionFixture<OrderTestFixture>;
 public class TestLanguage : IRequestLanguage
 {
     public string Current { get; set; } = "vi";
+}
+
+/// <summary>Test helpers that move time for the return window (specs/066).</summary>
+public static class ReturnWindow
+{
+    /// <summary>
+    /// Moves every delivered parcel of <paramref name="orderId"/> to 8 days ago - past the 7-day return window, so
+    /// its money is due (specs/066). A parcel delivered "now" is still returnable, and so still on the way.
+    /// </summary>
+    public static async Task PassAsync(OrderTestFixture fixture, Guid orderId)
+    {
+        await using var scope = fixture.NewScope();
+        await scope.ServiceProvider.GetRequiredService<OrderDbContext>().OrderShipments
+            .Where(s => s.OrderId == orderId && s.DeliveredAt != null)
+            .ExecuteUpdateAsync(x => x.SetProperty(s => s.DeliveredAt, DateTime.UtcNow.AddDays(-8)));
+    }
 }
 
 /// <summary>A settable <see cref="ICommissionRate"/> (specs/037).</summary>

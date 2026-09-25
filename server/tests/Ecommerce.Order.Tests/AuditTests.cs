@@ -46,6 +46,7 @@ public class AuditTests
         await As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-AUD")));   // a repeat: no entry
         var parcel = await PartIdAsync(order, alice);
         await As(customer, () => SendAsync(new ConfirmDeliveryCommand(order, parcel)));
+        await ReturnWindow.PassAsync(_fixture, order);   // due only after the return window (specs/066)
         await As(Guid.CreateVersion7(), () => SendAsync(new RecordPayoutCommand(alice, "VND")));
 
         var steps = Entries(order.ToString()).Select(e => e.Action).ToList();

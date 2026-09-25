@@ -1,0 +1,25 @@
+info:
+  name: the returns queue is not a customer s
+  type: http
+  seq: 57
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/returns?status=Escalated"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

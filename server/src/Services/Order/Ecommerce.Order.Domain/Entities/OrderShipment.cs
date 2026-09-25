@@ -63,4 +63,7 @@ public class OrderShipment
     public string? DeliveryConfirmedBy { get; set; }
 
     public Order? Order { get; set; }
+
+    /// <summary>Its return, if the buyer asked to send it back (specs/066). At most one.</summary>
+    public ParcelReturn? Return { get; set; }
 }

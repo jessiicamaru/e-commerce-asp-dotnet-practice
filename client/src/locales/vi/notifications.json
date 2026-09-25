@@ -33,6 +33,11 @@
     "ParcelAutoDelivered": "Kiện hàng của đơn {{order}} được tính là đã giao sau một tuần kể từ khi gửi.",
     "AccountLocked": "Tài khoản của bạn bị khoá đến {{until}}: {{reason}}",
     "AccountBanned": "Tài khoản của bạn bị cấm: {{reason}}",
-    "ReviewHidden": "Đánh giá của bạn về “{{product}}” đã bị ẩn: {{reason}}"
+    "ReviewHidden": "Đánh giá của bạn về “{{product}}” đã bị ẩn: {{reason}}",
+    "ReturnRequested": "Người mua đơn {{order}} yêu cầu trả lại kiện hàng của bạn.",
+    "ReturnAccepted": "Yêu cầu trả hàng của đơn {{order}} đã được chấp nhận - hãy gửi kiện hàng lại và nhập mã vận đơn.",
+    "ReturnRefused": "Yêu cầu trả hàng của đơn {{order}} bị từ chối: {{reason}}",
+    "ReturnSentBack": "Kiện hàng trả lại của đơn {{order}} đang được gửi về cho bạn ({{tracking}}).",
+    "ReturnRefunded": "Kiện hàng trả lại của đơn {{order}} đã về; đã hoàn {{amount}}."
   }
 }

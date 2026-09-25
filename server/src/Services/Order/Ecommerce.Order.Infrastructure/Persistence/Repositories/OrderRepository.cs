@@ -13,7 +13,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
     {
         return await _context.Orders
             .Include(x => x.Items)
-            .Include(x => x.Shipments)
+            .Include(x => x.Shipments).ThenInclude(s => s.Return)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
@@ -325,7 +325,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                         s.Commission,
                         s.ShippingShare,
                         PaidOut = s.PayoutId != null,
-                        s.DeliveredAt
+                        s.DeliveredAt,
+                        s.Return
                     })
                     .FirstOrDefault(),
                 x.ShipTo,
@@ -380,7 +381,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             row.Part?.ShippingShare,
             Owed(row.Part?.GoodsTotal, row.Part?.Commission, row.Part?.ShippingShare),
             row.Part?.PaidOut ?? false,
-            row.Part?.DeliveredAt);
+            row.Part?.DeliveredAt,
+            row.Part?.Return is { } r ? Ecommerce.Order.Application.Returns.ReturnResponse.From(r) : null);
     }
 
     /// <summary>What the shop owes for a part, or null when its terms were never recorded (specs/037).</summary>
@@ -804,7 +806,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         return await _context.Orders
             .AsNoTracking()
             .Include(x => x.Items)
-            .Include(x => x.Shipments)
+            .Include(x => x.Shipments).ThenInclude(s => s.Return)
             .FirstOrDefaultAsync(x => x.Id == orderId && x.UserId == userId, cancellationToken);
     }
 }

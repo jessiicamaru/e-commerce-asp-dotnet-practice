@@ -1,0 +1,28 @@
+info:
+  name: staff see the received return
+  type: http
+  seq: 24
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/returns?status=Received&pageSize=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("this return, received", function() {
+          expect(res.body.items.map(function(r) { return r.id; })).to.include(bru.getVar("returnId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

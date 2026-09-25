@@ -120,6 +120,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [063](../../specs/063-email-confirmation/) | Email confirmation | #146 | Fixes #106: a single-use, hashed, 24-hour link on registering; a banner and "send it again"; no shop until the address is confirmed; existing accounts count as confirmed |
 | [064](../../specs/064-account-settings/) | Account settings | #147 | Fixes #104: change your name, phone and password; the current password is checked and counted toward the sign-in pause; this session stays, every other ends |
 | [065](../../specs/065-revoke-access-tokens/) | Access tokens revoked | #148 | Fixes #112: `AccessTokensRevoked` on a lock, ban, role revoked, password reset or change and token reuse; every service refuses earlier tokens within seconds |
+| [066](../../specs/066-parcel-returns/) | Parcel returns (server) | #149 | #107 part 1: request within 7 days, the seller or staff decide, disputes, sent back, received; refund and restock once; money due only after the return window |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

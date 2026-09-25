@@ -76,6 +76,7 @@ public class InventoryTestFixture : IAsyncLifetime
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
+        services.AddScoped<IReturnedParcels, ReturnedParcels>();
 
         // Who the tests are acting as, and what Catalog would answer (specs/031). Both settable,
         // because the refusals under test are exactly "this caller, that owner".

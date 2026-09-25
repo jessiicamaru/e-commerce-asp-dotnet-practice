@@ -143,6 +143,10 @@ public class DeliveryTests
         var aliceParcel = (await PartAsync(order, alice)).Id;
         await As(customer, () => SendAsync(new ConfirmDeliveryCommand(order, aliceParcel)));
 
+        // Delivered - but still returnable for 7 days (specs/066), so still on the way, not due.
+        Assert.Equal(new BalanceResponse("VND", owed, 0m, 0m), Assert.Single(await BalanceAsync(alice)));
+        await ReturnWindow.PassAsync(_fixture, order);
+
         Assert.Equal(new BalanceResponse("VND", 0m, owed, 0m), Assert.Single(await BalanceAsync(alice)));
         var payout = await As(Guid.CreateVersion7(), () => SendAsync(new RecordPayoutCommand(alice, "VND")));
         Assert.Equal(owed, payout.Amount);

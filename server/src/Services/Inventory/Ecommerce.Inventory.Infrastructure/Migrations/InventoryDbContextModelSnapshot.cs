@@ -22,6 +22,24 @@ namespace Ecommerce.Inventory.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ecommerce.Inventory.Domain.Entities.ReturnedParcel", b =>
+                {
+                    b.Property<Guid>("ReturnId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RestockedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ReturnId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("returned_parcels", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Inventory.Domain.Entities.StockItem", b =>
                 {
                     b.Property<Guid>("Id")

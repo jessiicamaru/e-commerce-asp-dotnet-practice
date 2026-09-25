@@ -180,6 +180,12 @@ public class ConcurrentInsertRecoveryTests(PaymentTestFixture fixture)
         public Task AddRefundAsync(Domain.Entities.Refund refund, CancellationToken ct = default)
             => inner.AddRefundAsync(refund, ct);
 
+        public Task<Domain.Entities.Refund?> GetReturnRefundAsync(Guid returnId, CancellationToken ct = default)
+            => inner.GetReturnRefundAsync(returnId, ct);
+
+        public Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken ct = default)
+            => inner.GetRefundedTotalAsync(orderId, ct);
+
         public Task SaveChangesAsync(CancellationToken ct = default) => inner.SaveChangesAsync(ct);
     }
 

@@ -127,7 +127,7 @@ In both paths, the same transaction publishes one `ParcelDeliveredEvent` per par
 21. **The sweep locks its rows first, and announces exactly the rows it set.** *Why:* a parcel confirmed by the customer in the meantime fails the guard and must be announced once, by the customer's confirmation, not twice (specs/046).
 22. **`ParcelDeliveredEvent` is published inside the delivery transaction.** *Why:* the right to review is granted exactly when the parcel was delivered and never twice. Product ids, not variant ids, because a review is of the product; one event per parcel, so a customer who received half an order can review that half.
 23. **A nonsensical delivery period stops Order at startup.** `DeliveryOptions` validates `AutoConfirmDays >= 1` and `SweepIntervalMinutes >= 1` with `ValidateOnStart`. *Why:* zero days would pay a seller the moment they click "shipped" (`DeliveryTests.Order_does_not_start_without_a_sensible_delivery_period`).
-24. **Money is due only for a delivered parcel.** Balances show a paid part as on the way until `DeliveredAt` is set, then due; the payout claim requires `DeliveredAt IS NOT NULL`. *Why:* a seller is paid for what arrived, not for what they said they sent (specs/040, PR #85).
+24. **Money is due only once a delivered parcel can no longer come back.** Since specs/066 a part is due when it was delivered **more than the return window (7 days) ago** with no return of it open, and a returned part is no money at all. The payout claim applies the same rule. *Why:* a seller is paid for what arrived and stayed. Holding the money through the window means a return never has to claw back a payout ([returns](returns.md), specs/040, 066).
 25. **Notices and audit entries commit with the change.** They are staged through the repository's `stage` callback inside the same transaction. *Why:* an entry or a notice for a change that rolled back would be false (specs/041, 042). A notice stores a kind and data, never a sentence, so the storefront words it in the reader's current language.
 26. **`GET /api/orders/fulfilment/{id}` is the one order read not scoped to its owner.** *Why:* staff need to see what to pack and where; the `Admin` role on the route is the whole permission, so its handler `GetOrderForStaffQuery` must never sit behind any other route (specs/038).
 
@@ -239,7 +239,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 
 ## Known limits
 
-- **A delivered parcel cannot be returned** ([#107](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/107)). Once any part has shipped, the order cannot be cancelled either.
+- **A delivered parcel is returned, not cancelled** ([returns](returns.md), specs/066). Once any part has shipped, the order cannot be cancelled; within 7 days of its delivery, a parcel can be sent back.
 - **Cancellation is whole-order only.** There is no cancelling one seller's part.
 - **Payment is a stub.** A refund is a ledger row recorded through `Provider = "Stub"`; no money moves. A real provider is deliberately deferred.
 - **Shipping is manual.** No carrier integration: a person types the tracking reference, and it cannot be changed after shipping (a different reference is 409). Despatch is not a saga step (specs/011 research D2).
@@ -260,6 +260,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 | - | #83 | A confirmed dialog closes (the edited `alert-dialog`). |
 | [039-order-cancellation](../../specs/039-order-cancellation/) | #84 | Cancellation by customer and staff, `OrderCancelledEvent`, restock and refund. |
 | [040-delivery-confirmation](../../specs/040-delivery-confirmation/) | #85 | Delivery confirmation by the customer and by `DeliveryConfirmationSweeper`; money due only once delivered. |
+| [066-parcel-returns](../../specs/066-parcel-returns/) | #149 | Returns of a delivered parcel; money due only after the return window ([returns](returns.md)). |
 | [041-audit-log](../../specs/041-audit-log/) | #93 | Audit entries for every parcel move, cancellation, delivery, restock and refund. |
 | [042-in-app-notifications](../../specs/042-in-app-notifications/) | #94 | Notices to buyers and sellers, staged with each change. |
 | [046-product-reviews](../../specs/046-product-reviews/) | #98 | `ParcelDeliveredEvent` published in the delivery transaction; the sweep locks its rows first. |

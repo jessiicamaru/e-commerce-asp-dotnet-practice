@@ -8,9 +8,9 @@ works is a test that fails when it does not.
 
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
-| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 635 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
+| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 669 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
 | Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 329 tests in 59 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
-| API collection | Bruno CLI | `bruno/` | 205 requests, 336 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
+| API collection | Bruno CLI | `bruno/` | 215 requests, 352 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
 | Mutation checks | by hand, per change | recorded in each PR | 2-4 per feature | That a new test fails when the rule it guards is removed |
@@ -35,9 +35,9 @@ DB_PASSWORD=<your password> dotnet test
 | `Ecommerce.Identity.Tests` | 5435 | 150 | AccessTokenRevocation, Account, AddressBook, Audit, AuthError, Email, EmailCase, EmailConfirmation, ForbiddenProblem, JwtStartup, Moderation, PasswordReset, RefreshTokenReuse, SignInThrottle, RegistrationValidation, SellerRoles, Session, ShopApplication, UserReport |
 | `Ecommerce.Catalog.Tests` | 5433 | 161 | Audit, Availability, CategoryTranslation, DeleteCategory, DeleteProduct, LanguageNegotiation, OrphanImage, ProductImage, ProductReview, ProductView, RequestCurrency, Review, SellerOwnership, Translation, VariantOwnership, VariantPrice, VariantSellerPricing, Variant |
 | `Ecommerce.Cart.Tests` | 5439 | 18 | CheckoutOutcome, Validation, VariantLine |
-| `Ecommerce.Order.Tests` | 5434 | 185 | Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
-| `Ecommerce.Inventory.Tests` | 5437 | 46 | Announcement, Audit, ForgetProduct, ReserveStock, Restock, SellerStock, Settlement |
-| `Ecommerce.Payment.Tests` | 5438 | 20 | Audit, ChargeOrder, ConcurrentInsertRecovery, Refund |
+| `Ecommerce.Order.Tests` | 5434 | 209 | Return, Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
+| `Ecommerce.Inventory.Tests` | 5437 | 51 | RestockReturn, Announcement, Audit, ForgetProduct, ReserveStock, Restock, SellerStock, Settlement |
+| `Ecommerce.Payment.Tests` | 5438 | 25 | ReturnRefund, Audit, ChargeOrder, ConcurrentInsertRecovery, Refund |
 | `Ecommerce.Orchestrator.Tests` | 5436 | 15 | OrderStateMachine (the saga's transitions through MassTransit's harness - the first tests it has had, specs/053), PaymentTimeout (the sweeper's query, the options) |
 | `Ecommerce.ApiGateway.Tests` | - | 12 | AuthRateLimit (the gateway's real pipeline through WebApplicationFactory, every destination unreachable: 502 means let through, 429 means refused; no database - specs/062) |
 | `Ecommerce.Activity.Tests` | 5440 | 28 | AuditDiff, AuditLog, AuditTrail, Notification, Redaction |

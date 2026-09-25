@@ -44,7 +44,8 @@ public static class OrderMapping
                 IsShop: s.SellerId is null,
                 Id: s.Id,
                 DeliveredAt: s.DeliveredAt,
-                DeliveryConfirmedBy: s.DeliveryConfirmedBy))
+                DeliveryConfirmedBy: s.DeliveryConfirmedBy,
+                Return: s.Return is { } r ? Returns.ReturnResponse.From(r) : null))
             .ToList();
 
     public static ShippingAddressResponse? ToResponse(Domain.Entities.ShippingAddress? a) =>

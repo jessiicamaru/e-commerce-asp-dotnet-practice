@@ -1,0 +1,56 @@
+info:
+  name: staff receive it and the units go back on the shelf
+  type: http
+  seq: 22
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/fulfilment/{{orderId}}/shipments/{{shipmentId}}/return/received"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // What the parcel held and what is on the shelf now, so the test can see the units come back.
+        const axios = require("axios");
+        const order = await axios.get(bru.interpolate("{{baseUrl}}/api/orders/fulfilment/{{orderId}}"),
+          { headers: { Authorization: "Bearer " + bru.getVar("adminToken") } });
+        const line = order.data.items.filter(function(i) { return !i.sellerName; })[0];
+        const variant = line.variantId || line.productId;
+        const stock = await axios.get(bru.interpolate("{{baseUrl}}/api/stock/") + variant);
+        bru.setVar("returnedVariant", variant);
+        bru.setVar("returnedQuantity", line.quantity);
+        bru.setVar("onHandBefore", stock.data.quantityOnHand);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("received, with its goods and their tax to refund", function() {
+          expect(res.body.status).to.equal("Received");
+          expect(res.body.refundAmount).to.be.above(0);
+        });
+        test("Inventory put the units back (over the broker)", async function() {
+          const axios = require("axios");
+          let onHand = null;
+          for (let i = 0; i < 20; i++) {
+            await bru.sleep(500);
+            const stock = await axios.get(bru.interpolate("{{baseUrl}}/api/stock/") + bru.getVar("returnedVariant"));
+            onHand = stock.data.quantityOnHand;
+            if (onHand === bru.getVar("onHandBefore") + bru.getVar("returnedQuantity")) break;
+          }
+          expect(onHand).to.equal(bru.getVar("onHandBefore") + bru.getVar("returnedQuantity"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/066: ParcelReturnedEvent, in the transaction that marks it received. Payment records the refund (a ledger
+  entry - the provider is a stub) and Inventory puts the units back, each once.

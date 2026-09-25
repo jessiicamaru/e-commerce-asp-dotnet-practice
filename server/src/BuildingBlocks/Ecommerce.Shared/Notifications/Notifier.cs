@@ -41,6 +41,13 @@ public static class NotificationKind
 
     // Somebody reviewed a seller's product (specs/046)
     public const string NewReview = "NewReview";
+
+    // A delivered parcel sent back (specs/066)
+    public const string ReturnRequested = "ReturnRequested";
+    public const string ReturnAccepted = "ReturnAccepted";
+    public const string ReturnRefused = "ReturnRefused";
+    public const string ReturnSentBack = "ReturnSentBack";
+    public const string ReturnRefunded = "ReturnRefunded";
 }
 
 /// <summary>

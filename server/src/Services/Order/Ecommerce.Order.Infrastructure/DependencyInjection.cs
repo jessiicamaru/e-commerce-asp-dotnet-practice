@@ -36,6 +36,13 @@ public static class DependencyInjection
         services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
 
+        // Returns (specs/066): the window is also the hold on a seller's money, so a bad value refuses to start.
+        services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();
+        services.AddOptions<Ecommerce.Order.Application.Returns.ReturnOptions>()
+            .Bind(configuration.GetSection(Ecommerce.Order.Application.Returns.ReturnOptions.SectionName))
+            .Validate(o => o.WindowDays >= 1, "Returns:WindowDays must be at least 1.")
+            .ValidateOnStart();
+
         // The first synchronous cross-service call in this system. Everything else is messages.
         //
         // h2c - cleartext HTTP/2 - because Catalog serves gRPC on a port of its own: one plaintext

@@ -20,7 +20,7 @@ parcel), [catalog](catalog.md) (product review before sale), [moderation and sta
 | **Seller** | Everything a customer can (a seller always holds `Customer` too). List products, which wait for review before sale; manage their own listings - translations, variants, prices per currency, photographs, deletion; set the stock of their own variants; rename their shop; read their sales (their lines only); prepare and ship their own parcel of an order; read their balance and payouts. |
 | **Moderator** | Work the shop-application queue: approve, or reject with a reason. Review sellers' products (see [catalog](catalog.md)). |
 | **Administrator** | Everything a moderator can. List products that belong to the shop itself. Pass every ownership check - write to any listing and stock any variant - because moderating a marketplace is the job. See what is due to every seller and record payouts. |
-| **System** | Catalog keeps a read model of shop names fed by Identity's events. Order freezes the seller, the shop name and the commission terms onto an order at checkout. The delivery sweeper takes parcels nobody confirmed as delivered after 7 days, which makes them due. |
+| **System** | Catalog keeps a read model of shop names fed by Identity's events. Order freezes the seller, the shop name and the commission terms onto an order at checkout. The delivery sweeper takes parcels nobody confirmed as delivered after 7 days; their money is due once the 7-day return window has passed too (specs/066). |
 
 ## How it works
 
@@ -228,8 +228,10 @@ same transaction.
     leaves existing sales unchanged (specs/037 D1).
 17. **The shares add up exactly.** `Earnings.SplitDelivery` counts in minor units, so the parts' shares
     always sum to the delivery charge.
-18. **Money is due only for a delivered parcel.** Balances, the due list and the payout claim all
-    require `DeliveredAt`; shipped alone is "on the way" (specs/040).
+18. **Money is due only once a delivered parcel can no longer come back.** Balances, the due list and the
+    payout claim all require the parcel delivered **more than the return window (7 days) ago** with no
+    return of it open (specs/040, 066). Until then it is "on the way"; a returned part is no money at all
+    ([returns](returns.md)).
 19. **A payout is one statement, and carries no amount.** The CTE claims the parts and the `INSERT`
     records the sum of exactly those rows; `HAVING count(*) > 0` inserts nothing when nothing was
     claimed. Of two administrators at once, the second's `UPDATE` waits on the row locks, re-evaluates

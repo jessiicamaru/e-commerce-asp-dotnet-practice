@@ -1,0 +1,40 @@
+info:
+  name: the customer asks to return the parcel
+  type: http
+  seq: 17
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/{{orderId}}/shipments/{{shipmentId}}/return"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "The lens has a scratch across the front element"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a request, for the shop's own parcel", function() {
+          expect(res.body.status).to.equal("Requested");
+          expect(res.body.isShop).to.equal(true);
+          bru.setVar("returnId", res.body.id);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/066 (#107): a whole delivered parcel, within 7 days of its delivery. The shop's own parcel is answered by an
+  administrator; a seller's by its seller.
