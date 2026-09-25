@@ -47,6 +47,73 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
         return rows.Select(r => new ProductSalesRow(r.ProductId, r.Name, r.Currency, r.Units, r.Revenue)).ToList();
     }
 
+    /// <summary>
+    /// One seller's lines on sold orders in the period, less any part that came back and was refunded
+    /// (specs/068 research D1) - the part being the seller's parcel of that order, and "came back" its return
+    /// having reached Received. A return still open is revenue: it may yet be refused.
+    /// </summary>
+    private IQueryable<SellerLine> SellerLinesIn(Guid sellerId, DateTime from, DateTime to) =>
+        SoldIn(from, to)
+            .SelectMany(o => o.Items, (o, i) => new { Order = o, Item = i })
+            .Where(x => x.Item.SellerId == sellerId)
+            .Where(x => !_context.OrderShipments.Any(s =>
+                s.OrderId == x.Order.Id && s.SellerId == sellerId && s.Return != null && s.Return.Status == ReturnStatus.Received))
+            .Select(x => new SellerLine
+            {
+                OrderId = x.Order.Id,
+                Day = x.Order.CreatedAt.Date,
+                CreatedAt = x.Order.CreatedAt,
+                Currency = x.Order.Currency,
+                ProductId = x.Item.ProductId,
+                ProductName = x.Item.ProductName,
+                Quantity = x.Item.Quantity,
+                Revenue = x.Item.Quantity * x.Item.UnitPrice,
+            });
+
+    public async Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    {
+        var rows = await SellerLinesIn(sellerId, from, to)
+            .GroupBy(l => new { l.Day, l.Currency })
+            // Several of her lines on one order are one order.
+            .Select(g => new { g.Key.Day, g.Key.Currency, Revenue = g.Sum(l => l.Revenue), Orders = g.Select(l => l.OrderId).Distinct().Count() })
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(r => new RevenueRow(r.Day, r.Currency, r.Revenue, r.Orders)).ToList();
+    }
+
+    public async Task<List<ProductSalesRow>> SellerProductSalesAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    {
+        var rows = await SellerLinesIn(sellerId, from, to)
+            .GroupBy(l => new { l.ProductId, l.Currency })
+            .Select(g => new
+            {
+                g.Key.ProductId,
+                g.Key.Currency,
+                Name = g.OrderByDescending(l => l.CreatedAt).Select(l => l.ProductName).First(),
+                Units = g.Sum(l => l.Quantity),
+                Revenue = g.Sum(l => l.Revenue),
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(r => new ProductSalesRow(r.ProductId, r.Name, r.Currency, r.Units, r.Revenue)).ToList();
+    }
+
+    /// <summary>
+    /// A class with an object initializer, not a positional record: EF cannot group over a projection made with
+    /// a record's constructor (found in specs/066).
+    /// </summary>
+    private sealed class SellerLine
+    {
+        public Guid OrderId { get; init; }
+        public DateTime Day { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public string? Currency { get; init; }
+        public Guid ProductId { get; init; }
+        public string ProductName { get; init; } = string.Empty;
+        public int Quantity { get; init; }
+        public decimal Revenue { get; init; }
+    }
+
     public async Task<List<BuyerRow>> BuyersAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var rows = await SoldIn(from, to)

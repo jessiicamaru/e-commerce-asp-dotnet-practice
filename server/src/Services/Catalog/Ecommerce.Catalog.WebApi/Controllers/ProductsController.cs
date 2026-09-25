@@ -377,6 +377,14 @@ public class ProductsController : ApiControllerBase
         return NoContent();
     }
 
+    /// <summary>The signed-in seller's own products: views, ratings, the most viewed (specs/068).</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("insights/mine")]
+    public async Task<IActionResult> MyInsights([FromQuery] GetMyProductInsightsQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
+
     [Authorize(Roles = "Admin")]
     [HttpGet("insights/top-viewed")]
     public async Task<IActionResult> TopViewed([FromQuery] GetTopViewedQuery query)

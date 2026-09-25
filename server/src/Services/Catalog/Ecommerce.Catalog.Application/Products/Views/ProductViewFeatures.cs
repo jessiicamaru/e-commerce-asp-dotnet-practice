@@ -17,6 +17,21 @@ public record RecordProductViewCommand(Guid ProductId) : IRequest;
 /// <summary>What people look at most, for administrators.</summary>
 public record GetTopViewedQuery(DateTime? From = null, DateTime? To = null, int Limit = 10) : IRequest<List<ViewedProduct>>;
 
+/// <summary>
+/// The signed-in seller's own products (specs/068, #111): views in the period, ratings, the most viewed. The
+/// seller is the token's - there is no id to change into somebody else's (Constitution IV).
+/// </summary>
+public record GetMyProductInsightsQuery(DateTime? From = null, DateTime? To = null, int Limit = 10) : IRequest<SellerProductInsights>;
+
+public class GetMyProductInsightsQueryValidator : AbstractValidator<GetMyProductInsightsQuery>
+{
+    public GetMyProductInsightsQueryValidator()
+    {
+        RuleFor(x => x.Limit).InclusiveBetween(1, 50);
+        this.ValidPeriod(x => x.From, x => x.To);
+    }
+}
+
 public class GetTopViewedQueryValidator : AbstractValidator<GetTopViewedQuery>
 {
     public GetTopViewedQueryValidator()
@@ -29,7 +44,8 @@ public class GetTopViewedQueryValidator : AbstractValidator<GetTopViewedQuery>
 
 public class ProductViewHandlers(IProductViewRepository views, IProductRepository products, ICurrentUser currentUser) :
     IRequestHandler<RecordProductViewCommand>,
-    IRequestHandler<GetTopViewedQuery, List<ViewedProduct>>
+    IRequestHandler<GetTopViewedQuery, List<ViewedProduct>>,
+    IRequestHandler<GetMyProductInsightsQuery, SellerProductInsights>
 {
     public async Task Handle(RecordProductViewCommand request, CancellationToken cancellationToken)
     {
@@ -48,5 +64,12 @@ public class ProductViewHandlers(IProductViewRepository views, IProductRepositor
     {
         var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
         return views.TopAsync(period.FirstDay, period.LastDay, request.Limit, cancellationToken);
+    }
+
+    public Task<SellerProductInsights> Handle(GetMyProductInsightsQuery request, CancellationToken cancellationToken)
+    {
+        var seller = currentUser.Id ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        return views.SellerAsync(seller, period.FirstDay, period.LastDay, request.Limit, cancellationToken);
     }
 }
