@@ -10,7 +10,8 @@
     "moderation": "Kiểm duyệt",
     "review": "Sản phẩm chờ duyệt",
     "reviews": "Đánh giá",
-    "overview": "Tổng quan"
+    "overview": "Tổng quan",
+    "returns": "Trả hàng"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -311,5 +312,29 @@
     "loadFailed": "Không tải được.",
     "noSales": "không có đơn",
     "peak": "Ngày cao nhất {{amount}}"
+  },
+  "returns": {
+    "title": "Trả hàng",
+    "subtitle": "Khiếu nại người mua chuyển lên cửa hàng, và các kiện của chính cửa hàng đang được gửi trả. Cũ nhất trước.",
+    "state": {
+      "Requested": "Đã yêu cầu",
+      "Accepted": "Đã chấp nhận",
+      "Refused": "Bị từ chối",
+      "Escalated": "Chờ cửa hàng xem lại",
+      "Rejected": "Từ chối hẳn",
+      "SentBack": "Đang gửi trả",
+      "Received": "Đã nhận lại"
+    },
+    "loadFailed": "Không tải được danh sách trả hàng.",
+    "none": "Không có gì.",
+    "requestedAt": "Yêu cầu ngày {{at}}",
+    "theShop": "kiện của cửa hàng",
+    "aSeller": "kiện của người bán",
+    "refusedBecause": "Đã từ chối: {{reason}}",
+    "card": "Trả hàng",
+    "cardHint": "Cửa hàng tự trả lời các kiện của mình; kiện của người bán chỉ đến nhân viên khi người mua chuyển lên, và khi đó nhân viên quyết định cuối cùng.",
+    "shopParcel": "Kiện của cửa hàng",
+    "sellerParcel": "Kiện từ {{shop}}",
+    "sellersToAnswer": "Người bán trả lời kiện này. Nó đến nhân viên nếu người mua chuyển lời từ chối lên."
   }
 }

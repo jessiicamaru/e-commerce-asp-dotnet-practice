@@ -4,7 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { Order } from '@/services/order'
-import type { Order as OrderModel, Shipment } from '@/services/order/types'
+import type { Order as OrderModel, ParcelReturn, Shipment } from '@/services/order/types'
 import { refusal } from '@/test/refusal'
 import { renderAsSeller } from '@/test/render'
 import { OrderPage } from '.'
@@ -121,5 +121,128 @@ describe('OrderPage cancelling (specs/039)', () => {
     expect(screen.getByText(/Taken as received on/)).toBeInTheDocument()
     expect(screen.getByText(/^Received on/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /received it/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('OrderPage returns (specs/067)', () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString()
+  const deliveredParcel = (deliveredAt: string, extra: Partial<Shipment> = {}): Shipment => ({
+    ...part('Shipped', 'Mai'), id: 's-1', deliveredAt, deliveryConfirmedBy: 'Customer', ...extra,
+  })
+  const withReturn = (status: ParcelReturn['status'], extra: Partial<ParcelReturn> = {}) =>
+    deliveredParcel(daysAgo(2), {
+      return: {
+        id: 'r-1', orderId: 'o-1', shipmentId: 's-1', isShop: false, status, reason: 'Scratched lens',
+        decisionReason: null, trackingReference: null, requestedAt: daysAgo(2), decidedAt: daysAgo(1),
+        sentBackAt: null, receivedAt: null, refundAmount: null, ...extra,
+      },
+    })
+
+  it('asks for a reason before sending a return request for a delivered parcel', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Shipped', shipments: [deliveredParcel(daysAgo(0))] }))
+    const request = vi.spyOn(Order, 'requestReturn').mockResolvedValue(withReturn('Requested').return!)
+    const user = userEvent.setup()
+    renderAt()
+
+    await user.click(await screen.findByRole('button', { name: /Return this parcel/ }))
+    const send = screen.getByRole('button', { name: /Ask to return it/ })
+    expect(send).toBeDisabled()
+
+    await user.type(screen.getByLabelText(/Why are you returning it/), '  Scratched lens ')
+    await user.click(send)
+
+    await waitFor(() => expect(request).toHaveBeenCalledWith('o-1', 's-1', 'Scratched lens'))
+  })
+
+  it('does not offer a return once the window has passed', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Shipped', shipments: [deliveredParcel(daysAgo(8))] }))
+    renderAt()
+
+    await screen.findByText(/^Received on/)
+    expect(screen.queryByRole('button', { name: /Return this parcel/ })).not.toBeInTheDocument()
+  })
+
+  it('shows a refusal from the server in its own words', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Shipped', shipments: [deliveredParcel(daysAgo(0))] }))
+    vi.spyOn(Order, 'requestReturn').mockRejectedValue(refusal(409, 'This parcel already has a return.'))
+    const user = userEvent.setup()
+    renderAt()
+
+    await user.click(await screen.findByRole('button', { name: /Return this parcel/ }))
+    await user.type(screen.getByLabelText(/Why are you returning it/), 'Broken')
+    await user.click(screen.getByRole('button', { name: /Ask to return it/ }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('This parcel already has a return.')
+  })
+
+  it('sends an accepted parcel back with its tracking reference', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Shipped', shipments: [withReturn('Accepted')] }))
+    const sendBack = vi.spyOn(Order, 'sendReturnBack').mockResolvedValue(withReturn('SentBack').return!)
+    const user = userEvent.setup()
+    renderAt()
+
+    expect(await screen.findByText(/Your return was accepted. Send the parcel back by/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /sent it back/ }))
+    await user.type(screen.getByLabelText('Tracking reference'), 'VNPOST-42')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(sendBack).toHaveBeenCalledWith('o-1', 's-1', 'VNPOST-42'))
+  })
+
+  it("shows the seller's refusal and takes it to staff after confirming", async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({
+      status: 'Shipped', shipments: [withReturn('Refused', { decisionReason: 'Used, not faulty' })],
+    }))
+    const escalate = vi.spyOn(Order, 'escalateReturn').mockResolvedValue(withReturn('Escalated').return!)
+    const user = userEvent.setup()
+    renderAt()
+
+    expect(await screen.findByText('Refused by the seller: Used, not faulty')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /look again/ }))
+    expect(escalate).not.toHaveBeenCalled()
+    await user.click(await screen.findByRole('button', { name: 'Ask the shop' }))
+
+    await waitFor(() => expect(escalate).toHaveBeenCalledWith('o-1', 's-1'))
+  })
+
+  it('offers nothing on a refusal older than the window, nor on a final rejection', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({
+      status: 'Shipped',
+      shipments: [
+        { ...withReturn('Refused', { decisionReason: 'Too late', decidedAt: daysAgo(8) }), id: 's-1' },
+        { ...withReturn('Rejected', { decisionReason: 'Worn' }), id: 's-2', isShop: true, sellerName: null },
+      ],
+    }))
+    renderAt()
+
+    expect(await screen.findByText(/turned the return down for good: Worn/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /look again/ })).not.toBeInTheDocument()
+  })
+
+  it('says what was refunded, in the order currency', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({
+      status: 'Shipped', shipments: [withReturn('Received', { refundAmount: 3297800, receivedAt: daysAgo(0) })],
+    }))
+    renderAt()
+
+    expect(await screen.findByText(/Returned. Refunded/)).toHaveTextContent(/3[.,]297[.,]800/)
+  })
+
+  it("offers each parcel's return on its own card of a multi-parcel order", async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({
+      status: 'Shipped',
+      shipments: [deliveredParcel(daysAgo(1), { id: 's-1', isShop: true, sellerName: null }), deliveredParcel(daysAgo(1), { id: 's-2' })],
+    }))
+    const request = vi.spyOn(Order, 'requestReturn').mockResolvedValue(withReturn('Requested').return!)
+    const user = userEvent.setup()
+    renderAt()
+
+    const buttons = await screen.findAllByRole('button', { name: /Return this parcel/ })
+    expect(buttons).toHaveLength(2)
+    await user.click(buttons[1])
+    await user.type(screen.getByLabelText(/Why are you returning it/), 'Wrong lens')
+    await user.click(screen.getByRole('button', { name: /Ask to return it/ }))
+
+    await waitFor(() => expect(request).toHaveBeenCalledWith('o-1', 's-2', 'Wrong lens'))
   })
 })

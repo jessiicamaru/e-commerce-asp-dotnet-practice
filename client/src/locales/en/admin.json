@@ -10,7 +10,8 @@
     "moderation": "Moderation",
     "review": "Products to review",
     "reviews": "Reviews",
-    "overview": "Overview"
+    "overview": "Overview",
+    "returns": "Returns"
   },
   "queue": {
     "title": "Orders to ship",
@@ -311,5 +312,29 @@
     "loadFailed": "Could not load this.",
     "noSales": "no sales",
     "peak": "Highest day {{amount}}"
+  },
+  "returns": {
+    "title": "Returns",
+    "subtitle": "Disputes the buyer took to the shop, and the shop’s own parcels coming back. Oldest first.",
+    "state": {
+      "Requested": "Requested",
+      "Accepted": "Accepted",
+      "Refused": "Refused",
+      "Escalated": "Escalated",
+      "Rejected": "Rejected",
+      "SentBack": "Sent back",
+      "Received": "Received"
+    },
+    "loadFailed": "Could not load the returns.",
+    "none": "Nothing here.",
+    "requestedAt": "Asked on {{at}}",
+    "theShop": "the shop’s parcel",
+    "aSeller": "a seller’s parcel",
+    "refusedBecause": "Refused: {{reason}}",
+    "card": "Returns",
+    "cardHint": "The shop answers its own parcels; a seller’s comes to staff only once the buyer escalates it, and staff then decide for good.",
+    "shopParcel": "The shop’s parcel",
+    "sellerParcel": "Parcel from {{shop}}",
+    "sellersToAnswer": "The seller answers this one. It comes to staff if the buyer escalates a refusal."
   }
 }

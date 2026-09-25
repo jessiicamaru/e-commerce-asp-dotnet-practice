@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { PackageIcon, PackageCheckIcon, TruckIcon } from 'lucide-react'
 import type { UseMutationResult } from '@tanstack/react-query'
+import { ParcelReturn } from '@/components/order/parcel-return'
 import { ReceiveParcel } from '@/components/order/receive-parcel'
 import { Badge } from '@/components/ui/badge'
 import type { Shipment } from '@/services/order/types'
@@ -16,10 +17,13 @@ import { cn } from '@/utils/shared'
 export function OrderShipments({
   shipments,
   receive,
+  returns,
 }: {
   shipments: Shipment[]
   /** The customer's "I've received it" (specs/040). Left out on pages where the reader is not the customer. */
   receive?: UseMutationResult<unknown, Error, string>
+  /** The customer's order, whose parcels they may return (specs/067). Left out likewise. */
+  returns?: { orderId: string; currency: string }
 }) {
   const { t } = useTranslation('orders')
 
@@ -73,6 +77,7 @@ export function OrderShipments({
                 </p>
               )}
               {receive && <ReceiveParcel shipment={shipment} receive={receive} />}
+              {returns && <ParcelReturn orderId={returns.orderId} shipment={shipment} currency={returns.currency} />}
             </li>
           )
         })}

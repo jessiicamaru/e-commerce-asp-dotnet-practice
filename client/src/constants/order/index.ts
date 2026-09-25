@@ -19,3 +19,10 @@ export const ORDER_STATUS = {
 
 /** Still waiting on the saga: stock is being reserved and payment taken. */
 export const isSettling = (status: string) => status === ORDER_STATUS.submitted
+
+/**
+ * Days after delivery a parcel may be returned (specs/066, `Returns:WindowDays` on the server) - and days to
+ * take a refusal further or to send an accepted parcel back. For DRAWING only: the server decides, and a page
+ * that disagrees with it is refused with a 409 naming the window (specs/067 research D1).
+ */
+export const RETURN_WINDOW_DAYS = 7

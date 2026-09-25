@@ -4,6 +4,7 @@ import { ApiError } from '@/config/axios'
 import { CancelOrder } from '@/components/order/cancel-order'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderShipments } from '@/components/order/order-shipments'
+import { ParcelReturn } from '@/components/order/parcel-return'
 import { ReceiveParcel } from '@/components/order/receive-parcel'
 import { OrderStatus } from '@/components/order/order-status'
 import { OrderTotals } from '@/components/order/order-totals'
@@ -87,15 +88,20 @@ export function OrderPage() {
       )}
       {/* One parcel: the list below is not drawn, so its "received" lives here (specs/040). */}
       {order.shipments?.length === 1 && (
-        <div className="mt-3">
+        <div className="mt-3 grid gap-3">
           <ReceiveParcel shipment={order.shipments[0]} receive={receive} />
+          <ParcelReturn orderId={order.orderId} shipment={order.shipments[0]} currency={order.currency} />
         </div>
       )}
 
       {/* A cancelled order has no parcels to follow - nothing will be sent. */}
       {order.shipments && order.status !== ORDER_STATUS.cancelled && (
         <div className="mt-6">
-          <OrderShipments shipments={order.shipments} receive={receive} />
+          <OrderShipments
+            shipments={order.shipments}
+            receive={receive}
+            returns={{ orderId: order.orderId, currency: order.currency }}
+          />
         </div>
       )}
 

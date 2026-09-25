@@ -27,6 +27,7 @@ export const queryKeys = {
   adminQueue: (status: QueueState, page: number) => ['admin-queue', status, page] as const,
   adminOrder: (id: string) => ['admin-order', id] as const,
   payoutsDue: () => ['payouts-due'] as const,
+  adminReturns: (status: string, page: number) => ['admin-returns', status, page] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   accounts: (search: string, page: number) => ['accounts', search, page] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,
