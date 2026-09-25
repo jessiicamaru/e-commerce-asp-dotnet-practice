@@ -229,6 +229,32 @@ signed in with. That was more than a misleading warning (#128). Now only a rotat
 `RefreshTokenReuseTests.A_stale_tab_from_before_a_lock_does_not_end_the_session_after_the_unlock`
 holds it.
 
+### 4.5 A forgotten password (specs/061)
+
+Two anonymous endpoints, and the rules that make them safe:
+
+1. **`POST /api/auth/forgot-password` `{ email }` is always 202.** An unknown address completes the
+   same way as a known one, so the answer cannot be used to learn which emails have accounts (#28).
+2. **The link carries a random token; the database keeps its hash.** 32 random bytes, base64url in the
+   link; `password_reset_tokens.token_hash` is its SHA-256. Somebody who reads the table cannot use a
+   link from it. The link works for **30 minutes**, **once**, and asking again replaces it.
+3. **The token never crosses the broker.** Identity is the sender of every email, so it writes the reset
+   email straight into its own `outgoing_emails` in the transaction that stores the hash, and the
+   dispatcher scrubs the row's data once the email is sent ([email](../email.md)).
+4. **`POST /api/auth/reset-password` `{ token, password }` decides in one statement.** A guarded
+   `UPDATE ... SET "UsedAt" = now WHERE "TokenHash" = @h AND "UsedAt" IS NULL AND "ExpiresAt" > now
+   RETURNING "UserId"`. Of two submissions of one link at once, exactly one resets the password. Used,
+   expired, replaced and made-up tokens are the **same 400** on `Token`.
+5. **A reset ends every session.** In the same transaction as the new password, every refresh token of
+   the account is revoked: whoever held a session - perhaps the reason for the reset - holds it no
+   longer. An access token already issued lives out its minutes, as after a lock (#112).
+6. **Registration's password rules apply** (at least 8 characters, at most 72 bytes), so a reset is not
+   the way round them. Both steps are Security audit entries (`PasswordResetRequested`,
+   `PasswordReset`), with neither the token nor the password in them.
+
+`PasswordResetTests` covers each rule against a real PostgreSQL. The storefront's pages are
+`/forgot-password` (linked from sign-in) and `/reset-password?token=…`.
+
 ## 5. Known weaknesses in the current implementation
 
 §4 describes what runs today. Open weaknesses:
@@ -239,9 +265,9 @@ holds it.
    [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
 3. **An email address is never confirmed** to belong to whoever registered it -
    [#106](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/106).
-4. **A forgotten password cannot be reset, and nobody can change their password or name** -
-   [#103](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/103),
-   [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104).
+4. **Nobody can change their password or name while signed in** -
+   [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104). A forgotten
+   password can be reset since specs/061 (§4.5).
 
 Three earlier weaknesses were recorded here and are fixed:
 

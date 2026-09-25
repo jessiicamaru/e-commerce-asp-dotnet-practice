@@ -112,6 +112,12 @@ public class DispatchEmailsCommandHandler(
         email.SentAt = now;
         email.Attempts++;
         email.LastError = null;
+        if (EmailTemplates.ScrubbedOnceSent.Contains(email.Template))
+        {
+            // A reset link, say: delivery needed it, nothing afterwards does (specs/061).
+            email.DataJson = "{}";
+        }
+
         return true;
     }
 

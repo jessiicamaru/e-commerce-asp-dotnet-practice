@@ -104,6 +104,7 @@ public class IdentityTestFixture : IAsyncLifetime
 
         // Email (specs/060): the real queue and dispatcher, and a transport that records instead of sending.
         services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();
+        services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
         services.AddSingleton<IEmailTransport>(Mail);
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new EmailOptions { StorefrontUrl = "http://shop.test" }));
 

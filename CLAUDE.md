@@ -92,7 +92,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (93 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (101 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had). They run against a **real PostgreSQL** — the guarantees under test are the
@@ -589,6 +589,15 @@ Identity, the one service that knows addresses, keeps it in `outgoing_emails` (i
 and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
 server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
 error after 12 attempts. The first email is the order confirmation, in the order's own language.
+**A forgotten password** (specs/061): `POST /api/auth/forgot-password` is **202 for any address** (#28) and,
+for a real account, stores a single-use token **as its SHA-256 hash only** (30 minutes, replacing any
+earlier unused one) and queues a `PasswordReset` email in the request's `Accept-Language`. ⚠️ That email is
+written **straight into `outgoing_emails` in the same transaction**, not through `IEmailSender`: Identity is
+the sender, so the token never sits in an outbox row or a broker queue - and the dispatcher **scrubs the
+data to `{}` once sent** (`EmailTemplates.ScrubbedOnceSent`). `POST /api/auth/reset-password` claims the
+token in **one guarded `UPDATE ... WHERE "UsedAt" IS NULL AND "ExpiresAt" > now RETURNING "UserId"`**, sets
+the password (registration's rules) and revokes every session, in one transaction; used, expired, replaced
+and made-up tokens are one 400 on `Token`. The storefront: `/forgot-password`, `/reset-password?token=`.
 ⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
 the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
 transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent

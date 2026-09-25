@@ -28,7 +28,6 @@ A person cannot recover or manage their own account, and sign-in can be guessed 
 
 | Issue | Title | Depends on |
 | :-- | :-- | :-- |
-| [#103](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/103) | A forgotten password cannot be reset | #102 |
 | [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104) | Nobody can change their password or their name | - |
 | [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105) | Sign-in can be guessed at without any limit | - |
 | [#106](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/106) | An email address is never confirmed to belong to anyone | #102 |
@@ -70,6 +69,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#103](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/103) | A forgotten password cannot be reset | [#144](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/144) (specs/061) |
 | [#102](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/102) | The system sends no email at all | [#143](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/143) (specs/060) |
 | [#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128) | Some writes record no audit entry and some events tell nobody | [#141](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/141), [#142](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/142) (specs/058, 059) |
 | [#127](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/127) | Two first reviews at once give a 500, and hiding a review is not guarded | [#140](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/140) (specs/057) |
@@ -85,5 +85,5 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 ## Suggested order
 
-The defects are done, and email exists (#102). Next: #103 -> #106 -> #104 -> #105 -> #107 -> #108 -> #111, and
+The defects are done, email exists (#102) and a password can be reset (#103). Next: #106 -> #104 -> #105 -> #107 -> #108 -> #111, and
 the rest as they become pressing.

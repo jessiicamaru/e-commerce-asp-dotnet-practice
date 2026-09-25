@@ -1,7 +1,7 @@
 # Email
 
-Since specs/060 the system sends email. The first email is the **order confirmation**. The foundation is
-built for the next ones: password reset (#103) and address confirmation (#106). Any service asks for an
+Since specs/060 the system sends email: the **order confirmation**, and since specs/061 the **password
+reset link**. Address confirmation (#106) is next. Any service asks for an
 email the way it asks for a notification, and Identity, the one service that knows email addresses, sends
 it. In development every email lands in **Mailpit**, and nothing leaves the machine.
 
@@ -10,6 +10,7 @@ it. In development every email lands in **Mailpit**, and nothing leaves the mach
 | Email | To | When | Language |
 | :-- | :-- | :-- | :-- |
 | Order confirmation (`OrderPaid`) | the buyer | the order settles `Paid` | the language the order was placed in (`orders.Language`) |
+| Password reset (`PasswordReset`) | the account's owner | they ask at `/forgot-password` (specs/061) | the request's `Accept-Language` |
 
 The confirmation greets the buyer by first name. It gives the short order number and the total in the
 order's currency, in the reader's number format (`20.416.000 VND`, `22,462,000 VND`), and links to the
@@ -74,6 +75,12 @@ sequenceDiagram
    to Mailpit on `localhost:1025`, and the containers point at the `mailpit` service. `SmtpEmailTransport`
    is plain SMTP with no authentication. It is the seam a real provider replaces, the way
    `StubPaymentGateway` is for payments.
+7. **A secret never crosses the broker, and is not kept once delivered** (specs/061). A reset link's token
+   is the one piece of email data that is a credential. Identity asks for that email itself, so it writes
+   the row straight into `outgoing_emails` in the transaction that stores the token's hash - no
+   `EmailRequested`, no outbox row, no queue holding it. Once the email is `Sent`, the dispatcher replaces
+   the data with `{}` (`EmailTemplates.ScrubbedOnceSent`): delivery needed the token, nothing afterwards
+   does. A pending or failed row still holds it, for as long as the link could work anyway.
 
 ## Data
 
@@ -104,6 +111,7 @@ Mailpit's inbox is at **http://localhost:8025**. It keeps its mail on the `mailp
 | Where | Proves |
 | :-- | :-- |
 | `Ecommerce.Identity.Tests/EmailTests` | A request delivered twice is kept and sent once; Vietnamese and English words, Vietnamese as the fallback; a mail server that is down delays the email, and it goes out once it is back; after 12 failed attempts the email is `Failed` with its reason; an unknown recipient, an unknown template and incomplete data fail rather than retry; the backoff doubles to an hour. |
+| `Ecommerce.Identity.Tests/PasswordResetTests` | The reset email carries the link to the storefront, in the language asked for, and once sent its row holds no token. |
 | `Ecommerce.Order.Tests/NotificationTests` | A paid order asks for one confirmation in its language, a redelivered settlement asks for no second one, and a failed order asks for none. |
 
 It was verified end to end against Mailpit (specs/060):
@@ -113,8 +121,7 @@ It was verified end to end against Mailpit (specs/060):
 
 ## Known limits
 
-- **One email so far.** Password reset (#103) and address confirmation (#106) are next. Other notices
-  are not emails yet.
+- **Two emails so far.** Address confirmation (#106) is next. Other notices are not emails yet.
 - **No preferred language on the account.** An email about an order uses the order's language, and one
   about nothing in particular would use the default.
 - **Plain text, no unsubscribe, no bounce handling.** A real provider would add all three.
@@ -125,3 +132,4 @@ It was verified end to end against Mailpit (specs/060):
 | Spec | PR | Added |
 | :-- | :-- | :-- |
 | [060-email](../../specs/060-email/) | #143 | `IEmailSender`, `EmailRequested`, Identity's `outgoing_emails` and dispatcher, Mailpit, the order confirmation (#102). |
+| [061-password-reset](../../specs/061-password-reset/) | #144 | The password reset email, queued by Identity itself and scrubbed once sent (#103). |

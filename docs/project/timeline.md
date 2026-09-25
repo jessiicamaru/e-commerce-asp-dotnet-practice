@@ -115,6 +115,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [058](../../specs/058-audit-gaps/) | Audit gaps | #141 | #128 part A: the missing audit entries; a stale session after a lock is no longer taken for theft |
 | [059](../../specs/059-missing-notices/) | The notices nobody got | #142 | Fixes #128 (part B): a sweep-delivered parcel, a lock, a ban and a hidden review each tell the person concerned |
 | [060](../../specs/060-email/) | Email | #143 | Fixes #102: `IEmailSender`, Identity's outgoing queue and dispatcher, Mailpit; the order confirmation |
+| [061](../../specs/061-password-reset/) | Password reset | #144 | Fixes #103: a single-use, hashed, 30-minute link by email; one guarded claim; every session ends; the storefront's two pages |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

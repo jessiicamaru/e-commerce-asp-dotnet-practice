@@ -16,6 +16,19 @@ export class Auth {
     return data
   }
 
+  /**
+   * Asks for a link to choose a new password (specs/061). Succeeds the same way for any address - the
+   * server never says whether it has an account (#28). The email is written in the request's language.
+   */
+  static async forgotPassword(email: string): Promise<void> {
+    await http.post('/auth/forgot-password', { email }, { anonymous: true })
+  }
+
+  /** Chooses a new password with the token from the link; every session of the account ends. */
+  static async resetPassword(token: string, password: string): Promise<void> {
+    await http.post('/auth/reset-password', { token, password }, { anonymous: true })
+  }
+
   /** Trades the HttpOnly refresh cookie for a new pair. A replayed token ends every session (#29). */
   static async refresh(): Promise<AuthResponse> {
     const { data } = await http.post<AuthResponse>('/auth/refresh', undefined, { anonymous: true })

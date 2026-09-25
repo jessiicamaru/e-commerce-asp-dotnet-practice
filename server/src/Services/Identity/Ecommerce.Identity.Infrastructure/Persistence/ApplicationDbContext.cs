@@ -14,6 +14,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SellerProfile> SellerProfiles => Set<SellerProfile>();
     public DbSet<ShopApplication> ShopApplications => Set<ShopApplication>();
     public DbSet<OutgoingEmail> OutgoingEmails => Set<OutgoingEmail>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

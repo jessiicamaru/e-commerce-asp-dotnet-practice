@@ -31,6 +31,8 @@ import { AdminProductsPage } from '@/pages/admin-products'
 import { AdminReviewsPage } from '@/pages/admin-reviews'
 import { AdminOverviewPage } from '@/pages/admin-overview'
 import { NotificationsPage } from '@/pages/notifications'
+import { ForgotPasswordPage } from '@/pages/forgot-password'
+import { ResetPasswordPage } from '@/pages/reset-password'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -45,6 +47,8 @@ export function AppRoutes() {
           <Route path="/products/:id" element={<ProductPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/status" element={<StatusPage />} />
           <Route
             path="/account"
