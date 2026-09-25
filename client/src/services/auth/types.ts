@@ -22,6 +22,21 @@ export interface AuthResponse extends User {
   token: string
 }
 
+/** The signed-in person's own details (specs/064). The email is shown, not changed, here. */
+export interface AccountProfile {
+  email: string
+  firstName: string
+  lastName: string
+  phone: string | null
+  emailConfirmed: boolean
+}
+
+export interface ProfileInput {
+  firstName: string
+  lastName: string
+  phone: string
+}
+
 export interface SignUpInput {
   email: string
   password: string

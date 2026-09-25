@@ -15,6 +15,7 @@ export const queryKeys = {
   myShop: () => ['my-shop'] as const,
   cart: () => ['cart'] as const,
   addresses: () => ['addresses'] as const,
+  me: () => ['me'] as const,
   shippingOptions: () => ['shipping-options'] as const,
   checkoutQuote: (choice: CheckoutChoice) => ['checkout-quote', choice] as const,
   order: (id: string) => ['order', id] as const,

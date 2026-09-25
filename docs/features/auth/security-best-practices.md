@@ -333,6 +333,25 @@ open a shop in that name, and would receive that person's order confirmations an
 
 `EmailConfirmationTests` covers each rule against a real PostgreSQL.
 
+### 4.9 Changing your own password and details (specs/064)
+
+- **`GET /api/auth/me` and `PUT /api/auth/me` `{ firstName, lastName, phone }`** are signed in. The account
+  comes from the token, so there is no id anybody could change. The email is shown, not changed: a new
+  address would need its own confirmation (§4.8). A change of details is a User audit entry,
+  `ProfileUpdated`, with the fields before and after. The storefront renews its session afterwards, so
+  the name in the token's `given_name` (which signs reviews) is the new one.
+- **`PUT /api/auth/me/password` `{ currentPassword, newPassword }`** does four things:
+  1. It checks the current password. A wrong one is 400 on `CurrentPassword` and changes nothing.
+  2. A wrong one also **counts against the email's sign-in pause** (§4.7). Otherwise a stolen access token
+     could guess the password faster than the sign-in page allows. A paused email is 429 here too.
+  3. It applies registration's rules to the new password.
+  4. In one transaction with the new hash and the Security entry `PasswordChanged`, it **revokes every
+     other session and keeps this one**. The kept session is named by the request's HttpOnly refresh
+     cookie, never by the body. A browser that sent no cookie ends every session.
+
+`AccountTests` covers each rule. The end-to-end run used two browsers: after browser A changed the
+password, A's refresh answered 200 and B's answered 401.
+
 ## 5. Known weaknesses in the current implementation
 
 §4 describes what runs today. Open weaknesses:
@@ -344,11 +363,10 @@ open a shop in that name, and would receive that person's order confirmations an
    This is the price of a pause per email (§4.7); a pause per email *and* IP would let a guesser with
    many addresses go unslowed.
 3. **The gateway's counters are per instance.** Several gateways would each allow the full rate.
-4. **Nobody can change their password or name while signed in** -
-   [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104). A forgotten
-   password can be reset since specs/061 (§4.6).
+4. **An email address cannot be changed.** A new address needs its own confirmation before it replaces
+   the one the account signs in with (§4.8, §4.9).
 
-Five earlier weaknesses were recorded here and are fixed:
+Six earlier weaknesses were recorded here and are fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
@@ -362,3 +380,5 @@ Five earlier weaknesses were recorded here and are fixed:
    (§4.7).
 5. ~~**An email address is never confirmed.**~~ **Fixed in specs/063 (#106)** - a link on registering, and
    no shop until it is used (§4.8).
+6. ~~**Nobody can change their password or name while signed in.**~~ **Fixed in specs/064 (#104)** (§4.9);
+   a forgotten password can be reset since specs/061 (§4.6).

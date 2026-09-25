@@ -1,0 +1,32 @@
+info:
+  name: my details
+  type: http
+  seq: 8
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/auth/me"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("mine, from the token", function() {
+          expect(res.body.email.toLowerCase()).to.equal((bru.getVar("customerEmail") || bru.getEnvVar("customerEmail")).toLowerCase());
+          expect(res.body).to.have.property("emailConfirmed");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/064 (#104). The caller's own details - there is no id to name, so nobody else's can be asked for.
