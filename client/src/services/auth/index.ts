@@ -1,5 +1,5 @@
 import { http } from '@/config/axios'
-import type { AuthResponse, SignUpInput } from './types'
+import type { AccountProfile, AuthResponse, ProfileInput, SignUpInput } from './types'
 
 /**
  * Identity's session endpoints. Anonymous on purpose: none of them may carry the access token or
@@ -37,6 +37,26 @@ export class Auth {
   /** Sends the signed-in person a new confirmation link (specs/063); at most one a minute is really sent. */
   static async resendConfirmation(): Promise<void> {
     await http.post('/auth/resend-confirmation')
+  }
+
+  /** The signed-in person's own details (specs/064). */
+  static async me(): Promise<AccountProfile> {
+    const { data } = await http.get<AccountProfile>('/auth/me')
+    return data
+  }
+
+  /** Changes the signed-in person's name and phone (specs/064). */
+  static async updateMe(input: ProfileInput): Promise<AccountProfile> {
+    const { data } = await http.put<AccountProfile>('/auth/me', input)
+    return data
+  }
+
+  /**
+   * Changes the signed-in person's password (specs/064). This browser stays signed in - Identity keeps the
+   * session its HttpOnly cookie names - and every other one ends.
+   */
+  static async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await http.put('/auth/me/password', { currentPassword, newPassword })
   }
 
   /** Trades the HttpOnly refresh cookie for a new pair. A replayed token ends every session (#29). */

@@ -118,6 +118,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [061](../../specs/061-password-reset/) | Password reset | #144 | Fixes #103: a single-use, hashed, 30-minute link by email; one guarded claim; every session ends; the storefront's two pages |
 | [062](../../specs/062-auth-rate-limits/) | Limits on guessing and on email | #145 | Fixes #105: per-IP limits at the gateway (X-Forwarded-For only from the storefront), a 5-minute pause per email after 5 wrong passwords, one reset email a minute per address |
 | [063](../../specs/063-email-confirmation/) | Email confirmation | #146 | Fixes #106: a single-use, hashed, 24-hour link on registering; a banner and "send it again"; no shop until the address is confirmed; existing accounts count as confirmed |
+| [064](../../specs/064-account-settings/) | Account settings | #147 | Fixes #104: change your name, phone and password; the current password is checked and counted toward the sign-in pause; this session stays, every other ends |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

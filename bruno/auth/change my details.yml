@@ -1,0 +1,40 @@
+info:
+  name: change my details
+  type: http
+  seq: 9
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/auth/me"
+  body:
+    type: json
+    data: |-
+      {
+        "firstName": "Bruno",
+        "lastName": "Customer",
+        "phone": "0900 000 000"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answers with the details as saved", function() {
+          expect(res.body.firstName).to.equal("Bruno");
+          expect(res.body.phone).to.equal("0900 000 000");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/064 (#104). Name and phone only - the email is how a person signs in and is not changed here.

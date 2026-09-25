@@ -19,6 +19,12 @@ public interface IUserRepository
     /// <summary>Revokes every still-active refresh token of the user: all their sessions end.</summary>
     Task<int> RevokeAllRefreshTokensAsync(Guid userId, DateTime now, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Revokes every still-active refresh token of the user except <paramref name="keep"/> (specs/064): the
+    /// session that made a change stays, every other ends. A null <paramref name="keep"/> ends them all.
+    /// </summary>
+    Task<int> RevokeOtherRefreshTokensAsync(Guid userId, string? keep, DateTime now, CancellationToken cancellationToken = default);
+
     /// <summary>One user with their roles, tracked - for staff acting on them (specs/043).</summary>
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 

@@ -1,3 +1,4 @@
+using Ecommerce.Application.Auth.Commands.Account;
 using Ecommerce.Application.Auth.Commands.EmailConfirmation;
 using Ecommerce.Application.Auth.Commands.Login;
 using Ecommerce.Application.Auth.Commands.Logout;
@@ -89,6 +90,29 @@ public class AuthController : ApiControllerBase
     {
         await Mediator.Send(new ResendConfirmationCommand(RequestLanguage()));
         return Accepted();
+    }
+
+    /// <summary>The caller's own details (specs/064) - from the token, never from the request.</summary>
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me() => Ok(await Mediator.Send(new GetMeQuery()));
+
+    /// <summary>Changes the caller's own name and phone (specs/064). The email is not changed here.</summary>
+    [Authorize]
+    [HttpPut("me")]
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateMeCommand command) => Ok(await Mediator.Send(command));
+
+    /// <summary>
+    /// Changes the caller's own password (specs/064): 204, or 400 when the current one is wrong. Every other
+    /// session ends; this browser's - named by its HttpOnly cookie, never by the body - stays.
+    /// </summary>
+    [Authorize]
+    [HttpPut("me/password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
+    {
+        Request.Cookies.TryGetValue("refreshToken", out var thisSession);
+        await Mediator.Send(command with { KeepRefreshToken = string.IsNullOrEmpty(thisSession) ? null : thisSession });
+        return NoContent();
     }
 
     /// <summary>The first language of <c>Accept-Language</c>, primary tag only ("en-US" is "en"); empty when none.</summary>

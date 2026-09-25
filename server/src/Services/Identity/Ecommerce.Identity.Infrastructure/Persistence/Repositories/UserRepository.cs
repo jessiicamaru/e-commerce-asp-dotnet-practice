@@ -72,6 +72,11 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
             .Where(t => t.UserId == userId && t.RevokedAt == null)
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedAt, now), cancellationToken);
 
+    public Task<int> RevokeOtherRefreshTokensAsync(Guid userId, string? keep, DateTime now, CancellationToken cancellationToken = default) =>
+        _context.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null && (keep == null || t.Token != keep))
+            .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedAt, now), cancellationToken);
+
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 

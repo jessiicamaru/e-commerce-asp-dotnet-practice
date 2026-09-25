@@ -92,7 +92,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (127 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (136 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
@@ -623,6 +623,12 @@ confirmed address (403 `EmailNotConfirmed`), and approving a `register-seller` a
 applicant confirms. Accounts from before were backfilled `EmailConfirmedAt = CreatedAt`. Bruno's seller
 folder reads the link from **Mailpit** (`mailpitUrl`), so the collection now needs `docker compose up -d`'s
 Mailpit.
+**A person manages their own account** (specs/064, #104): `GET`/`PUT /api/auth/me` (name, phone - never the
+email) and `PUT /api/auth/me/password`, all from the token. The current password is checked, and ⚠️ **a
+wrong one counts toward the sign-in pause** (specs/062) - else a stolen access token guesses faster than the
+sign-in page. Success revokes every OTHER session (`RevokeOtherRefreshTokensAsync`) and keeps the one named
+by the request's HttpOnly cookie - never the body. The storefront renews its session after a name change,
+so `given_name` (reviews) follows.
 ⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
 the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
 transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent
