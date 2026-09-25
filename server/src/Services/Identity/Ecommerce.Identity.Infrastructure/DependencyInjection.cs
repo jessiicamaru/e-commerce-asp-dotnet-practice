@@ -61,6 +61,9 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddScoped<Ecommerce.Application.Auth.SignInThrottling.ISignInThrottle, SignInThrottleRepository>();
 
+        // Confirming addresses (specs/063).
+        services.AddScoped<Ecommerce.Application.Auth.Commands.EmailConfirmation.IEmailConfirmationRepository, EmailConfirmationRepository>();
+
         services.AddScoped<DataInitializer>();
 
         return services;

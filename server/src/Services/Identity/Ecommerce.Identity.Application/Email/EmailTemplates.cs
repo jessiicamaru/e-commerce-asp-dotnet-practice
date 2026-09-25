@@ -51,13 +51,27 @@ public static class EmailTemplates
             + "{link}\n\n"
             + "If it was not you, ignore this email - your password has not changed.\n\n"
             + "- e-commerce"),
+        [(EmailTemplate.EmailConfirmation, "vi")] = (
+            "Xác nhận địa chỉ email của bạn",
+            "Xin chào {name},\n\n"
+            + "Cảm ơn bạn đã đăng ký. Mở liên kết dưới đây trong 24 giờ để xác nhận email này là của bạn.\n\n"
+            + "{link}\n\n"
+            + "Nếu bạn không đăng ký, hãy bỏ qua email này.\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.EmailConfirmation, "en")] = (
+            "Confirm your email address",
+            "Hi {name},\n\n"
+            + "Thanks for signing up. Open the link below within 24 hours to confirm this address is yours.\n\n"
+            + "{link}\n\n"
+            + "If you did not sign up, ignore this email.\n\n"
+            + "- e-commerce"),
     };
 
     /// <summary>
     /// Templates whose data is a secret (specs/061): once sent, the row keeps no copy of it. Delivery needs it;
     /// nothing afterwards does.
     /// </summary>
-    public static readonly IReadOnlySet<string> ScrubbedOnceSent = new HashSet<string> { EmailTemplate.PasswordReset };
+    public static readonly IReadOnlySet<string> ScrubbedOnceSent = new HashSet<string> { EmailTemplate.PasswordReset, EmailTemplate.EmailConfirmation };
 
     /// <summary>Every template with words, for a test that holds the list and the constants together.</summary>
     public static IEnumerable<(string Template, string Language)> Known => Words.Keys;
@@ -111,6 +125,18 @@ public static class EmailTemplates
                 {
                     ["name"] = name,
                     ["link"] = $"{storefrontUrl.TrimEnd('/')}/reset-password?token={Uri.EscapeDataString(token)}",
+                };
+
+            case EmailTemplate.EmailConfirmation:
+                if (!data.TryGetValue("token", out var confirmation) || string.IsNullOrWhiteSpace(confirmation))
+                {
+                    return null;
+                }
+
+                return new()
+                {
+                    ["name"] = name,
+                    ["link"] = $"{storefrontUrl.TrimEnd('/')}/confirm-email?token={Uri.EscapeDataString(confirmation)}",
                 };
 
             default:

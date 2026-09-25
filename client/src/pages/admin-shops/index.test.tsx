@@ -90,3 +90,16 @@ describe('AdminShopsPage (specs/044)', () => {
     expect(await screen.findByText('This application is already approved.')).toBeInTheDocument()
   })
 })
+
+describe('AdminShopsPage and unconfirmed applicants (specs/063)', () => {
+  it('marks an applicant whose address is not confirmed - approval waits for it', async () => {
+    vi.spyOn(ShopApplications, 'list').mockResolvedValue(page(
+      { ...lan, applicantEmailConfirmed: false },
+      { ...lan, id: 'a2', shopName: 'Minh Lens', applicantEmailConfirmed: true },
+    ))
+    renderPage()
+
+    expect(await screen.findByText('Lan Film')).toBeInTheDocument()
+    expect(screen.getAllByText(i18n.t('admin:shops.unconfirmed'))).toHaveLength(1)
+  })
+})

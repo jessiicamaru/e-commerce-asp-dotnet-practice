@@ -30,7 +30,9 @@ public class AuditTests(IdentityTestFixture fixture)
         var registered = await RecordedAsync(Guid.Empty, new RegisterCommand(email, "Passw0rd!23", "Lan", "Pham"));
         var signedIn = await RecordedAsync(Guid.Empty, new LoginCommand(email, "Passw0rd!23"));
 
-        var reg = Assert.Single(registered);
+        // Registering also sends the confirmation link (specs/063), recorded as its own entry.
+        Assert.Equal(["Registered", "EmailConfirmationSent"], registered.Select(e => e.Action));
+        var reg = registered[0];
         Assert.Equal(("User", "Registered", "Customer"), (reg.Category, reg.Action, reg.ActorRole));
         Assert.Equal(email, reg.ActorEmail);
         Assert.DoesNotContain("Passw0rd", reg.After);
@@ -62,7 +64,7 @@ public class AuditTests(IdentityTestFixture fixture)
     {
         var email = $"audit-{Guid.NewGuid():N}@example.test";
         var applied = Assert.Single(await RecordedAsync(Guid.Empty,
-            new RegisterSellerCommand(email, "Passw0rd!23", "Mai", "Tran", "Mai Lens")));
+            new RegisterSellerCommand(email, "Passw0rd!23", "Mai", "Tran", "Mai Lens")), e => e.Action != "EmailConfirmationSent");
         Assert.Equal("ShopApplied", applied.Action);
 
         // The shop exists once a moderator approves it (specs/044); then it can be renamed.

@@ -107,6 +107,7 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Application.Auth.SignInThrottling.SignInOptions()));
         services.AddScoped<Ecommerce.Application.Auth.SignInThrottling.ISignInThrottle, SignInThrottleRepository>();
+        services.AddScoped<Ecommerce.Application.Auth.Commands.EmailConfirmation.IEmailConfirmationRepository, EmailConfirmationRepository>();
         services.AddSingleton<IEmailTransport>(Mail);
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new EmailOptions { StorefrontUrl = "http://shop.test" }));
 
@@ -128,6 +129,9 @@ public class IdentityTestFixture : IAsyncLifetime
                 new Ecommerce.Application.Auth.Commands.RegisterSeller.RegisterSellerCommand(email, password, "Test", "Seller", shopName));
         }
 
+        // A shop is approved only for a confirmed address (specs/063).
+        await ConfirmEmailAsync(registered.Id);
+
         Guid applicationId;
         await using (var provider = For(registered.Id))
         await using (var scope = provider.CreateAsyncScope())
@@ -145,6 +149,30 @@ public class IdentityTestFixture : IAsyncLifetime
         }
 
         return registered;
+    }
+
+    /// <summary>
+    /// Marks an address confirmed as its link would (specs/063) - for tests about something else that needs a
+    /// confirmed account. <c>EmailConfirmationTests</c> use the link itself.
+    /// </summary>
+    public async Task ConfirmEmailAsync(Guid userId)
+    {
+        await using var provider = For(Guid.Empty);
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Users.Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.EmailConfirmedAt, DateTime.UtcNow));
+    }
+
+    /// <summary>
+    /// Removes the confirmation email registering queued (specs/063), for tests that count the other emails a
+    /// person gets.
+    /// </summary>
+    public async Task DropConfirmationEmailAsync(Guid userId)
+    {
+        await using var provider = For(Guid.Empty);
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().OutgoingEmails
+            .Where(e => e.RecipientId == userId && e.Template == "EmailConfirmation").ExecuteDeleteAsync();
     }
 
     /// <summary>A customer row to own addresses - the address book is locked through it.</summary>

@@ -13,6 +13,8 @@ export interface ShopApplication {
   decisionReason: string | null
   createdAt: string
   decidedAt: string | null
+  /** Staff only (specs/063): approval waits until the applicant's address is confirmed. */
+  applicantEmailConfirmed?: boolean | null
 }
 
 export interface ShopApplicationPage {

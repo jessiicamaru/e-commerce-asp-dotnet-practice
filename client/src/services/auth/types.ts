@@ -10,6 +10,11 @@ export interface User {
    * Order is not guaranteed. Ask with `includes`, never by position.
    */
   roles: string[]
+  /**
+   * Whether the address was confirmed by its link (specs/063) - for drawing the "confirm your email" banner.
+   * The server decides what an unconfirmed account may do; a missing value (an older Identity) reads true.
+   */
+  emailConfirmed: boolean
 }
 
 export interface AuthResponse extends User {

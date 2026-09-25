@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { UserMenu } from '.'
 
-const user = { id: 'u1', email: 'mai@demo.test', firstName: 'Mai', lastName: 'Trần', roles: [] as string[] }
+const user = { id: 'u1', email: 'mai@demo.test', firstName: 'Mai', lastName: 'Trần', roles: [] as string[], emailConfirmed: true }
 
 /**
  * Opens the menu and waits for it: base-ui opens asynchronously, so asserting synchronously right after

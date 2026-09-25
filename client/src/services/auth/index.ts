@@ -29,6 +29,16 @@ export class Auth {
     await http.post('/auth/reset-password', { token, password }, { anonymous: true })
   }
 
+  /** Uses the link sent to confirm an address (specs/063). Anonymous: the link may be opened in any browser. */
+  static async confirmEmail(token: string): Promise<void> {
+    await http.post('/auth/confirm-email', { token }, { anonymous: true })
+  }
+
+  /** Sends the signed-in person a new confirmation link (specs/063); at most one a minute is really sent. */
+  static async resendConfirmation(): Promise<void> {
+    await http.post('/auth/resend-confirmation')
+  }
+
   /** Trades the HttpOnly refresh cookie for a new pair. A replayed token ends every session (#29). */
   static async refresh(): Promise<AuthResponse> {
     const { data } = await http.post<AuthResponse>('/auth/refresh', undefined, { anonymous: true })

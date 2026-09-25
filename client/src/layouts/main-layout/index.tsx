@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { ConfirmEmailBanner } from '@/components/layout/confirm-email-banner'
 import { TopBar } from '@/components/layout/top-bar'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -13,6 +14,7 @@ export function MainLayout() {
     <div className="from-primary/8 min-h-dvh bg-linear-to-b via-transparent to-transparent">
       <TopBar />
       <main className="mx-auto max-w-6xl px-4 py-8">
+        <ConfirmEmailBanner />
         <Outlet />
       </main>
       <Toaster />

@@ -115,7 +115,9 @@ public class DataInitializer(
                 Email = email,
                 PasswordHash = _passwordHasher.HashPassword(password),
                 FirstName = "System",
-                LastName = "Administrator"
+                LastName = "Administrator",
+                // Configured by whoever runs the system: nobody else could have typed this address (specs/063).
+                EmailConfirmedAt = DateTime.UtcNow,
             };
 
             user.Roles.Add(adminRole);

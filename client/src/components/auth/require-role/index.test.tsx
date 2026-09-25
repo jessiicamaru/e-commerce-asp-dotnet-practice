@@ -7,7 +7,7 @@ import type { User } from '@/services/auth/types'
 import { RequireRole } from '.'
 
 function aUser(roles: string[]): User {
-  return { id: 'u1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles }
+  return { id: 'u1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles, emailConfirmed: true }
 }
 
 function renderAt(state: Partial<AuthState>, role: string | string[] = 'Seller') {

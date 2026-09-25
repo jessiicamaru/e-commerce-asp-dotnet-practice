@@ -126,7 +126,7 @@ public class SignInThrottleTests(IdentityTestFixture fixture)
 
         await SendAsync(new ForgotPasswordCommand(email, "vi"));
         var token = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
-            (await WithDbAsync(db => db.OutgoingEmails.AsNoTracking().SingleAsync(e => e.RecipientId == id))).DataJson)!["token"];
+            (await WithDbAsync(db => db.OutgoingEmails.AsNoTracking().SingleAsync(e => e.RecipientId == id && e.Template == "PasswordReset"))).DataJson)!["token"];
         await SendAsync(new ResetPasswordCommand(token, "N3w-Passw0rd!"));
 
         await SendAsync(new LoginCommand(email, "N3w-Passw0rd!"));

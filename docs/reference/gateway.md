@@ -1,6 +1,6 @@
 # Gateway routes
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bc137b6`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `325a428`. Do not edit by hand - change the code and run the script again.
 
 What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno talk only to the gateway. A new endpoint under a new path prefix needs a route here, or it is a 404 that looks like a missing feature. Container destinations are overridden by command-line arguments in `docker-compose.app.yml`; the addresses below are the local-development ones.
 
@@ -21,11 +21,13 @@ What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno t
 | `catalog-reviews-route` | `/api/reviews/{**catch-all}` | `catalog-cluster` | http://localhost:5057/ |  |  |
 | `addresses-root-route` | `/api/addresses` | `identity-cluster` | http://localhost:5056/ |  |  |
 | `addresses-route` | `/api/addresses/{**catch-all}` | `identity-cluster` | http://localhost:5056/ |  |  |
+| `auth-confirm-email-route` | `/api/auth/confirm-email` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `auth-forgot-password-route` | `/api/auth/forgot-password` | `identity-cluster` | http://localhost:5056/ |  | `email` |
 | `auth-login-route` | `/api/auth/login` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `auth-refresh-route` | `/api/auth/refresh` | `identity-cluster` | http://localhost:5056/ |  | `session` |
 | `auth-register-route` | `/api/auth/register` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `auth-register-seller-route` | `/api/auth/register-seller` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
+| `auth-resend-confirmation-route` | `/api/auth/resend-confirmation` | `identity-cluster` | http://localhost:5056/ |  | `email` |
 | `auth-reset-password-route` | `/api/auth/reset-password` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `identity-route` | `/api/auth/{**catch-all}` | `identity-cluster` | http://localhost:5056/ |  |  |
 | `identity-health-route` | `/api/identity/health` | `identity-cluster` | http://localhost:5056/ | `/health` |  |

@@ -7,5 +7,6 @@ public record RegisterCommand(
     string Email,
     string Password,
     string FirstName,
-    string LastName
+    string LastName,
+    string Language = ""   // the confirmation email's language; the controller reads Accept-Language (specs/063)
 ) : IRequest<AuthResponse>;

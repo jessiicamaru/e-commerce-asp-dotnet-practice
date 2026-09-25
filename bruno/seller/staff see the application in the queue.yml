@@ -21,6 +21,7 @@ runtime:
           var ours = res.body.items.filter(function(a) { return a.id === bru.getVar("applicationId"); });
           expect(ours).to.have.length(1);
           expect(ours[0].applicantEmail).to.equal(bru.getVar("sellerEmail"));
+          expect(ours[0].applicantEmailConfirmed).to.equal(false);
         });
 
 settings:

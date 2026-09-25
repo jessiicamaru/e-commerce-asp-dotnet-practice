@@ -99,15 +99,15 @@ the answer before it can continue. Details: [microservices design](../architectu
 | | |
 | :-- | :-- |
 | Services | 8, plus the gateway |
-| HTTP endpoints | 109 ([reference](../reference/api.md)) |
+| HTTP endpoints | 111 ([reference](../reference/api.md)) |
 | Integration messages | 22 ([reference](../reference/messages.md)) |
 | gRPC services | 4 ([reference](../reference/grpc.md)) |
-| Database tables (excluding outbox) | 36 ([reference](../reference/data-model.md)) |
-| Service, saga and gateway tests | 601, in 9 projects |
-| Storefront unit tests | 313 |
-| Bruno requests | 195 |
-| Design records (`specs/`) | 50 |
-| Merged pull requests | 67 |
+| Database tables (excluding outbox) | 37 ([reference](../reference/data-model.md)) |
+| Service, saga and gateway tests | 612, in 9 projects |
+| Storefront unit tests | 323 |
+| Bruno requests | 199 |
+| Design records (`specs/`) | 51 |
+| Merged pull requests | 68 |
 | Published images | 10 - eight services, the gateway and the storefront |
 
 ## Status

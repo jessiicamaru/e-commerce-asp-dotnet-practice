@@ -11,6 +11,9 @@ public interface IOutgoingEmailRepository
     /// </summary>
     Task<bool> QueueAsync(OutgoingEmail email, CancellationToken cancellationToken = default);
 
+    /// <summary>Adds an email to the context, so it is written by the caller's next save - with the change it is about.</summary>
+    void Stage(OutgoingEmail email);
+
     /// <summary>
     /// The pending emails due by <paramref name="now"/>, oldest first, LOCKED (<c>FOR UPDATE SKIP LOCKED</c>) -
     /// so two instances never send one row. Must run inside a transaction; the lock is what the caller's

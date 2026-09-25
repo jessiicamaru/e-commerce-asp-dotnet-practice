@@ -3,7 +3,7 @@ using Ecommerce.Domain.Entities;
 namespace Ecommerce.Application.Common.Interfaces;
 
 /// <summary>An application with who made it, for staff (specs/044).</summary>
-public record ShopApplicationRow(ShopApplication Application, string Email, string FirstName, string LastName);
+public record ShopApplicationRow(ShopApplication Application, string Email, string FirstName, string LastName, bool EmailConfirmed = true);
 
 public interface IShopApplicationRepository
 {

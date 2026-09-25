@@ -26,7 +26,7 @@ import type { ShopApplication } from '@/services/shop-applications/types'
  */
 export function OpenShopPage() {
   const { t, i18n } = useTranslation('seller')
-  const { isSeller, refreshSession } = useAuth()
+  const { user, isSeller, refreshSession } = useAuth()
   const navigate = useNavigate()
   const mine = useMyShopApplications()
   const apply = useApplyForShop()
@@ -75,7 +75,14 @@ export function OpenShopPage() {
         </Button>
       )}
 
-      {!waiting && !approved && !isSeller && (
+      {/* A shop is a public claim in the address's name (specs/063): the server refuses 403 anyway. */}
+      {!waiting && !approved && !isSeller && user?.emailConfirmed === false && (
+        <p role="alert" className="bg-card ring-border/60 rounded-3xl p-6 text-sm ring-1">
+          {t('apply.confirmFirst', { email: user.email })}
+        </p>
+      )}
+
+      {!waiting && !approved && !isSeller && user?.emailConfirmed !== false && (
         <form onSubmit={submit} className="bg-card ring-border/60 grid gap-4 rounded-3xl p-6 ring-1">
           {applications.some((a) => a.status === 'Rejected') && (
             <p className="text-muted-foreground text-sm">{t('apply.applyAgain')}</p>

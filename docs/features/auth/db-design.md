@@ -170,6 +170,7 @@ CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
 | :--- | :--- | :--- | :--- |
 | `id` | UUID | PK, Default Gen | Unique identifier of the user |
 | `email` | VARCHAR(255) | Unique, Unique on `lower(email)`, Not Null | User's email address (used as login username). Stored as typed; every lookup goes through `EmailKey.For` (trim, lower-case), so `A@x.com` and `a@x.com` are one account (#49) |
+| `email_confirmed_at` | TIMESTAMPTZ | Nullable | When the link sent to the address was used (specs/063). Null: not confirmed - the account buys but opens no shop. Accounts from before specs/063 were set to their `created_at` |
 | `password_hash` | VARCHAR(255) | Not Null | BCrypt hash (`BCrypt.Net-Next`) |
 | `first_name` | VARCHAR(100) | Not Null | User's first name. Also the token's `given_name` claim, which signs the person's product reviews |
 | `last_name` | VARCHAR(100) | Not Null | User's last name - never put in a token |
@@ -212,6 +213,12 @@ the token's row.
 Asking again deletes the person's unused rows first, so only the newest link works (specs/061). A used
 row stays as the record that the link was used. Since specs/062 a link asked for within a minute of the
 last one sends nothing.
+
+### `email_confirmation_tokens` Table
+The same shape as `password_reset_tokens` (specs/063): `id`, `user_id` (FK, cascade), `token_hash` CHAR(64)
+unique - **the token itself is never stored** - `expires_at` (24 hours), `used_at` (set by the one guarded
+statement that uses it) and `created_at`. Sending a new link deletes the person's unused ones first, and at
+most one is sent a minute.
 
 ### `sign_in_throttles` Table
 | Column | Type | Constraints | Description |

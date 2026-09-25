@@ -1,7 +1,7 @@
 # Email
 
-Since specs/060 the system sends email: the **order confirmation**, and since specs/061 the **password
-reset link**. Address confirmation (#106) is next. Any service asks for an
+Since specs/060 the system sends email: the **order confirmation**, since specs/061 the **password
+reset link**, and since specs/063 the **link that confirms an address**. Any service asks for an
 email the way it asks for a notification, and Identity, the one service that knows email addresses, sends
 it. In development every email lands in **Mailpit**, and nothing leaves the machine.
 
@@ -11,6 +11,7 @@ it. In development every email lands in **Mailpit**, and nothing leaves the mach
 | :-- | :-- | :-- | :-- |
 | Order confirmation (`OrderPaid`) | the buyer | the order settles `Paid` | the language the order was placed in (`orders.Language`) |
 | Password reset (`PasswordReset`) | the account's owner | they ask at `/forgot-password` (specs/061) | the request's `Accept-Language` |
+| Address confirmation (`EmailConfirmation`) | a new account | they register, or ask again from the banner (specs/063) | the request's `Accept-Language` |
 
 The confirmation greets the buyer by first name. It gives the short order number and the total in the
 order's currency, in the reader's number format (`20.416.000 VND`, `22,462,000 VND`), and links to the
@@ -76,7 +77,7 @@ sequenceDiagram
    is plain SMTP with no authentication. It is the seam a real provider replaces, the way
    `StubPaymentGateway` is for payments.
 7. **A secret never crosses the broker, and is not kept once delivered** (specs/061). A reset link's token
-   is the one piece of email data that is a credential. Identity asks for that email itself, so it writes
+   is a credential, and so is an address-confirmation token (specs/063). Identity asks for that email itself, so it writes
    the row straight into `outgoing_emails` in the transaction that stores the token's hash - no
    `EmailRequested`, no outbox row, no queue holding it. Once the email is `Sent`, the dispatcher replaces
    the data with `{}` (`EmailTemplates.ScrubbedOnceSent`): delivery needed the token, nothing afterwards
@@ -124,7 +125,7 @@ It was verified end to end against Mailpit (specs/060):
 
 ## Known limits
 
-- **Two emails so far.** Address confirmation (#106) is next. Other notices are not emails yet.
+- **Three emails so far.** Other notices are not emails yet.
 - **No preferred language on the account.** An email about an order uses the order's language, and one
   about nothing in particular would use the default.
 - **Plain text, no unsubscribe, no bounce handling.** A real provider would add all three.
@@ -136,3 +137,4 @@ It was verified end to end against Mailpit (specs/060):
 | :-- | :-- | :-- |
 | [060-email](../../specs/060-email/) | #143 | `IEmailSender`, `EmailRequested`, Identity's `outgoing_emails` and dispatcher, Mailpit, the order confirmation (#102). |
 | [061-password-reset](../../specs/061-password-reset/) | #144 | The password reset email, queued by Identity itself and scrubbed once sent (#103). |
+| [063-email-confirmation](../../specs/063-email-confirmation/) | #146 | The address-confirmation email, staged in the account's own save and scrubbed once sent (#106). |

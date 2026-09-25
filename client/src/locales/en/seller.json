@@ -217,7 +217,8 @@
     "open": "Go to my shop",
     "opening": "Opening…",
     "applyAgain": "You can apply again below.",
-    "failed": "Could not send the application."
+    "failed": "Could not send the application.",
+    "confirmFirst": "Confirm your email address before applying to sell - we sent a link to {{email}}. You can ask for a new one at the top of the page."
   },
   "openShop": "Open a shop",
   "review": {

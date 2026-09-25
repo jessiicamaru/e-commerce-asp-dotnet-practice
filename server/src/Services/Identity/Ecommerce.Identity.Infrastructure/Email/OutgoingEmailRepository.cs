@@ -17,6 +17,8 @@ public class OutgoingEmailRepository(ApplicationDbContext context) : IOutgoingEm
             ON CONFLICT ("Id") DO NOTHING
             """, cancellationToken) == 1;
 
+    public void Stage(OutgoingEmail email) => _context.OutgoingEmails.Add(email);
+
     public Task<List<OutgoingEmail>> ClaimDueAsync(DateTime now, int batch, CancellationToken cancellationToken = default) =>
         _context.OutgoingEmails
             .FromSqlInterpolated($"""

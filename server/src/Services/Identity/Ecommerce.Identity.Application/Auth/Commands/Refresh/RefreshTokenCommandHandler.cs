@@ -116,7 +116,8 @@ public class RefreshTokenCommandHandler(
             user.LastName,
             _jwtTokenGenerator.GenerateAccessToken(user),
             replacement.Token,
-            user.Roles.Select(role => role.Name).ToList()
+            user.Roles.Select(role => role.Name).ToList(),
+            user.EmailConfirmed
         );
     }
 }

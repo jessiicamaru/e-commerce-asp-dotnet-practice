@@ -155,6 +155,7 @@ public class EmailTests(IdentityTestFixture fixture)
     {
         var email = $"mail-{Guid.NewGuid():N}@example.test";
         var registered = await SendAsync(new RegisterCommand(email, "Passw0rd!23", "Lan", "Pham"));
+        await _fixture.DropConfirmationEmailAsync(registered.Id);   // these tests count the other emails
         return (registered.Id, email);
     }
 

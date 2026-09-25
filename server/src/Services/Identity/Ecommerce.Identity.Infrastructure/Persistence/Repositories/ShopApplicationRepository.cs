@@ -39,7 +39,7 @@ public class ShopApplicationRepository(ApplicationDbContext context) : IShopAppl
         // Ordered AFTER the join: an order inside a subquery that is then joined is not kept.
         var joined = from a in query
                      join u in _context.Users.AsNoTracking() on a.UserId equals u.Id
-                     select new { a, u.Email, u.FirstName, u.LastName };
+                     select new { a, u.Email, u.FirstName, u.LastName, u.EmailConfirmedAt };
         var ordered = status == ShopApplicationStatus.Pending
             ? joined.OrderBy(x => x.a.CreatedAt).ThenBy(x => x.a.Id)
             : joined.OrderByDescending(x => x.a.CreatedAt).ThenBy(x => x.a.Id);
@@ -47,7 +47,7 @@ public class ShopApplicationRepository(ApplicationDbContext context) : IShopAppl
         var items = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new ShopApplicationRow(x.a, x.Email, x.FirstName, x.LastName))
+            .Select(x => new ShopApplicationRow(x.a, x.Email, x.FirstName, x.LastName, x.EmailConfirmedAt != null))
             .ToListAsync(cancellationToken);
         return (items, total);
     }
@@ -94,5 +94,5 @@ public class ShopApplicationRepository(ApplicationDbContext context) : IShopAppl
     private IQueryable<ShopApplicationRow> WithApplicant(IQueryable<ShopApplication> applications) =>
         from a in applications
         join u in _context.Users.AsNoTracking() on a.UserId equals u.Id
-        select new ShopApplicationRow(a, u.Email, u.FirstName, u.LastName);
+        select new ShopApplicationRow(a, u.Email, u.FirstName, u.LastName, u.EmailConfirmedAt != null);
 }

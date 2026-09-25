@@ -221,7 +221,8 @@
     "confirmReject": "Từ chối",
     "approved": "Đã mở gian hàng “{{shop}}”.",
     "rejected": "Đã từ chối “{{shop}}”.",
-    "decided": "Quyết định lúc {{when}}"
+    "decided": "Quyết định lúc {{when}}",
+    "unconfirmed": "Email chưa xác nhận"
   },
   "review": {
     "title": "Sản phẩm chờ duyệt",

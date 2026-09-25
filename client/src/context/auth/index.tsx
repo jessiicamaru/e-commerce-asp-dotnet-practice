@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firstName: response.firstName,
       lastName: response.lastName,
       roles: response.roles ?? [],
+      emailConfirmed: response.emailConfirmed ?? true,
     })
   }, [])
 

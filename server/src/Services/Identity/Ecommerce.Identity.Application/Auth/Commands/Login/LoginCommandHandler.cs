@@ -115,7 +115,8 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             user.LastName,
             accessToken,
             refreshTokenString,
-            user.Roles.Select(role => role.Name).ToList()
+            user.Roles.Select(role => role.Name).ToList(),
+            user.EmailConfirmed
         );
     }
 }
