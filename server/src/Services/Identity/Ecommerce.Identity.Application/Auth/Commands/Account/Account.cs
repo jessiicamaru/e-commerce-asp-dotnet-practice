@@ -1,3 +1,5 @@
+using Ecommerce.Contracts.Identity;
+using MassTransit;
 using System.Text;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.SignInThrottling;
@@ -62,7 +64,8 @@ public class AccountHandlers(
     ISignInThrottle throttle,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
-    IAuditTrail audit) :
+    IAuditTrail audit,
+    IPublishEndpoint publishEndpoint) :
     IRequestHandler<GetMeQuery, AccountProfile>,
     IRequestHandler<UpdateMeCommand, AccountProfile>,
     IRequestHandler<ChangePasswordCommand>
@@ -75,6 +78,7 @@ public class AccountHandlers(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly IAuditTrail _audit = audit;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     public async Task<AccountProfile> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
@@ -128,6 +132,9 @@ public class AccountHandlers(
             await _audit.RecordAsync(AuditCategory.Security, "PasswordChanged", "User", user.Id.ToString(),
                 $"{user.Email} changed their password; every other session ended",
                 actor: AuditActors.Of(user), cancellationToken: ct);
+            // Access tokens already issued stop within seconds (specs/065). This browser's refresh token is
+            // kept, so it refreshes once and carries on; a thief holding only an access token does not.
+            await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "PasswordChanged"), ct);
             await _users.SaveChangesAsync(ct);
 
             // Whoever else holds a session - perhaps the reason for the change - holds it no longer. This

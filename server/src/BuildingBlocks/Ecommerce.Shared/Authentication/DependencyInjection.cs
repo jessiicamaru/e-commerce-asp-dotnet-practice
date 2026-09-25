@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
@@ -56,7 +57,26 @@ public static class DependencyInjection
                     // name is not expanded again, so "role" is what actually arrives.
                     RoleClaimType = "role"
                 };
+
+                // A token issued before its user's tokens were revoked - a lock, a ban, a password or a role
+                // changed (specs/065) - is refused here, within seconds, rather than living out its minutes.
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context =>
+                    {
+                        var revoked = context.HttpContext.RequestServices.GetRequiredService<RevokedAccessTokens>();
+                        if (context.Principal is { } principal && revoked.IsRevoked(principal))
+                        {
+                            context.Fail("This token was issued before its account's access was revoked.");
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
             });
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<RevokedAccessTokens>();
 
         services.AddAuthorization();
 

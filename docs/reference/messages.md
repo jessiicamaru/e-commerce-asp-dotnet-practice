@@ -1,10 +1,10 @@
 # Messages
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `a9fbad8`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bbf90a7`. Do not edit by hand - change the code and run the script again.
 
 Every integration message in `Ecommerce.Contracts` - the only coupling between services - with who publishes it and who consumes it. Every publish goes through the publisher's transactional outbox, and every consumer is idempotent (see [reliable messaging](../architecture/reliable-messaging-and-outbox-pattern.md)). A consumer's class name is its queue name, so two services never share one.
 
-**22 messages.**
+**23 messages.**
 
 | Message | Owner | Published by | Consumed by |
 | :-- | :-- | :-- | :-- |
@@ -13,6 +13,7 @@ Every integration message in `Ecommerce.Contracts` - the only coupling between s
 | `ProductCreatedEvent` | Catalog | Catalog | Inventory (`ProductCreatedConsumer`) |
 | `ProductDeletedEvent` | Catalog | Catalog | Inventory (`ProductDeletedConsumer`) |
 | `ProductVariantCreatedEvent` | Catalog | Catalog | Inventory (`ProductVariantCreatedConsumer`) |
+| `AccessTokensRevoked` | Identity | Identity | Activity (`AccessTokensRevokedConsumer`, Shared), Cart (`AccessTokensRevokedConsumer`, Shared), Catalog (`AccessTokensRevokedConsumer`, Shared), Identity (`AccessTokensRevokedConsumer`, Shared), Inventory (`AccessTokensRevokedConsumer`, Shared), Order (`AccessTokensRevokedConsumer`, Shared), Payment (`AccessTokensRevokedConsumer`, Shared) |
 | `EmailRequested` | Identity | any service, through `Ecommerce.Shared` | Identity (`QueueEmailConsumer`) |
 | `SellerRegisteredEvent` | Identity | Identity | Catalog (`SellerRegisteredConsumer`) |
 | `SellerRenamedEvent` | Identity | Identity | Catalog (`SellerRenamedConsumer`) |

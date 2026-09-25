@@ -1,7 +1,7 @@
 info:
   name: an administrator revokes moderator
   type: http
-  seq: 15
+  seq: 20
 
 http:
   method: DELETE
@@ -28,4 +28,6 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  The role goes at the next refresh or sign-in.
+  The role leaves the tokens already issued within seconds (specs/065, #112): the next request with the
+  moderator's old token is refused, and their next refresh carries no Moderator. Run LAST, after every request
+  that uses the moderator's token - it is here, at the end of the last folder, for that reason.

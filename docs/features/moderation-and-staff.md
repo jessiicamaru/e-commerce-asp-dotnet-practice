@@ -49,7 +49,7 @@ validator allows 1 to 365 days for anyone (`AdminMaxLockDays = 365`).
 
 **Unlocking obeys the same limits** (specs/050, `ModerationRules.EnsureMayRelease`), because it had none
 until #121 - a moderator could lift an administrator's year-long lock, free another moderator, or, with an
-access token that outlived the lock (#112), free themselves:
+access token that outlived the lock (possible until specs/065 closed #112), free themselves:
 
 | Caller \ target | Themselves | A moderator | A customer or seller, lock with at most 30 days to run | ... with more than 30 days to run |
 | :-- | :-- | :-- | :-- | :-- |
@@ -173,9 +173,10 @@ on its own.
 8. **Stopping an account ends every session.** `RevokeAllRefreshTokensAsync` runs right after the
    save, and refresh refuses a locked or banned account in any case, so a session that slipped through
    still cannot be renewed.
-9. **An access token lives out its minutes.** Roles and stops reach a session at its next refresh; an
-   access token already issued is valid until it expires (15 minutes, `ClockSkew = Zero`). Accepted in
-   specs/043 because the alternative is a lookup on every request in every service.
+9. **A stop reaches a signed-in session within seconds** (specs/065). Accepted in specs/043 as "an access
+   token lives out its minutes"; since #112 a lock, a ban or a role revoked publishes
+   `AccessTokensRevoked`, and every service refuses the tokens issued before it - from a list each keeps
+   in memory, not a lookup on every request. Roles granted still arrive at the next refresh.
 10. **403 only when the caller is known and the answer is no.** `ForbiddenException` carries a sentence
     the caller reads - a locked account after the right password, a moderator reaching past what
     moderators may do. "Not yours" stays a 404, because a 403 confirms the thing exists.
@@ -270,11 +271,8 @@ No message is specific to moderation. Staff actions publish, through the acting 
 
 ## Known limits
 
-- **A lock or ban takes up to 15 minutes to reach a signed-in session**: the access token already
-  issued stays valid until it expires -
-  [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112).
-- **Sign-in has no rate limit**, so a password can be guessed at without bound -
-  [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
+- **A service restarted within an hour of a stop forgets it**, and a token it held lives out its minutes
+  there (specs/065).
 - **A lock or ban is told in the app, not by email.** Since specs/059 the person gets an `AccountLocked`
   or `AccountBanned` notice, readable once the stop ends, and the reason at sign-in (specs/049). Email
   (specs/060) does not carry it yet.
@@ -295,3 +293,4 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | [047-admin-insights](../../specs/047-admin-insights/) | [#99](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/99) | `/admin/overview`, `/api/users/lookup`, `/api/users/stats`. |
 | [049-sign-in-refusal](../../specs/049-sign-in-refusal/) | [#130](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/130) | `ForbiddenException` facts as ProblemDetails extensions; the sign-in refusal's `code`, `until`, `reason`; the sign-in page words a lock or ban in the reader's language and time (#120). |
 | [050-unlock-rules](../../specs/050-unlock-rules/) | [#131](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/131) | `ModerationRules.EnsureMayRelease`: nobody unlocks themselves, only an administrator unlocks a moderator, a moderator lifts only a lock within their reach (#121). |
+| [065-revoke-access-tokens](../../specs/065-revoke-access-tokens/) | [#148](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/148) | A lock, a ban or a role revoked stops the access tokens already issued within seconds, in every service (#112). |

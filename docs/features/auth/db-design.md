@@ -367,5 +367,5 @@ Exposes REST endpoints.
 - [x] **JWT Tokens**: Issue short-lived Access Tokens (15 minutes) containing Claims (`sub`, `email`, `given_name`, `jti`, one `role` per role).
 - [x] **Refresh Tokens**: Issue long-lived Refresh Tokens (e.g., 7 days) stored securely in HttpOnly cookies, and rotate them on use to prevent replay attacks.
 - [x] **Email Uniqueness**: enforced by the database - case-insensitively, through `IX_users_Email_lower` (#49) - and an existing email is a **409** from the application check (#28). Two registrations of the same email at the same instant can still reach the unique index and surface as 500 — rare, and recorded rather than handled.
-- [x] **Stopping an account**: a lock or ban refuses sign-in (403 with the reason, only after the right password), revokes every refresh token, and makes refresh answer 401. The access token already issued lives out its minutes ([#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112)).
+- [x] **Stopping an account**: a lock or ban refuses sign-in (403 with the reason, only after the right password), revokes every refresh token, and makes refresh answer 401. The access token already issued is refused within seconds by every service (specs/065, #112).
 - [x] **One shop per account, one pending application per person**: the `seller_profiles` key and a partial unique index.

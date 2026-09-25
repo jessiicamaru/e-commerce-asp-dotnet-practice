@@ -1,3 +1,5 @@
+using MassTransit;
+using Ecommerce.Contracts.Identity;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Constants;
 using Ecommerce.Domain.Entities;
@@ -160,7 +162,8 @@ public class UserAdministrationHandlers(
     IRoleRepository roles,
     ICurrentUser currentUser,
     IAuditTrail audit,
-    INotifier notifier) :
+    INotifier notifier,
+    IPublishEndpoint publishEndpoint) :
     IRequestHandler<GrantRoleCommand, UserAdminResponse>,
     IRequestHandler<RevokeRoleCommand, UserAdminResponse>,
     IRequestHandler<LockUserCommand, UserAdminResponse>,
@@ -173,6 +176,7 @@ public class UserAdministrationHandlers(
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     public async Task<UserAdminResponse> Handle(GrantRoleCommand request, CancellationToken cancellationToken)
     {
@@ -211,6 +215,8 @@ public class UserAdministrationHandlers(
             await _audit.RecordAsync(AuditCategory.Security, "RoleRevoked", "User", user.Id.ToString(),
                 $"{user.Email} is no longer {request.Role}", before, Snapshot(user), cancellationToken: cancellationToken);
             await _notifier.NotifyAsync(user.Id, NotificationKind.ModeratorRevoked, cancellationToken: cancellationToken);
+            // The role leaves the tokens already issued within seconds, not at their next refresh (specs/065).
+            await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, user.UpdatedAt, "RoleRevoked"), cancellationToken);
             await _users.SaveChangesAsync(cancellationToken);
         }
 
@@ -241,6 +247,8 @@ public class UserAdministrationHandlers(
                 ["until"] = DateTime.SpecifyKind(user.LockedUntil.Value, DateTimeKind.Utc).ToString("o"),
                 ["reason"] = user.LockReason,
             }, cancellationToken: cancellationToken);
+        // Every token already issued stops working within seconds, everywhere (specs/065) - with the lock.
+        await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "Locked"), cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
         // Every session ends now, not when its refresh token would have run out.
         await _users.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
@@ -284,6 +292,7 @@ public class UserAdministrationHandlers(
             $"{user.Email} banned", before, Snapshot(user), cancellationToken: cancellationToken);
         await _notifier.NotifyAsync(user.Id, NotificationKind.AccountBanned,
             new Dictionary<string, string> { ["reason"] = user.BanReason! }, cancellationToken: cancellationToken);
+        await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "Banned"), cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
         await _users.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
 

@@ -1,0 +1,33 @@
+info:
+  name: the revoked moderator's token stops at once
+  type: http
+  seq: 21
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/shop-applications?status=Pending"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Every service hears the revocation over the broker - give it the moment it takes.
+        await bru.sleep(1500);
+    - type: tests
+      code: |-
+        test("status 401 - the token issued before the revoke no longer works", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/065 (#112). Until then this token still said "Moderator" for up to 15 minutes after the role was
+  revoked, and the staff queue answered 200.

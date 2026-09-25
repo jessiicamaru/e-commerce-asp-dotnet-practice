@@ -1,3 +1,5 @@
+using Ecommerce.Contracts.Identity;
+using MassTransit;
 using Ecommerce.Application.Common;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -34,7 +36,8 @@ public class RefreshTokenCommandHandler(
     IUserRepository userRepository,
     IJwtTokenGenerator jwtTokenGenerator,
     ILogger<RefreshTokenCommandHandler> logger,
-    IAuditTrail audit
+    IAuditTrail audit,
+    IPublishEndpoint publishEndpoint
 ) : IRequestHandler<RefreshTokenCommand, AuthResponse>
 {
     public static readonly TimeSpan ReuseGrace = TimeSpan.FromSeconds(10);
@@ -43,6 +46,7 @@ public class RefreshTokenCommandHandler(
 
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IJwtTokenGenerator _jwtTokenGenerator = jwtTokenGenerator;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly ILogger<RefreshTokenCommandHandler> _logger = logger;
     private readonly IAuditTrail _audit = audit;
 
@@ -68,6 +72,8 @@ public class RefreshTokenCommandHandler(
                 await _audit.RecordAsync(AuditCategory.Security, "SessionReuseDetected", "User", user.Id.ToString(),
                     $"A replaced session token of {user.Email} was presented again; every session ended",
                     actor: AuditActors.Of(user), cancellationToken: cancellationToken);
+                // Whoever holds the stolen token may hold an access token too: it stops within seconds (specs/065).
+                await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "SessionReuseDetected"), cancellationToken);
                 await _userRepository.SaveChangesAsync(cancellationToken);
 
                 var revoked = await _userRepository.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);

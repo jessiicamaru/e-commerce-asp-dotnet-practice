@@ -209,9 +209,14 @@ locked account after the right password, a moderator asking to lock another mode
 
 > Because roles live inside the token, a granted or revoked role, an approved shop and a lock or ban
 > reach a session only when it is **refreshed** - `RefreshTokenCommandHandler` re-reads the account and
-> its roles every time. An access token already issued stays valid until it expires (at most 15
-> minutes). A lock or ban revokes every refresh token at once, and refresh refuses a locked or banned
-> account whatever token it presents, so the session cannot be renewed; the remaining minutes of the
-> access token are tracked in
-> [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112). Closing that gap
-> would need a lookup on every request in every service, or much shorter lifetimes.
+> its roles every time. A lock or ban revokes every refresh token at once, and refresh refuses a locked
+> or banned account whatever token it presents.
+>
+> **Since specs/065 the access token already issued stops too, within seconds** (#112). Identity
+> publishes `AccessTokensRevoked(UserId, RevokedAt)` on a lock, a ban, a role revoked, a password reset
+> or change, and a reused refresh token. `AddJwtAuthentication` registers a `RevokedAccessTokens`
+> singleton and an `OnTokenValidated` hook that fails any token of that user whose `iat` is earlier.
+> Every service feeds the singleton through `x.AddAccessTokenRevocations("<service>")`, which uses a
+> **temporary queue per instance**, so every instance hears every revocation. A token issued in the same
+> second is accepted, because `iat` has whole seconds only. After a password change or a role revoke,
+> the refresh that follows succeeds and carries the new state; after a lock or ban it is refused.

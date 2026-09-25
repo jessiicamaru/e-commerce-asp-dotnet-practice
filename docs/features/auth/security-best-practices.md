@@ -215,7 +215,7 @@ administrator sets or lifts it. They are two pairs of nullable columns on `users
 | Sign-in, wrong password or unknown email | **401** `Invalid email or password.` - identical for a stopped account, so the answer reveals nothing. |
 | Sign-in, right password, stopped account | **403** through `ForbiddenException`, with a sentence the person can read: `This account is locked until yyyy-MM-dd HH:mm UTC: <reason>` or `This account is banned: <reason>`. Recorded as `SignInRefused`. |
 | Refresh | **401** `The session is not valid. Sign in again.` - the account row decides, whatever the token. |
-| Requests with an access token already issued | Still accepted until it expires, at most 15 minutes ([#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112)). |
+| Requests with an access token already issued | Refused with 401 within seconds, by every service (specs/065, §4.10). Until #112 they were accepted for up to 15 minutes. |
 | Unlock or lift | The columns are cleared; the person signs in again. |
 
 The order of the two sign-in checks is the point: before the password is verified, a locked account
@@ -247,7 +247,7 @@ Two anonymous endpoints, and the rules that make them safe:
    expired, replaced and made-up tokens are the **same 400** on `Token`.
 5. **A reset ends every session.** In the same transaction as the new password, every refresh token of
    the account is revoked: whoever held a session - perhaps the reason for the reset - holds it no
-   longer. An access token already issued lives out its minutes, as after a lock (#112).
+   longer, and its access tokens stop within seconds (§4.10).
 6. **Registration's password rules apply** (at least 8 characters, at most 72 bytes), so a reset is not
    the way round them. Both steps are Security audit entries (`PasswordResetRequested`,
    `PasswordReset`), with neither the token nor the password in them.
@@ -352,12 +352,46 @@ open a shop in that name, and would receive that person's order confirmations an
 `AccountTests` covers each rule. The end-to-end run used two browsers: after browser A changed the
 password, A's refresh answered 200 and B's answered 401.
 
+### 4.10 An access token stops when access is revoked (specs/065)
+
+Refresh tokens end at once when access is revoked, but until #112 an access token already issued kept
+working until it expired: up to 15 minutes in which a banned person could still order, review and
+change listings.
+
+1. **Identity publishes `AccessTokensRevoked(UserId, RevokedAt, Reason)`** through its outbox, with the
+   change, when it:
+   - locks or bans an account;
+   - revokes a role;
+   - resets or changes a password;
+   - catches a refresh token reused.
+
+   Granting a role revokes nothing.
+2. **Every service that validates tokens keeps a small list** (`RevokedAccessTokens`, in memory). The
+   `OnTokenValidated` hook that `AddJwtAuthentication` installs refuses, with 401, any token of that user
+   whose `iat` is before `RevokedAt`.
+3. **It means "tokens issued before now", not "this account is stopped".** After a lock or ban the
+   refresh that follows is refused too, so the person is signed out. After a password change or a role
+   revoke the refresh succeeds, and the new token carries the new state. The storefront refreshes on a
+   401 on its own.
+4. **Second precision.** `iat` has whole seconds, so a revocation counts from the start of its second:
+   a token issued in that second is accepted. Comparing with the exact instant would refuse the new token
+   of the session a password change keeps, and it would refresh for ever.
+5. **Every instance hears it.** `AddAccessTokenRevocations("<service>")` gives each instance a temporary
+   queue. One durable queue per service would deliver each message to a single instance.
+6. **Bounded and failing open.** An entry is forgotten after an hour, by which time every token it could
+   refuse has expired. A service restarted within that hour forgets what it held, and the worst case is
+   the old behaviour. Nothing here can refuse a token Identity would accept.
+
+`AccessTokenRevocationTests` covers the rule, the hook, the consumer and all six publishers. The
+end-to-end run banned a signed-in customer and showed Identity, Catalog, Cart and Order refusing their
+token within seconds.
+
 ## 5. Known weaknesses in the current implementation
 
 §4 describes what runs today. Open weaknesses:
 
-1. **An access token outlives a lock or ban** by up to 15 minutes -
-   [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112).
+1. **A service restarted within an hour of a revocation forgets it** (§4.10). A token it held can then
+   live out the rest of its minutes, as before #112.
 2. **Somebody who knows an email can keep its sign-in paused.** 5 wrong passwords every 5 minutes
    do it. They cannot get in, and the per-IP limit caps how many addresses one client can do this to.
    This is the price of a pause per email (§4.7); a pause per email *and* IP would let a guesser with
@@ -366,7 +400,7 @@ password, A's refresh answered 200 and B's answered 401.
 4. **An email address cannot be changed.** A new address needs its own confirmation before it replaces
    the one the account signs in with (§4.8, §4.9).
 
-Six earlier weaknesses were recorded here and are fixed:
+Seven earlier weaknesses were recorded here and are fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
@@ -382,3 +416,5 @@ Six earlier weaknesses were recorded here and are fixed:
    no shop until it is used (§4.8).
 6. ~~**Nobody can change their password or name while signed in.**~~ **Fixed in specs/064 (#104)** (§4.9);
    a forgotten password can be reset since specs/061 (§4.6).
+7. ~~**An access token outlives a lock or ban** by up to 15 minutes.~~ **Fixed in specs/065 (#112)** -
+   refused within seconds, by every service (§4.10).

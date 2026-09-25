@@ -93,6 +93,10 @@ builder.Services.AddAuditTrail("payment");
 
 builder.Services.AddMassTransit(x =>
 {
+    // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
+    // seconds, on every instance (specs/065).
+    x.AddAccessTokenRevocations("payment");
+
     x.AddConsumer<ProcessPaymentConsumer>();
     // specs/039: a cancelled order is refunded. Registered, or it never runs and never complains.
     x.AddConsumer<RefundCancelledOrderConsumer>();
