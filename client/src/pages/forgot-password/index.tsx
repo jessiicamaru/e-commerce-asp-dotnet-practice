@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Auth } from '@/services/auth'
+import { tooManyAttempts } from '@/utils/shared'
 
 /**
  * "I forgot my password" (specs/061). Once asked, it says the same thing for any address: the server does
@@ -28,8 +29,8 @@ export function ForgotPasswordPage() {
     try {
       await Auth.forgotPassword(email)
       setSentTo(email)
-    } catch {
-      setError(t('forgot.failed'))
+    } catch (caught) {
+      setError(tooManyAttempts(t, caught) ?? t('forgot.failed'))
     } finally {
       setBusy(false)
     }

@@ -27,7 +27,10 @@
   "checkingSession": "Checking your session…",
   "error": {
     "unreachable": "The server could not be reached. Try again in a moment.",
-    "generic": "Something went wrong. Try again in a moment."
+    "generic": "Something went wrong. Try again in a moment.",
+    "tooManyAttempts_one": "Too many attempts. Try again in {{count}} minute.",
+    "tooManyAttempts_other": "Too many attempts. Try again in {{count}} minutes.",
+    "tooManyAttemptsLater": "Too many attempts. Try again in a few minutes."
   },
   "action": {
     "save": "Save",

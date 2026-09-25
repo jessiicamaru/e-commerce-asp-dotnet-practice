@@ -274,6 +274,13 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:8080
       OTLP_ENDPOINT: http://seq:5341/ingest/otlp
+      # The one proxy whose X-Forwarded-For is believed (specs/062): the storefront's nginx, at its fixed
+      # address on the edge network. Without it every browser behind the storefront would share nginx's
+      # address, and one person's sign-in attempts would use up everybody's.
+      GATEWAY_TRUSTED_PROXIES: 172.30.10.10
+    networks:
+      - default
+      - edge
     # The gateway is the one service whose configuration genuinely differs between
     # host and container: it is the only one that needs to know where the others
     # are. appsettings.json points at http://localhost:50XX, which is wrong in here.
@@ -325,6 +332,10 @@ services:
       GATEWAY_URL: http://gateway:8080
     ports:
       - "8088:8080"
+    # A fixed address, because the gateway trusts X-Forwarded-For from exactly this one (specs/062).
+    networks:
+      edge:
+        ipv4_address: 172.30.10.10
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
       interval: 10s
@@ -334,6 +345,14 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+
+networks:
+  # Between the storefront and the gateway only (specs/062): a subnet of our choosing, so the storefront's
+  # address - the one proxy the gateway believes - is known before either starts.
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.10.0/24
 
 volumes:
   # Catalog product images (specs/019). Survives rebuilds and restarts, like the databases.

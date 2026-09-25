@@ -210,7 +210,19 @@ the token's row.
 | `created_at` | TIMESTAMPTZ | Not Null | |
 
 Asking again deletes the person's unused rows first, so only the newest link works (specs/061). A used
-row stays as the record that the link was used.
+row stays as the record that the link was used. Since specs/062 a link asked for within a minute of the
+last one sends nothing.
+
+### `sign_in_throttles` Table
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `email_key` | VARCHAR(255) | PK | The email as sign-in compares it: trimmed, lower-case. **Not** a user id - unknown addresses are counted too (#28) |
+| `failures` | INTEGER | Not Null | Wrong passwords in the current window; back to 0 when a pause starts |
+| `window_started_at` | TIMESTAMPTZ | Not Null | 15 minutes after this, the count starts again |
+| `blocked_until` | TIMESTAMPTZ | Nullable | Every sign-in for this email is 429 until then |
+
+Changed only by single atomic statements (specs/062); cleared by the right password or a reset; purged
+hourly once nothing runs.
 
 ### `seller_profiles` Table
 | Column | Type | Constraints | Description |

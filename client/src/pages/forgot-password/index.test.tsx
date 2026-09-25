@@ -53,6 +53,16 @@ describe('ForgotPasswordPage (specs/061)', () => {
     expect(screen.queryByRole('status')).toBeNull()
   })
 
+  /** specs/062: the gateway's per-client limit on asking for links. */
+  it('says how long to wait when links are asked for too fast', async () => {
+    vi.spyOn(Auth, 'forgotPassword').mockRejectedValue(refusal(429, 'Too many attempts.', { retryAfter: 45 }))
+
+    await ask('lan@demo.test')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Try again in 1 minute.')
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
   it('speaks Vietnamese too', async () => {
     await i18n.changeLanguage('vi')
     vi.spyOn(Auth, 'forgotPassword').mockResolvedValue()

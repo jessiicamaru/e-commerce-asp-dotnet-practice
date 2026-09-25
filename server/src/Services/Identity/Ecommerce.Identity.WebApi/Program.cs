@@ -141,6 +141,13 @@ builder.Services.AddHostedService(sp => new EmailDispatchSweeper(
     TimeSpan.FromSeconds(builder.Configuration.GetValue("Email:SweepSeconds", 15)),
     sp.GetRequiredService<ILogger<EmailDispatchSweeper>>()));
 
+// Forgets wrong-password counts nobody needs any more (specs/062).
+builder.Services.AddHostedService(sp => new Ecommerce.Infrastructure.Persistence.SignInThrottleSweeper(
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<TimeProvider>(),
+    TimeSpan.FromMinutes(builder.Configuration.GetValue("SignIn:PurgeMinutes", 60)),
+    sp.GetRequiredService<ILogger<Ecommerce.Infrastructure.Persistence.SignInThrottleSweeper>>()));
+
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks();
 

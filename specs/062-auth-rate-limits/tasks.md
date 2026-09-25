@@ -1,0 +1,41 @@
+# Tasks: Limits on the sign-in and email endpoints
+
+- [X] T001 [US2] [US3] Tests first in `server/tests/Ecommerce.Identity.Tests/SignInThrottleTests.cs`. Cover:
+  - the 6th sign-in after 5 wrong passwords is 429, even with the right password;
+  - an unknown email trips at the same point;
+  - simultaneous wrong passwords are all counted;
+  - success clears the count, and so does a reset;
+  - the block ends after the cool-down;
+  - `SignInThrottled` is recorded only for a real account;
+  - stale rows are purged;
+  - forgot-password twice within a minute queues one email, including two at once.
+- [X] T002 [US2] [US3] Shared `TooManyRequestsException` and its mapping in `GlobalExceptionHandler`. Then Identity:
+  - `SignInThrottle` entity, configuration and migration;
+  - `ISignInThrottle` and its repository;
+  - `SignInOptions`;
+  - the `LoginCommandHandler` and `ResetPasswordCommand` changes;
+  - the forgot-password interval;
+  - `SignInThrottleSweeper`.
+- [X] T003 [US1] Tests first in the new project `server/tests/Ecommerce.ApiGateway.Tests`. Cover:
+  - each policy trips at its limit with 429, `Retry-After` and ProblemDetails;
+  - policies and IPs are separate buckets;
+  - other routes are not limited;
+  - a forged `X-Forwarded-For` from an untrusted peer is ignored;
+  - a trusted proxy's header is honoured;
+  - a bad configuration refuses to start.
+
+  Then build `AuthRateLimits`, the routes and `Program.cs`.
+- [X] T004 [US1] Compose: the `edge` network, the storefront's fixed address and `GATEWAY_TRUSTED_PROXIES`. Check `verify-storefront-image.sh` still passes.
+- [X] T005 [US4] Storefront tests first, then:
+  - `ApiError.retryAfterSeconds`;
+  - the words;
+  - 429 on the sign-in, sign-up, forgot-password and reset-password pages.
+- [X] T006 Bruno check. Then end to end:
+  - rapid reset requests through the storefront and the gateway;
+  - 5 wrong passwords, then 429, for a real email and an unknown one.
+- [X] T007 Mutation checks. Docs:
+  - `docs/features/auth/security-best-practices.md`;
+  - the reference, regenerated;
+  - gateway and infrastructure pages;
+  - timeline, backlog, decisions and counts;
+  - CLAUDE.md.

@@ -77,6 +77,16 @@ describe('ResetPasswordPage (specs/061)', () => {
     expect(await screen.findByText('Password must be at least 8 characters.')).toBeInTheDocument()
   })
 
+  it('says how long to wait after too many attempts, and keeps the form', async () => {
+    vi.spyOn(Auth, 'resetPassword').mockRejectedValue(refusal(429, 'Too many attempts.', { retryAfter: 120 }))
+    open('/reset-password?token=abc')
+
+    await choose('N3w-Passw0rd!')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Try again in 2 minutes.')
+    expect(screen.getByLabelText(i18n.t('auth:reset.password'))).toBeInTheDocument()
+  })
+
   it('says the link is broken when it carries no token, and offers no form', () => {
     open('/reset-password')
 

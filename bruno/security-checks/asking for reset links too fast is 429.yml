@@ -1,0 +1,56 @@
+info:
+  name: asking for reset links too fast is 429
+  type: http
+  seq: 52
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/forgot-password"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "nobody-{{$randomUUID}}@example.test"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Use up this client's allowance for reset links (5 a minute at the gateway, specs/062), so this
+        // request is at least the sixth. Only the "email" limit - sign-in and refresh have their own, so
+        // nothing else in the collection is slowed. Kept LAST in security-checks all the same.
+        const axios = require("axios");
+        // Bruno's sandboxed axios throws on a 429 whatever validateStatus says - and reaching one early
+        // (an earlier request in this minute) is fine: the request below is refused either way.
+        for (let i = 0; i < 5; i++) {
+          try {
+            await axios.post(bru.interpolate("{{baseUrl}}/api/auth/forgot-password"),
+              { email: "nobody-" + Date.now() + "-" + i + "@example.test" });
+          } catch (e) {
+            if (!e.response || e.response.status !== 429) throw e;
+          }
+        }
+    - type: tests
+      code: |-
+        test("status 429 - refused at the gateway", function() {
+          expect(res.status).to.equal(429);
+        });
+        test("says how long to wait, in the header and the body", function() {
+          const seconds = Number(res.headers["retry-after"]);
+          expect(seconds).to.be.within(1, 60);
+          expect(res.body.retryAfter).to.equal(seconds);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/062 (#105). Every call to forgot-password can send a real email, so one client gets 5 a minute.
+  Behind the storefront each browser is counted separately: the gateway believes nginx's
+  X-Forwarded-For, and nobody else's.

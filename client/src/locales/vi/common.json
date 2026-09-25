@@ -27,7 +27,10 @@
   "checkingSession": "Đang kiểm tra phiên đăng nhập…",
   "error": {
     "unreachable": "Không kết nối được máy chủ. Thử lại sau giây lát.",
-    "generic": "Có lỗi xảy ra. Thử lại sau giây lát."
+    "generic": "Có lỗi xảy ra. Thử lại sau giây lát.",
+    "tooManyAttempts_one": "Quá nhiều lần thử. Thử lại sau {{count}} phút.",
+    "tooManyAttempts_other": "Quá nhiều lần thử. Thử lại sau {{count}} phút.",
+    "tooManyAttemptsLater": "Quá nhiều lần thử. Thử lại sau vài phút."
   },
   "action": {
     "save": "Lưu",

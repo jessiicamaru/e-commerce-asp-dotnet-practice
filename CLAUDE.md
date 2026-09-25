@@ -92,10 +92,11 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (101 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (116 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
-5436; specs/053, the first tests the saga has had). They run against a **real PostgreSQL** — the guarantees under test are the
+5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
+gateway's real pipeline through WebApplicationFactory, specs/062). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
 
@@ -598,6 +599,20 @@ data to `{}` once sent** (`EmailTemplates.ScrubbedOnceSent`). `POST /api/auth/re
 token in **one guarded `UPDATE ... WHERE "UsedAt" IS NULL AND "ExpiresAt" > now RETURNING "UserId"`**, sets
 the password (registration's rules) and revokes every session, in one transaction; used, expired, replaced
 and made-up tokens are one 400 on `Token`. The storefront: `/forgot-password`, `/reset-password?token=`.
+**Guessing is limited** (specs/062, #105). The gateway counts per client IP (`AuthRateLimits`, YARP's
+`RateLimiterPolicy`):
+- `sign-in` - login, both registrations, reset-password - 30 a minute;
+- `email` - forgot-password - 5 a minute;
+- `session` - refresh - 60 a minute.
+
+A refusal is 429 ProblemDetails with `Retry-After` and `retryAfter`. Identity pauses **one email** for 5
+minutes after 5 wrong passwords in 15 minutes (`sign_in_throttles`, single `ON CONFLICT DO UPDATE`
+statements). It is keyed on the email, so unknown addresses behave the same (#28), and it is **a pause,
+never the moderation lock**. `forgot-password` sends one email a minute per address.
+⚠️ `X-Forwarded-For` is read **only** from `GATEWAY_TRUSTED_PROXIES` (compose: the storefront at
+`172.30.10.10` on the `edge` network). With none configured the gateway sets `ForwardedHeaders.None`,
+because **empty `KnownProxies` + `KnownIPNetworks` means trust EVERY peer**, and a forged header per
+request then bypassed the limit.
 ⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
 the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
 transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent

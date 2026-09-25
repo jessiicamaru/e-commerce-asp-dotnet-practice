@@ -54,6 +54,13 @@ public static class DependencyInjection
         services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
         services.AddSingleton<IEmailTransport, SmtpEmailTransport>();
 
+        // Wrong passwords counted per email (specs/062). Bad settings refuse to start rather than disable it.
+        services.AddOptions<Ecommerce.Application.Auth.SignInThrottling.SignInOptions>()
+            .Bind(configuration.GetSection(Ecommerce.Application.Auth.SignInThrottling.SignInOptions.SectionName))
+            .Validate(o => !o.Problems().Any(), "SignIn settings are invalid: MaxFailures, WindowMinutes and CooldownMinutes must each be at least 1.")
+            .ValidateOnStart();
+        services.AddScoped<Ecommerce.Application.Auth.SignInThrottling.ISignInThrottle, SignInThrottleRepository>();
+
         services.AddScoped<DataInitializer>();
 
         return services;

@@ -303,6 +303,26 @@ namespace Ecommerce.Infrastructure.Migrations
                     b.ToTable("shop_applications", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Entities.SignInThrottle", b =>
+                {
+                    b.Property<string>("EmailKey")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("BlockedUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Failures")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("WindowStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("EmailKey");
+
+                    b.ToTable("sign_in_throttles", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")

@@ -83,6 +83,12 @@ describe('SignInPage refusals (specs/049)', () => {
     expect(await signInAnswered(refusal(500))).toBe(i18n.t('auth:signIn.failed'))
   })
 
+  /** specs/062: too many wrong passwords for this email, or too many attempts from this client. */
+  it('says how long to wait after too many attempts', async () => {
+    const said = await signInAnswered(refusal(429, 'Too many wrong passwords for this email. Try again later.', { retryAfter: 290 }))
+    expect(said).toBe('Too many attempts. Try again in 5 minutes.')
+  })
+
   it('falls back to the generic sentence when the server was not reached', async () => {
     expect(await signInAnswered(new Error('network'))).toBe(i18n.t('auth:signIn.failed'))
   })

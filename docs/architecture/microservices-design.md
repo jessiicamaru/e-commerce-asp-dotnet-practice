@@ -194,6 +194,8 @@ database that publishes or consumes also holds MassTransit's `InboxState`, `Outb
 
 ### 2.9 API Gateway (`Ecommerce.ApiGateway`)
 * YARP on port `5000`, the only address the storefront and Bruno use - see [§4](#4-api-gateway-configuration-yarp).
+* Limits how fast one client may call the anonymous auth endpoints (specs/062) - see
+  [security §4.7](../features/auth/security-best-practices.md).
 
 ---
 
@@ -316,6 +318,14 @@ gateway and 200 directly; `/api/sellers` was exactly that when specs/027 added i
 
 The gateway ignores a client's `traceparent`, so every trace starts there
 ([observability](../guides/observability.md)).
+
+### Rate limits (specs/062)
+
+Six routes are more specific than `/api/auth/{**catch-all}` and carry a `RateLimiterPolicy`: `sign-in`
+for login, both registrations and reset-password, `email` for forgot-password, and `session` for refresh.
+`app.UseRateLimiter()` runs after routing and before `MapReverseProxy()`, and counts per client IP. The
+IP is the connection's, or the last hop a proxy in `GATEWAY_TRUSTED_PROXIES` wrote. Details and numbers
+are in [security §4.7](../features/auth/security-best-practices.md).
 
 ---
 

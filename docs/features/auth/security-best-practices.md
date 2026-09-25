@@ -229,7 +229,7 @@ signed in with. That was more than a misleading warning (#128). Now only a rotat
 `RefreshTokenReuseTests.A_stale_tab_from_before_a_lock_does_not_end_the_session_after_the_unlock`
 holds it.
 
-### 4.5 A forgotten password (specs/061)
+### 4.6 A forgotten password (specs/061)
 
 Two anonymous endpoints, and the rules that make them safe:
 
@@ -255,21 +255,72 @@ Two anonymous endpoints, and the rules that make them safe:
 `PasswordResetTests` covers each rule against a real PostgreSQL. The storefront's pages are
 `/forgot-password` (linked from sign-in) and `/reset-password?token=…`.
 
+### 4.7 Limits on guessing and on email (specs/062)
+
+Until #105 twelve wrong passwords in a row were all answered at once, and since #103 each
+`forgot-password` call could send a real email. There are now three limits, each answering **429** as
+ProblemDetails, with `Retry-After` in seconds and the same number as `retryAfter` in the body:
+
+1. **Per client IP, at the gateway.** ASP.NET Core's rate limiter uses fixed windows, attached to routes
+   through YARP's `RateLimiterPolicy`. Nothing else behind the gateway is limited, and each policy is its
+   own allowance:
+
+   | Policy | Routes | Default |
+   | :-- | :-- | :-- |
+   | `sign-in` | `login`, `register`, `register-seller`, `reset-password` | 30 a minute |
+   | `email` | `forgot-password` | 5 a minute |
+   | `session` | `refresh` (two tabs share one cookie) | 60 a minute |
+
+   Each is `RateLimits:<policy>:PermitLimit` / `WindowSeconds`, and a value below 1 refuses to start.
+   The counters are in memory, per gateway instance.
+2. **Per email, in Identity.** After **5** wrong passwords for one email within **15 minutes**, every
+   sign-in for that email waits **5 minutes**, the right password included. Otherwise the pause would
+   still tell a guesser "right" or "wrong".
+   - **Key.** The count is keyed on the email (`EmailKey.For`), not on an account, so an unknown
+     address is answered exactly like a real one (#28).
+   - **Storage.** It lives in `sign_in_throttles`, changed only by single `INSERT ... ON CONFLICT DO
+     UPDATE` statements, so simultaneous wrong passwords are all counted and several instances agree.
+   - **Clearing.** A pause puts the count back to 0. The right password or a password reset clears it.
+   - **Audit.** Starting a pause for a real account is a Security audit entry, `SignInThrottled`.
+   - **Purge.** `SignInThrottleSweeper` deletes stale rows hourly.
+   - Settings: `SignIn:MaxFailures`, `WindowMinutes`, `CooldownMinutes`.
+3. **Per address, for reset links.** `forgot-password` sends at most **one email a minute** per address,
+   however many IPs ask. It locks the person's row, so two requests at once send one email, and the
+   answer is still the same 202.
+
+**A pause, not a lock.** The moderation lock (§4.5) would let anybody shut anybody out. The price of a
+pause is recorded below.
+
+**The client's IP comes from the connection.** `X-Forwarded-For` is believed only from the proxies in
+`GATEWAY_TRUSTED_PROXIES` (IPs or CIDRs), and only its last hop (`ForwardLimit = 1`). In compose that is
+the storefront's nginx, at a fixed address on the `edge` network (`172.30.10.10`). Without it every
+browser would share nginx's address, and one person's attempts would use up everybody's. ⚠️ With **no**
+trusted proxy the header is not read at all (`ForwardedHeaders.None`). Leaving `KnownProxies` and
+`KnownIPNetworks` both empty does **not** mean "trust nobody": the middleware then trusts every peer, and
+a client that wrote a new address on each request was never limited. `AuthRateLimitTests` found that.
+
+`SignInThrottleTests` (Identity, real PostgreSQL) and `AuthRateLimitTests` (the gateway's real pipeline,
+new in `Ecommerce.ApiGateway.Tests`) cover each rule. The storefront's sign-in, sign-up, forgot-password
+and reset-password pages say "Too many attempts. Try again in N minutes." in the reader's language.
+
 ## 5. Known weaknesses in the current implementation
 
 §4 describes what runs today. Open weaknesses:
 
 1. **An access token outlives a lock or ban** by up to 15 minutes -
    [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112).
-2. **Sign-in can be guessed at without any limit** - no rate limiting at the gateway or in Identity -
-   [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
-3. **An email address is never confirmed** to belong to whoever registered it -
+2. **Somebody who knows an email can keep its sign-in paused.** 5 wrong passwords every 5 minutes
+   do it. They cannot get in, and the per-IP limit caps how many addresses one client can do this to.
+   This is the price of a pause per email (§4.7); a pause per email *and* IP would let a guesser with
+   many addresses go unslowed.
+3. **The gateway's counters are per instance.** Several gateways would each allow the full rate.
+4. **An email address is never confirmed** to belong to whoever registered it -
    [#106](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/106).
-4. **Nobody can change their password or name while signed in** -
+5. **Nobody can change their password or name while signed in** -
    [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104). A forgotten
-   password can be reset since specs/061 (§4.5).
+   password can be reset since specs/061 (§4.6).
 
-Three earlier weaknesses were recorded here and are fixed:
+Four earlier weaknesses were recorded here and are fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
@@ -279,3 +330,5 @@ Three earlier weaknesses were recorded here and are fixed:
 3. ~~**Rotation deletes the old token instead of revoking it.**~~ **Fixed in #29.** A stolen token
    replayed after its owner rotated it used to be simply "not found". It is now recognised as reuse,
    and every session of that user is revoked (§4.2).
+4. ~~**Sign-in can be guessed at without any limit.**~~ **Fixed in specs/062 (#105)** - three limits
+   (§4.7).

@@ -47,6 +47,12 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
                 "Forbidden",
                 null
             ),
+            // Too many attempts (specs/062): the caller is told how long to wait, below.
+            TooManyRequestsException => (
+                StatusCodes.Status429TooManyRequests,
+                "Too Many Requests",
+                null
+            ),
             UnauthorizedAccessException => (
                 StatusCodes.Status401Unauthorized,
                 "Unauthorized",
@@ -103,6 +109,12 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
             }
         }
 
+        if (exception is TooManyRequestsException tooMany)
+        {
+            problemDetails.Extensions["retryAfter"] = tooMany.RetryAfterSeconds;
+            httpContext.Response.Headers.RetryAfter = tooMany.RetryAfterSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 
@@ -121,5 +133,6 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
         or NotFoundException
         or ConflictException
         or ForbiddenException
+        or TooManyRequestsException
         or DependencyUnavailableException;
 }

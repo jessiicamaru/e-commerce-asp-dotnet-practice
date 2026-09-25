@@ -320,11 +320,15 @@ def gateway_page():
         "gateway. A new endpoint under a new path prefix needs a route here, or it is a 404 that looks like "
         "a missing feature. Container destinations are overridden by command-line arguments in "
         "`docker-compose.app.yml`; the addresses below are the local-development ones."))
-    text += "| Route | Path | Cluster | Destination | Rewrites to |\n| :-- | :-- | :-- | :-- | :-- |\n"
+    text += ("| Route | Path | Cluster | Destination | Rewrites to | Rate limit |\n"
+             "| :-- | :-- | :-- | :-- | :-- | :-- |\n")
     for name, route in sorted(proxy["Routes"].items(), key=lambda kv: (kv[1]["ClusterId"], kv[1]["Match"]["Path"])):
         rewrite = next((t.get("PathPattern") for t in route.get("Transforms", []) if "PathPattern" in t), "")
+        # Per client IP (specs/062); the policies and their numbers are in Ecommerce.ApiGateway/AuthRateLimits.cs.
+        limit = route.get("RateLimiterPolicy", "")
         text += (f"| `{name}` | `{route['Match']['Path']}` | `{route['ClusterId']}` | "
-                 f"{clusters.get(route['ClusterId'], '')} | {f'`{rewrite}`' if rewrite else ''} |\n")
+                 f"{clusters.get(route['ClusterId'], '')} | {f'`{rewrite}`' if rewrite else ''} | "
+                 f"{f'`{limit}`' if limit else ''} |\n")
     write("gateway.md", text)
 
 

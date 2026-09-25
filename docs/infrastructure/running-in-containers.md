@@ -274,6 +274,21 @@ verified end to end.
 explanation, so that whoever picks it up starts from what was actually tested. If you work it out,
 [research D4](../../specs/005-containerise-services/research.md) is the place to record it.
 
+### The `edge` network: which proxy the gateway believes (specs/062)
+
+The storefront's nginx forwards every browser's requests to the gateway, so the gateway would see one
+address, nginx's, for everybody. The limits on sign-in would then be shared by every visitor. So:
+
+- the storefront sits on a small network of its own, `edge` (`172.30.10.0/24`), at a **fixed** address,
+  `172.30.10.10`;
+- the gateway joins both `edge` and the default network, and `GATEWAY_TRUSTED_PROXIES=172.30.10.10`
+  makes it believe that address's `X-Forwarded-For`, and nobody else's;
+- nginx appends `$remote_addr` to `X-Forwarded-For`, and the gateway takes only that last hop, so whatever
+  a browser wrote into the header itself is ignored.
+
+Traffic from the host straight to `:5000` is counted by the address Docker gives it, and its
+`X-Forwarded-For` is ignored.
+
 ---
 
 ## 7. Published images

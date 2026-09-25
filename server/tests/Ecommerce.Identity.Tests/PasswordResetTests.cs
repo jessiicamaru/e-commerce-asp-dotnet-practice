@@ -84,8 +84,10 @@ public class PasswordResetTests(IdentityTestFixture fixture)
         await RefusedAsync(used);
         await RefusedAsync("made-up-token");
 
+        await AskedLongAgoAsync(id);
         await SendAsync(new ForgotPasswordCommand(email, "vi"));
         var expired = await TokenAsync(id);
+        Assert.NotEqual(used, expired);
         await WithDbAsync(db => db.PasswordResetTokens.Where(t => t.TokenHash == ResetTokens.Hash(expired))
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.ExpiresAt, DateTime.UtcNow.AddMinutes(-1))));
         await RefusedAsync(expired);
@@ -97,6 +99,7 @@ public class PasswordResetTests(IdentityTestFixture fixture)
         var (id, email) = await PersonAsync();
         await SendAsync(new ForgotPasswordCommand(email, "vi"));
         var first = await TokenAsync(id);
+        await AskedLongAgoAsync(id);   // past the one-a-minute interval (specs/062)
         await SendAsync(new ForgotPasswordCommand(email, "vi"));
         var second = (await PendingResetEmailsAsync(id)).Select(TokenOf).Single(t => t != first);
 
@@ -172,6 +175,11 @@ public class PasswordResetTests(IdentityTestFixture fixture)
         var registered = await SendAsync(new RegisterCommand(email, OldPassword, "Lan", "Pham"));
         return (registered.Id, email);
     }
+
+    /// <summary>Moves this person's links two minutes back, past the one-email-a-minute interval (specs/062).</summary>
+    private Task AskedLongAgoAsync(Guid id) =>
+        WithDbAsync(db => db.PasswordResetTokens.Where(t => t.UserId == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.CreatedAt, DateTime.UtcNow.AddMinutes(-2))));
 
     private Task<int> CountAsync() => WithDbAsync(db => db.PasswordResetTokens.CountAsync());
 
