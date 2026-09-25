@@ -11,6 +11,8 @@ export interface ProblemDetails {
   /** ISO 8601, UTC. */
   until?: string
   reason?: string
+  /** Seconds to wait before trying again, beside `Retry-After` on a 429 (specs/062). */
+  retryAfter?: number
 }
 
 /**
@@ -35,6 +37,12 @@ export class ApiError extends Error {
     return out
   }
 
+  /** How long a 429 says to wait, in seconds - from the body, else from `Retry-After`; null when neither says. */
+  get retryAfterSeconds(): number | null {
+    const seconds = Number(this.problem.retryAfter)
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : null
+  }
+
   /** The same messages keyed as a form names its fields (camelCase). */
   get formErrors(): Record<string, string> {
     return Object.fromEntries(
@@ -51,7 +59,10 @@ export class ApiError extends Error {
       const status = error.response?.status ?? 0
       const data = error.response?.data
       const problem: ProblemDetails = data && typeof data === 'object' ? (data as ProblemDetails) : {}
-      return new ApiError(status, { ...problem, status })
+      // A 429's wait is in the header as well as the body; keep it if only the header survived a proxy.
+      const header = Number(error.response?.headers?.['retry-after'])
+      const retryAfter = problem.retryAfter ?? (Number.isFinite(header) && header > 0 ? header : undefined)
+      return new ApiError(status, { ...problem, status, ...(retryAfter ? { retryAfter } : {}) })
     }
 
     // No response at all: the gateway is down, or the browser refused the request.

@@ -55,6 +55,7 @@
     <Project Path="src/Services/Payment/Ecommerce.Payment.WebApi/Ecommerce.Payment.WebApi.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Ecommerce.ApiGateway.Tests/Ecommerce.ApiGateway.Tests.csproj" />
     <Project Path="tests/Ecommerce.Catalog.Tests/Ecommerce.Catalog.Tests.csproj" />
     <Project Path="tests/Ecommerce.Inventory.Tests/Ecommerce.Inventory.Tests.csproj" />
     <Project Path="tests/Ecommerce.Orchestrator.Tests/Ecommerce.Orchestrator.Tests.csproj" />

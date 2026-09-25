@@ -11,6 +11,16 @@ public class PasswordResetRepository(ApplicationDbContext context) : IPasswordRe
     public async Task AddAsync(PasswordResetToken token, CancellationToken cancellationToken = default) =>
         await _context.PasswordResetTokens.AddAsync(token, cancellationToken);
 
+    public async Task<bool> AskedSinceAsync(Guid userId, DateTime since, CancellationToken cancellationToken = default)
+    {
+        // The person's row, locked until the transaction ends: a second request for the same address waits
+        // here, then sees the link the first one wrote.
+        await _context.Database.SqlQuery<Guid>(
+            $"""SELECT "Id" AS "Value" FROM users WHERE "Id" = {userId} FOR UPDATE""").ToListAsync(cancellationToken);
+
+        return await _context.PasswordResetTokens.AnyAsync(t => t.UserId == userId && t.CreatedAt > since, cancellationToken);
+    }
+
     public Task DeleteUnusedAsync(Guid userId, CancellationToken cancellationToken = default) =>
         _context.PasswordResetTokens.Where(t => t.UserId == userId && t.UsedAt == null).ExecuteDeleteAsync(cancellationToken);
 

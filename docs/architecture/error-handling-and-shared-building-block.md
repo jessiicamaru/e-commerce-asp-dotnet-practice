@@ -190,6 +190,7 @@ before it, a locked account and a wrong password must look the same (#28).
 | `ForbiddenException` | 403 | Forbidden |
 | `NotFoundException` | 404 | Resource Not Found |
 | `ConflictException` | 409 | Resource Conflict |
+| `TooManyRequestsException` | 429 | Too Many Requests - with `Retry-After` and a `retryAfter` extension, in whole seconds (specs/062); its message is shown |
 | `DependencyUnavailableException` | 503 | Service Unavailable — a service this request depends on did not answer (Catalog, Cart or Identity at checkout; Catalog when a seller sets stock) |
 | anything else | 500 | Internal Server Error |
 

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Ecommerce.Application.Auth.Commands.Register;
+using Ecommerce.Application.Auth.SignInThrottling;
 using Ecommerce.Application.Common;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Email;
@@ -28,6 +29,12 @@ public interface IPasswordResetRepository
 {
     Task AddAsync(PasswordResetToken token, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Whether a link was asked for this person since <paramref name="since"/>. Locks the person's row first,
+    /// so two requests at once are decided one after the other (specs/062). Call inside the transaction.
+    /// </summary>
+    Task<bool> AskedSinceAsync(Guid userId, DateTime since, CancellationToken cancellationToken = default);
+
     /// <summary>Removes a person's links that were never used: the newest one they asked for is the only way in.</summary>
     Task DeleteUnusedAsync(Guid userId, CancellationToken cancellationToken = default);
 
@@ -41,6 +48,9 @@ public interface IPasswordResetRepository
 public static class ResetTokens
 {
     public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(30);
+
+    /// <summary>At most one email per address in this long (specs/062), however many IPs ask.</summary>
+    public static readonly TimeSpan MinimumInterval = TimeSpan.FromMinutes(1);
 
     public const string Invalid = "This link is invalid or has expired. Ask for a new one.";
 
@@ -83,7 +93,8 @@ public class PasswordResetHandlers(
     IOutgoingEmailRepository emails,
     IPasswordHasher hasher,
     IUnitOfWork unitOfWork,
-    IAuditTrail audit) :
+    IAuditTrail audit,
+    ISignInThrottle throttle) :
     IRequestHandler<ForgotPasswordCommand>,
     IRequestHandler<ResetPasswordCommand>
 {
@@ -93,6 +104,7 @@ public class PasswordResetHandlers(
     private readonly IPasswordHasher _hasher = hasher;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IAuditTrail _audit = audit;
+    private readonly ISignInThrottle _throttle = throttle;
 
     public async Task Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
@@ -108,6 +120,13 @@ public class PasswordResetHandlers(
 
         await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
+            // One email a minute per address (specs/062): a stranger asking from many IPs cannot fill an
+            // inbox. Still the same 202 - the answer must not differ from any other request.
+            if (await _resets.AskedSinceAsync(user.Id, now - ResetTokens.MinimumInterval, ct))
+            {
+                return;
+            }
+
             await _resets.DeleteUnusedAsync(user.Id, ct);
             await _resets.AddAsync(new PasswordResetToken
             {
@@ -161,6 +180,9 @@ public class PasswordResetHandlers(
 
             // Whoever held a session - perhaps the reason the password was reset - holds it no longer.
             await _users.RevokeAllRefreshTokensAsync(user.Id, now, ct);
+
+            // The link proved the mailbox: wrong passwords counted against this email are forgotten (specs/062).
+            await _throttle.ClearAsync(EmailKey.For(user.Email), ct);
         }, cancellationToken);
     }
 }

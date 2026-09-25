@@ -1,6 +1,6 @@
 # Tasks: Limits on the sign-in and email endpoints
 
-- [ ] T001 [US2] [US3] Tests first in `server/tests/Ecommerce.Identity.Tests/SignInThrottleTests.cs`. Cover:
+- [X] T001 [US2] [US3] Tests first in `server/tests/Ecommerce.Identity.Tests/SignInThrottleTests.cs`. Cover:
   - the 6th sign-in after 5 wrong passwords is 429, even with the right password;
   - an unknown email trips at the same point;
   - simultaneous wrong passwords are all counted;
@@ -9,14 +9,14 @@
   - `SignInThrottled` is recorded only for a real account;
   - stale rows are purged;
   - forgot-password twice within a minute queues one email, including two at once.
-- [ ] T002 [US2] [US3] Shared `TooManyRequestsException` and its mapping in `GlobalExceptionHandler`. Then Identity:
+- [X] T002 [US2] [US3] Shared `TooManyRequestsException` and its mapping in `GlobalExceptionHandler`. Then Identity:
   - `SignInThrottle` entity, configuration and migration;
   - `ISignInThrottle` and its repository;
   - `SignInOptions`;
   - the `LoginCommandHandler` and `ResetPasswordCommand` changes;
   - the forgot-password interval;
   - `SignInThrottleSweeper`.
-- [ ] T003 [US1] Tests first in the new project `server/tests/Ecommerce.ApiGateway.Tests`. Cover:
+- [X] T003 [US1] Tests first in the new project `server/tests/Ecommerce.ApiGateway.Tests`. Cover:
   - each policy trips at its limit with 429, `Retry-After` and ProblemDetails;
   - policies and IPs are separate buckets;
   - other routes are not limited;
@@ -25,15 +25,15 @@
   - a bad configuration refuses to start.
 
   Then build `AuthRateLimits`, the routes and `Program.cs`.
-- [ ] T004 [US1] Compose: the `edge` network, the storefront's fixed address and `GATEWAY_TRUSTED_PROXIES`. Check `verify-storefront-image.sh` still passes.
-- [ ] T005 [US4] Storefront tests first, then:
+- [X] T004 [US1] Compose: the `edge` network, the storefront's fixed address and `GATEWAY_TRUSTED_PROXIES`. Check `verify-storefront-image.sh` still passes.
+- [X] T005 [US4] Storefront tests first, then:
   - `ApiError.retryAfterSeconds`;
   - the words;
   - 429 on the sign-in, sign-up, forgot-password and reset-password pages.
-- [ ] T006 Bruno check. Then end to end:
+- [X] T006 Bruno check. Then end to end:
   - rapid reset requests through the storefront and the gateway;
   - 5 wrong passwords, then 429, for a real email and an unknown one.
-- [ ] T007 Mutation checks. Docs:
+- [X] T007 Mutation checks. Docs:
   - `docs/features/auth/security-best-practices.md`;
   - the reference, regenerated;
   - gateway and infrastructure pages;

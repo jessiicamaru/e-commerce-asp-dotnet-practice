@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/auth/useAuth'
+import { tooManyAttempts } from '@/utils/shared'
 
 const FIELDS = [
   { name: 'firstName', type: 'text', autoComplete: 'given-name' },
@@ -38,6 +39,8 @@ export function SignUpPage() {
       const apiError = ApiError.from(caught)
       if (apiError.status === 409) {
         setError(t('signUp.taken'))
+      } else if (apiError.status === 429) {
+        setError(tooManyAttempts(t, caught))
       } else if (apiError.status === 400) {
         // Identity's own rules (#43), shown next to the field each one is about.
         setFieldErrors(apiError.formErrors)

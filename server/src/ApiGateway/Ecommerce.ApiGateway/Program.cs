@@ -1,3 +1,4 @@
+using Ecommerce.ApiGateway;
 using Ecommerce.Shared.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,11 @@ builder.Services.AddReverseProxy()
 
 builder.Services.AddHealthChecks();
 
+// The anonymous auth endpoints, limited per client IP (specs/062). X-Forwarded-For is believed only from
+// the proxies GATEWAY_TRUSTED_PROXIES names - in compose, the storefront's nginx.
+builder.Services.AddTrustedProxies(builder.Configuration);
+builder.Services.AddAuthRateLimits(builder.Configuration);
+
 // Every request starts a fresh trace HERE: a traceparent sent by a client is ignored, so no caller can
 // choose a trace id or attach to someone else's checkout. Services behind the gateway propagate
 // normally (feature 013, research D3).
@@ -16,7 +22,13 @@ builder.AddObservability("gateway");
 
 var app = builder.Build();
 
+// First, so every later step - the rate limiter above all - sees the client's address, not the proxy's.
+app.UseForwardedHeaders();
+
 app.MapHealthChecks("/health");
+
+// After routing (implicit) and before the proxy: a route's RateLimiterPolicy is read from its endpoint.
+app.UseRateLimiter();
 
 // Enable YARP Reverse Proxy middleware routing
 app.MapReverseProxy();
@@ -36,3 +48,5 @@ else
     app.Run();
 }
 
+/// <summary>For WebApplicationFactory in Ecommerce.ApiGateway.Tests.</summary>
+public partial class Program;

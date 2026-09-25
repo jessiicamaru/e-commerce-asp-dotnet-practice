@@ -43,12 +43,31 @@ public class ForbiddenProblemTests
         Assert.Equal("the-trace", body.GetProperty("traceId").GetString());
     }
 
-    private static async Task<JsonElement> HandleAsync(Exception exception)
+    /// <summary>specs/062: a 429 says how long to wait, in the header and the body, in whole seconds rounded up.</summary>
+    [Fact]
+    public async Task Too_many_requests_says_how_long_to_wait()
+    {
+        var context = NewContext();
+        var body = await HandleAsync(new TooManyRequestsException("Too many wrong passwords for this email. Try again later.",
+            TimeSpan.FromSeconds(299.2)), context);
+
+        Assert.Equal(429, body.GetProperty("status").GetInt32());
+        Assert.Equal("Too many wrong passwords for this email. Try again later.", body.GetProperty("detail").GetString());
+        Assert.Equal(300, body.GetProperty("retryAfter").GetInt32());
+        Assert.Equal("300", context.Response.Headers.RetryAfter.ToString());
+    }
+
+    private static DefaultHttpContext NewContext()
     {
         var context = new DefaultHttpContext { TraceIdentifier = "the-trace" };
         context.Request.Path = "/api/auth/login";
         context.Response.Body = new MemoryStream();
+        return context;
+    }
 
+    private static async Task<JsonElement> HandleAsync(Exception exception, DefaultHttpContext? given = null)
+    {
+        var context = given ?? NewContext();
         var handler = new GlobalExceptionHandler(NullLogger<GlobalExceptionHandler>.Instance, new ProductionEnvironment());
         Assert.True(await handler.TryHandleAsync(context, exception, CancellationToken.None));
 

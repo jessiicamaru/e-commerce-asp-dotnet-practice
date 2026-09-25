@@ -81,6 +81,9 @@ sequenceDiagram
    `EmailRequested`, no outbox row, no queue holding it. Once the email is `Sent`, the dispatcher replaces
    the data with `{}` (`EmailTemplates.ScrubbedOnceSent`): delivery needed the token, nothing afterwards
    does. A pending or failed row still holds it, for as long as the link could work anyway.
+8. **Nobody fills an inbox** (specs/062). A reset link is sent at most once a minute per address, and one
+   client may ask at most 5 times a minute at the gateway. Both still answer 202 or 429 the same way for
+   any address.
 
 ## Data
 

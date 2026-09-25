@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Auth } from '@/services/auth'
+import { tooManyAttempts } from '@/utils/shared'
 
 /**
  * Where the emailed link lands (specs/061): `/reset-password?token=…`. A used, expired, replaced or
@@ -48,7 +49,7 @@ export function ResetPasswordPage() {
         // Registration's rules (#43), said by the server beside the field they are about.
         setPasswordError(fields.password)
       } else {
-        setError(t('reset.failed'))
+        setError(tooManyAttempts(t, caught) ?? t('reset.failed'))
       }
     } finally {
       setBusy(false)

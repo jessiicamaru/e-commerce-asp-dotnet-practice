@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next'
 import { ApiError } from '@/config/axios'
+import { tooManyAttempts } from '@/utils/shared'
 
 /**
  * What the sign-in page says when signing in fails (specs/049).
@@ -10,12 +11,16 @@ import { ApiError } from '@/config/axios'
  *   owed the reason. Identity sends the facts - `code`, `until`, `reason` - and they are worded here, in
  *   the reader's language and time zone, the way a notification is worded from its data (specs/042).
  *   A 403 this page has no words for shows the server's own sentence.
+ * - 429 (specs/062) - too many attempts from this client or for this email - says how long to wait.
  */
 export function describeSignInFailure(t: TFunction<'auth'>, language: string, caught: unknown): string {
   const error = ApiError.from(caught)
   const problem = error.problem
 
   if (error.status === 401) return t('signIn.wrong')
+
+  const wait = tooManyAttempts(t as TFunction, caught)
+  if (wait) return wait
 
   if (error.status === 403) {
     if (problem.code === 'AccountLocked' && problem.until && problem.reason) {
