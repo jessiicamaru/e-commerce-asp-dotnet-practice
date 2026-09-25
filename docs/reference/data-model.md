@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `325a428`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `6149cdc`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -371,7 +371,7 @@ Entity `CheckoutOutcome`.
 | `UpdatedAt` | timestamp with time zone |  |
 | `UserId` | uuid | yes |
 
-## Order - `ecommerce_order_db` (4 tables)
+## Order - `ecommerce_order_db` (5 tables)
 
 ### `order_items`
 
@@ -438,6 +438,28 @@ Entity `Order`.
 | `UpdatedAt` | timestamp with time zone |  |
 | `UserId` | uuid |  |
 
+### `parcel_returns`
+
+Entity `ParcelReturn`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `CustomerId` | uuid |  |
+| `DecidedAt` | timestamp with time zone | yes |
+| `DecisionReason` | character varying(500) | yes |
+| `OrderId` | uuid |  |
+| `Reason` | character varying(1000) |  |
+| `ReceivedAt` | timestamp with time zone | yes |
+| `RefundAmount` | numeric(18,2) | yes |
+| `RequestedAt` | timestamp with time zone |  |
+| `SellerId` | uuid | yes |
+| `SentBackAt` | timestamp with time zone | yes |
+| `ShipmentId` | uuid |  |
+| `Status` | character varying(16) |  |
+| `TrackingReference` | character varying(100) | yes |
+| `UpdatedAt` | timestamp with time zone |  |
+
 ### `payouts`
 
 Entity `Payout`.
@@ -452,7 +474,17 @@ Entity `Payout`.
 | `RecordedBy` | uuid |  |
 | `SellerId` | uuid |  |
 
-## Inventory - `ecommerce_inventory_db` (2 tables)
+## Inventory - `ecommerce_inventory_db` (3 tables)
+
+### `returned_parcels`
+
+Entity `ReturnedParcel`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `ReturnId` | uuid |  |
+| `OrderId` | uuid |  |
+| `RestockedAt` | timestamp with time zone |  |
 
 ### `stock_items`
 
@@ -515,6 +547,7 @@ Entity `Refund`.
 | `PaymentId` | uuid |  |
 | `Provider` | character varying(32) |  |
 | `RefundedAt` | timestamp with time zone |  |
+| `ReturnId` | uuid | yes |
 
 ## Orchestrator - `ecommerce_saga_db` (1 tables)
 

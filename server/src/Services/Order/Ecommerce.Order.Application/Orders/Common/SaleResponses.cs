@@ -102,4 +102,5 @@ public record SaleDetailResponse(
     decimal? ShippingShare = null,
     decimal? Payout = null,
     bool PaidOut = false,
-    DateTime? DeliveredAt = null);
+    DateTime? DeliveredAt = null,
+    Ecommerce.Order.Application.Returns.ReturnResponse? Return = null);

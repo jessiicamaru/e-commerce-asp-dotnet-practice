@@ -54,6 +54,7 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 | The catalogue: products, variants, images, languages, currencies, review before sale, views | [Catalog](features/catalog.md) |
 | Cart, checkout, pricing and totals, the saga, settlement | [Shopping and checkout](features/shopping-and-checkout.md) |
 | Parcels per seller, shipping, cancellation, delivery confirmation | [Fulfilment and delivery](features/fulfilment-and-delivery.md) |
+| Sending a delivered parcel back: the request, the decision and the dispute, the refund and the restock, the money hold | [Returns](features/returns.md) |
 | Sellers, shop applications, seller stock and sales, commission and payouts | [Marketplace](features/marketplace.md) |
 | Staff roles, locks and bans, the moderation queues, the admin console | [Moderation and staff](features/moderation-and-staff.md) |
 | The audit log and in-app notifications | [Audit and notifications](features/audit-and-notifications.md) |

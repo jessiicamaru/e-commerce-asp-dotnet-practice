@@ -89,8 +89,8 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (209 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
@@ -493,8 +493,19 @@ service shaped like Inventory's expiry sweeper, takes the rest as delivered "Aut
 instances. ⚠️ Delivered is **columns, not a status**: `order_shipments.ShippedAt`, `DeliveredAt`,
 `DeliveryConfirmedBy`, with the part still `Shipped` - a `Delivered` enum value would stop a rolled-back
 image reading the row. ⚠️ `ShippedAt` is written by the ship move and was backfilled from `UpdatedAt`;
-counting the week from `UpdatedAt` would restart it at the part's next write. Money is **due only for a
-delivered parcel** - balances, the due list and the payout's claim all require `DeliveredAt`.
+counting the week from `UpdatedAt` would restart it at the part's next write. Money is **due only once a
+delivered parcel can no longer come back** (specs/066): delivered more than `Returns:WindowDays` (7) ago with no
+return of it open - balances and the due list read it from `PayoutRepository.Money`, the claim's SQL says it
+again, and `ReturnTests.The_payout_claims_exactly_what_the_balance_calls_due` holds the two together.
+
+**A delivered parcel can be returned** (specs/066, #107; server only - the screens are part 2): the buyer asks
+within 7 days, the seller (Admin for the shop's parcel) accepts or refuses, a refusal can be escalated to Admin
+for the final word, the buyer sends it back with a reference, the seller marks it received. `parcel_returns` is
+one row per parcel (`ON CONFLICT` on `ShipmentId`), every step a guarded `UPDATE ... WHERE "Status" = @from`.
+Received publishes `ParcelReturnedEvent` with the lines and the refund (goods + tax, never delivery): Payment's
+`RefundReturnedParcelConsumer` (unique `refunds.ReturnId`; the `OrderId` index is now partial) and Inventory's
+`RestockReturnedParcelConsumer` (`returned_parcels` claim, the eighth announcer). ⚠️ **A hold, never a debt**: a
+return can start only inside the window and money is due only after it, so nothing paid out ever comes back.
 
 ⚠️ **Opening a write to sellers means the controller
 attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the ownership checks

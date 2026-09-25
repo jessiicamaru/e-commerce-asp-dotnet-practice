@@ -140,6 +140,23 @@ public class AnnouncementTests(InventoryTestFixture fixture)
         Assert.Equal(2, announcement.QuantityAvailable);
     }
 
+    /// <summary>The eighth path (specs/066): a returned parcel's units back on the shelf, announced.</summary>
+    [Fact]
+    public async Task RestockReturnedParcel_announces_the_units_put_back()
+    {
+        var productId = await StockedProductAsync(onHand: 1);
+        var orderId = Guid.CreateVersion7();
+        await SendAsync(new ReserveStockCommand(orderId, [new ReserveStockItem(productId, 1)]));
+        await SendAsync(new ConfirmStockCommand(orderId));
+
+        await SendAsync(new Ecommerce.Inventory.Application.Reservations.RestockReturnedParcel.RestockReturnedParcelCommand(
+            Guid.CreateVersion7(), orderId, [new Ecommerce.Contracts.Order.ReturnedItemDto(productId, 1)]));
+
+        var announcement = await LastAnnouncementForAsync(productId);
+        Assert.True(announcement.IsAvailable);
+        Assert.Equal(1, announcement.QuantityAvailable);
+    }
+
     [Fact]
     public async Task ExpireStock_announces_the_reclaimed_units()
     {

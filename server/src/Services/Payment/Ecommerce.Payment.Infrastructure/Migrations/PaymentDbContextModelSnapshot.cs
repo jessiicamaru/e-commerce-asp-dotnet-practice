@@ -96,12 +96,20 @@ namespace Ecommerce.Payment.Infrastructure.Migrations
                     b.Property<DateTime>("RefundedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ReturnId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"ReturnId\" IS NULL");
 
                     b.HasIndex("PaymentId");
+
+                    b.HasIndex("ReturnId")
+                        .IsUnique()
+                        .HasFilter("\"ReturnId\" IS NOT NULL");
 
                     b.ToTable("refunds", null, t =>
                         {

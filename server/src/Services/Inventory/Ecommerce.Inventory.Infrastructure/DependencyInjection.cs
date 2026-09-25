@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<IReservationRepository, ReservationRepository>();
+        services.AddScoped<IReturnedParcels, ReturnedParcels>();
 
         // Inventory's FIRST synchronous dependency on another service (specs/031). Everything it
         // did before this was messages.

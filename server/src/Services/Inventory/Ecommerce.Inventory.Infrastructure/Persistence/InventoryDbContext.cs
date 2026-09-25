@@ -10,6 +10,8 @@ public class InventoryDbContext(DbContextOptions<InventoryDbContext> options) : 
 
     public DbSet<StockReservation> StockReservations => Set<StockReservation>();
 
+    public DbSet<ReturnedParcel> ReturnedParcels => Set<ReturnedParcel>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

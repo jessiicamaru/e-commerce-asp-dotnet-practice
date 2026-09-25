@@ -16,9 +16,11 @@ public class RefundConfiguration : IEntityTypeConfiguration<Refund>
         builder.Property(x => x.Currency).HasMaxLength(3);
         builder.Property(x => x.Provider).HasMaxLength(32).IsRequired();
 
-        // One refund per order: the second delivery of a cancellation is a unique violation, not a
-        // second refund (research D3).
-        builder.HasIndex(x => x.OrderId).IsUnique();
+        // One refund of the WHOLE order: the second delivery of a cancellation is a unique violation, not a
+        // second refund (research D3). Since specs/066 an order may also have one refund per returned parcel,
+        // so the rule is partial - and each return is refunded once, by its own index.
+        builder.HasIndex(x => x.OrderId).IsUnique().HasFilter("\"ReturnId\" IS NULL");
+        builder.HasIndex(x => x.ReturnId).IsUnique().HasFilter("\"ReturnId\" IS NOT NULL");
 
         builder.HasOne<Domain.Entities.Payment>()
             .WithMany()

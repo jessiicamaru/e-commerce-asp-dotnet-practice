@@ -40,7 +40,8 @@ public record ShipmentResponse(
     bool IsShop = false,
     Guid? Id = null,
     DateTime? DeliveredAt = null,
-    string? DeliveryConfirmedBy = null);
+    string? DeliveryConfirmedBy = null,
+    Ecommerce.Order.Application.Returns.ReturnResponse? Return = null);
 
 public record ShippingAddressResponse(
     string RecipientName,

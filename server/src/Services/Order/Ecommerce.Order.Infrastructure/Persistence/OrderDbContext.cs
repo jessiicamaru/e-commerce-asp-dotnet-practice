@@ -14,6 +14,7 @@ public class OrderDbContext : DbContext
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderShipment> OrderShipments => Set<OrderShipment>();
     public DbSet<Payout> Payouts => Set<Payout>();
+    public DbSet<ParcelReturn> ParcelReturns => Set<ParcelReturn>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

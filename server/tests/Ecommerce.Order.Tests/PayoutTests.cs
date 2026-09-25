@@ -430,7 +430,8 @@ public class PayoutTests
         await scope.ServiceProvider.GetRequiredService<OrderDbContext>().OrderShipments
             .Where(s => s.OrderId == order && s.SellerId == seller)
             .ExecuteUpdateAsync(x => x
-                .SetProperty(s => s.DeliveredAt, DateTime.UtcNow)
+                // Past the return window (specs/066): delivered now, it would still be returnable - on the way.
+                .SetProperty(s => s.DeliveredAt, DateTime.UtcNow.AddDays(-8))
                 .SetProperty(s => s.DeliveryConfirmedBy, "Customer"));
     }
 

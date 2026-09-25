@@ -1,0 +1,25 @@
+info:
+  name: a customer cannot decide a return
+  type: http
+  seq: 19
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/fulfilment/{{orderId}}/shipments/{{shipmentId}}/return/accept"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403 - staff decide the shop's returns", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

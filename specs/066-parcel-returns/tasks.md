@@ -1,6 +1,6 @@
 # Tasks: Returning a delivered parcel (part 1 - the server)
 
-- [ ] T001 [US1] [US2] [US3] Tests first in `Ecommerce.Order.Tests/ReturnTests.cs`. Cover:
+- [X] T001 [US1] [US2] [US3] Tests first in `Ecommerce.Order.Tests/ReturnTests.cs`. Cover:
   - request rules: owner only, delivered only, inside the window, once, and once when two requests race;
   - accept and refuse by the right party only;
   - escalate, and an admin's final word;
@@ -8,13 +8,13 @@
   - received publishes the event with the right amount;
   - every late or second move is 409;
   - the notices.
-- [ ] T002 [US4] Tests in `Ecommerce.Order.Tests/ReturnMoneyTests.cs`. Cover:
+- [X] T002 [US4] Tests (in `Ecommerce.Order.Tests/ReturnTests.cs`, beside the flow). Cover:
   - due only after the window;
   - an open return holds the money;
   - a returned part is never money;
   - the payout claim agrees with the balance.
-- [ ] T003 Order: the entity, configuration, migration, repository, commands, routes, read models and notices.
-- [ ] T004 Payment: `refunds.ReturnId` and its indexes, the consumer and the command, with tests.
-- [ ] T005 Inventory: `returned_parcels`, the consumer and the command, the announcement, with tests (including `AnnouncementTests`).
-- [ ] T006 Storefront words for the five notices. Bruno: the round trip on the shop's parcel, and the negative cases.
-- [ ] T007 End to end, mutation checks, docs.
+- [X] T003 Order: the entity, configuration, migration, repository, commands, routes, read models and notices.
+- [X] T004 Payment: `refunds.ReturnId` and its indexes, the consumer and the command, with tests.
+- [X] T005 Inventory: `returned_parcels`, the consumer and the command, the announcement, with tests (including `AnnouncementTests`).
+- [X] T006 Storefront words for the five notices. Bruno: the round trip on the shop's parcel, and the negative cases.
+- [X] T007 End to end, mutation checks, docs.

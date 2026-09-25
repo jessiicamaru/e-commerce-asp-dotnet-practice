@@ -187,6 +187,7 @@ public class NotificationTests
         await As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-PAY")));
         var parcel = await PartIdAsync(order, alice);
         await As(buyer, () => SendAsync(new ConfirmDeliveryCommand(order, parcel)));
+        await ReturnWindow.PassAsync(_fixture, order);   // due only after the return window (specs/066)
 
         var payout = await As(Guid.CreateVersion7(), () => SendAsync(new RecordPayoutCommand(alice, "VND")));
 

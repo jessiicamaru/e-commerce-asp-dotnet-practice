@@ -1,0 +1,25 @@
+info:
+  name: receiving it again is 409
+  type: http
+  seq: 23
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/fulfilment/{{orderId}}/shipments/{{shipmentId}}/return/received"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409 - refunded and restocked once", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -23,5 +23,11 @@ public class Refund
     public decimal Amount { get; set; }
     public string? Currency { get; set; }
     public string Provider { get; set; } = "Stub";
+
+    /// <summary>
+    /// The return this refunds, for a parcel sent back (specs/066) - null for a whole order (a cancellation, a
+    /// late payment). An order has at most one refund of the whole, and one per return.
+    /// </summary>
+    public Guid? ReturnId { get; set; }
     public DateTime RefundedAt { get; set; } = DateTime.UtcNow;
 }
