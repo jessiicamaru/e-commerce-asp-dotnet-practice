@@ -137,6 +137,10 @@ builder.Services.AddGrpcReflection();
 
 builder.Services.AddMassTransit(x =>
 {
+    // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
+    // seconds, on every instance (specs/065).
+    x.AddAccessTokenRevocations("cart");
+
     // A consumer's class name becomes its queue name. Cart is the THIRD service with an
     // OrderCompletedConsumer (Inventory and Order have one each); without this prefix all three bind
     // one queue and compete for a single copy of the event. That exact collision once settled an order

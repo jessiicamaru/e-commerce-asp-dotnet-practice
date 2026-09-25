@@ -210,10 +210,21 @@ def messages_page():
                 consumers[name].add(f"{service} (saga)")
     # The audit trail and the notifier publish on behalf of whichever service calls them.
     shared = os.path.join(SERVER, "BuildingBlocks", "Ecommerce.Shared")
+    shared_consumers = {}   # registration helper -> (message, consumer class)
     for path in files(shared, ".cs"):
+        source = read(path)
         for name in records:
-            if re.search(rf"new\s+(?:[\w.]+\.)?{name}\s*\(", read(path)):
+            if re.search(rf"new\s+(?:[\w.]+\.)?{name}\s*\(", source):
                 publishers[name].add("any service, through `Ecommerce.Shared`")
+            # A consumer in Shared (specs/065) is registered by each service through a helper in the same file.
+            for consumer in re.findall(rf"public\s+(?:sealed\s+)?class\s+(\w+)[^{{]*IConsumer<(?:[\w.]+\.)?{name}>", source):
+                for helper in re.findall(r"public\s+static\s+void\s+(\w+)\(\s*this\s+IBusRegistrationConfigurator", source):
+                    shared_consumers[helper] = (name, consumer)
+    for path in files(os.path.join(SERVER, "Services"), ".cs"):
+        source = read(path)
+        for helper, (name, consumer) in shared_consumers.items():
+            if re.search(rf"\.{helper}\(", source):
+                consumers[name].add(f"{service_of(path)} (`{consumer}`, Shared)")
     # A record used only inside another message (a line of an order) is part of that message, not one.
     records = {n: d for n, d in records.items() if not n.endswith("Dto")}
     text = header("Messages", (

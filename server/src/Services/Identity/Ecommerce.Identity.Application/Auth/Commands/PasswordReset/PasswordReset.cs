@@ -1,3 +1,5 @@
+using Ecommerce.Contracts.Identity;
+using MassTransit;
 using System.Security.Cryptography;
 using System.Text;
 using Ecommerce.Application.Auth.Commands.Register;
@@ -94,7 +96,8 @@ public class PasswordResetHandlers(
     IPasswordHasher hasher,
     IUnitOfWork unitOfWork,
     IAuditTrail audit,
-    ISignInThrottle throttle) :
+    ISignInThrottle throttle,
+    IPublishEndpoint publishEndpoint) :
     IRequestHandler<ForgotPasswordCommand>,
     IRequestHandler<ResetPasswordCommand>
 {
@@ -105,6 +108,7 @@ public class PasswordResetHandlers(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IAuditTrail _audit = audit;
     private readonly ISignInThrottle _throttle = throttle;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
     public async Task Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
     {
@@ -176,6 +180,8 @@ public class PasswordResetHandlers(
             await _audit.RecordAsync(AuditCategory.Security, "PasswordReset", "User", user.Id.ToString(),
                 $"{user.Email} chose a new password with a reset link; every session ended",
                 actor: AuditActors.Of(user), cancellationToken: ct);
+            // And the access tokens already issued, within seconds, everywhere (specs/065).
+            await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "PasswordReset"), ct);
             await _users.SaveChangesAsync(ct);
 
             // Whoever held a session - perhaps the reason the password was reset - holds it no longer.

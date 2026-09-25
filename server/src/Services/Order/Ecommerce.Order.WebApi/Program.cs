@@ -99,6 +99,10 @@ builder.Services.AddRequestCurrency(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
+    // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
+    // seconds, on every instance (specs/065).
+    x.AddAccessTokenRevocations("order");
+
     // The first consumers this service has ever had. Until now it published OrderSubmittedEvent and
     // then stopped taking part, which is why every order row read Submitted however checkout ended.
     x.AddConsumer<OrderCompletedConsumer>();

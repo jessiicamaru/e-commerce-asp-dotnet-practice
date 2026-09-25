@@ -185,6 +185,10 @@ builder.Services.AddRequestCurrency(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
+    // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
+    // seconds, on every instance (specs/065).
+    x.AddAccessTokenRevocations("catalog");
+
     // Catalog's first consumer. Until now this service only published, which is why the product
     // listing carried a stock number nothing could update (issue #4).
     x.AddConsumer<StockAvailabilityChangedConsumer>();

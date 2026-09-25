@@ -92,7 +92,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (136 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
@@ -541,8 +541,14 @@ same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody u
 administrator unlocks a moderator, and a moderator lifts only a lock with at most 30 days still to run. A lock or ban ends
 every session at once, refresh refuses the account whatever its token, and sign-in answers **403 with
 the reason only after the right password** - before it, a locked account and a wrong password must
-look the same (#28). ⚠️ A grant or a lock reaches a token already issued only at its next refresh: an
-access token lives out its minutes. `ForbiddenException` (Shared) is the 403 whose message is shown; a
+look the same (#28). **A stop reaches a signed-in session within seconds** (specs/065, #112): Identity
+publishes `AccessTokensRevoked(UserId, RevokedAt, Reason)` on a lock, ban, role revoked, password reset or
+change and a reused refresh token, and every service's `AddJwtAuthentication` hook refuses that user's tokens
+with an earlier `iat` (`RevokedAccessTokens`, in memory, an hour). ⚠️ Each service registers it with
+`x.AddAccessTokenRevocations("<svc>")` - a **temporary queue per instance**, because one durable queue per
+service would reach one instance only - so a new service that validates tokens needs that line. `iat` is in
+whole seconds, so a revocation counts from the start of its second. A role GRANTED still arrives at the
+next refresh. `ForbiddenException` (Shared) is the 403 whose message is shown; a
 "not yours" is still a 404. It can also carry **facts**, written as ProblemDetails extensions in every
 environment (specs/049): the sign-in refusal sends `code` (`AccountLocked`/`AccountBanned`), `until` (UTC)
 and `reason`, and the sign-in page words them in the reader's language and time zone - the handler's own

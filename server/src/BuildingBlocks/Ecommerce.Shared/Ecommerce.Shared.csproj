@@ -23,6 +23,8 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="MassTransit.Abstractions" Version="8.3.6" />
+    <!-- The registration types (IBusRegistrationConfigurator) for the access-token revocation consumer, specs/065. -->
+    <PackageReference Include="MassTransit" Version="8.3.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="12.4.1" />

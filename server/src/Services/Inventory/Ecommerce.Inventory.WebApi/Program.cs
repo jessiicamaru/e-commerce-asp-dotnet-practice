@@ -104,6 +104,10 @@ builder.Services.AddHostedService<ReservationExpirySweeper>();
 
 builder.Services.AddMassTransit(x =>
 {
+    // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
+    // seconds, on every instance (specs/065).
+    x.AddAccessTokenRevocations("inventory");
+
     x.AddConsumer<ReserveInventoryConsumer>();
     x.AddConsumer<ReleaseInventoryConsumer>();
     x.AddConsumer<OrderCompletedConsumer>();

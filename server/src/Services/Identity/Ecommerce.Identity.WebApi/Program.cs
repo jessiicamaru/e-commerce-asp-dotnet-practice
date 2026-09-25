@@ -174,6 +174,10 @@ builder.AddObservability("identity");
 // its passing is the check on that claim.
 builder.Services.AddMassTransit(x =>
 {
+    // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
+    // seconds, on every instance (specs/065).
+    x.AddAccessTokenRevocations("identity");
+
     // A consumer class name becomes a queue name, and two services naming one the same thing
     // compete for a single queue - feature 003 shipped exactly that defect. Identity consumes
     // nothing today; the prefix is here so that the day it does, the collision is impossible
