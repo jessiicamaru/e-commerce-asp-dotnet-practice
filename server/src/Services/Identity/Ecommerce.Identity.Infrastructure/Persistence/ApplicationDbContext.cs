@@ -13,6 +13,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<DeliveryAddress> DeliveryAddresses => Set<DeliveryAddress>();
     public DbSet<SellerProfile> SellerProfiles => Set<SellerProfile>();
     public DbSet<ShopApplication> ShopApplications => Set<ShopApplication>();
+    public DbSet<OutgoingEmail> OutgoingEmails => Set<OutgoingEmail>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

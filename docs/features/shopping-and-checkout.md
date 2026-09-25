@@ -272,7 +272,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 - **Checkout depends synchronously on Catalog, Cart and Identity.** Any one being down refuses orders with 503.
 - **A shopper sees `Submitted` for the seconds before settlement.** The order page polls for up to 30 s.
 - **Orders from before specs/012 and specs/022** have no stored parts and no currency; they are left null rather than invented.
-- **Customers receive no email** about their order; notices are in-app only ([#102](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/102)).
+- **One email per order, so far**: the confirmation when it is paid (specs/060, [email](email.md)). Shipping and cancellation are told in the app only.
 - **Every `verify-saga.sh` and Bruno run creates a product and does not remove it** ([#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118)); `server/seed/clean-test-debris.py` cleans up.
 
 ## History

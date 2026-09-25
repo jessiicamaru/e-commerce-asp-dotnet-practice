@@ -12,7 +12,7 @@ There are two ways to run this system, and both are supported.
 | **Host** (the original) | `docker compose up -d` then `./start-dev.sh` | Infrastructure in containers, services on your machine |
 
 `docker compose up -d` on its own still brings up **infrastructure only** — eight PostgreSQL
-containers, RabbitMQ, Seq and pgAdmin. That is deliberate: the services live in an *overlay* file so that
+containers, RabbitMQ, Seq, pgAdmin and Mailpit (every email the stack sends, at http://localhost:8025 - specs/060). That is deliberate: the services live in an *overlay* file so that
 `start-dev.sh` keeps working untouched. Merging the two would force every contributor down the
 container path.
 

@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Localization;
@@ -85,6 +86,8 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 // Who did what, through the outbox with every change (specs/041).
 builder.Services.AddAuditTrail("order");
 builder.Services.AddNotifier();
+// Order confirmations (specs/060): requested through the outbox, sent by Identity.
+builder.Services.AddEmailSender();
 
 // Which language a request wants to be answered in (specs/021). A service whose responses carry text
 // a customer reads needs this; it refuses to start if the default is not one it supports.

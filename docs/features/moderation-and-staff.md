@@ -275,12 +275,9 @@ No message is specific to moderation. Staff actions publish, through the acting 
   [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112).
 - **Sign-in has no rate limit**, so a password can be guessed at without bound -
   [#105](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/105).
-- **A stopped person is told nothing until they try to sign in.** Locks and bans send no notification,
-  and the system sends no email at all -
-  [#102](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/102).
-- **Hiding a review is not a guarded update** ([#127](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/127)) - it checks `HiddenAt` and then saves - so two
-  moderators hiding the same review at the same moment can both succeed; the outcome is the same
-  hidden review, with two audit entries.
+- **A lock or ban is told in the app, not by email.** Since specs/059 the person gets an `AccountLocked`
+  or `AccountBanned` notice, readable once the stop ends, and the reason at sign-in (specs/049). Email
+  (specs/060) does not carry it yet.
 - **Nothing closes a shop or removes `Seller`**; locking the account stops the person, not their
   listings. Taking a product down is per product.
 - **The audit log is an administrator's.** A moderator sees only their own Moderation decisions.

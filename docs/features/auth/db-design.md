@@ -54,7 +54,7 @@ Below is the SQL DDL representation of the Authentication tables. We use `UUID` 
 > ([`Migrations/`](../../../server/src/Services/Identity/Ecommerce.Identity.Infrastructure/Migrations/):
 > `InitialCreate`, `CaseInsensitiveEmail`, `AddSellerProfilesAndOutbox`, `AddAccountLocks`,
 > `AddShopApplications`; `AddDeliveryAddresses` adds the address book, which is not part of
-> authentication). The generated [data model](../../reference/data-model.md#identity---ecommerce_identity_db-7-tables)
+> authentication). The generated [data model](../../reference/data-model.md#identity---ecommerce_identity_db-8-tables)
 > lists every column as the migrations produce it. The tables and columns match, with three differences
 > worth knowing before you query the database:
 > - **Column names are PascalCase** — EF Core's default. It is `"Email"`, quoted, not `email`.
@@ -139,6 +139,22 @@ CREATE UNIQUE INDEX "IX_shop_applications_one_pending"
     ON shop_applications (user_id) WHERE status = 'Pending';
 -- The queue: pending, oldest first.
 CREATE INDEX ON shop_applications (status, created_at);
+
+-- Emails any service asked Identity to send (specs/060), kept until sent - see features/email.md.
+CREATE TABLE outgoing_emails (
+    id UUID PRIMARY KEY,                 -- the requester's id: a redelivery inserts nothing
+    recipient_id UUID NOT NULL,
+    template VARCHAR(64) NOT NULL,
+    data_json JSONB NOT NULL,
+    language VARCHAR(10) NOT NULL,
+    status VARCHAR(20) NOT NULL,         -- Pending / Sent / Failed
+    attempts INT NOT NULL,
+    next_attempt_at TIMESTAMPTZ NOT NULL,
+    sent_at TIMESTAMPTZ,
+    last_error VARCHAR(1000),
+    created_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX "IX_outgoing_emails_due" ON outgoing_emails (next_attempt_at) WHERE status = 'Pending';
 
 -- Indexes for performance on query patterns
 CREATE INDEX idx_users_email ON users(email);
