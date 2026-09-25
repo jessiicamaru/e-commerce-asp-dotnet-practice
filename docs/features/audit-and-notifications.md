@@ -316,9 +316,8 @@ From [messages.md](../reference/messages.md).
 - **A product sent back to review by the seller's own edit tells nobody**: the seller made the edit, and
   the product page shows its status.
 - **No retention or archiving.** Both tables grow without bound; exporting is out of scope (specs/041).
-- **No email, push or SMS** - in-app only -
-  [#102](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/102). No notification
-  preferences.
+- **Notices are in-app only; no push or SMS.** Email exists since specs/060, but so far only the order
+  confirmation is also an email ([email](email.md)). No notification preferences.
 - **Up to 30 seconds of delay** on the bell, by design.
 - **Activity down means nothing is lost but nothing is visible**: messages wait in the publishers'
   outboxes and the broker until it returns.

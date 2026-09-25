@@ -114,6 +114,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [057](../../specs/057-review-races/) | Review races | #140 | Fixes #127; a double-posted review is one review, a review is hidden once, nobody reviews what they sell |
 | [058](../../specs/058-audit-gaps/) | Audit gaps | #141 | #128 part A: the missing audit entries; a stale session after a lock is no longer taken for theft |
 | [059](../../specs/059-missing-notices/) | The notices nobody got | #142 | Fixes #128 (part B): a sweep-delivered parcel, a lock, a ban and a hidden review each tell the person concerned |
+| [060](../../specs/060-email/) | Email | #143 | Fixes #102: `IEmailSender`, Identity's outgoing queue and dispatcher, Mailpit; the order confirmation |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

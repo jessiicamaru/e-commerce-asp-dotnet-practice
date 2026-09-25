@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Ecommerce.Application.Email;
+using Ecommerce.Infrastructure.Email;
 using Ecommerce.Infrastructure.Security;
 using Ecommerce.Shared.Authentication;
 
@@ -37,6 +39,19 @@ public static class DependencyInjection
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IShopApplicationRepository, ShopApplicationRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Email (specs/060): kept in outgoing_emails, sent by a sweeper over SMTP - Mailpit in development.
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+        services.PostConfigure<SmtpOptions>(o =>
+        {
+            o.SmtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? o.SmtpHost;
+            if (int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT"), out var port)) o.SmtpPort = port;
+        });
+        services.PostConfigure<EmailOptions>(o =>
+            o.StorefrontUrl = Environment.GetEnvironmentVariable("STOREFRONT_URL") ?? o.StorefrontUrl);
+        services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();
+        services.AddSingleton<IEmailTransport, SmtpEmailTransport>();
 
         services.AddScoped<DataInitializer>();
 

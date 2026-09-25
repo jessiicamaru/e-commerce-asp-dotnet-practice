@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Order.Application;
@@ -182,6 +183,7 @@ public class OrderTestFixture : IAsyncLifetime
             x.AddConsumer<OrderCompletedConsumer>();
         services.AddAuditTrail("order");
         services.AddNotifier();
+        services.AddEmailSender();
             x.AddConsumer<OrderFailedConsumer>();
         });
 

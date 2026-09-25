@@ -772,6 +772,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 o.UserId,
                 o.TotalAmount,
                 o.Currency,
+                o.Language,
                 Parts = o.Shipments.Select(s => new { s.Id, s.SellerId }).ToList(),
                 Names = o.Items.Where(i => i.SellerName != null).Select(i => new { i.SellerId, i.SellerName }).ToList()
             })
@@ -788,7 +789,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             order.TotalAmount,
             order.Currency ?? string.Empty,
             order.Parts.Select(p => new ParcelFact(
-                p.Id, p.SellerId, order.Names.FirstOrDefault(n => n.SellerId == p.SellerId)?.SellerName)).ToList());
+                p.Id, p.SellerId, order.Names.FirstOrDefault(n => n.SellerId == p.SellerId)?.SellerName)).ToList(),
+            order.Language ?? string.Empty);
     }
 
     public async Task<Domain.Entities.Order?> GetByIdForUserAsync(

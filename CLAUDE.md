@@ -90,9 +90,9 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (184 tests,
+`Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (83 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (93 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had). They run against a **real PostgreSQL** — the guarantees under test are the
@@ -174,7 +174,7 @@ so.
 | Service | HTTP port | DB port / name | Notes |
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
-| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027); **shop applications** wait for staff (specs/044) |
+| Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027); **shop applications** wait for staff (specs/044); **sends every email** - `outgoing_emails`, a dispatcher over SMTP (specs/060) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
@@ -183,7 +183,7 @@ so.
 | Activity | 5063 | 5440 / `ecommerce_activity_db` | **The audit log** (specs/041): keeps `AuditEntryRecorded` from every service, one row per entry id, with a field-level diff; Admin-only reads at `/api/audit`; **everyone's in-app notifications** (specs/042) at `/api/notifications` |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
-pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`).
+pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`), **Mailpit `:8025`** (every email the stack sends; SMTP on `:1025`, specs/060).
 
 **Following one order** (feature 013): every service and the gateway ship logs and traces to Seq over
 OpenTelemetry when `OTLP_ENDPOINT` is set (containers set it; unset, nothing is exported and nothing
@@ -583,6 +583,12 @@ background tab, and loads the list only when opened. Order tells the buyer (paid
 cancelled) and each seller (a new sale, a cancelled sale, a parcel received, a parcel the 7-day sweep took as
 delivered, a payout); Identity tells a person their account was locked or banned, and Catalog a reviewer that
 their review was hidden (specs/059).
+**Email** (specs/060): a service calls `IEmailSender.SendAsync(recipient, template, data, language)` from
+`Ecommerce.Shared/Email` - through the outbox like a notice, so **before the one save** or in a `stage` - and
+Identity, the one service that knows addresses, keeps it in `outgoing_emails` (idempotent on the email id)
+and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
+server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
+error after 12 attempts. The first email is the order confirmation, in the order's own language.
 ⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
 the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
 transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent

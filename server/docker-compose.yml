@@ -200,6 +200,21 @@ services:
       - seq_data:/data
     restart: unless-stopped
 
+  # Every email the stack sends lands here (specs/060) and nothing leaves the machine: SMTP on 1025, the
+  # inbox at http://localhost:8025. Identity's dispatcher sends to it by default.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: e-commerce-mailpit
+    environment:
+      # On a volume: its own default is memory, and a restart then loses every email it caught.
+      MP_DATABASE: /data/mailpit.db
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # UI and API
+    volumes:
+      - mailpit_data:/data
+    restart: unless-stopped
+
 volumes:
   postgres_identity_data:
   postgres_catalog_data:
@@ -210,4 +225,5 @@ volumes:
   postgres_activity_data:
   postgres_cart_data:
   rabbitmq_data:
+  mailpit_data:
   seq_data:

@@ -57,6 +57,7 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 | Sellers, shop applications, seller stock and sales, commission and payouts | [Marketplace](features/marketplace.md) |
 | Staff roles, locks and bans, the moderation queues, the admin console | [Moderation and staff](features/moderation-and-staff.md) |
 | The audit log and in-app notifications | [Audit and notifications](features/audit-and-notifications.md) |
+| Email: the order confirmation, the outgoing queue, Mailpit | [Email](features/email.md) |
 | Ratings and reviews | [Ratings and reviews](features/ratings-and-reviews.md) |
 | The administrator's Overview | [Admin insights](features/admin-insights.md) |
 

@@ -1,11 +1,13 @@
 using System.Globalization;
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 
 namespace Ecommerce.Order.Application.Orders.Common;
 
 /// <summary>What a notification about an order needs (specs/042).</summary>
-public record OrderNoticeFacts(Guid OrderId, Guid BuyerId, decimal Total, string Currency, List<ParcelFact> Parcels)
+/// <param name="Language">What the order was placed in (specs/021) - and so what its emails are written in (specs/060).</param>
+public record OrderNoticeFacts(Guid OrderId, Guid BuyerId, decimal Total, string Currency, List<ParcelFact> Parcels, string Language = "")
 {
     /// <summary>Every seller with a parcel on the order - never the shop, which has nobody to tell.</summary>
     public IEnumerable<Guid> Sellers => Parcels.Where(p => p.SellerId is not null).Select(p => p.SellerId!.Value).Distinct();
@@ -23,11 +25,14 @@ public static class OrderNotices
 
     private static Dictionary<string, string> About(Guid orderId) => new() { ["orderId"] = orderId.ToString() };
 
-    public static async Task PaidAsync(INotifier notifier, OrderNoticeFacts f, CancellationToken ct)
+    public static async Task PaidAsync(INotifier notifier, IEmailSender email, OrderNoticeFacts f, CancellationToken ct)
     {
-        await notifier.NotifyAsync(f.BuyerId, NotificationKind.OrderPaid,
-            new Dictionary<string, string>(About(f.OrderId)) { ["total"] = Money(f.Total), ["currency"] = f.Currency },
-            $"/orders/{f.OrderId}", ct);
+        var paid = new Dictionary<string, string>(About(f.OrderId)) { ["total"] = Money(f.Total), ["currency"] = f.Currency };
+        await notifier.NotifyAsync(f.BuyerId, NotificationKind.OrderPaid, paid, $"/orders/{f.OrderId}", ct);
+
+        // The confirmation email (specs/060), in the language the order was placed in - committed with the
+        // settlement, and sent by Identity whenever the mail server can take it.
+        await email.SendAsync(f.BuyerId, EmailTemplate.OrderPaid, paid, f.Language, ct);
 
         foreach (var seller in f.Sellers)
         {

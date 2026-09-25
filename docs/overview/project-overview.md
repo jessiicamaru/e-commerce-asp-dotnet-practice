@@ -100,10 +100,10 @@ the answer before it can continue. Details: [microservices design](../architectu
 | :-- | :-- |
 | Services | 8, plus the gateway |
 | HTTP endpoints | 107 ([reference](../reference/api.md)) |
-| Integration messages | 21 ([reference](../reference/messages.md)) |
+| Integration messages | 22 ([reference](../reference/messages.md)) |
 | gRPC services | 4 ([reference](../reference/grpc.md)) |
-| Database tables (excluding outbox) | 33 ([reference](../reference/data-model.md)) |
-| Service and saga tests | 555, in 8 projects |
+| Database tables (excluding outbox) | 34 ([reference](../reference/data-model.md)) |
+| Service and saga tests | 566, in 8 projects |
 | Storefront unit tests | 291 |
 | Bruno requests | 192 |
 | Design records (`specs/`) | 48 |
@@ -117,8 +117,9 @@ the answer before it can continue. Details: [microservices design](../architectu
 
 **Deliberately deferred:** a real payment provider, and deployment.
 
-**Open work:** the [backlog](../project/backlog.md) - most urgently password reset and email (the
-system sends none), limits on sign-in attempts, returns after delivery and discounts.
+**Open work:** the [backlog](../project/backlog.md) - most urgently password reset and address
+confirmation (email itself exists since specs/060), limits on sign-in attempts, returns after delivery and
+discounts.
 
 ## Where to read next
 

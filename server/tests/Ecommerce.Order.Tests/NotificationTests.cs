@@ -112,6 +112,33 @@ public class NotificationTests
     }
 
     /// <summary>
+    /// #102 (specs/060): a paid order is confirmed by email to its buyer, once, in the language it was placed
+    /// in - requested in the settlement's own transaction; a failed order asks for none.
+    /// </summary>
+    [Fact]
+    public async Task A_paid_order_asks_for_one_confirmation_email_in_its_language_and_a_failed_one_for_none()
+    {
+        var (order, buyer) = await PaidAsync(Guid.CreateVersion7());
+        await SendAsync(new CompleteOrderCommand(order, DateTime.UtcNow));   // a redelivered settlement
+
+        var asked = _fixture.Harness.Published.Select<Ecommerce.Contracts.Identity.EmailRequested>()
+            .Select(x => x.Context.Message).Where(m => m.Data.GetValueOrDefault("orderId") == order.ToString()).ToList();
+        var email = Assert.Single(asked);
+        Assert.Equal((buyer, "OrderPaid"), (email.RecipientId, email.Template));
+        await using (var scope = _fixture.NewScope())
+        {
+            var language = await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders
+                .Where(o => o.Id == order).Select(o => o.Language).SingleAsync();
+            Assert.Equal(language, email.Language);
+        }
+
+        var (failed, _) = await PlacedAsync(Guid.CreateVersion7());
+        await SendAsync(new FailOrderCommand(failed, "Payment declined", DateTime.UtcNow));
+        Assert.DoesNotContain(_fixture.Harness.Published.Select<Ecommerce.Contracts.Identity.EmailRequested>(),
+            x => x.Context.Message.Data.GetValueOrDefault("orderId") == failed.ToString());
+    }
+
+    /// <summary>
     /// #128 (specs/059): the seller was told when the CUSTOMER confirmed and not at all when the 7-day sweep
     /// did - though that is the moment their money becomes due.
     /// </summary>

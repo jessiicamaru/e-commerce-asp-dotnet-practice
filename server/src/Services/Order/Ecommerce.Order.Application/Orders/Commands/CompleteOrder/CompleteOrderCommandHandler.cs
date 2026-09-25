@@ -2,6 +2,7 @@ using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -11,12 +12,14 @@ namespace Ecommerce.Order.Application.Orders.Commands.CompleteOrder;
 public class CompleteOrderCommandHandler(
     IOrderRepository orderRepository,
     INotifier notifier,
+    IEmailSender email,
     IAuditTrail audit,
     ILogger<CompleteOrderCommandHandler> logger
 ) : IRequestHandler<CompleteOrderCommand, bool>
 {
     private readonly IOrderRepository _orderRepository = orderRepository;
     private readonly INotifier _notifier = notifier;
+    private readonly IEmailSender _email = email;
     private readonly IAuditTrail _audit = audit;
     private readonly ILogger<CompleteOrderCommandHandler> _logger = logger;
 
@@ -33,7 +36,7 @@ public class CompleteOrderCommandHandler(
             // Paid: the buyer is told, each seller learns of a new sale, and the log records it (specs/041, 042).
             ct => OrderNotices.WithFactsAsync(_orderRepository, request.OrderId, async facts =>
             {
-                await OrderNotices.PaidAsync(_notifier, facts, ct);
+                await OrderNotices.PaidAsync(_notifier, _email, facts, ct);
                 await _audit.RecordAsync(
                     AuditCategory.Order, "OrderPaid", "Order", request.OrderId.ToString(),
                     $"Order paid: {facts.Total} {facts.Currency}",

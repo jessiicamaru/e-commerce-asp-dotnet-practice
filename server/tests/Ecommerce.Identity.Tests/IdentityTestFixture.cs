@@ -13,6 +13,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
+using Ecommerce.Application.Email;
+using Ecommerce.Infrastructure.Email;
+
 namespace Ecommerce.Identity.Tests;
 
 /// <summary>
@@ -63,6 +66,9 @@ public class IdentityTestFixture : IAsyncLifetime
         await db.SaveChangesAsync();
     }
 
+    /// <summary>What the dispatcher would have sent - and a switch to make the "mail server" refuse.</summary>
+    public FakeEmailTransport Mail { get; } = new();
+
     /// <summary>A provider whose caller is <paramref name="userId"/>.</summary>
     public ServiceProvider For(Guid userId, params string[] roles)
     {
@@ -95,6 +101,11 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddMassTransitTestHarness();
         services.AddAuditTrail("identity");
         services.AddNotifier();
+
+        // Email (specs/060): the real queue and dispatcher, and a transport that records instead of sending.
+        services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();
+        services.AddSingleton<IEmailTransport>(Mail);
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new EmailOptions { StorefrontUrl = "http://shop.test" }));
 
         services.AddSingleton<ICurrentUser>(new FixedUser(userId, roles));
         return services.BuildServiceProvider(validateScopes: true);
@@ -183,3 +194,27 @@ public class IdentityTestFixture : IAsyncLifetime
 
 [CollectionDefinition(nameof(IdentityTestCollection))]
 public class IdentityTestCollection : ICollectionFixture<IdentityTestFixture>;
+
+/// <summary>A mail server that records what it was given, and can be switched off (specs/060).</summary>
+public sealed class FakeEmailTransport : IEmailTransport
+{
+    private readonly List<(string To, string Subject, string Body)> _sent = [];
+
+    public bool Down { get; set; }
+
+    public IReadOnlyList<(string To, string Subject, string Body)> SentTo(string to)
+    {
+        lock (_sent) return _sent.Where(m => string.Equals(m.To, to, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    public Task SendAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        if (Down)
+        {
+            throw new InvalidOperationException("Connection refused (the test's mail server is down).");
+        }
+
+        lock (_sent) _sent.Add((to, subject, body));
+        return Task.CompletedTask;
+    }
+}

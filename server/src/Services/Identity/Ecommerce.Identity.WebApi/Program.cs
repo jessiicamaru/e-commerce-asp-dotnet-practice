@@ -1,3 +1,6 @@
+using Ecommerce.Infrastructure.Email;
+using Ecommerce.WebApi.Consumers;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Observability;
@@ -129,6 +132,15 @@ builder.Services.AddAuditTrail("identity");
 // Telling people what happened to their account (specs/042, 043).
 builder.Services.AddNotifier();
 
+// Sends what outgoing_emails holds (specs/060). With no mail server it only logs and retries later - the
+// auth-smoke CI job runs Identity with none, which is the check on that.
+builder.Services.TryAddSingleton(TimeProvider.System);
+builder.Services.AddHostedService(sp => new EmailDispatchSweeper(
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<TimeProvider>(),
+    TimeSpan.FromSeconds(builder.Configuration.GetValue("Email:SweepSeconds", 15)),
+    sp.GetRequiredService<ILogger<EmailDispatchSweeper>>()));
+
 builder.Services.AddGrpc();
 builder.Services.AddGrpcHealthChecks();
 
@@ -160,6 +172,10 @@ builder.Services.AddMassTransit(x =>
     // nothing today; the prefix is here so that the day it does, the collision is impossible
     // rather than unlikely.
     x.SetEndpointNameFormatter(new DefaultEndpointNameFormatter(prefix: "IdentitySvc", includeNamespace: false));
+
+    // Identity's first consumer (specs/060): every service's email requests, kept here to be sent - this is
+    // the one service that knows email addresses.
+    x.AddConsumer<QueueEmailConsumer>();
 
     x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
     {
