@@ -1,0 +1,21 @@
+# Tasks: Change your password and your name
+
+- [ ] T001 [US1] [US2] Tests first in `server/tests/Ecommerce.Identity.Tests/AccountTests.cs`. Cover:
+  - reading and updating my own profile;
+  - validation;
+  - `ProfileUpdated` with its diff;
+  - a wrong current password is 400, changes nothing and counts toward the pause, and a paused email is 429;
+  - the change keeps this session and ends the others;
+  - `PasswordChanged` holds no password.
+- [ ] T002 [US1] [US2] Identity:
+  - the commands and handlers;
+  - `RevokeOtherRefreshTokensAsync`;
+  - the `AuthController` endpoints;
+  - the gateway route.
+- [ ] T003 [US3] Storefront tests first, then:
+  - the service, `hooks/account`, the account page's two forms, the words.
+- [ ] T004 Bruno. Then end to end with two sessions.
+- [ ] T005 Mutation checks. Docs:
+  - security, db and reference;
+  - timeline, backlog and counts;
+  - CLAUDE.md.
