@@ -68,3 +68,35 @@ describe('Order.receive', () => {
     expect(post.mock.calls[0]).toEqual(['/orders/o-1/shipments/p-2/received'])
   })
 })
+
+describe('returns (specs/067)', () => {
+  /** The buyer names the order and the parcel; whose they are is the token (Constitution IV). */
+  it("sends the buyer's three steps to the parcel's return routes, with only what each needs", async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: {} })
+
+    await Order.requestReturn('o-1', 's-2', 'Scratched')
+    await Order.escalateReturn('o-1', 's-2')
+    await Order.sendReturnBack('o-1', 's-2', 'VN-9')
+
+    expect(post.mock.calls).toEqual([
+      ['/orders/o-1/shipments/s-2/return', { reason: 'Scratched' }],
+      ['/orders/o-1/shipments/s-2/return/escalate'],
+      ['/orders/o-1/shipments/s-2/return/sent', { trackingReference: 'VN-9' }],
+    ])
+  })
+
+  /** A seller names the sale only: their parcel of it is the token's (specs/035). */
+  it("sends the seller's steps to their sale", async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: {} })
+
+    await Order.acceptSaleReturn('o-1')
+    await Order.refuseSaleReturn('o-1', 'Used')
+    await Order.receiveSaleReturn('o-1')
+
+    expect(post.mock.calls).toEqual([
+      ['/orders/sales/o-1/return/accept'],
+      ['/orders/sales/o-1/return/refuse', { reason: 'Used' }],
+      ['/orders/sales/o-1/return/received'],
+    ])
+  })
+})

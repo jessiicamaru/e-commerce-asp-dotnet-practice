@@ -64,6 +64,44 @@ export interface Shipment {
   deliveredAt?: string | null
   /** 'Customer', or 'Auto' when nobody confirmed it within the period after shipping. */
   deliveryConfirmedBy?: string | null
+  /** Its return, once one was asked for (specs/066); a parcel has at most one. */
+  return?: ParcelReturn | null
+}
+
+/** Where a return has got to (specs/066), as the server names it. */
+export type ReturnStatus = 'Requested' | 'Accepted' | 'Refused' | 'Escalated' | 'Rejected' | 'SentBack' | 'Received'
+
+/**
+ * One parcel's return (specs/066): asked for by the buyer within the window of its delivery, answered by its
+ * seller (staff for the shop's own), taken to staff when refused, sent back, and received - which refunds it.
+ */
+export interface ParcelReturn {
+  id: string
+  orderId: string
+  shipmentId: string
+  /** The shop's own parcel - staff answer it; otherwise its seller does until it is escalated. */
+  isShop: boolean
+  status: ReturnStatus
+  /** The buyer's words. */
+  reason: string
+  /** Why it was refused or rejected; null when accepted or not decided yet. */
+  decisionReason: string | null
+  /** The buyer's reference for the parcel sent back. */
+  trackingReference: string | null
+  requestedAt: string
+  /** The latest decision: the seller's, then staff's final word on an escalation. */
+  decidedAt: string | null
+  sentBackAt: string | null
+  receivedAt: string | null
+  /** Goods plus their tax, never the delivery - set once received, in the order's own currency. */
+  refundAmount: number | null
+}
+
+export interface ReturnPage {
+  items: ParcelReturn[]
+  page: number
+  pageSize: number
+  totalCount: number
 }
 
 export interface Order extends Totals {
@@ -170,6 +208,8 @@ export interface Sale {
   shippingAddress: AddressFields | null
   /** When their parcel was confirmed as received (specs/040); until then its money is on the way. */
   deliveredAt?: string | null
+  /** Their parcel's return, if the buyer asked for one (specs/066). */
+  return?: ParcelReturn | null
   /**
    * What the shop owes the seller for this sale (specs/037), frozen at checkout: goods before tax, less
    * the marketplace's commission, plus their share of the delivery charge. All four are null on an

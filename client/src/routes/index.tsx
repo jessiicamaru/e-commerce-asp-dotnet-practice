@@ -20,6 +20,7 @@ import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrderPage } from '@/pages/admin-order'
+import { AdminReturnsPage } from '@/pages/admin-returns'
 import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { AdminAuditPage } from '@/pages/admin-audit'
 import { AdminHome } from '@/pages/admin-home'
@@ -147,6 +148,7 @@ export function AppRoutes() {
           >
             <Route index element={<AdminHome />} />
             <Route path="orders/:id" element={<AdminOrderPage />} />
+            <Route path="returns" element={<AdminReturnsPage />} />
             <Route path="payouts" element={<AdminPayoutsPage />} />
             <Route path="audit" element={<AdminAuditPage />} />
             <Route path="users" element={<AdminUsersPage />} />

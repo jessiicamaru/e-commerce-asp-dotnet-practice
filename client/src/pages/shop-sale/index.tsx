@@ -3,13 +3,15 @@ import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { OrderLines } from '@/components/order/order-lines'
 import { ParcelActions } from '@/components/order/parcel-actions'
+import { ReturnDecision } from '@/components/order/return-decision'
 import { SaleEarnings } from '@/components/seller/sale-earnings'
 import { Price } from '@/components/shared/price'
 import { LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useMoveSale, useSale } from '@/hooks/order'
+import { useMoveSale, useSale, useSaleReturn } from '@/hooks/order'
 import { describeAddress } from '@/utils/address'
+import { sellerReturnStep } from '@/utils/order/returns'
 
 /**
  * One sale: the seller's own lines of one order, and their part of shipping it (specs/034, 035).
@@ -29,6 +31,7 @@ export function ShopSalePage() {
   const { id = '' } = useParams()
   const sale = useSale(id)
   const { prepare, ship } = useMoveSale(id)
+  const { accept, refuse, receive } = useSaleReturn(id)
 
   const back = (
     <nav className="text-muted-foreground flex items-center gap-1 text-sm">
@@ -66,6 +69,26 @@ export function ShopSalePage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="grid gap-6">
+          {/* The buyer asked to send their parcel back (specs/066) - first, because it is what waits on them. */}
+          {data.return && (
+            <Card className="rounded-3xl">
+              <CardHeader>
+                <CardTitle>{t('return.title')}</CardTitle>
+                <CardDescription>{t('return.hint')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ReturnDecision
+                  ret={data.return}
+                  currency={data.currency}
+                  step={sellerReturnStep(data.return)}
+                  accept={accept}
+                  refuse={refuse}
+                  receive={receive}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="rounded-3xl">
             <CardHeader>
               <CardTitle>{t('fulfil.title')}</CardTitle>

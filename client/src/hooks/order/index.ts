@@ -147,6 +147,42 @@ export function useCancelOrder(id: string) {
   })
 }
 
+/**
+ * The buyer's three steps on one parcel's return (specs/066). Each re-reads the order rather than patching
+ * it: where the return has got to is the server's to say.
+ */
+export function useParcelReturn(orderId: string, shipmentId: string) {
+  const queryClient = useQueryClient()
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.order(orderId) })
+
+  return {
+    request: useMutation({ mutationFn: (reason: string) => Order.requestReturn(orderId, shipmentId, reason), onSuccess: refresh }),
+    escalate: useMutation({ mutationFn: () => Order.escalateReturn(orderId, shipmentId), onSuccess: refresh }),
+    sendBack: useMutation({
+      mutationFn: (trackingReference: string) => Order.sendReturnBack(orderId, shipmentId, trackingReference),
+      onSuccess: refresh,
+    }),
+  }
+}
+
+/**
+ * The seller's steps on the return of their parcel of this sale. Received also changes their balance - a
+ * returned part is no money (specs/066) - so that is re-read too.
+ */
+export function useSaleReturn(id: string) {
+  const queryClient = useQueryClient()
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.sale(id) })
+    await queryClient.invalidateQueries({ queryKey: queryKeys.balance() })
+  }
+
+  return {
+    accept: useMutation({ mutationFn: () => Order.acceptSaleReturn(id), onSuccess: refresh }),
+    refuse: useMutation({ mutationFn: (reason: string) => Order.refuseSaleReturn(id, reason), onSuccess: refresh }),
+    receive: useMutation({ mutationFn: () => Order.receiveSaleReturn(id), onSuccess: refresh }),
+  }
+}
+
 /** The customer says a parcel arrived (specs/040); the order and the list are re-read. */
 export function useReceiveParcel(orderId: string) {
   const queryClient = useQueryClient()

@@ -58,11 +58,45 @@
   "received": {
     "button": "I've received it",
     "title": "Did this parcel arrive?",
-    "body": "Confirming releases the seller’s payment for this parcel. It cannot be undone.",
+    "body": "Confirming starts the 7 days in which you can still return it; after them the seller is paid. It cannot be undone.",
     "confirm": "Yes, it arrived",
     "done": "Thanks for confirming.",
     "hint": "If you do not confirm, the parcel is taken as received 7 days after it shipped.",
     "at": "Received on {{at}}",
     "auto": "Taken as received on {{at}}"
+  },
+  "return": {
+    "button": "Return this parcel",
+    "title": "Return this parcel?",
+    "body": "Say what is wrong. The seller answers first; if they refuse, you can ask the shop to look again. Delivery is not refunded, and you pay to send it back.",
+    "reason": "Why are you returning it?",
+    "confirm": "Ask to return it",
+    "requested": "Return requested.",
+    "until": "You can ask to return it until {{at}}.",
+    "heading": "Return",
+    "theShop": "the shop",
+    "theSeller": "the seller",
+    "state": {
+      "Requested": "You asked to return this parcel on {{at}}. Waiting for {{who}} to answer.",
+      "Accepted": "Your return was accepted. Send the parcel back by {{at}} and tell us its tracking reference.",
+      "AcceptedLate": "Your return was accepted, but the time to send it back has passed.",
+      "Refused": "Refused by {{who}}: {{reason}}",
+      "Escalated": "The shop’s staff are looking at your return again. Their answer is final.",
+      "Rejected": "The shop’s staff turned the return down for good: {{reason}}",
+      "SentBack": "On its way back ({{reference}}). You are refunded once it arrives.",
+      "Received": "Returned. Refunded"
+    },
+    "sendBack": "I’ve sent it back",
+    "sendBackTitle": "Send the parcel back",
+    "sendBackBody": "Enter the carrier’s tracking reference, so the seller can follow it.",
+    "tracking": "Tracking reference",
+    "sendBackConfirm": "Save",
+    "sentBackDone": "Thanks - the seller will mark it received when it arrives.",
+    "escalate": "Ask the shop to look again",
+    "escalateTitle": "Ask the shop to look again?",
+    "escalateBody": "The shop’s staff read your reason and the seller’s, and decide. Their answer is final.",
+    "escalateConfirm": "Ask the shop",
+    "escalated": "Sent to the shop’s staff.",
+    "escalateUntil": "You can ask until {{at}}."
   }
 }

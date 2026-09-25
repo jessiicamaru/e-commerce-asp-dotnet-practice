@@ -121,6 +121,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [064](../../specs/064-account-settings/) | Account settings | #147 | Fixes #104: change your name, phone and password; the current password is checked and counted toward the sign-in pause; this session stays, every other ends |
 | [065](../../specs/065-revoke-access-tokens/) | Access tokens revoked | #148 | Fixes #112: `AccessTokensRevoked` on a lock, ban, role revoked, password reset or change and token reuse; every service refuses earlier tokens within seconds |
 | [066](../../specs/066-parcel-returns/) | Parcel returns (server) | #149 | #107 part 1: request within 7 days, the seller or staff decide, disputes, sent back, received; refund and restock once; money due only after the return window |
+| [067](../../specs/067-return-screens/) | Parcel returns (screens) | #151 | #107 part 2: the buyer returns, sends back and escalates from the order page; the seller accepts, refuses and receives from the sale; staff settle disputes on the order and in `/admin/returns` |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

@@ -235,5 +235,36 @@
     "resubmitted": "Đã gửi duyệt lại.",
     "approvedHint": "Đang bán. Đổi tên, mô tả hoặc ảnh sẽ phải duyệt lại; đổi giá và tồn kho thì không.",
     "failed": "Không gửi duyệt lại được."
+  },
+  "return": {
+    "title": "Trả hàng",
+    "hint": "Người mua muốn gửi trả kiện này. Hãy trả lời trong vài ngày - lời từ chối có thể được chuyển lên nhân viên cửa hàng.",
+    "reason": "Lý do của người mua",
+    "state": {
+      "Requested": "Yêu cầu ngày {{at}}. Hãy chấp nhận hoặc từ chối.",
+      "Accepted": "Đã chấp nhận. Đang chờ người mua gửi trả.",
+      "Refused": "Đã từ chối: {{reason}}. Người mua có thể nhờ nhân viên cửa hàng xem lại.",
+      "Escalated": "Người mua đã chuyển lời từ chối lên nhân viên cửa hàng, họ sẽ quyết định cuối cùng.",
+      "Rejected": "Đã từ chối, quyết định cuối cùng: {{reason}}",
+      "SentBack": "Đã gửi trả ngày {{at}} ({{reference}}). Hãy xác nhận khi nhận được.",
+      "Received": "Đã nhận lại ngày {{at}}. Người mua đã được hoàn"
+    },
+    "accept": "Chấp nhận trả hàng",
+    "acceptTitle": "Chấp nhận yêu cầu trả hàng?",
+    "acceptBody": "Người mua được báo gửi trả kiện. Khi kiện đến và được xác nhận, họ được hoàn tiền hàng và thuế, và hàng được nhập lại kho.",
+    "accepted": "Đã chấp nhận trả hàng.",
+    "refuse": "Từ chối",
+    "refuseTitle": "Từ chối yêu cầu trả hàng?",
+    "refuseBody": "Người mua đọc lý do của bạn và có thể nhờ nhân viên cửa hàng xem lại.",
+    "reject": "Từ chối hẳn",
+    "rejectTitle": "Từ chối hẳn yêu cầu này?",
+    "rejectBody": "Đây là quyết định cuối cùng: người mua không thể yêu cầu thêm. Họ đọc lý do của bạn.",
+    "refuseReason": "Lý do",
+    "refused": "Đã gửi câu trả lời.",
+    "receive": "Xác nhận đã nhận lại",
+    "receiveTitle": "Kiện đã được gửi trả về?",
+    "receiveBody": "Người mua được hoàn tiền hàng và thuế, và hàng được nhập lại kho. Không hoàn tác được.",
+    "receiveConfirm": "Đúng, đã nhận lại",
+    "receivedDone": "Đã nhận lại - người mua đang được hoàn tiền."
   }
 }

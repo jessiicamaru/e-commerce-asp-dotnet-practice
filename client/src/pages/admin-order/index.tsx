@@ -12,7 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useMoveShopParcel, useStaffCancelOrder, useStaffOrder } from '@/hooks/admin'
 import { staffCanCancel } from '@/utils/order/cancel'
 import { describeAddress } from '@/utils/address'
+import type { ParcelReturn, Shipment } from '@/services/order/types'
 import { shopParcelOf } from './shop-parcel'
+import { StaffReturn } from './staff-return'
 
 /**
  * One order as staff see it (specs/038): the shop's parcel and the next step for it, where it goes, and
@@ -52,6 +54,7 @@ export function AdminOrderPage() {
   const cancelled = data.status === 'Cancelled'
   const parcel = cancelled ? null : shopParcelOf(data)
   const address = data.shippingAddress
+  const returns = (data.shipments ?? []).filter((s): s is Shipment & { return: ParcelReturn } => Boolean(s.return && s.id))
 
   return (
     <section className="grid gap-6">
@@ -90,6 +93,23 @@ export function AdminOrderPage() {
               {staffCanCancel(data) && <CancelOrder cancel={cancel} />}
             </CardContent>
           </Card>
+
+          {/* Every parcel of the order being sent back (specs/067), whoever answers it. */}
+          {returns.length > 0 && (
+            <Card className="rounded-3xl">
+              <CardHeader>
+                <CardTitle>{t('returns.card')}</CardTitle>
+                <CardDescription>{t('returns.cardHint')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="grid gap-3">
+                  {returns.map((shipment) => (
+                    <StaffReturn key={shipment.id} orderId={data.orderId} shipment={shipment} currency={data.currency} />
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {!cancelled && <OrderShipments shipments={data.shipments ?? []} />}
 

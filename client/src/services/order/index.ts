@@ -6,6 +6,7 @@ import type {
   CheckoutChoice,
   Order as OrderModel,
   OrderPage,
+  ParcelReturn,
   PayoutPage,
   Quote,
   Sale,
@@ -60,6 +61,29 @@ export class Order {
     return data
   }
 
+  /**
+   * The caller asks to return a delivered parcel of their order (specs/066), saying why. The server decides
+   * whether it is theirs, delivered, and still inside the window.
+   */
+  static async requestReturn(orderId: string, shipmentId: string, reason: string): Promise<ParcelReturn> {
+    const { data } = await http.post<ParcelReturn>(`/orders/${orderId}/shipments/${shipmentId}/return`, { reason })
+    return data
+  }
+
+  /** The caller asks staff to look again at a refused return. */
+  static async escalateReturn(orderId: string, shipmentId: string): Promise<ParcelReturn> {
+    const { data } = await http.post<ParcelReturn>(`/orders/${orderId}/shipments/${shipmentId}/return/escalate`)
+    return data
+  }
+
+  /** The caller has sent the accepted parcel back, with the carrier's reference. */
+  static async sendReturnBack(orderId: string, shipmentId: string, trackingReference: string): Promise<ParcelReturn> {
+    const { data } = await http.post<ParcelReturn>(`/orders/${orderId}/shipments/${shipmentId}/return/sent`, {
+      trackingReference,
+    })
+    return data
+  }
+
   /** The caller's own orders: there is no user id in the request (Constitution IV). */
   static async listMine(page: number, pageSize: number): Promise<OrderPage> {
     const { data } = await http.get<OrderPage>(`/orders?page=${page}&pageSize=${pageSize}`)
@@ -90,6 +114,24 @@ export class Order {
   /** The seller has sent THEIR part, with the carrier's tracking reference. */
   static async shipSale(id: string, trackingReference: string): Promise<Sale> {
     const { data } = await http.post<Sale>(`/orders/sales/${id}/shipment`, { trackingReference })
+    return data
+  }
+
+  /** The seller accepts the return of THEIR parcel of this sale (specs/066). The token says whose. */
+  static async acceptSaleReturn(id: string): Promise<ParcelReturn> {
+    const { data } = await http.post<ParcelReturn>(`/orders/sales/${id}/return/accept`)
+    return data
+  }
+
+  /** The seller refuses it, with a reason the buyer reads - and may take to staff. */
+  static async refuseSaleReturn(id: string, reason: string): Promise<ParcelReturn> {
+    const { data } = await http.post<ParcelReturn>(`/orders/sales/${id}/return/refuse`, { reason })
+    return data
+  }
+
+  /** The parcel came back: the buyer is refunded and the units go back on the shelf. */
+  static async receiveSaleReturn(id: string): Promise<ParcelReturn> {
+    const { data } = await http.post<ParcelReturn>(`/orders/sales/${id}/return/received`)
     return data
   }
 

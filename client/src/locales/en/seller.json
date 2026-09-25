@@ -236,5 +236,36 @@
     "resubmitted": "Sent back for review.",
     "approvedHint": "On sale. Changing its name, description or photographs sends it back for review; prices and stock do not.",
     "failed": "Could not send it back."
+  },
+  "return": {
+    "title": "Return",
+    "hint": "The buyer wants to send this parcel back. Answer within a few days - a refusal can be taken to the shop’s staff.",
+    "reason": "The buyer’s reason",
+    "state": {
+      "Requested": "Asked on {{at}}. Accept or refuse it.",
+      "Accepted": "Accepted. Waiting for the buyer to send it back.",
+      "Refused": "Refused: {{reason}}. The buyer can ask the shop’s staff to look again.",
+      "Escalated": "The buyer took the refusal to the shop’s staff, who decide for good.",
+      "Rejected": "Turned down for good: {{reason}}",
+      "SentBack": "Sent back on {{at}} ({{reference}}). Mark it received when it arrives.",
+      "Received": "Received back on {{at}}. The buyer was refunded"
+    },
+    "accept": "Accept the return",
+    "acceptTitle": "Accept this return?",
+    "acceptBody": "The buyer is told to send the parcel back. When it arrives and is marked received, they are refunded the goods and their tax, and the units go back in stock.",
+    "accepted": "Return accepted.",
+    "refuse": "Refuse",
+    "refuseTitle": "Refuse this return?",
+    "refuseBody": "The buyer reads your reason and can ask the shop’s staff to look again.",
+    "reject": "Reject for good",
+    "rejectTitle": "Reject this return for good?",
+    "rejectBody": "This is the final word: the buyer cannot take it any further. They read your reason.",
+    "refuseReason": "Reason",
+    "refused": "Answer sent.",
+    "receive": "Mark as received",
+    "receiveTitle": "Did the parcel come back?",
+    "receiveBody": "The buyer is refunded the goods and their tax, and the units go back in stock. It cannot be undone.",
+    "receiveConfirm": "Yes, it came back",
+    "receivedDone": "Received - the buyer is being refunded."
   }
 }

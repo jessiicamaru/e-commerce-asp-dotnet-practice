@@ -47,6 +47,30 @@ export function useStaffCancelOrder(id: string) {
   })
 }
 
+/** Returns in one state, a page at a time (specs/066). */
+export function useReturnQueue(status: string, page: number, pageSize: number) {
+  return useQuery({
+    queryKey: queryKeys.adminReturns(status, page),
+    queryFn: () => Admin.returns(status, page, pageSize),
+    placeholderData: (previous) => previous,
+  })
+}
+
+/** Staff's steps on one parcel's return; the order and the returns queue are re-read. */
+export function useStaffReturn(orderId: string, shipmentId: string) {
+  const queryClient = useQueryClient()
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.adminOrder(orderId) })
+    await queryClient.invalidateQueries({ queryKey: ['admin-returns'] })
+  }
+
+  return {
+    accept: useMutation({ mutationFn: () => Admin.acceptReturn(orderId, shipmentId), onSuccess: refresh }),
+    refuse: useMutation({ mutationFn: (reason: string) => Admin.refuseReturn(orderId, shipmentId, reason), onSuccess: refresh }),
+    receive: useMutation({ mutationFn: () => Admin.receiveReturn(orderId, shipmentId), onSuccess: refresh }),
+  }
+}
+
 export function usePayoutsDue() {
   return useQuery({ queryKey: queryKeys.payoutsDue(), queryFn: () => Admin.due() })
 }

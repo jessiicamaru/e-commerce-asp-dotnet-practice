@@ -58,11 +58,45 @@
   "received": {
     "button": "Đã nhận hàng",
     "title": "Bạn đã nhận được kiện này?",
-    "body": "Xác nhận là người bán được thanh toán cho kiện này. Không hoàn tác được.",
+    "body": "Xác nhận bắt đầu 7 ngày bạn vẫn có thể trả hàng; sau đó người bán được thanh toán. Không hoàn tác được.",
     "confirm": "Đã nhận",
     "done": "Cảm ơn bạn đã xác nhận.",
     "hint": "Nếu bạn không xác nhận, kiện được coi là đã nhận sau 7 ngày kể từ lúc gửi.",
     "at": "Đã nhận ngày {{at}}",
     "auto": "Tự động coi là đã nhận ngày {{at}}"
+  },
+  "return": {
+    "button": "Trả lại kiện này",
+    "title": "Trả lại kiện hàng này?",
+    "body": "Cho biết có vấn đề gì. Người bán trả lời trước; nếu họ từ chối, bạn có thể nhờ cửa hàng xem lại. Phí giao hàng không được hoàn, và bạn trả phí gửi trả.",
+    "reason": "Vì sao bạn muốn trả lại?",
+    "confirm": "Gửi yêu cầu trả hàng",
+    "requested": "Đã gửi yêu cầu trả hàng.",
+    "until": "Bạn có thể yêu cầu trả hàng đến {{at}}.",
+    "heading": "Trả hàng",
+    "theShop": "cửa hàng",
+    "theSeller": "người bán",
+    "state": {
+      "Requested": "Bạn đã yêu cầu trả kiện này ngày {{at}}. Đang chờ {{who}} trả lời.",
+      "Accepted": "Yêu cầu trả hàng đã được chấp nhận. Hãy gửi kiện lại trước {{at}} và cho biết mã vận đơn.",
+      "AcceptedLate": "Yêu cầu trả hàng đã được chấp nhận, nhưng đã quá hạn gửi trả.",
+      "Refused": "Bị {{who}} từ chối: {{reason}}",
+      "Escalated": "Nhân viên cửa hàng đang xem lại yêu cầu của bạn. Quyết định của họ là cuối cùng.",
+      "Rejected": "Nhân viên cửa hàng đã từ chối trả hàng, đây là quyết định cuối cùng: {{reason}}",
+      "SentBack": "Kiện đang được gửi trả ({{reference}}). Bạn được hoàn tiền khi kiện đến nơi.",
+      "Received": "Đã trả hàng. Đã hoàn"
+    },
+    "sendBack": "Tôi đã gửi trả",
+    "sendBackTitle": "Gửi trả kiện hàng",
+    "sendBackBody": "Nhập mã vận đơn của đơn vị vận chuyển để người bán theo dõi.",
+    "tracking": "Mã vận đơn",
+    "sendBackConfirm": "Lưu",
+    "sentBackDone": "Cảm ơn bạn - người bán sẽ xác nhận khi nhận được kiện.",
+    "escalate": "Nhờ cửa hàng xem lại",
+    "escalateTitle": "Nhờ cửa hàng xem lại?",
+    "escalateBody": "Nhân viên cửa hàng đọc lý do của bạn và của người bán rồi quyết định. Quyết định của họ là cuối cùng.",
+    "escalateConfirm": "Nhờ cửa hàng",
+    "escalated": "Đã chuyển cho nhân viên cửa hàng.",
+    "escalateUntil": "Bạn có thể yêu cầu đến {{at}}."
   }
 }

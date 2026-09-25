@@ -6,7 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { Order } from '@/services/order'
-import type { Sale } from '@/services/order/types'
+import type { ParcelReturn, Sale } from '@/services/order/types'
 import { ShopSalePage } from '.'
 import { noEarnings } from '@/test/fixtures'
 
@@ -177,5 +177,83 @@ describe('ShopSalePage shipping the seller part', () => {
     expect(screen.queryByText('Lan Pham')).not.toBeInTheDocument()
     expect(screen.getByText('VN-9')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Start preparing|Mark as shipped/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('ShopSalePage returns (specs/067)', () => {
+  const ret = (status: ParcelReturn['status'], extra: Partial<ParcelReturn> = {}): ParcelReturn => ({
+    id: 'r-1', orderId: 'o-1', shipmentId: 's-1', isShop: false, status, reason: 'Scratched lens',
+    decisionReason: null, trackingReference: null, requestedAt: '2026-09-24T08:00:00Z', decidedAt: null,
+    sentBackAt: null, receivedAt: null, refundAmount: null, ...extra,
+  })
+  const withReturn = (r: ParcelReturn) => sale('Shipped', { deliveredAt: '2026-09-23T08:00:00Z', return: r })
+
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
+  })
+
+  it("shows the buyer's reason and accepts the request after confirming", async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(withReturn(ret('Requested')))
+    const accept = vi.spyOn(Order, 'acceptSaleReturn').mockResolvedValue(ret('Accepted'))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    expect(await screen.findByText('Scratched lens')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Accept the return/ }))
+    expect(accept).not.toHaveBeenCalled()
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: /Accept the return/ }))
+
+    await waitFor(() => expect(accept).toHaveBeenCalledWith('o-1'))
+  })
+
+  it('refuses only with a reason the buyer can read', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(withReturn(ret('Requested')))
+    const refuse = vi.spyOn(Order, 'refuseSaleReturn').mockResolvedValue(ret('Refused'))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    await user.click(await screen.findByRole('button', { name: /Refuse/ }))
+    const dialog = await screen.findByRole('dialog')
+    const send = within(dialog).getByRole('button', { name: 'Refuse' })
+    expect(send).toBeDisabled()
+
+    await user.type(within(dialog).getByLabelText('Reason'), 'Used, not faulty')
+    await user.click(send)
+
+    await waitFor(() => expect(refuse).toHaveBeenCalledWith('o-1', 'Used, not faulty'))
+  })
+
+  it('marks a parcel sent back as received, after saying it refunds the buyer', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(withReturn(ret('SentBack', { trackingReference: 'VN-9', sentBackAt: '2026-09-25T08:00:00Z' })))
+    const receive = vi.spyOn(Order, 'receiveSaleReturn').mockResolvedValue(ret('Received'))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    expect(await screen.findByText(/\(VN-9\)/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Accept the return/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Mark as received/ }))
+    expect(await screen.findByText(/refunded the goods and their tax/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Yes, it came back/ }))
+
+    await waitFor(() => expect(receive).toHaveBeenCalledWith('o-1'))
+  })
+
+  /** Escalated is staff's to decide; the seller only reads where it has got to. */
+  it('offers the seller nothing on an escalated return', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(withReturn(ret('Escalated', { decisionReason: 'Used' })))
+    renderAt('o-1')
+
+    expect(await screen.findByText(/took the refusal to the shop/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Accept the return/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Refuse/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Mark as received/ })).not.toBeInTheDocument()
+  })
+
+  it('shows no return card on a sale without one', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped'))
+    renderAt('o-1')
+
+    await screen.findByText('Sony A7 IV')
+    expect(screen.queryByText("The buyer’s reason")).not.toBeInTheDocument()
   })
 })

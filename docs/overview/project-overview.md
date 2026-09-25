@@ -104,10 +104,10 @@ the answer before it can continue. Details: [microservices design](../architectu
 | gRPC services | 4 ([reference](../reference/grpc.md)) |
 | Database tables (excluding outbox) | 39 ([reference](../reference/data-model.md)) |
 | Service, saga and gateway tests | 669, in 9 projects |
-| Storefront unit tests | 329 |
+| Storefront unit tests | 371 |
 | Bruno requests | 215 |
-| Design records (`specs/`) | 54 |
-| Merged pull requests | 71 |
+| Design records (`specs/`) | 55 |
+| Merged pull requests | 72 |
 | Published images | 10 - eight services, the gateway and the storefront |
 
 ## Status
