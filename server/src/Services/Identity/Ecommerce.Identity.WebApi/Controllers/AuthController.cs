@@ -1,5 +1,6 @@
 using Ecommerce.Application.Auth.Commands.Login;
 using Ecommerce.Application.Auth.Commands.Logout;
+using Ecommerce.Application.Auth.Commands.PasswordReset;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Commands.RegisterSeller;
 using Ecommerce.Application.Auth.Commands.Refresh;
@@ -47,6 +48,32 @@ public class AuthController : ApiControllerBase
 
         // Hide refresh token from HTTP response body
         return Ok(result with { RefreshToken = "" });
+    }
+
+    /// <summary>
+    /// Asks for a link to choose a new password (specs/061). Always 202, whether or not the address has an
+    /// account (#28). The email is written in the language the request comes in.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordCommand command)
+    {
+        await Mediator.Send(command with { Language = RequestLanguage() });
+        return Accepted();
+    }
+
+    /// <summary>Chooses a new password with the link's token (specs/061); every session ends. 204, or 400.</summary>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordCommand command)
+    {
+        await Mediator.Send(command);
+        return NoContent();
+    }
+
+    /// <summary>The first language of <c>Accept-Language</c>, primary tag only ("en-US" is "en"); empty when none.</summary>
+    private string RequestLanguage()
+    {
+        var first = Request.Headers.AcceptLanguage.ToString().Split(',')[0].Split(';')[0].Trim();
+        return first.Length >= 2 ? first[..2].ToLowerInvariant() : string.Empty;
     }
 
     [HttpPost("refresh")]

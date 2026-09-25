@@ -35,7 +35,29 @@ public static class EmailTemplates
             + "We will prepare it soon and tell you when it ships.\n\n"
             + "See your order: {link}\n\n"
             + "- e-commerce"),
+        [(EmailTemplate.PasswordReset, "vi")] = (
+            "Đặt lại mật khẩu của bạn",
+            "Xin chào {name},\n\n"
+            + "Có người (hy vọng là bạn) đã yêu cầu đặt lại mật khẩu cho tài khoản này.\n"
+            + "Mở liên kết dưới đây trong 30 phút để chọn mật khẩu mới. Liên kết chỉ dùng được một lần.\n\n"
+            + "{link}\n\n"
+            + "Nếu không phải bạn, hãy bỏ qua email này - mật khẩu của bạn không đổi.\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.PasswordReset, "en")] = (
+            "Reset your password",
+            "Hi {name},\n\n"
+            + "Somebody (hopefully you) asked to reset the password of this account.\n"
+            + "Open the link below within 30 minutes to choose a new one. It works once.\n\n"
+            + "{link}\n\n"
+            + "If it was not you, ignore this email - your password has not changed.\n\n"
+            + "- e-commerce"),
     };
+
+    /// <summary>
+    /// Templates whose data is a secret (specs/061): once sent, the row keeps no copy of it. Delivery needs it;
+    /// nothing afterwards does.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ScrubbedOnceSent = new HashSet<string> { EmailTemplate.PasswordReset };
 
     /// <summary>Every template with words, for a test that holds the list and the constants together.</summary>
     public static IEnumerable<(string Template, string Language)> Known => Words.Keys;
@@ -77,6 +99,18 @@ public static class EmailTemplates
                     ["order"] = orderId.Length >= 8 ? orderId[..8] : orderId,
                     ["total"] = Money(total, currency, language),
                     ["link"] = $"{storefrontUrl.TrimEnd('/')}/orders/{orderId}",
+                };
+
+            case EmailTemplate.PasswordReset:
+                if (!data.TryGetValue("token", out var token) || string.IsNullOrWhiteSpace(token))
+                {
+                    return null;
+                }
+
+                return new()
+                {
+                    ["name"] = name,
+                    ["link"] = $"{storefrontUrl.TrimEnd('/')}/reset-password?token={Uri.EscapeDataString(token)}",
                 };
 
             default:

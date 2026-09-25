@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.PostConfigure<EmailOptions>(o =>
             o.StorefrontUrl = Environment.GetEnvironmentVariable("STOREFRONT_URL") ?? o.StorefrontUrl);
         services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();
+        services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
         services.AddSingleton<IEmailTransport, SmtpEmailTransport>();
 
         services.AddScoped<DataInitializer>();

@@ -53,7 +53,12 @@ export function SignInPage() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="password">{t('signIn.password')}</Label>
+            <div className="flex items-baseline justify-between">
+              <Label htmlFor="password">{t('signIn.password')}</Label>
+              <Link to="/forgot-password" className="text-muted-foreground text-sm underline">
+                {t('signIn.forgot')}
+              </Link>
+            </div>
             <Input
               id="password"
               type="password"

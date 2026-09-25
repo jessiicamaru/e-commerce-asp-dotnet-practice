@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `c42d85b`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `532210d`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**107 endpoints** across 7 services.
+**109 endpoints** across 7 services.
 
-## Identity (27)
+## Identity (29)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -16,11 +16,13 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/addresses/{id}` | signed in |  |
 | `PUT` | `/api/addresses/{id}` | signed in |  |
 | `PUT` | `/api/addresses/{id}/default` | signed in |  |
+| `POST` | `/api/auth/forgot-password` | anyone | Asks for a link to choose a new password (specs/061). Always 202, whether or not the address has an account (#28). The email is written in the language the request comes in. |
 | `POST` | `/api/auth/login` | anyone |  |
 | `POST` | `/api/auth/logout` | anyone | Ends the session: the refresh token is deleted server-side and the cookie is cleared. Anonymous on purpose - an expired access token must not stop someone signing out. Always 204. |
 | `POST` | `/api/auth/refresh` | anyone |  |
 | `POST` | `/api/auth/register` | anyone |  |
 | `POST` | `/api/auth/register-seller` | anyone | Registers somebody who sells, with the name their shop trades under (specs/027). |
+| `POST` | `/api/auth/reset-password` | anyone | Chooses a new password with the link's token (specs/061); every session ends. 204, or 400. |
 | `GET` | `/api/sellers/me` | Seller |  |
 | `PUT` | `/api/sellers/me/shop-name` | Seller | Renames the caller's shop. No product is written - the catalogue keeps the name as a read model, so two hundred listings change because one row did. |
 | `GET` | `/api/shop-applications` | Admin, Moderator |  |

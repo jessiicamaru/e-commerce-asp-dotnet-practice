@@ -10,6 +10,12 @@ public static class EmailTemplate
 {
     /// <summary>An order settled as paid. Data: <c>orderId</c>, <c>total</c>, <c>currency</c>.</summary>
     public const string OrderPaid = "OrderPaid";
+
+    /// <summary>
+    /// A link to choose a new password (specs/061). Data: <c>token</c> - queued by Identity itself, never through
+    /// the broker, and scrubbed from the row once sent.
+    /// </summary>
+    public const string PasswordReset = "PasswordReset";
 }
 
 /// <summary>
