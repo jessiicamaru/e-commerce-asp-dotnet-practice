@@ -35,7 +35,6 @@ Gaps a shopper or a seller would notice.
 
 | Issue | Title |
 | :-- | :-- |
-| [#107](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/107) | A delivered parcel cannot be returned - **server done in [#149](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/149); the storefront screens remain** |
 | [#108](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/108) | There is no way to give a discount |
 | [#111](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/111) | A seller cannot see how their shop is doing |
 | [#109](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/109) | A shopper cannot save a product for later |
@@ -66,6 +65,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#107](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/107) | A delivered parcel cannot be returned | [#149](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/149) (specs/066, server) and [#151](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/151) (specs/067, screens) |
 | [#112](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/112) | A lock or ban takes up to 15 minutes to reach a signed-in session | [#148](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/148) (specs/065) |
 | [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104) | Nobody can change their password or their name | [#147](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/147) (specs/064) |
 | [#106](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/106) | An email address is never confirmed to belong to anyone | [#146](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/146) (specs/063) |
@@ -86,5 +86,5 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 ## Suggested order
 
-The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done. Next: #107 (the storefront screens) -> #111; #108 waits until it is asked for, and
+The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done, and returns (#107). Next: #111; #108 waits until it is asked for, and
 the rest as they become pressing.

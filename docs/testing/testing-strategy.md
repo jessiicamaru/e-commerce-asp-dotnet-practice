@@ -9,7 +9,7 @@ works is a test that fails when it does not.
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
 | Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 669 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
-| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 329 tests in 59 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
+| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 371 tests in 61 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
 | API collection | Bruno CLI | `bruno/` | 215 requests, 352 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |

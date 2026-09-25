@@ -50,3 +50,22 @@ describe('Admin', () => {
     expect(post.mock.calls[0]).toEqual(['/orders/fulfilment/o-1/cancel'])
   })
 })
+
+describe('Admin returns (specs/067)', () => {
+  it('reads the queue by state and moves one parcel through the fulfilment routes', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: { items: [] } })
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: {} })
+
+    await Admin.returns('Escalated', 2, 12)
+    await Admin.acceptReturn('o-1', 's-2')
+    await Admin.refuseReturn('o-1', 's-2', 'Worn')
+    await Admin.receiveReturn('o-1', 's-2')
+
+    expect(get.mock.calls[0][0]).toBe('/orders/returns?status=Escalated&page=2&pageSize=12')
+    expect(post.mock.calls).toEqual([
+      ['/orders/fulfilment/o-1/shipments/s-2/return/accept'],
+      ['/orders/fulfilment/o-1/shipments/s-2/return/refuse', { reason: 'Worn' }],
+      ['/orders/fulfilment/o-1/shipments/s-2/return/received'],
+    ])
+  })
+})

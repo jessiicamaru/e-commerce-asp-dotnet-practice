@@ -5,8 +5,21 @@ parcel's seller decides, or an administrator decides for the shop's own parcel. 
 disputed. Once the parcel is back, the buyer is refunded its goods and their tax, and its units return
 to the shelf, each exactly once.
 
-The server side is complete. The storefront screens are part 2 of #107. Until then, returns are handled
-through the API; the storefront already words the five new notices.
+The server came in #149 (specs/066) and the storefront screens in #151 (specs/067).
+
+## Where it happens in the storefront
+
+| Who | Page | What they see |
+| :-- | :-- | :-- |
+| **Buyer** | `/orders/:id`, under each parcel | **Return this parcel** while the window is open, with the last day. Then the return's state in words: waiting, accepted with the send-back form and its deadline, refused with the reason and **Ask the shop to look again**, with staff, rejected for good, on its way back, and the amount refunded. |
+| **Seller** | `/shop/sales/:id`, a card above the parcel | The buyer's reason. **Accept** or **Refuse** (a reason is required) while requested, then **Mark as received** once sent back. Nothing to press on an escalated return. |
+| **Administrator** | `/admin/orders/:id`, a returns card | Every parcel of the order with a return. For the shop's own parcel, the seller's steps. For an escalated return of anyone's, the final word: **Reject for good**. A seller's parcel that is not escalated is drawn without buttons. |
+| **Administrator** | `/admin/returns` (menu: Returns) | The queue by state - escalated first, then requested, sent back, received - oldest first, each row leading to its order. No amounts, because a return carries no currency. |
+
+Accepting and receiving are confirmed in a dialog first, because they cannot be taken back. The pages
+decide only what to *offer*: `utils/order/returns.ts` copies each server guard, and the window is the
+constant `RETURN_WINDOW_DAYS` (7). If the two ever disagree, the server's 409 is shown in its own words
+(specs/067 research D1).
 
 ## What people can do
 
@@ -114,10 +127,12 @@ A parcel's return also appears on the buyer's order (`shipments[].return`) and o
 | `Ecommerce.Payment.Tests/ReturnRefundTests` (5) | Refunded once however delivered. Two parcels refunded separately. Never more than paid, never in another currency. Nothing for an order never charged. Not taken for the order's own refund. |
 | `Ecommerce.Inventory.Tests/RestockReturnTests` (4), `AnnouncementTests` | Restocked once however delivered. Two returns of one order. A vanished variant skipped. The availability announced. |
 | Bruno `admin-audit/` | The round trip on the shop's parcel through the gateway, with the stock checked coming back over the broker. Also: asking twice is 409, a customer deciding is 403, receiving twice is 409. |
+| Vitest `utils/order/returns.test.ts` | What each role is offered in each state, and the window's edges (exactly 7 days is closed, as on the server). |
+| Vitest `pages/order`, `shop-sale`, `admin-order`, `admin-returns`, `services/{order,admin}` | What each button sends and to which route, that a reason is required, that an escalated refusal is worded as final, a 409 shown in the server's words, and the queue reading its state from the address. |
 
 ## Known limits
 
-- **No storefront screens yet**: part 2 of #107.
+- **The sales list has no return badge.** A seller learns of a return from the `ReturnRequested` notice, which links to the sale.
 - **Whole parcels only, and no photos.**
 - **The admin overview still counts a returned sale as a sale.** Revenue is not reduced by refunds.
 
@@ -126,3 +141,4 @@ A parcel's return also appears on the buyer's order (`shipments[].return`) and o
 | Spec | PR | Added |
 | :-- | :-- | :-- |
 | [066-parcel-returns](../../specs/066-parcel-returns/) | #149 | The return flow, the refund and restock, and the money hold (#107, part 1). |
+| [067-return-screens](../../specs/067-return-screens/) | #151 | The storefront screens for the buyer, the seller and staff, and the `/admin/returns` queue (#107, part 2). |

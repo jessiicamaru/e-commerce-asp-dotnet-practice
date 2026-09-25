@@ -498,7 +498,7 @@ delivered parcel can no longer come back** (specs/066): delivered more than `Ret
 return of it open - balances and the due list read it from `PayoutRepository.Money`, the claim's SQL says it
 again, and `ReturnTests.The_payout_claims_exactly_what_the_balance_calls_due` holds the two together.
 
-**A delivered parcel can be returned** (specs/066, #107; server only - the screens are part 2): the buyer asks
+**A delivered parcel can be returned** (specs/066, #107; screens in specs/067 - the order page, the sale, `/admin/returns`): the buyer asks
 within 7 days, the seller (Admin for the shop's parcel) accepts or refuses, a refusal can be escalated to Admin
 for the final word, the buyer sends it back with a reference, the seller marks it received. `parcel_returns` is
 one row per parcel (`ON CONFLICT` on `ShipmentId`), every step a guarded `UPDATE ... WHERE "Status" = @from`.
