@@ -32,6 +32,9 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
+        test("a new address is not confirmed yet (specs/063)", function() {
+          expect(res.body.emailConfirmed).to.equal(false);
+        });
         test("an applicant is a customer until somebody approves the shop (specs/044)", function() {
           expect(res.body.roles).to.deep.equal(["Customer"]);
         });

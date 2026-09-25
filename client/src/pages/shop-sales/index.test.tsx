@@ -13,7 +13,7 @@ import { noEarnings } from '@/test/fixtures'
 function render_(isSeller = true) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const value = {
-    user: { id: 's1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles: isSeller ? ['Seller'] : [] },
+    user: { id: 's1', email: 'a@b.test', firstName: 'Alice', lastName: 'N', roles: isSeller ? ['Seller'] : [], emailConfirmed: true },
     restoring: false,
     isSeller,
     isAdmin: false,

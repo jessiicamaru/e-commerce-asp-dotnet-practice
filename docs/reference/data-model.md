@@ -1,10 +1,10 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bc137b6`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `325a428`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
-## Identity - `ecommerce_identity_db` (10 tables)
+## Identity - `ecommerce_identity_db` (11 tables)
 
 ### `delivery_addresses`
 
@@ -24,6 +24,19 @@ Entity `DeliveryAddress`.
 | `RecipientName` | character varying(100) |  |
 | `Region` | character varying(100) | yes |
 | `UpdatedAt` | timestamp with time zone |  |
+| `UserId` | uuid |  |
+
+### `email_confirmation_tokens`
+
+Entity `EmailConfirmationToken`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `CreatedAt` | timestamp with time zone |  |
+| `ExpiresAt` | timestamp with time zone |  |
+| `TokenHash` | character(64) |  |
+| `UsedAt` | timestamp with time zone | yes |
 | `UserId` | uuid |  |
 
 ### `outgoing_emails`
@@ -139,6 +152,7 @@ Entity `User`.
 | `BannedAt` | timestamp with time zone | yes |
 | `CreatedAt` | timestamp with time zone |  |
 | `Email` | character varying(255) |  |
+| `EmailConfirmedAt` | timestamp with time zone | yes |
 | `FirstName` | character varying(100) |  |
 | `IsActive` | boolean |  |
 | `LastName` | character varying(100) |  |

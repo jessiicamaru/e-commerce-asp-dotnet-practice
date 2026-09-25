@@ -87,6 +87,39 @@ namespace Ecommerce.Infrastructure.Migrations
                     b.ToTable("delivery_addresses", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Entities.EmailConfirmationToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("email_confirmation_tokens", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Entities.OutgoingEmail", b =>
                 {
                     b.Property<Guid>("Id")
@@ -344,6 +377,9 @@ namespace Ecommerce.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTime?>("EmailConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -570,6 +606,15 @@ namespace Ecommerce.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Entities.DeliveryAddress", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Entities.EmailConfirmationToken", b =>
                 {
                     b.HasOne("Ecommerce.Domain.Entities.User", null)
                         .WithMany()

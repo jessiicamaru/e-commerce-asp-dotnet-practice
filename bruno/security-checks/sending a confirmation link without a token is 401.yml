@@ -1,0 +1,27 @@
+info:
+  name: sending a confirmation link without a token is 401
+  type: http
+  seq: 53
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/resend-confirmation"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/063. The account comes from the access token, never from the body - there is nothing to name.

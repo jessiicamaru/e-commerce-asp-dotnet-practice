@@ -30,6 +30,12 @@ A shop starts as an **application** (`shop_applications`), not as a role. `regis
 an account holding `Customer` only plus a `Pending` application, in one save; a signed-in customer
 applies the same way from `/open-shop`. Nobody sells until staff decide.
 
+**The address must be confirmed first** (specs/063). A signed-in customer whose address is unconfirmed is
+refused the application (403 `EmailNotConfirmed`, and `/open-shop` says to confirm first). Registering as a
+seller still creates the application in one step, but approving it is 409 until the applicant has used the
+link emailed to them; staff see "Email not confirmed" on such an application. A shop is a public claim in
+the address's name, so the address must be shown to be theirs.
+
 A decision is made by `ShopApplicationRepository.TryDecideAsync`: in its own transaction it runs a
 guarded `UPDATE shop_applications ... WHERE "Id" = @id AND "Status" = 'Pending'`, and only when that
 statement changed a row does it run the handler's `stage` callback and commit. For an approval the
@@ -366,3 +372,4 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | [039-order-cancellation](../../specs/039-order-cancellation/) | [#84](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/84) | `Sales.Earning` split from `Sales.Statuses`, so a cancelled sale is never money. |
 | [040-delivery-confirmation](../../specs/040-delivery-confirmation/) | [#85](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/85) | Due means delivered, not shipped. |
 | [044-shop-applications](../../specs/044-shop-applications/) | [#96](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/96) | Shop applications; `register-seller` grants `Customer` only; `/open-shop`, `/admin/shops`, `refreshSession`. |
+| [063-email-confirmation](../../specs/063-email-confirmation/) | [#146](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/146) | A shop is applied for and approved only with a confirmed address. |

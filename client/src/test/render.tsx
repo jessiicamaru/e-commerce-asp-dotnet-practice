@@ -12,10 +12,10 @@ import type { AuthState } from '@/context/auth/types'
  * Here and not in a test file, because importing from a `.test.tsx` runs that file's suites again
  * inside the importing one.
  */
-function renderWithRoles(roles: string[], children: ReactNode, path: string) {
+function renderWithRoles(roles: string[], children: ReactNode, path: string, emailConfirmed = true) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const value = {
-    user: { id: 'u1', email: 'a@b.test', firstName: 'Mai', lastName: 'T', roles },
+    user: { id: 'u1', email: 'a@b.test', firstName: 'Mai', lastName: 'T', roles, emailConfirmed },
     restoring: false,
     isSeller: roles.includes('Seller'),
     isAdmin: roles.includes('Admin'),
@@ -45,6 +45,11 @@ export function renderAsAdmin(children: ReactNode, path = '/') {
 /** Signed in as a customer who sells nothing (specs/044). */
 export function renderAsCustomer(children: ReactNode, path = '/') {
   return renderWithRoles(['Customer'], children, path)
+}
+
+/** Signed in as a customer whose address is not confirmed yet (specs/063). */
+export function renderAsUnconfirmedCustomer(children: ReactNode, path = '/') {
+  return renderWithRoles(['Customer'], children, path, false)
 }
 
 /** Signed in as a moderator, who is a customer too (specs/043). */

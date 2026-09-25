@@ -20,6 +20,14 @@ public class User
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// When the address was shown to belong to this person, by the link sent to it (specs/063). Null: not yet.
+    /// Accounts from before specs/063 carry their creation time.
+    /// </summary>
+    public DateTime? EmailConfirmedAt { get; set; }
+
+    public bool EmailConfirmed => EmailConfirmedAt is not null;
+
     /// <summary>Signed out and refused sign-in until then (specs/043). Past means not locked.</summary>
     public DateTime? LockedUntil { get; set; }
 

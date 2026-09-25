@@ -16,6 +16,10 @@ namespace Ecommerce.Application.Auth.Common;
 /// already put in the token. Order is not guaranteed - ask with Contains, never by position.
 /// </para>
 /// </param>
+/// <param name="EmailConfirmed">
+/// Whether the address was confirmed by its link (specs/063) - for drawing the "confirm your email" banner,
+/// like <paramref name="Roles"/>. The server decides what an unconfirmed account may do on its own.
+/// </param>
 public record AuthResponse(
     Guid Id,
     string Email,
@@ -23,5 +27,6 @@ public record AuthResponse(
     string LastName,
     string Token,
     string RefreshToken,
-    IReadOnlyList<string> Roles
+    IReadOnlyList<string> Roles,
+    bool EmailConfirmed
 );

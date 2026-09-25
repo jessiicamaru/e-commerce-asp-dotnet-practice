@@ -221,7 +221,8 @@
     "confirmReject": "Reject",
     "approved": "“{{shop}}” is open.",
     "rejected": "“{{shop}}” was not approved.",
-    "decided": "Decided {{when}}"
+    "decided": "Decided {{when}}",
+    "unconfirmed": "Email not confirmed"
   },
   "review": {
     "title": "Products to review",

@@ -92,7 +92,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (46 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (19 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (185 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (161 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (116 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (127 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
@@ -613,6 +613,16 @@ never the moderation lock**. `forgot-password` sends one email a minute per addr
 `172.30.10.10` on the `edge` network). With none configured the gateway sets `ForwardedHeaders.None`,
 because **empty `KnownProxies` + `KnownIPNetworks` means trust EVERY peer**, and a forged header per
 request then bypassed the limit.
+**An address is confirmed by its link** (specs/063, #106). Both registrations stage a hashed, single-use,
+24-hour token plus an `EmailConfirmation` email **in the account's own save** (`EmailConfirmations.StageAsync`,
+through `IOutgoingEmailRepository.Stage`, never the broker). `POST /api/auth/confirm-email` is anonymous
+and uses one guarded claim plus a guarded `UPDATE users ... WHERE "EmailConfirmedAt" IS NULL`.
+`POST /api/auth/resend-confirmation` is signed in and sends at most one a minute. `emailConfirmed` on the
+auth response draws the storefront's banner. ⚠️ **Buying is not gated; selling is**: applying needs a
+confirmed address (403 `EmailNotConfirmed`), and approving a `register-seller` application is 409 until the
+applicant confirms. Accounts from before were backfilled `EmailConfirmedAt = CreatedAt`. Bruno's seller
+folder reads the link from **Mailpit** (`mailpitUrl`), so the collection now needs `docker compose up -d`'s
+Mailpit.
 ⚠️ **The saga's outcome arrives at a consumer, and the consumer outbox already holds a transaction** on
 the context. `TrySettleAsync` joins it rather than opening a second one - which throws "already in a
 transaction", and did: every order stayed `Submitted` while every unit test passed, because they sent

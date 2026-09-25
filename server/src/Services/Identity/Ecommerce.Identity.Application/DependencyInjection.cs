@@ -13,6 +13,9 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(assembly);
 
+        // Stages a confirmation link with whatever save the caller makes (specs/063).
+        services.AddScoped<Auth.Commands.EmailConfirmation.EmailConfirmations>();
+
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(assembly);

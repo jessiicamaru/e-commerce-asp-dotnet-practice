@@ -24,7 +24,8 @@ public record ShopApplicationResponse(
     string Status,
     string? DecisionReason,
     DateTime CreatedAt,
-    DateTime? DecidedAt)
+    DateTime? DecidedAt,
+    bool? ApplicantEmailConfirmed = null)   // staff only (specs/063): approval waits for a confirmed address
 {
     public static ShopApplicationResponse Mine(ShopApplication a) => new(
         a.Id, a.UserId, null, null, a.ShopName, a.Description, a.Phone, a.Status.ToString(), a.DecisionReason, a.CreatedAt, a.DecidedAt);
@@ -32,7 +33,7 @@ public record ShopApplicationResponse(
     public static ShopApplicationResponse ForStaff(ShopApplicationRow r) => new(
         r.Application.Id, r.Application.UserId, r.Email, $"{r.FirstName} {r.LastName}".Trim(),
         r.Application.ShopName, r.Application.Description, r.Application.Phone, r.Application.Status.ToString(),
-        r.Application.DecisionReason, r.Application.CreatedAt, r.Application.DecidedAt);
+        r.Application.DecisionReason, r.Application.CreatedAt, r.Application.DecidedAt, r.EmailConfirmed);
 }
 
 public record ShopApplicationPage(List<ShopApplicationResponse> Items, int Page, int PageSize, int TotalCount);
@@ -91,6 +92,11 @@ public static class ShopApplicationRules
     {
         if (user.Roles.Any(r => r.Name == RoleNames.Seller))
             throw new ConflictException("This account already sells on the shop.");
+
+        // A shop is a public claim made in the address's name (specs/063): the address must be shown to be theirs.
+        if (!user.EmailConfirmed)
+            throw new ForbiddenException("Confirm your email address before applying to sell.",
+                new Dictionary<string, object?> { ["code"] = "EmailNotConfirmed" });
 
         if (await applications.HasPendingAsync(user.Id, cancellationToken))
             throw new ConflictException("An application is already waiting for review.");
@@ -171,6 +177,10 @@ public class ShopApplicationHandlers(
         var row = await _applications.GetAsync(request.Id, cancellationToken) ?? throw new NotFoundException("Application not found.");
         var now = DateTime.UtcNow;
         var application = row.Application;
+
+        // Registering as a seller creates the application at once; the shop waits for the address (specs/063).
+        if (!row.EmailConfirmed && application.Status == ShopApplicationStatus.Pending)
+            throw new ConflictException("The applicant has not confirmed their email address yet.");
 
         var decided = await _applications.TryDecideAsync(application.Id, ShopApplicationStatus.Approved, null, CallerId(), now,
             async ct =>

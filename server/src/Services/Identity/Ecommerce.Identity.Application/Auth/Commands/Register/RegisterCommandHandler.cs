@@ -1,5 +1,6 @@
 using Ecommerce.Application.Common;
 using Ecommerce.Application.Auth.Common;
+using Ecommerce.Application.Auth.Commands.EmailConfirmation;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Common.Constants;
 using Ecommerce.Domain.Constants;
@@ -16,9 +17,11 @@ IRoleRepository roleRepository,
 IPasswordHasher passwordHasher,
 IJwtTokenGenerator jwtTokenGenerator
     ,
-    IAuditTrail audit) : IRequestHandler<RegisterCommand, AuthResponse>
+    IAuditTrail audit,
+    EmailConfirmations confirmations) : IRequestHandler<RegisterCommand, AuthResponse>
 {
     private readonly IAuditTrail _audit = audit;
+    private readonly EmailConfirmations _confirmations = confirmations;
 
     private readonly IUserRepository _userRepository = userRepository;
     private readonly IRoleRepository _roleRepository = roleRepository;
@@ -60,6 +63,9 @@ IJwtTokenGenerator jwtTokenGenerator
             AuditCategory.User, "Registered", "User", user.Id.ToString(), $"{user.Email} registered",
             after: new { user.Email, user.FirstName, user.LastName, Roles = user.Roles.Select(r => r.Name) },
             actor: AuditActors.Of(user), cancellationToken: cancellationToken);
+
+        // The link to confirm the address, written with the account in its one save (specs/063).
+        await _confirmations.StageAsync(user, request.Language, DateTime.UtcNow, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
@@ -82,7 +88,8 @@ IJwtTokenGenerator jwtTokenGenerator
             user.LastName,
             accessToken,
             refreshTokenString,
-            user.Roles.Select(role => role.Name).ToList()
+            user.Roles.Select(role => role.Name).ToList(),
+            user.EmailConfirmed
         );
     }
 }

@@ -3,6 +3,9 @@ variables:
   - name: baseUrl
     value: http://localhost:5000
     description: The YARP gateway. Every request goes through it, like a real client would.
+  - name: mailpitUrl
+    value: http://localhost:8025
+    description: Mailpit, where every email the stack sends lands (specs/060). Links in emails are read from here.
   - name: customerEmail
     value: bruno.customer@example.test
     description: A throwaway customer. "register" creates it; if it already exists, just run "login customer".

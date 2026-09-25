@@ -16,6 +16,12 @@ public static class EmailTemplate
     /// the broker, and scrubbed from the row once sent.
     /// </summary>
     public const string PasswordReset = "PasswordReset";
+
+    /// <summary>
+    /// A link to confirm an address belongs to its account (specs/063). Data: <c>token</c> - queued by Identity
+    /// itself, never through the broker, and scrubbed from the row once sent.
+    /// </summary>
+    public const string EmailConfirmation = "EmailConfirmation";
 }
 
 /// <summary>

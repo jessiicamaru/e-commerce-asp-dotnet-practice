@@ -43,6 +43,7 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
     public async Task Approval_makes_a_seller_opens_the_shop_and_tells_Catalog_and_the_applicant_once()
     {
         var registered = await SendAsync(Guid.Empty, new RegisterSellerCommand(AnEmail(), Password, "Mai", "Tran", "Mai Lens"));
+        await _fixture.ConfirmEmailAsync(registered.Id);   // approval waits for a confirmed address (specs/063)
         var id = (await SendAsync(registered.Id, new GetMyShopApplicationsQuery())).Single().Id;
 
         var (published, approved) = await PublishedAsync(Moderator, new ApproveShopApplicationCommand(id), RoleNames.Moderator);
@@ -68,6 +69,7 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
     public async Task Two_simultaneous_approvals_open_one_shop()
     {
         var registered = await SendAsync(Guid.Empty, new RegisterSellerCommand(AnEmail(), Password, "Mai", "Tran", "Mai Lens"));
+        await _fixture.ConfirmEmailAsync(registered.Id);   // approval waits for a confirmed address (specs/063)
         var id = (await SendAsync(registered.Id, new GetMyShopApplicationsQuery())).Single().Id;
 
         var attempts = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Attempt(() =>
@@ -81,6 +83,7 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
     public async Task A_rejection_says_why_and_the_applicant_may_apply_again()
     {
         var registered = await SendAsync(Guid.Empty, new RegisterSellerCommand(AnEmail(), Password, "Mai", "Tran", "Mai Lens"));
+        await _fixture.ConfirmEmailAsync(registered.Id);   // approval waits for a confirmed address (specs/063)
         var id = (await SendAsync(registered.Id, new GetMyShopApplicationsQuery())).Single().Id;
 
         // Waiting already: a second application is refused.
@@ -102,6 +105,7 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
     {
         var email = AnEmail();
         var customer = await SendAsync(Guid.Empty, new RegisterCommand(email, Password, "Lan", "Pham"));
+        await _fixture.ConfirmEmailAsync(customer.Id);   // applying needs a confirmed address (specs/063)
 
         var applied = await SendAsync(customer.Id, new ApplyForShopCommand("Lan Film", null, null));
         Assert.Equal("Pending", applied.Status);

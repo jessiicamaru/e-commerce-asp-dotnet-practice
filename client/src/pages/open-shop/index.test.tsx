@@ -6,7 +6,7 @@ import i18n from '@/config/i18n'
 import { ShopApplications } from '@/services/shop-applications'
 import type { ShopApplication } from '@/services/shop-applications/types'
 import { refusal } from '@/test/refusal'
-import { renderAsCustomer } from '@/test/render'
+import { renderAsCustomer, renderAsUnconfirmedCustomer } from '@/test/render'
 import { OpenShopPage } from '.'
 
 const application = (over: Partial<ShopApplication> = {}): ShopApplication => ({
@@ -81,5 +81,20 @@ describe('OpenShopPage (specs/044)', () => {
     await user.click(screen.getByRole('button', { name: 'Send the application' }))
 
     expect(await screen.findByText('An application is already waiting for review.')).toBeInTheDocument()
+  })
+})
+
+describe('OpenShopPage before the address is confirmed (specs/063)', () => {
+  it('asks to confirm the address first instead of offering the form', async () => {
+    vi.spyOn(ShopApplications, 'mine').mockResolvedValue([])
+    renderAsUnconfirmedCustomer(
+      <Routes>
+        <Route path="/open-shop" element={<OpenShopPage />} />
+      </Routes>,
+      '/open-shop',
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Confirm your email address before applying to sell')
+    expect(screen.queryByLabelText('Shop name')).toBeNull()
   })
 })

@@ -1,3 +1,4 @@
+using Ecommerce.Application.Auth.Commands.EmailConfirmation;
 using Ecommerce.Application.Auth.Commands.Login;
 using Ecommerce.Application.Auth.Commands.Logout;
 using Ecommerce.Application.Auth.Commands.PasswordReset;
@@ -5,6 +6,7 @@ using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Commands.RegisterSeller;
 using Ecommerce.Application.Auth.Commands.Refresh;
 using Ecommerce.Application.Common.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce.WebApi.Controllers;
@@ -14,7 +16,7 @@ public class AuthController : ApiControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command with { Language = RequestLanguage() });
 
         SetRefreshTokenCookie(result.RefreshToken);
 
@@ -32,7 +34,7 @@ public class AuthController : ApiControllerBase
     [HttpPost("register-seller")]
     public async Task<IActionResult> RegisterSeller([FromBody] RegisterSellerCommand command)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command with { Language = RequestLanguage() });
 
         SetRefreshTokenCookie(result.RefreshToken);
 
@@ -67,6 +69,26 @@ public class AuthController : ApiControllerBase
     {
         await Mediator.Send(command);
         return NoContent();
+    }
+
+    /// <summary>Uses the link sent to confirm an address (specs/063). Anonymous - it may be opened anywhere. 204, or 400.</summary>
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailCommand command)
+    {
+        await Mediator.Send(command);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Sends the signed-in caller a new confirmation link (specs/063): 202, at most one email a minute; 409 when
+    /// the address is already confirmed.
+    /// </summary>
+    [Authorize]
+    [HttpPost("resend-confirmation")]
+    public async Task<IActionResult> ResendConfirmation()
+    {
+        await Mediator.Send(new ResendConfirmationCommand(RequestLanguage()));
+        return Accepted();
     }
 
     /// <summary>The first language of <c>Accept-Language</c>, primary tag only ("en-US" is "en"); empty when none.</summary>

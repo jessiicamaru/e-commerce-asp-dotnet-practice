@@ -7,6 +7,7 @@ import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -90,6 +91,9 @@ export function AdminShopsPage() {
                     <h3 className="font-semibold">{a.shopName}</h3>
                     <p className="text-muted-foreground text-sm break-all">
                       {a.applicantName} · {a.applicantEmail}
+                      {a.status === 'Pending' && a.applicantEmailConfirmed === false && (
+                        <Badge variant="outline" className="ml-2">{t('shops.unconfirmed')}</Badge>
+                      )}
                     </p>
                   </div>
                   {a.status === 'Pending' && (

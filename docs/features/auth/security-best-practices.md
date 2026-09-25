@@ -303,6 +303,36 @@ a client that wrote a new address on each request was never limited. `AuthRateLi
 new in `Ecommerce.ApiGateway.Tests`) cover each rule. The storefront's sign-in, sign-up, forgot-password
 and reset-password pages say "Too many attempts. Try again in N minutes." in the reader's language.
 
+### 4.8 Confirming an email address (specs/063)
+
+Until #106 anybody could register with somebody else's address and be treated as its owner: they could
+open a shop in that name, and would receive that person's order confirmations and reset links.
+
+1. **Registering sends a link.** Both registrations stage a single-use token and an `EmailConfirmation`
+   email in the account's own save, so there is no account without its link. Only the token's SHA-256
+   hash is stored (`email_confirmation_tokens`), and the sent row is scrubbed, as with a reset link (§4.6).
+   The link works for **24 hours**: a confirmation grants nothing an attacker wants, and people open
+   welcome emails late.
+2. **`POST /api/auth/confirm-email` `{ token }` is anonymous**, because the link may be opened in another
+   browser. It runs one guarded claim on the token and one guarded
+   `UPDATE users ... WHERE "EmailConfirmedAt" IS NULL`, in one transaction. A used, expired, replaced or
+   made-up token is one 400, and two submissions at once confirm once.
+3. **`POST /api/auth/resend-confirmation` is signed in**: the account comes from the token. It answers
+   202, sends at most one email a minute under the person's row lock, and is limited per IP at the
+   gateway (`email`). An address already confirmed gets 409.
+4. **What waits for it: selling, not buying.** An unconfirmed customer who applies to sell gets 403
+   `EmailNotConfirmed`. Registering as a seller still creates the application, but **approving** it while
+   the address is unconfirmed is 409, and staff see the flag on the application. Browsing, the cart and
+   checkout stay open.
+5. **Accounts from before this count as confirmed.** The migration sets `EmailConfirmedAt = CreatedAt`,
+   and the administrator seeded at startup is confirmed. Asking again would stop shops that already
+   trade.
+6. `emailConfirmed` is on every authentication response, for drawing the storefront's banner (like
+   `roles`, never for deciding). Both steps are User audit entries: `EmailConfirmationSent` and
+   `EmailConfirmed`.
+
+`EmailConfirmationTests` covers each rule against a real PostgreSQL.
+
 ## 5. Known weaknesses in the current implementation
 
 §4 describes what runs today. Open weaknesses:
@@ -314,13 +344,11 @@ and reset-password pages say "Too many attempts. Try again in N minutes." in the
    This is the price of a pause per email (§4.7); a pause per email *and* IP would let a guesser with
    many addresses go unslowed.
 3. **The gateway's counters are per instance.** Several gateways would each allow the full rate.
-4. **An email address is never confirmed** to belong to whoever registered it -
-   [#106](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/106).
-5. **Nobody can change their password or name while signed in** -
+4. **Nobody can change their password or name while signed in** -
    [#104](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/104). A forgotten
    password can be reset since specs/061 (§4.6).
 
-Four earlier weaknesses were recorded here and are fixed:
+Five earlier weaknesses were recorded here and are fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
@@ -332,3 +360,5 @@ Four earlier weaknesses were recorded here and are fixed:
    and every session of that user is revoked (§4.2).
 4. ~~**Sign-in can be guessed at without any limit.**~~ **Fixed in specs/062 (#105)** - three limits
    (§4.7).
+5. ~~**An email address is never confirmed.**~~ **Fixed in specs/063 (#106)** - a link on registering, and
+   no shop until it is used (§4.8).

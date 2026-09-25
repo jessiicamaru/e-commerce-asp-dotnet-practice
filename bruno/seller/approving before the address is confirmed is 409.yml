@@ -1,0 +1,32 @@
+info:
+  name: approving before the address is confirmed is 409
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/shop-applications/{{applicationId}}/approve"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("says what it waits for", function() {
+          expect(res.body.detail).to.contain("confirmed their email");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/063 (#106). Registering as a seller creates the application at once, but a shop is a public claim in
+  the address's name: it is approved only once the link sent to that address has been used.

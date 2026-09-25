@@ -216,7 +216,8 @@
     "open": "Vào gian hàng",
     "opening": "Đang mở…",
     "applyAgain": "Bạn có thể gửi đơn mới bên dưới.",
-    "failed": "Không gửi được đơn đăng ký."
+    "failed": "Không gửi được đơn đăng ký.",
+    "confirmFirst": "Hãy xác nhận địa chỉ email trước khi đăng ký bán hàng - chúng tôi đã gửi liên kết đến {{email}}. Bạn có thể yêu cầu liên kết mới ở đầu trang."
   },
   "openShop": "Mở gian hàng",
   "review": {

@@ -2,6 +2,7 @@ using Ecommerce.Application.Common;
 using System.Text;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Common;
+using Ecommerce.Application.Auth.Commands.EmailConfirmation;
 using Ecommerce.Application.Common.Constants;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Contracts.Identity;
@@ -30,7 +31,8 @@ public record RegisterSellerCommand(
     string LastName,
     string ShopName,
     string? Description = null,
-    string? Phone = null
+    string? Phone = null,
+    string Language = ""   // the confirmation email's language; the controller reads Accept-Language (specs/063)
 ) : IRequest<AuthResponse>;
 
 public class RegisterSellerCommandValidator : AbstractValidator<RegisterSellerCommand>
@@ -79,8 +81,10 @@ public class RegisterSellerCommandHandler(
     IShopApplicationRepository applications,
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
-    IAuditTrail audit) : IRequestHandler<RegisterSellerCommand, AuthResponse>
+    IAuditTrail audit,
+    EmailConfirmations confirmations) : IRequestHandler<RegisterSellerCommand, AuthResponse>
 {
+    private readonly EmailConfirmations _confirmations = confirmations;
     private readonly IAuditTrail _audit = audit;
 
     private readonly IUserRepository _userRepository = userRepository;
@@ -138,7 +142,10 @@ public class RegisterSellerCommandHandler(
             ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay),
         });
 
-        // One save: the account, the application, the audit entry and the session commit together.
+        // The link to confirm the address (specs/063): the shop is approved only once it is used.
+        await _confirmations.StageAsync(user, request.Language, DateTime.UtcNow, cancellationToken);
+
+        // One save: the account, the application, the audit entry, the link and the session commit together.
         await _userRepository.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse(
@@ -148,7 +155,8 @@ public class RegisterSellerCommandHandler(
             user.LastName,
             accessToken,
             refreshTokenString,
-            user.Roles.Select(role => role.Name).ToList()
+            user.Roles.Select(role => role.Name).ToList(),
+            user.EmailConfirmed
         );
     }
 }
