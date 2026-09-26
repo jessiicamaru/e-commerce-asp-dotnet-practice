@@ -38,6 +38,12 @@ public class User
 
     public string? BanReason { get; set; }
 
+    /// <summary>
+    /// The language the person last used the shop in (specs/083) - from their registration, sign-in or session
+    /// renewal. What an email about them is written in when its sender cannot know. Null: never said.
+    /// </summary>
+    public string? Language { get; set; }
+
     public bool IsLocked(DateTime now) => LockedUntil is { } until && until > now;
 
     public bool IsBanned => BannedAt is not null;

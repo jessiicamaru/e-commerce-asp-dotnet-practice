@@ -1,5 +1,6 @@
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Domain.Enums;
@@ -25,11 +26,12 @@ internal static class FulfilmentStep
         string? trackingReference,
         CancellationToken cancellationToken,
         IAuditTrail? audit = null,
-        INotifier? notifier = null)
+        INotifier? notifier = null,
+        IEmailSender? email = null)
     {
         var result = await orders.TryMoveShipmentAsync(
             orderId, sellerId: null, from, to, trackingReference, DateTime.UtcNow, cancellationToken,
-            audit is null ? null : ct => ParcelAudit.RecordMoveAsync(audit, notifier, orders, orderId, null, from, to, trackingReference, ct));
+            audit is null ? null : ct => ParcelAudit.RecordMoveAsync(audit, notifier, orders, orderId, null, from, to, trackingReference, ct, email));
 
         switch (result.Outcome)
         {

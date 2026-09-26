@@ -116,6 +116,9 @@ public class ReturnTests
 
         Assert.Equal("Accepted", accepted.Status);
         Assert.Contains(Told(order), n => n.RecipientId == buyer && n.Kind == NotificationKind.ReturnAccepted);
+        // And by email, in the order's language (specs/083).
+        var email = Assert.Single(Emailed(order));
+        Assert.Equal((buyer, "ReturnAccepted", await LanguageAsync(order)), (email.RecipientId, email.Template, email.Language));
     }
 
     [Fact]
@@ -130,6 +133,9 @@ public class ReturnTests
         Assert.Equal(("Refused", "Used, not faulty"), (refused.Status, refused.DecisionReason));
         var notice = Assert.Single(Told(order), n => n.Kind == NotificationKind.ReturnRefused);
         Assert.Equal((buyer, "Used, not faulty"), (notice.RecipientId, notice.Data["reason"]));
+        // The refused-without-a-reason attempt asked for nothing (specs/083).
+        var email = Assert.Single(Emailed(order));
+        Assert.Equal(("ReturnRefused", "Used, not faulty"), (email.Template, email.Data["reason"]));
     }
 
     [Fact]
@@ -232,6 +238,9 @@ public class ReturnTests
 
         await Assert.ThrowsAsync<ConflictException>(() => As(alice, () => SendAsync(new ReceiveSaleReturnCommand(order))));
         Assert.Single(_fixture.Harness.Published.Select<ParcelReturnedEvent>(), e => e.Context.Message.OrderId == order);
+        // One refund email, saying how much, however often the parcel is "received" (specs/083).
+        var refunded = Assert.Single(Emailed(order), e => e.Template == "ReturnRefunded");
+        Assert.Equal((buyer, "2200", "VND"), (refunded.RecipientId, refunded.Data["amount"], refunded.Data["currency"]));
     }
 
     [Fact]
@@ -403,6 +412,19 @@ public class ReturnTests
     {
         await using var scope = _fixture.NewScope();
         return await scope.ServiceProvider.GetRequiredService<OrderDbContext>().ParcelReturns.CountAsync(r => r.ShipmentId == parcel);
+    }
+
+    /// <summary>The emails asked for about an order (specs/083), the acceptance one included when the flow passed through it.</summary>
+    private List<Ecommerce.Contracts.Identity.EmailRequested> Emailed(Guid order) =>
+        _fixture.Harness.Published.Select<Ecommerce.Contracts.Identity.EmailRequested>().Select(x => x.Context.Message)
+            .Where(e => e.Template.StartsWith("Return") && e.Data.GetValueOrDefault("orderId") == order.ToString())
+            .ToList();
+
+    private async Task<string?> LanguageAsync(Guid order)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders
+            .Where(o => o.Id == order).Select(o => o.Language).SingleAsync();
     }
 
     private List<UserNotificationRequested> Told(Guid order) =>

@@ -18,7 +18,7 @@ review before sale), [ratings and reviews](ratings-and-reviews.md) (hiding revie
 
 | Role | Can |
 | :-- | :-- |
-| **Customer** | Nothing staff-related. When locked or banned, is refused at sign-in with the reason and the end date in the API's answer - only after typing the right password. Is told by notification when made or no longer a moderator. |
+| **Customer** | Nothing staff-related. When locked or banned, is refused at sign-in with the reason and the end date in the API's answer - only after typing the right password - and is told by notification and by email, in the language they last used the shop in (specs/083). Is told by notification when made or no longer a moderator. |
 | **Seller** | Reads why a shop application or a product was rejected or taken down, in a notification and on the page; sends a rejected product back for review. |
 | **Moderator** | Opens the console on `/admin/moderation`: how many shops and products wait, and their own recent decisions. Finds people by email or name; locks an account for 1 to 30 days with a reason, and unlocks. Approves or rejects shop applications. Approves, rejects or takes down sellers' products. Hides and restores reviews. |
 | **Administrator** | Everything a moderator can. Grants and revokes `Moderator`. Locks for up to 365 days; bans and lifts bans. Works the fulfilment queue, reads any order, cancels orders, records payouts ([fulfilment](fulfilment-and-delivery.md), [marketplace](marketplace.md)). Reads the whole audit log. Reads the shop's figures at `/admin/overview` ([admin insights](admin-insights.md)). |
@@ -273,9 +273,6 @@ No message is specific to moderation. Staff actions publish, through the acting 
 
 - **A service restarted within an hour of a stop forgets it**, and a token it held lives out its minutes
   there (specs/065).
-- **A lock or ban is told in the app, not by email.** Since specs/059 the person gets an `AccountLocked`
-  or `AccountBanned` notice, readable once the stop ends, and the reason at sign-in (specs/049). Email
-  (specs/060) does not carry it yet.
 - **Nothing closes a shop or removes `Seller`**; locking the account stops the person, not their
   listings. Taking a product down is per product.
 - **The audit log is an administrator's.** A moderator sees only their own Moderation decisions.

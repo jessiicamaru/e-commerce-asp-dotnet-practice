@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Common;
 using System.Text;
 using Ecommerce.Application.Auth.Commands.Register;
@@ -112,6 +113,7 @@ public class RegisterSellerCommandHandler(
             PasswordHash = _passwordHasher.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
+            Language = EmailTemplates.Supported(request.Language),   // what their emails are written in (specs/083)
             Roles = { customerRole },
         };
 

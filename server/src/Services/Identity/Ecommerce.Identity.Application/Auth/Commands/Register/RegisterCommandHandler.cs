@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Common;
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Application.Auth.Commands.EmailConfirmation;
@@ -54,6 +55,7 @@ IJwtTokenGenerator jwtTokenGenerator
             PasswordHash = passwordHash,
             FirstName = request.FirstName,
             LastName = request.LastName,
+            Language = EmailTemplates.Supported(request.Language),   // what their emails are written in (specs/083)
             Roles = { customerRole }
         };
 

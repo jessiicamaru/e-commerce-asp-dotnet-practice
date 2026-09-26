@@ -34,7 +34,22 @@ beforeEach(async () => {
   vi.spyOn(EmailTemplates, 'versions').mockResolvedValue([])
 })
 
+/** Every email the server can send (Identity's `EmailTemplates.Templates`) - specs/060, 061, 063 and 083. */
+const SERVER_TEMPLATES = [
+  'OrderPaid', 'ParcelShipped', 'OrderCancelled', 'ReturnAccepted', 'ReturnRefused', 'ReturnRefunded',
+  'SavedBackInStock', 'PasswordReset', 'EmailConfirmation', 'AccountLocked', 'AccountBanned',
+]
+
 describe('AdminEmailsPage (specs/077)', () => {
+  /** specs/083: eight emails joined the list; one without a name in a language showed its raw key in the menu. */
+  it('names every email the server sends, in both languages', () => {
+    for (const lng of ['en', 'vi']) {
+      for (const name of SERVER_TEMPLATES) {
+        expect(i18n.exists(`admin:emails.template.${name}`, { lng }), `${lng}: ${name}`).toBe(true)
+      }
+    }
+  })
+
   it('opens on the first email in the first language, and says what a security email must keep', async () => {
     vi.spyOn(EmailTemplates, 'list').mockResolvedValue(all())
     const user = userEvent.setup()

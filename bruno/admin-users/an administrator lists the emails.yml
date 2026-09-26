@@ -21,10 +21,20 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("three emails in two languages, each with what it may use", function() {
-          expect(res.body).to.have.length(6);
+        test("eleven emails in two languages, each with what it may use", function() {
+          expect(res.body).to.have.length(22);
           const reset = res.body.find(e => e.template === "PasswordReset" && e.language === "en");
           expect(reset.required).to.include("link");
+        });
+        test("the emails of specs/083 are listed and editable, in both languages", function() {
+          ["ParcelShipped", "OrderCancelled", "ReturnAccepted", "ReturnRefused", "ReturnRefunded",
+           "SavedBackInStock", "AccountLocked", "AccountBanned"].forEach(function(name) {
+            ["vi", "en"].forEach(function(language) {
+              expect(res.body.some(e => e.template === name && e.language === language), name + " " + language).to.equal(true);
+            });
+          });
+          const shipped = res.body.find(e => e.template === "ParcelShipped" && e.language === "en");
+          expect(shipped.placeholders).to.include.members(["shop", "tracking"]);
         });
 
 settings:

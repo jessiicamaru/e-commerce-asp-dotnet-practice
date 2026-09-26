@@ -138,6 +138,14 @@ public class SavedProductTests(CatalogTestFixture fixture) : IDisposable
         Assert.Equal(4, told.Count);   // two shoppers, two flips back in
         Assert.Equal(2, told.Count(n => n.RecipientId == mai));
         Assert.All(told, n => Assert.Equal($"/products/{product.Id}", n.Link));
+
+        // And by email, one per notice (specs/083) - in each saver's language, which only Identity knows.
+        var emailed = Emails(product.Id);
+        Assert.Equal(4, emailed.Count);
+        Assert.Equal(2, emailed.Count(e => e.RecipientId == bao));
+        Assert.All(emailed, e => Assert.Equal(
+            ("SavedBackInStock", Ecommerce.Shared.Email.EmailTemplate.ReadersLanguage, product.Name),
+            (e.Template, e.Language, e.Data["product"])));
     }
 
     [Fact]
@@ -155,9 +163,15 @@ public class SavedProductTests(CatalogTestFixture fixture) : IDisposable
         await SendAsync(new RecordStockAvailabilityCommand(product.Id, true, DateTime.UtcNow, product.Id));
 
         Assert.Empty(Notices(product.Name));
+        Assert.Empty(Emails(product.Id));
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private List<Ecommerce.Contracts.Identity.EmailRequested> Emails(Guid productId) =>
+        _fixture.Harness.Published.Select<Ecommerce.Contracts.Identity.EmailRequested>().Select(x => x.Context.Message)
+            .Where(e => e.Data.GetValueOrDefault("productId") == productId.ToString())
+            .ToList();
 
     private List<UserNotificationRequested> Notices(string productName) =>
         _fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message)

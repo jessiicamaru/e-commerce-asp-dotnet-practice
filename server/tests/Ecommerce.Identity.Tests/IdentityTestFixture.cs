@@ -1,4 +1,5 @@
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using MassTransit;
 using Ecommerce.Application;
@@ -101,6 +102,7 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddMassTransitTestHarness();
         services.AddAuditTrail("identity");
         services.AddNotifier();
+        services.AddEmailSender();
 
         // Email (specs/060): the real queue and dispatcher, and a transport that records instead of sending.
         services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();

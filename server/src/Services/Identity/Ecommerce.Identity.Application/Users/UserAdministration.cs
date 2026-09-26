@@ -4,6 +4,7 @@ using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Constants;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Notifications;
@@ -163,7 +164,8 @@ public class UserAdministrationHandlers(
     ICurrentUser currentUser,
     IAuditTrail audit,
     INotifier notifier,
-    IPublishEndpoint publishEndpoint) :
+    IPublishEndpoint publishEndpoint,
+    IEmailSender email) :
     IRequestHandler<GrantRoleCommand, UserAdminResponse>,
     IRequestHandler<RevokeRoleCommand, UserAdminResponse>,
     IRequestHandler<LockUserCommand, UserAdminResponse>,
@@ -177,6 +179,7 @@ public class UserAdministrationHandlers(
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly IEmailSender _email = email;
 
     public async Task<UserAdminResponse> Handle(GrantRoleCommand request, CancellationToken cancellationToken)
     {
@@ -247,6 +250,13 @@ public class UserAdministrationHandlers(
                 ["until"] = DateTime.SpecifyKind(user.LockedUntil.Value, DateTimeKind.Utc).ToString("o"),
                 ["reason"] = user.LockReason,
             }, cancellationToken: cancellationToken);
+        // And by email (specs/083): signed out, the bell is the one place they cannot look.
+        await _email.SendAsync(user.Id, EmailTemplate.AccountLocked,
+            new Dictionary<string, string>
+            {
+                ["until"] = DateTime.SpecifyKind(user.LockedUntil.Value, DateTimeKind.Utc).ToString("o"),
+                ["reason"] = user.LockReason,
+            }, EmailTemplate.ReadersLanguage, cancellationToken);
         // Every token already issued stops working within seconds, everywhere (specs/065) - with the lock.
         await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "Locked"), cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
@@ -292,6 +302,8 @@ public class UserAdministrationHandlers(
             $"{user.Email} banned", before, Snapshot(user), cancellationToken: cancellationToken);
         await _notifier.NotifyAsync(user.Id, NotificationKind.AccountBanned,
             new Dictionary<string, string> { ["reason"] = user.BanReason! }, cancellationToken: cancellationToken);
+        await _email.SendAsync(user.Id, EmailTemplate.AccountBanned,
+            new Dictionary<string, string> { ["reason"] = user.BanReason! }, EmailTemplate.ReadersLanguage, cancellationToken);
         await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "Banned"), cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
         await _users.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);

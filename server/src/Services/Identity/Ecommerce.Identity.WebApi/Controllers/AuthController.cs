@@ -45,7 +45,7 @@ public class AuthController : ApiControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(command with { Language = RequestLanguage() });
 
         SetRefreshTokenCookie(result.RefreshToken);
 
@@ -133,7 +133,7 @@ public class AuthController : ApiControllerBase
         // No catch-all (issue #28). It used to turn EVERY exception - a database outage included - into
         // "logged out", with the exception's own text as the body. A bad session is now a 401 from the
         // handler; anything else is what it is, through the shared ProblemDetails handler.
-        var result = await Mediator.Send(new RefreshTokenCommand(refreshToken));
+        var result = await Mediator.Send(new RefreshTokenCommand(refreshToken, RequestLanguage()));
 
         SetRefreshTokenCookie(result.RefreshToken);
 

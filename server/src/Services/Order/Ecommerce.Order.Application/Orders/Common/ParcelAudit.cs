@@ -1,6 +1,7 @@
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 
 namespace Ecommerce.Order.Application.Orders.Common;
@@ -25,14 +26,14 @@ public static class ParcelAudit
     /// <summary>The audit entry, and - when the parcel is shipped - the buyer told (specs/042).</summary>
     public static async Task RecordMoveAsync(
         IAuditTrail audit, INotifier? notifier, IOrderRepository orders, Guid orderId, Guid? sellerId,
-        ShipmentStatus from, ShipmentStatus to, string? tracking, CancellationToken cancellationToken)
+        ShipmentStatus from, ShipmentStatus to, string? tracking, CancellationToken cancellationToken, IEmailSender? email = null)
     {
         await RecordAsync(audit, orderId, sellerId, from, to, tracking, cancellationToken);
 
         if (notifier is not null && to == ShipmentStatus.Shipped)
         {
             await OrderNotices.WithFactsAsync(orders, orderId,
-                facts => OrderNotices.ShippedAsync(notifier, facts, sellerId, tracking, cancellationToken), cancellationToken);
+                facts => OrderNotices.ShippedAsync(notifier, email, facts, sellerId, tracking, cancellationToken), cancellationToken);
         }
     }
 }

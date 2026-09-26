@@ -31,6 +31,7 @@ public class ReturnRepository(OrderDbContext context) : IReturnRepository
                 s.Status,
                 s.DeliveredAt,
                 s.Order.Currency,
+                s.Order.Language,
                 // The part's lines: an order's lines belong to the part of their seller (specs/035).
                 Lines = s.Order.Items
                     .Where(i => i.SellerId == s.SellerId)
@@ -42,7 +43,7 @@ public class ReturnRepository(OrderDbContext context) : IReturnRepository
         return row is null
             ? null
             : new ReturnParcel(row.OrderId, row.ShipmentId, row.BuyerId, row.SellerId, row.OrderStatus, row.Status,
-                row.DeliveredAt, row.Currency ?? string.Empty, row.Lines);
+                row.DeliveredAt, row.Currency ?? string.Empty, row.Lines, row.Language ?? string.Empty);
     }
 
     public Task<ParcelReturn?> GetForShipmentAsync(Guid shipmentId, CancellationToken cancellationToken = default) =>

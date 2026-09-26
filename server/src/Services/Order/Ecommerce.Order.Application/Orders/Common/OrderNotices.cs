@@ -43,7 +43,9 @@ public static class OrderNotices
     public static Task FailedAsync(INotifier notifier, OrderNoticeFacts f, CancellationToken ct) =>
         notifier.NotifyAsync(f.BuyerId, NotificationKind.OrderFailed, About(f.OrderId), $"/orders/{f.OrderId}", ct);
 
-    public static Task ShippedAsync(INotifier notifier, OrderNoticeFacts f, Guid? sellerId, string? tracking, CancellationToken ct)
+    /// <param name="email">Null for a caller that tells nobody by email; the buyer's parcel on its way is emailed (specs/083).</param>
+    public static async Task ShippedAsync(
+        INotifier notifier, IEmailSender? email, OrderNoticeFacts f, Guid? sellerId, string? tracking, CancellationToken ct)
     {
         var parcel = f.Parcels.FirstOrDefault(p => p.SellerId == sellerId);
         var data = new Dictionary<string, string>(About(f.OrderId)) { ["tracking"] = tracking ?? string.Empty };
@@ -52,13 +54,20 @@ public static class OrderNotices
             data["shop"] = shop;
         }
 
-        return notifier.NotifyAsync(f.BuyerId, NotificationKind.ParcelShipped, data, $"/orders/{f.OrderId}", ct);
+        await notifier.NotifyAsync(f.BuyerId, NotificationKind.ParcelShipped, data, $"/orders/{f.OrderId}", ct);
+        if (email is not null)
+        {
+            await email.SendAsync(f.BuyerId, EmailTemplate.ParcelShipped, data, f.Language, ct);
+        }
     }
 
-    public static async Task CancelledAsync(INotifier notifier, OrderNoticeFacts f, string by, CancellationToken ct)
+    public static async Task CancelledAsync(INotifier notifier, IEmailSender email, OrderNoticeFacts f, string by, CancellationToken ct)
     {
         await notifier.NotifyAsync(f.BuyerId, NotificationKind.OrderCancelled,
             new Dictionary<string, string>(About(f.OrderId)) { ["by"] = by }, $"/orders/{f.OrderId}", ct);
+        // A whole paid order is refunded in full (specs/039); the email says how much, in the order's language (specs/083).
+        await email.SendAsync(f.BuyerId, EmailTemplate.OrderCancelled,
+            new Dictionary<string, string>(About(f.OrderId)) { ["total"] = Money(f.Total), ["currency"] = f.Currency }, f.Language, ct);
 
         foreach (var seller in f.Sellers)
         {

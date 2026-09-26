@@ -16,6 +16,12 @@ public interface IUserRepository
     /// </summary>
     Task<bool> TryRotateRefreshTokenAsync(string token, RefreshToken replacement, DateTime now, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Remembers the language a person is using the shop in (specs/083): one guarded statement that writes nothing
+    /// when it is already the one on record - a session renewal calls it every few minutes.
+    /// </summary>
+    Task RecordLanguageAsync(Guid userId, string language, CancellationToken cancellationToken = default);
+
     /// <summary>Revokes every still-active refresh token of the user: all their sessions end.</summary>
     Task<int> RevokeAllRefreshTokensAsync(Guid userId, DateTime now, CancellationToken cancellationToken = default);
 

@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Application.Common;
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Application.Auth.SignInThrottling;
@@ -102,6 +103,12 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             UserId = user.Id,
             ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
         });
+
+        // The language they are using the shop in, for the emails that cannot know it (specs/083).
+        if (EmailTemplates.Supported(request.Language) is { } language)
+        {
+            user.Language = language;
+        }
 
         await _audit.RecordAsync(
             AuditCategory.Security, "SignedIn", "User", user.Id.ToString(), $"{user.Email} signed in",
