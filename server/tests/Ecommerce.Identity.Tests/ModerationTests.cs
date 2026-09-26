@@ -225,6 +225,38 @@ public class ModerationTests(IdentityTestFixture fixture)
         await SendAsync(Guid.Empty, new LoginCommand(email, Password));
     }
 
+    /// <summary>#193 (specs/095): a banned seller's shop closes - Catalog is told, in the ban's transaction - and reopens.</summary>
+    [Fact]
+    public async Task Banning_a_seller_closes_their_shop_and_lifting_the_ban_reopens_it()
+    {
+        var seller = await _fixture.ApprovedSellerAsync($"mod-{Guid.NewGuid():N}@example.test", "Closing Soon");
+
+        var closed = await SuspensionsAsync(Admin, new BanUserCommand(seller.Id, "Counterfeits"));
+        var reopened = await SuspensionsAsync(Admin, new LiftBanCommand(seller.Id));
+
+        Assert.Equal((seller.Id, true), (Assert.Single(closed).SellerId, closed[0].Suspended));
+        Assert.Equal((seller.Id, false), (Assert.Single(reopened).SellerId, reopened[0].Suspended));
+        Assert.True(reopened[0].ChangedAt > closed[0].ChangedAt);
+    }
+
+    [Fact]
+    public async Task Banning_somebody_who_does_not_sell_closes_no_shop()
+    {
+        var (id, _) = await NewUserAsync();
+
+        Assert.Empty(await SuspensionsAsync(Admin, new BanUserCommand(id, "Fraud")));
+        Assert.Empty(await SuspensionsAsync(Admin, new LiftBanCommand(id)));
+    }
+
+    /// <summary>A lock is a cooling-off, not a closure (specs/095 D1).</summary>
+    [Fact]
+    public async Task Locking_a_seller_leaves_their_shop_open()
+    {
+        var seller = await _fixture.ApprovedSellerAsync($"mod-{Guid.NewGuid():N}@example.test", "Still Open");
+
+        Assert.Empty(await SuspensionsAsync(Admin, new LockUserCommand(seller.Id, 3, "Cooling off")));
+    }
+
     [Fact]
     public async Task Every_action_is_on_the_record_with_its_diff_and_a_grant_tells_the_person()
     {
@@ -299,6 +331,19 @@ public class ModerationTests(IdentityTestFixture fixture)
         await using var scope = provider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         return await db.Users.Where(u => u.Id == id).Select(u => u.LockReason).SingleAsync();
+    }
+
+    private async Task<List<Ecommerce.Contracts.Identity.SellerSuspensionChangedEvent>> SuspensionsAsync<T>(Guid caller, IRequest<T> request)
+    {
+        await using var provider = _fixture.For(caller, [RoleNames.Admin]);
+        var harness = provider.GetRequiredService<ITestHarness>();
+        await harness.Start();
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+        }
+
+        return harness.Published.Select<Ecommerce.Contracts.Identity.SellerSuspensionChangedEvent>().Select(x => x.Context.Message).ToList();
     }
 
     private async Task<T> SendAsync<T>(Guid caller, IRequest<T> request, params string[] roles)

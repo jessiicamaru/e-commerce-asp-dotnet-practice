@@ -69,6 +69,13 @@ public class Product
     public bool IsActive { get; set; } = true;
 
     /// <summary>
+    /// The seller's shop is closed - their account is banned (#193, specs/095). A copy of Catalog's <c>sellers</c> read
+    /// model, written for all of the seller's products at once when Identity announces it, so that
+    /// <see cref="OnShelf"/> stays a property of the product.
+    /// </summary>
+    public bool SellerSuspended { get; set; }
+
+    /// <summary>
     /// The stored image's type (<c>image/jpeg</c>, <c>image/png</c> or <c>image/webp</c>), decided from
     /// its bytes at upload; <c>null</c> when the product has no image (specs/019).
     /// </summary>
@@ -108,12 +115,12 @@ public class Product
     public bool IsListed => ReviewStatus == ProductReviewStatus.Approved;
 
     /// <summary>
-    /// On the shelf: approved and not withdrawn. The one rule for every public read - the lookup, the listing, its
+    /// On the shelf: approved, not withdrawn, and its seller's shop open (specs/095). The one rule for every public read - the lookup, the listing, its
     /// photographs, reviews and questions - and every shopper's write and every sale (#185, specs/092). Before, reads
     /// asked <see cref="IsListed"/> alone and writes asked both, so a withdrawn product could be opened but not
-    /// reviewed. A query that cannot call this spells it out: <c>ReviewStatus == Approved &amp;&amp; IsActive</c>.
+    /// reviewed. A query that cannot call this spells it out: <c>ReviewStatus == Approved &amp;&amp; IsActive &amp;&amp; !SellerSuspended</c>.
     /// </summary>
-    public bool OnShelf => IsListed && IsActive;
+    public bool OnShelf => IsListed && IsActive && !SellerSuspended;
 
     /// <summary>
     /// The average of the visible reviews and how many there are (specs/046) - kept on the row, recomputed

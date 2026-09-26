@@ -14,5 +14,6 @@ public class SellerConfiguration : IEntityTypeConfiguration<Seller>
         builder.Property(s => s.SellerId).ValueGeneratedNever();
         builder.Property(s => s.ShopName).HasMaxLength(100).IsRequired();
         builder.Property(s => s.ObservedAt).IsRequired();
+        builder.Property(s => s.Suspended).IsRequired().HasDefaultValue(false);
     }
 }

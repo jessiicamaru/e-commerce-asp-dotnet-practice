@@ -323,6 +323,9 @@ public class UserAdministrationHandlers(
         await _email.SendAsync(user.Id, EmailTemplate.AccountBanned,
             new Dictionary<string, string> { ["reason"] = user.BanReason! }, EmailTemplate.ReadersLanguage, cancellationToken);
         await _publishEndpoint.Publish(new AccessTokensRevoked(user.Id, now, "Banned"), cancellationToken);
+        // A banned seller's shop closes (#193, specs/095): Catalog takes their products off the shelf. A lock does not.
+        if (IsSeller(user))
+            await _publishEndpoint.Publish(new SellerSuspensionChangedEvent(user.Id, true, now), cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
         await _users.RevokeAllRefreshTokensAsync(user.Id, now, cancellationToken);
 
@@ -343,11 +346,16 @@ public class UserAdministrationHandlers(
 
             await _audit.RecordAsync(AuditCategory.Moderation, "BanLifted", "User", user.Id.ToString(),
                 $"{user.Email} ban lifted", before, Snapshot(user), cancellationToken: cancellationToken);
+            // And the shop reopens, its products back as they were (specs/095).
+            if (IsSeller(user))
+                await _publishEndpoint.Publish(new SellerSuspensionChangedEvent(user.Id, false, now), cancellationToken);
             await _users.SaveChangesAsync(cancellationToken);
         }
 
         return UserAdminResponse.From(user, now);
     }
+
+    private static bool IsSeller(User user) => user.Roles.Any(r => r.Name == RoleNames.Seller);
 
     private async Task<User> TargetAsync(Guid id, CancellationToken cancellationToken) =>
         await _users.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("User not found.");

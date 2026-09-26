@@ -31,4 +31,14 @@ public class Seller
     /// <c>StockAvailabilityChangedEvent</c> already follows.
     /// </summary>
     public DateTime ObservedAt { get; set; }
+
+    /// <summary>
+    /// The shop is closed because its seller is banned (#193, specs/095). ⚠️ This DOES decide something - the seller's
+    /// products leave the shelf - and it is a read model on purpose: a few seconds' lag sells a banned seller's product
+    /// a little longer, which staff can cancel, whereas asking Identity would make every listing depend on it (D2).
+    /// </summary>
+    public bool Suspended { get; set; }
+
+    /// <summary>When Identity decided the suspension; the ordering guard, separate from the name's.</summary>
+    public DateTime? SuspensionChangedAt { get; set; }
 }

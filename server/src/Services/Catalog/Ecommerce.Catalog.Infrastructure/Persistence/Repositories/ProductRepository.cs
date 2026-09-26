@@ -230,6 +230,13 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         });
     }
 
+    public Task<List<Product>> GetOnSaleBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
+        // Product.OnShelf and in stock, spelled out for SQL.
+        _context.Products.AsNoTracking()
+            .Where(p => p.SellerId == sellerId && p.ReviewStatus == ProductReviewStatus.Approved && p.IsActive
+                && !p.SellerSuspended && p.Availability)
+            .ToListAsync(cancellationToken);
+
     private sealed class RollupFlip
     {
         public bool Was { get; init; }
@@ -278,7 +285,7 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         if (listedOnly)
         {
             // Product.OnShelf, spelled out for SQL (specs/092).
-            query = query.Where(p => p.ReviewStatus == ProductReviewStatus.Approved && p.IsActive);
+            query = query.Where(p => p.ReviewStatus == ProductReviewStatus.Approved && p.IsActive && !p.SellerSuspended);
         }
 
         if (sellerId.HasValue)

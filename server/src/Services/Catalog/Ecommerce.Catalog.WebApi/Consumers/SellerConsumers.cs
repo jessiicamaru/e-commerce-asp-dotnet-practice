@@ -23,6 +23,20 @@ public class SellerRegisteredConsumer(ISender mediator) : IConsumer<SellerRegist
 }
 
 /// <summary>
+/// A seller was banned or the ban lifted: their shop closes or reopens (#193, specs/095). Idempotent - the timestamp guard
+/// makes a redelivery or an overtaken decision change nothing.
+/// </summary>
+public class SellerSuspensionChangedConsumer(ISender mediator) : IConsumer<SellerSuspensionChangedEvent>
+{
+    private readonly ISender _mediator = mediator;
+
+    public async Task Consume(ConsumeContext<SellerSuspensionChangedEvent> context) =>
+        await _mediator.Send(
+            new RecordSellerSuspensionCommand(context.Message.SellerId, context.Message.Suspended, context.Message.ChangedAt),
+            context.CancellationToken);
+}
+
+/// <summary>
 /// A shop changed its name. <b>No product is touched</b> - that is the point of the read model.
 /// </summary>
 public class SellerRenamedConsumer(ISender mediator) : IConsumer<SellerRenamedEvent>

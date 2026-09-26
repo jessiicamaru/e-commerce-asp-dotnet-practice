@@ -171,6 +171,9 @@ public interface IProductRepository : ILiveImageKeys
     /// </returns>
     Task<bool> RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default);
 
+    /// <summary>A seller's products that a shopper can buy now - on the shelf and in stock (specs/095).</summary>
+    Task<List<Product>> GetOnSaleBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Saves what the caller staged, recomputes the product's rollup, and - only when that flipped it back in
     /// stock - runs <paramref name="whenBackInStock"/> and saves what it staged, all in one transaction (#182,
