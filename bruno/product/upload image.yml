@@ -28,8 +28,8 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("the product now carries a versioned image address", function() {
-          expect(res.body.imageUrl).to.match(/^\/api\/products\/[0-9a-f-]+\/image\?v=\d+$/);
+        test("the product now carries a versioned image address, with the image's own key (specs/081)", function() {
+          expect(res.body.imageUrl).to.match(/^\/api\/products\/[0-9a-f-]+\/image\?v=\d+&k=[0-9a-f]{32}$/);
         });
 
 settings:
