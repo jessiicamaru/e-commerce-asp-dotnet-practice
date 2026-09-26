@@ -24,6 +24,14 @@ runtime:
           expect(dong[0].orders).to.be.at.least(1);
           expect(res.body.days.length).to.be.at.least(1);
         });
+        test("every day counted is one of the shop's days the response names (specs/082)", function() {
+          expect(res.body.firstDay).to.match(/^\d{4}-\d{2}-\d{2}$/);
+          res.body.days.forEach(function(d) {
+            expect(d.day >= res.body.firstDay && d.day <= res.body.lastDay).to.equal(true);
+          });
+          // Asia/Ho_Chi_Minh is UTC+7 with no daylight saving: its midnight is 17:00 UTC the day before.
+          expect(Date.parse(res.body.from) + 7 * 3600000).to.equal(Date.parse(res.body.firstDay));
+        });
         test("never summed across currencies", function() {
           var currencies = res.body.totals.map(function(t) { return t.currency; });
           expect(new Set(currencies).size).to.equal(currencies.length);

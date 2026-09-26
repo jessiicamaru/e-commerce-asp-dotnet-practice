@@ -10,7 +10,7 @@ works is a test that fails when it does not.
 | :-- | :-- | :-- | :-- | :-- |
 | Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 790 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
 | Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 453 tests in 81 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
-| API collection | Bruno CLI | `bruno/` | 267 requests, 433 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
+| API collection | Bruno CLI | `bruno/` | 267 requests, 435 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Browser end to end | Playwright (Edge locally, Chromium in CI) | `client/e2e/` | 4 flows | A page and the API it calls drifting apart: a gateway route missing, a field renamed, a toast that never shows |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
