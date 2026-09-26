@@ -126,6 +126,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [069](../../specs/069-vouchers/) | Vouchers (server) | #153 | #108 part 1: platform and shop vouchers made of conditions, targets and amounts per currency; priced by the checkout's own code, tax after discount; uses claimed with the order and given back by a failed or cancelled one; the seller pays for their own |
 | [070](../../specs/070-voucher-screens/) | Vouchers (screens) | #154 | #108 part 2: codes at checkout, tried with the server before they are kept; vouchers named on the order; `/shop/vouchers` and `/admin/vouchers` to create, list and disable |
 | [071](../../specs/071-orchestrator-health/) | Orchestrator health | #155 | #115: `/health` with the saga database and the broker, routed by the gateway; compose, CI and verify-saga wait for it |
+| [072](../../specs/072-revenue-paid-day/) | Revenue on the paid day | #156 | #116: `orders.PaidAt` written by the settlement; every insight dates a sale by `PaidAt ?? CreatedAt` |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.
