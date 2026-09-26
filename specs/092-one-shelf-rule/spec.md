@@ -2,7 +2,7 @@
 
 **Feature Branch**: `092-one-shelf-rule` | **Created**: 2026-09-27 | **Issue**: #185
 
-**Status**: Draft
+**Status**: Merged (#191, 2026-09-27)
 
 **Input**: Issue #185 - "off the shelf is IsListed for reads but IsListed and IsActive for writes".
 

@@ -19,6 +19,7 @@ using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Notifications;
 using MassTransit.Testing;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -68,6 +69,36 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
         var product = await CreateAsync();
 
         Assert.Equal("Approved", product.ReviewStatus);
+        // As STORED, not only as answered (specs/093): the enum's default is Approved, so a model-level default of
+        // Pending would make EF leave the column out of this insert and the database would file it as Pending.
+        Assert.Equal(ProductReviewStatus.Approved, await StoredStatusAsync(product.Id));
+    }
+
+    /// <summary>
+    /// #184 (specs/093): an image from before specs/045 - running after a rollback - inserts a product without knowing
+    /// the column, so the database's default decides. It was 'Approved', and a seller's product went on sale unreviewed.
+    /// </summary>
+    [Fact]
+    public async Task A_product_inserted_without_a_review_status_waits_for_review()
+    {
+        var categoryId = Guid.CreateVersion7();
+        var id = Guid.CreateVersion7();
+        var sku = $"OLD{Guid.NewGuid():N}"[..20];
+        await using (var scope = _fixture.NewScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+            context.Categories.Add(new Category { Id = categoryId, Name = $"Old {categoryId:N}"[..20], Slug = $"old-{categoryId:N}"[..20] });
+            await context.SaveChangesAsync();
+            await context.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO products ("Id", "Name", "Price", "Sku", "CategoryId", "IsActive", "CreatedAt", "UpdatedAt", "SellerId")
+                VALUES ({id}, {"Old image " + sku}, {1_000_000m}, {sku}, {categoryId}, true, now(), now(), {_alice})
+                """);
+        }
+
+        Assert.Equal(ProductReviewStatus.Pending, await StoredStatusAsync(id));
+        As(Guid.CreateVersion7(), "Customer");
+        Assert.Null(await SendAsync(new GetProductByIdQuery(id)));
+        Assert.Empty(await SearchAsync(sku));
     }
 
     [Fact]
@@ -227,6 +258,13 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
 
         var sku = $"REV{Guid.NewGuid():N}"[..20];
         return await SendAsync(new CreateProductCommand($"Review {sku}", null, 40_000_000m, sku, categoryId));
+    }
+
+    private async Task<ProductReviewStatus> StoredStatusAsync(Guid productId)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Products.AsNoTracking()
+            .Where(p => p.Id == productId).Select(p => p.ReviewStatus).SingleAsync();
     }
 
     private async Task<List<ProductResponse>> SearchAsync(string name) =>
