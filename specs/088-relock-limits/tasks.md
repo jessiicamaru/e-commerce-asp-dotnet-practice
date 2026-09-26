@@ -25,7 +25,7 @@ description: "Task list for Locking again obeys the unlock rule"
 - [X] T005 Mutation checks (quickstart Scenario 4): call removed, administrator bypass removed, reach removed - each red
 - [X] T006 Identity suite 177/177 against real PostgreSQL; Bruno 275/275 against a rebuilt Identity container
 - [X] T007 Docs: `docs/features/moderation-and-staff.md`, `docs/project/backlog.md`, `docs/project/timeline.md`, CLAUDE.md
-- [ ] T008 Merged as #187, closing #180
+- [X] T008 Merged as #187 (2026-09-27), closing #180
 
 ## Verification
 

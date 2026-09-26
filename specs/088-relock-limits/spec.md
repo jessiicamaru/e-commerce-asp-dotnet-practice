@@ -2,7 +2,7 @@
 
 **Feature Branch**: `088-relock-limits` | **Created**: 2026-09-27 | **Issue**: #180
 
-**Status**: Draft
+**Status**: Merged (#187, 2026-09-27)
 
 **Input**: Issue #180 - "a moderator can shorten an administrator's lock by locking the account again".
 
