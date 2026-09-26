@@ -26,6 +26,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         // specs/045. Text, so a row reads the same to every image that knows the column; required, and
         // the migration fills existing rows with Approved - they were on sale before review existed.
+        // ⚠️ No HasDefaultValue here (specs/093): the column's default is 'Pending' in the database, for images that
+        // do not know the column; declaring it in the model would make EF omit Approved - the enum's CLR default -
+        // from every INSERT, and file the shop's own products as Pending.
         builder.Property(p => p.ReviewStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(p => p.ReviewReason).HasMaxLength(500);
         builder.Ignore(p => p.IsListed);
