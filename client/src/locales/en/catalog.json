@@ -93,5 +93,31 @@
     "browse": "Browse the shop",
     "unavailable": "No longer available",
     "loadFailed": "Could not load what you saved."
+  },
+  "questions": {
+    "title": "Questions",
+    "signIn": "Sign in to ask the seller a question",
+    "ask": "Ask the seller a question",
+    "placeholder": "Does it come with the charger?",
+    "send": "Ask",
+    "sending": "Sending…",
+    "asked": "Your question is posted.",
+    "failed": "Could not send it.",
+    "loadFailed": "Could not load the questions.",
+    "none": "No questions yet.",
+    "answerFrom": "Answer from {{shop}}",
+    "answerFromShop": "Answer from the shop",
+    "unanswered": "Not answered yet.",
+    "edited": "edited",
+    "answer": "Answer",
+    "editAnswer": "Edit answer",
+    "yourAnswer": "Your answer",
+    "sendAnswer": "Post answer",
+    "answered": "Answer posted.",
+    "on": "On {{product}}",
+    "hiddenBecause": "Hidden: {{reason}}",
+    "answerHiddenBecause": "Answer hidden: {{reason}}",
+    "noneWaiting": "No questions are waiting for an answer.",
+    "noneAnswered": "Nothing answered yet."
   }
 }

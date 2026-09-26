@@ -90,5 +90,31 @@
     "browse": "Xem cửa hàng",
     "unavailable": "Không còn bán",
     "loadFailed": "Không tải được danh sách đã lưu."
+  },
+  "questions": {
+    "title": "Hỏi đáp",
+    "signIn": "Đăng nhập để hỏi người bán",
+    "ask": "Hỏi người bán",
+    "placeholder": "Máy có kèm sạc không?",
+    "send": "Gửi câu hỏi",
+    "sending": "Đang gửi…",
+    "asked": "Đã đăng câu hỏi của bạn.",
+    "failed": "Không gửi được.",
+    "loadFailed": "Không tải được phần hỏi đáp.",
+    "none": "Chưa có câu hỏi nào.",
+    "answerFrom": "{{shop}} trả lời",
+    "answerFromShop": "Cửa hàng trả lời",
+    "unanswered": "Chưa có câu trả lời.",
+    "edited": "đã sửa",
+    "answer": "Trả lời",
+    "editAnswer": "Sửa câu trả lời",
+    "yourAnswer": "Câu trả lời của bạn",
+    "sendAnswer": "Đăng câu trả lời",
+    "answered": "Đã đăng câu trả lời.",
+    "on": "Về {{product}}",
+    "hiddenBecause": "Đã ẩn: {{reason}}",
+    "answerHiddenBecause": "Câu trả lời đã ẩn: {{reason}}",
+    "noneWaiting": "Không có câu hỏi nào đang chờ trả lời.",
+    "noneAnswered": "Chưa trả lời câu nào."
   }
 }

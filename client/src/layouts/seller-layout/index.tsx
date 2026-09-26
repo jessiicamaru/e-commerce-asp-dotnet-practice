@@ -1,6 +1,16 @@
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { ChartColumnIcon, LayoutDashboardIcon, PackageIcon, PlusIcon, ReceiptTextIcon, StoreIcon, TicketPercentIcon, WalletIcon } from 'lucide-react'
+import {
+  ChartColumnIcon,
+  LayoutDashboardIcon,
+  MessageCircleQuestionIcon,
+  PackageIcon,
+  PlusIcon,
+  ReceiptTextIcon,
+  StoreIcon,
+  TicketPercentIcon,
+  WalletIcon,
+} from 'lucide-react'
 import { RenameShopDialog } from '@/components/seller/rename-shop-dialog'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/context/auth/useAuth'
@@ -31,6 +41,7 @@ export function SellerLayout() {
     { to: '/shop/insights', end: false, icon: ChartColumnIcon, label: t('menu.insights') },
     { to: '/shop/products', end: false, icon: PackageIcon, label: t('menu.products') },
     { to: '/shop/sales', end: false, icon: ReceiptTextIcon, label: t('menu.sales') },
+    { to: '/shop/questions', end: false, icon: MessageCircleQuestionIcon, label: t('menu.questions') },
     { to: '/shop/payouts', end: false, icon: WalletIcon, label: t('menu.payouts') },
     { to: '/shop/vouchers', end: false, icon: TicketPercentIcon, label: t('menu.vouchers') },
   ]

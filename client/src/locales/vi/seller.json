@@ -102,7 +102,8 @@
     "sales": "Đơn đã bán",
     "payouts": "Thanh toán",
     "insights": "Thống kê",
-    "vouchers": "Mã giảm giá"
+    "vouchers": "Mã giảm giá",
+    "questions": "Hỏi đáp"
   },
   "overview": {
     "subtitle": "Tình hình gian hàng và những việc cần bạn xử lý.",
@@ -285,5 +286,14 @@
     "units_other": "đã bán {{count}}",
     "viewCount_one": "{{count}} lượt xem",
     "viewCount_other": "{{count}} lượt xem"
+  },
+  "questions": {
+    "title": "Hỏi đáp",
+    "subtitle": "Khách hỏi gì về sản phẩm của bạn. Câu trả lời hiện công khai trên trang sản phẩm, dưới tên cửa hàng.",
+    "tab": {
+      "open": "Cần trả lời",
+      "answered": "Đã trả lời"
+    },
+    "yourAnswer": "Bạn trả lời"
   }
 }
