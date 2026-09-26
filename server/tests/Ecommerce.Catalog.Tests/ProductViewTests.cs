@@ -25,14 +25,77 @@ public class ProductViewTests(CatalogTestFixture fixture) : IDisposable
     }
 
     [Fact]
-    public async Task A_shopper_opening_a_product_page_counts_and_twenty_at_once_count_twenty()
+    public async Task Twenty_visitors_at_once_count_twenty()
+    {
+        var product = await ListedAsync();
+        Visitor();
+
+        await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => SendAsync(new RecordProductViewCommand(product.Id, Guid.NewGuid()))));
+
+        Assert.Equal(20, await ViewsAsync(product.Id));
+    }
+
+    /// <summary>
+    /// #173 (specs/086): every call added a view, so a reload - or a loop - inflated "most viewed" at will. One visitor
+    /// opening the page twenty times, all at once, is one view; the claim on the viewer's row is what decides it.
+    /// </summary>
+    [Fact]
+    public async Task One_visitor_opening_the_page_twenty_times_at_once_counts_once()
+    {
+        var product = await ListedAsync();
+        Visitor();
+        var me = Guid.NewGuid();
+
+        await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => SendAsync(new RecordProductViewCommand(product.Id, me))));
+
+        Assert.Equal(1, await ViewsAsync(product.Id));
+    }
+
+    /// <summary>A signed-in person is their token, whatever the body says - a new visitor id each time buys nothing.</summary>
+    [Fact]
+    public async Task A_signed_in_shopper_counts_once_whatever_visitor_id_they_send()
     {
         var product = await ListedAsync();
         As(Guid.CreateVersion7(), "Customer");
 
-        await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => SendAsync(new RecordProductViewCommand(product.Id))));
+        for (var i = 0; i < 5; i++) await SendAsync(new RecordProductViewCommand(product.Id, Guid.NewGuid()));
 
-        Assert.Equal(20, await ViewsAsync(product.Id));
+        Assert.Equal(1, await ViewsAsync(product.Id));
+    }
+
+    /// <summary>An older storefront names nobody: each of its calls still counts, and the gateway limits how many.</summary>
+    [Fact]
+    public async Task A_visitor_naming_nobody_counts_every_time()
+    {
+        var product = await ListedAsync();
+        Visitor();
+
+        for (var i = 0; i < 3; i++) await SendAsync(new RecordProductViewCommand(product.Id));
+
+        Assert.Equal(3, await ViewsAsync(product.Id));
+    }
+
+    /// <summary>Only today's viewers matter: the product's first view of a day drops the rows of the days before.</summary>
+    [Fact]
+    public async Task A_products_viewers_from_earlier_days_go_with_its_first_view_today()
+    {
+        var product = await ListedAsync();
+        await using (var scope = _fixture.NewScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+            db.ProductViewers.Add(new ProductViewer { ProductId = product.Id, Day = new DateOnly(2020, 1, 1), Viewer = new string('A', 64) });
+            await db.SaveChangesAsync();
+        }
+
+        Visitor();
+        await SendAsync(new RecordProductViewCommand(product.Id, Guid.NewGuid()));
+
+        await using var read = _fixture.NewScope();
+        var left = await read.ServiceProvider.GetRequiredService<CatalogDbContext>().ProductViewers
+            .Where(v => v.ProductId == product.Id).ToListAsync();
+        var today = Assert.Single(left);
+        Assert.NotEqual(new DateOnly(2020, 1, 1), today.Day);
+        Assert.Matches("^[0-9A-F]{64}$", today.Viewer);   // a hash, never the id itself
     }
 
     [Fact]
@@ -60,9 +123,9 @@ public class ProductViewTests(CatalogTestFixture fixture) : IDisposable
     {
         var popular = await ListedAsync();
         var quiet = await ListedAsync();
-        As(Guid.CreateVersion7(), "Customer");
-        for (var i = 0; i < 5; i++) await SendAsync(new RecordProductViewCommand(popular.Id));
-        await SendAsync(new RecordProductViewCommand(quiet.Id));
+        Visitor();
+        for (var i = 0; i < 5; i++) await SendAsync(new RecordProductViewCommand(popular.Id, Guid.NewGuid()));
+        await SendAsync(new RecordProductViewCommand(quiet.Id, Guid.NewGuid()));
 
         As(Guid.CreateVersion7(), "Admin");
         var top = await SendAsync(new GetTopViewedQuery(DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(1), 50));
@@ -101,6 +164,14 @@ public class ProductViewTests(CatalogTestFixture fixture) : IDisposable
     }
 
     // ------------------------------------------------------------------ helpers
+
+    /// <summary>Nobody signed in: a visitor to the storefront.</summary>
+    private void Visitor()
+    {
+        var caller = _fixture.Services.GetRequiredService<TestCaller>();
+        caller.Id = null;
+        caller.Roles.Clear();
+    }
 
     private void As(Guid id, string role)
     {

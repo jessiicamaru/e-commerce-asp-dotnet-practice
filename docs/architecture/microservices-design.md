@@ -324,6 +324,7 @@ The gateway ignores a client's `traceparent`, so every trace starts there
 
 Six routes are more specific than `/api/auth/{**catch-all}` and carry a `RateLimiterPolicy`: `sign-in`
 for login, both registrations and reset-password, `email` for forgot-password, and `session` for refresh.
+A seventh, `POST /api/products/{id}/view`, carries `views` (specs/086).
 `app.UseRateLimiter()` runs after routing and before `MapReverseProxy()`, and counts per client IP. The
 IP is the connection's, or the last hop a proxy in `GATEWAY_TRUSTED_PROXIES` wrote. Details and numbers
 are in [security §4.7](../features/auth/security-best-practices.md).

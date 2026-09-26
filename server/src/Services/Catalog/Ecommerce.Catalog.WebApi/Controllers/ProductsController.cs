@@ -18,6 +18,7 @@ using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
 using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Ecommerce.Catalog.WebApi.Controllers;
 
@@ -375,12 +376,15 @@ public class ProductsController : ApiControllerBase
 
     // ---- Views (specs/047).
 
-    /// <summary>The product page was opened. Anonymous, and always 204 - counted or not.</summary>
+    /// <summary>
+    /// The product page was opened. Anonymous, and always 204 - counted or not. The optional body names the visitor
+    /// (specs/086), so opening the page again today adds no view; the gateway limits how often a client may call.
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("{id:guid}/view")]
-    public async Task<IActionResult> View(Guid id)
+    public async Task<IActionResult> View(Guid id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ProductViewRequest? body)
     {
-        await Mediator.Send(new RecordProductViewCommand(id));
+        await Mediator.Send(new RecordProductViewCommand(id, body?.Viewer));
         return NoContent();
     }
 

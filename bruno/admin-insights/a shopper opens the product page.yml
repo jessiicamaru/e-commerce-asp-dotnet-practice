@@ -6,10 +6,28 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/products/{{productId}}/view"
+  body:
+    type: json
+    data: |-
+      {
+        "viewer": "{{visitorId}}"
+      }
   auth: inherit
 
 runtime:
   scripts:
+    - type: before-request
+      code: |-
+        // The storefront's visitor id (specs/086): random, kept by the browser, the same on every page it opens.
+        const hex = "0123456789abcdef";
+        let id = "";
+        for (let i = 0; i < 32; i++) id += hex[Math.floor(Math.random() * 16)];
+        bru.setVar("visitorId", id.slice(0, 8) + "-" + id.slice(8, 12) + "-4" + id.slice(13, 16) + "-8" + id.slice(17, 20) + "-" + id.slice(20));
+    - type: after-response
+      code: |-
+        // The same visitor opens the page again - a reload. It must add nothing (checked by "the most viewed products").
+        const axios = require("axios");
+        await axios.post(bru.interpolate("{{baseUrl}}/api/products/{{productId}}/view"), { viewer: bru.getVar("visitorId") });
     - type: tests
       code: |-
         test("status 204", function() {
@@ -23,4 +41,5 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  The storefront reports each product page it opens. Anonymous; counted per product per day.
+  The storefront reports each product page it opens. Anonymous; counted per product per day, once per visitor
+  (specs/086) - the same visitor opens it twice here, and the next request sees one view.

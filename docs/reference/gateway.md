@@ -1,6 +1,6 @@
 # Gateway routes
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `768bc0e`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92682f1`. Do not edit by hand - change the code and run the script again.
 
 What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno talk only to the gateway. A new endpoint under a new path prefix needs a route here, or it is a 404 that looks like a missing feature. Container destinations are overridden by command-line arguments in `docker-compose.app.yml`; the addresses below are the local-development ones.
 
@@ -17,6 +17,7 @@ What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno t
 | `catalog-health-route` | `/api/catalog/health` | `catalog-cluster` | http://localhost:5057/ | `/health` |  |
 | `catalog-categories-route` | `/api/categories/{**catch-all}` | `catalog-cluster` | http://localhost:5057/ |  |  |
 | `catalog-products-route` | `/api/products/{**catch-all}` | `catalog-cluster` | http://localhost:5057/ |  |  |
+| `catalog-product-view-route` | `/api/products/{id}/view` | `catalog-cluster` | http://localhost:5057/ |  | `views` |
 | `catalog-questions-root-route` | `/api/questions` | `catalog-cluster` | http://localhost:5057/ |  |  |
 | `catalog-questions-route` | `/api/questions/{**catch-all}` | `catalog-cluster` | http://localhost:5057/ |  |  |
 | `catalog-reviews-root-route` | `/api/reviews` | `catalog-cluster` | http://localhost:5057/ |  |  |

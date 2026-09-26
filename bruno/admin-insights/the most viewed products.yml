@@ -23,6 +23,11 @@ runtime:
             expect(res.body[i - 1].views).to.be.at.least(res.body[i].views);
           }
         });
+        test("the product opened twice by one visitor counts once (specs/086)", function() {
+          const ours = res.body.find(function(p) { return p.productId === bru.getVar("productId"); });
+          expect(ours, "the product this run listed and opened").to.not.equal(undefined);
+          expect(ours.views).to.equal(1);
+        });
 
 settings:
   encodeUrl: true

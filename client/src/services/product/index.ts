@@ -2,6 +2,7 @@
 // class and an interface cannot share a name.
 import { http } from '@/config/axios'
 import { CURRENCY_HEADER } from '@/config/money'
+import { visitorId } from '@/utils/shared'
 import type { NewProduct, Page, Product as ProductModel, ProductQuery } from './types'
 
 /** Catalog's products. Browsing needs no account, so every call here is anonymous. */
@@ -103,9 +104,12 @@ export class Product {
     await http.delete(`/products/${productId}`)
   }
 
-  /** The product page was opened (specs/047). Counted by the server only for a shopper; always quiet. */
+  /**
+   * The product page was opened (specs/047). Counted by the server only for a shopper, and once a day per viewer:
+   * this browser's visitor id says who (specs/086). Always quiet.
+   */
   static async recordView(productId: string): Promise<void> {
-    await http.post(`/products/${productId}/view`)
+    await http.post(`/products/${productId}/view`, { viewer: visitorId() })
   }
 
   /** A seller sends their rejected product back to the moderators (specs/045). */

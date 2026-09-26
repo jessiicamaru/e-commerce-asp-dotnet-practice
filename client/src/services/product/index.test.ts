@@ -39,3 +39,44 @@ describe('Product.mine', () => {
     expect(url).not.toContain('searchTerm')
   })
 })
+
+describe('Product.recordView (specs/086)', () => {
+  /** One visitor is one view a day: the same id every time this browser opens a page, whichever product. */
+  it('names this browser the same way every time', async () => {
+    localStorage.clear()
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: undefined })
+
+    await Product.recordView('p1')
+    await Product.recordView('p2')
+
+    const [[url, first], [, second]] = post.mock.calls as unknown as [string, { viewer?: string }][]
+    expect(url).toBe('/products/p1/view')
+    expect(first.viewer).toMatch(/^[0-9a-f-]{36}$/)
+    expect(second.viewer).toBe(first.viewer)
+  })
+
+  it('keeps a visitor id already made, and replaces one that is not an id', async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: undefined })
+    localStorage.setItem('visitor-id', '4f1c2d3e-0000-4000-8000-000000000001')
+    await Product.recordView('p1')
+    localStorage.setItem('visitor-id', 'not-an-id')
+    await Product.recordView('p1')
+
+    const bodies = post.mock.calls.map(([, body]) => (body as { viewer?: string }).viewer)
+    expect(bodies[0]).toBe('4f1c2d3e-0000-4000-8000-000000000001')
+    expect(bodies[1]).not.toBe('not-an-id')
+    expect(localStorage.getItem('visitor-id')).toBe(bodies[1])
+  })
+
+  /** Without storage a fresh id per call would dedupe nothing - send none, and let the gateway limit. */
+  it('sends no visitor id when the browser keeps nothing', async () => {
+    const post = vi.spyOn(http, 'post').mockResolvedValue({ data: undefined })
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('blocked')
+    })
+
+    await Product.recordView('p1')
+
+    expect((post.mock.calls[0][1] as { viewer?: string }).viewer).toBeUndefined()
+  })
+})

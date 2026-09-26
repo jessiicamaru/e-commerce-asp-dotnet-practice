@@ -13,8 +13,12 @@ public record SellerProductInsights(int Views, decimal? RatingAverage, int Ratin
 
 public interface IProductViewRepository
 {
-    /// <summary>One more view of this product today - one statement, safe under any number at once.</summary>
-    Task RecordAsync(Guid productId, DateOnly day, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// One more view of this product today - one statement, safe under any number at once. With a
+    /// <paramref name="viewer"/> (a hash, specs/086) only that viewer's first view of the day counts, and the
+    /// product's viewers from earlier days are dropped in the same statement.
+    /// </summary>
+    Task RecordAsync(Guid productId, DateOnly day, string? viewer, CancellationToken cancellationToken = default);
 
     /// <summary>The most viewed products over [from, to], most first.</summary>
     Task<List<ViewedProduct>> TopAsync(DateOnly from, DateOnly to, int limit, CancellationToken cancellationToken = default);

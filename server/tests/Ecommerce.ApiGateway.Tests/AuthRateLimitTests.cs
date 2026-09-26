@@ -102,6 +102,29 @@ public class AuthRateLimitTests
         }
     }
 
+    /// <summary>
+    /// #173 (specs/086): the product view is anonymous and feeds "most viewed" - a loop could inflate it at will. It has
+    /// an allowance of its own per client; reading products has none, and one client's loop leaves another's views.
+    /// </summary>
+    [Fact]
+    public async Task Counting_product_views_too_fast_is_429_and_nothing_else_about_products_is_limited()
+    {
+        using var gateway = Gateway(("RateLimits:views:PermitLimit", "2"));
+        var client = gateway.CreateClient();
+        var view = $"/api/products/{Guid.NewGuid()}/view";
+
+        Assert.Equal(HttpStatusCode.BadGateway, (await PostAsync(client, view, "10.0.0.1")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadGateway, (await PostAsync(client, $"/api/products/{Guid.NewGuid()}/view", "10.0.0.1")).StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await PostAsync(client, view, "10.0.0.1")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.BadGateway, (await PostAsync(client, view, "10.0.0.2")).StatusCode);
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.Equal(HttpStatusCode.BadGateway, (await SendAsync(client, HttpMethod.Get, view.Replace("/view", ""), "10.0.0.1")).StatusCode);
+            Assert.Equal(HttpStatusCode.BadGateway, (await PostAsync(client, view.Replace("/view", "/saved"), "10.0.0.1")).StatusCode);
+        }
+    }
+
     /// <summary>Anybody can write X-Forwarded-For: from a peer nobody trusts, a new one each time changes nothing.</summary>
     [Fact]
     public async Task A_forwarded_address_from_an_untrusted_peer_is_ignored()
