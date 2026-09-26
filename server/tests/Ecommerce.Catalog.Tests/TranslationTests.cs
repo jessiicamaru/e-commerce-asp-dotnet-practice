@@ -142,6 +142,28 @@ public class TranslationTests(CatalogTestFixture fixture)
         Assert.Contains(await SearchAsync(marker, "vi"), p => p.Id == product.Id);
     }
 
+    /// <summary>
+    /// The search is a LIKE since specs/074 (#113) - so a term's own % and _ are escaped and mean themselves:
+    /// "50%" is not "50 followed by anything", and "a_b" is not "a, any one character, b".
+    /// </summary>
+    [Fact]
+    public async Task A_term_with_percent_or_underscore_is_matched_literally()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        var percent = await CreateProductAsync($"Sale 50% {marker}", null);
+        var fifty = await CreateProductAsync($"Sale 5000 {marker}", null);
+        var underscore = await CreateProductAsync($"Lens a_b {marker}", null);
+        var axb = await CreateProductAsync($"Lens axb {marker}", null);
+
+        var byPercent = await SearchAsync($"50% {marker}", "en");
+        var byUnderscore = await SearchAsync($"a_b {marker}", "en");
+
+        Assert.Equal([percent.Id], byPercent.Select(p => p.Id));
+        Assert.DoesNotContain(byPercent, p => p.Id == fifty.Id);
+        Assert.Equal([underscore.Id], byUnderscore.Select(p => p.Id));
+        Assert.DoesNotContain(byUnderscore, p => p.Id == axb.Id);
+    }
+
     [Fact]
     public async Task Deleting_a_product_takes_its_translations_with_it()
     {

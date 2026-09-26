@@ -29,6 +29,10 @@ public class CatalogDbContext : DbContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(CatalogDbContext).Assembly);
 
+        // The search's IMMUTABLE unaccent (specs/074): what the trigram indexes are built over.
+        modelBuilder.HasDbFunction(typeof(SearchFunctions).GetMethod(nameof(SearchFunctions.Unaccent))!)
+            .HasName("f_unaccent");
+
         modelBuilder.AddTransactionalOutboxEntities();
     }
 }
