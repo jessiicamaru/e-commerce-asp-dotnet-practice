@@ -61,6 +61,24 @@ export interface UserBrief {
   lastName: string
 }
 
+/** One of a seller's products: views in the period, and its rating over its visible reviews (specs/068). */
+export interface SellerProductInsight {
+  productId: string
+  name: string
+  views: number
+  ratingAverage: number | null
+  ratingCount: number
+}
+
+/** A seller's products at a glance: all their views, their rating over every review, the most viewed. */
+export interface SellerProductInsights {
+  views: number
+  /** Weighted by each product's review count; null when nobody has reviewed anything yet. */
+  ratingAverage: number | null
+  ratingCount: number
+  products: SellerProductInsight[]
+}
+
 /** A period the Overview offers, in days back from now. */
 export const PERIODS = [7, 30, 90] as const
 export type Period = (typeof PERIODS)[number]

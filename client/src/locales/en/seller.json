@@ -100,7 +100,8 @@
     "overview": "Overview",
     "products": "Products",
     "sales": "Sales",
-    "payouts": "Payouts"
+    "payouts": "Payouts",
+    "insights": "Insights"
   },
   "overview": {
     "subtitle": "How your shop is doing, and what needs you.",
@@ -267,5 +268,22 @@
     "receiveBody": "The buyer is refunded the goods and their tax, and the units go back in stock. It cannot be undone.",
     "receiveConfirm": "Yes, it came back",
     "receivedDone": "Received - the buyer is being refunded."
+  },
+  "insights": {
+    "title": "Insights",
+    "subtitle": "How your shop is doing: what you sold, what sells, what people look at. Money is shown per currency and counts your own goods before tax - not delivery, and not a parcel returned and refunded.",
+    "revenue": "Your revenue",
+    "noRevenue": "No sales in this period.",
+    "topSelling": "Selling most",
+    "topViewed": "Looked at most",
+    "views": "Product views",
+    "rating": "Rating",
+    "noRating": "No reviews yet",
+    "reviews_one": "{{count}} review",
+    "reviews_other": "{{count}} reviews",
+    "units_one": "{{count}} sold",
+    "units_other": "{{count}} sold",
+    "viewCount_one": "{{count}} view",
+    "viewCount_other": "{{count}} views"
   }
 }

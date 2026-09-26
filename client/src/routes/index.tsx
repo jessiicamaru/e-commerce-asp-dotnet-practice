@@ -10,6 +10,7 @@ import { CatalogPage } from '@/pages/catalog'
 import { CheckoutPage } from '@/pages/checkout'
 import { OrderPage } from '@/pages/order'
 import { OrdersPage } from '@/pages/orders'
+import { ShopInsightsPage } from '@/pages/shop-insights'
 import { ProductPage } from '@/pages/product'
 import { ShopPage } from '@/pages/shop'
 import { SellerProductPage } from '@/pages/shop-product'
@@ -135,6 +136,7 @@ export function AppRoutes() {
             <Route path="sales" element={<ShopSalesPage />} />
             <Route path="sales/:id" element={<ShopSalePage />} />
             <Route path="payouts" element={<ShopPayoutsPage />} />
+            <Route path="insights" element={<ShopInsightsPage />} />
           </Route>
           {/* The administrator's console (specs/038). Same bargain as /shop: RequireRole draws, the
               server decides. */}

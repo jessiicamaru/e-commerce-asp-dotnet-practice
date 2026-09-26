@@ -23,3 +23,15 @@ export function useInsights(from: string, to: string, currency: string) {
 
   return { revenue, products, buyers, viewed, stats, people }
 }
+
+/**
+ * A seller's own insights (specs/068): two services, each answering from its own data - Order for money and
+ * what sold, Catalog for views and ratings - composed here, as the admin's Overview is.
+ */
+export function useSellerInsights(from: string, to: string) {
+  const revenue = useQuery({ queryKey: queryKeys.insights('seller-revenue', from), queryFn: () => Insights.sellerRevenue(from, to) })
+  const products = useQuery({ queryKey: queryKeys.insights('seller-products', from), queryFn: () => Insights.sellerTopProducts(from, to, TOP) })
+  const mine = useQuery({ queryKey: queryKeys.insights('seller-mine', from), queryFn: () => Insights.mine(from, to, TOP) })
+
+  return { revenue, products, mine }
+}

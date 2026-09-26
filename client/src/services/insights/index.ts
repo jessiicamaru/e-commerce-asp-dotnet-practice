@@ -1,6 +1,6 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
-import type { Revenue, TopBuyer, TopProduct, UserBrief, UserStats, ViewedProduct } from './types'
+import type { Revenue, SellerProductInsights, TopBuyer, TopProduct, UserBrief, UserStats, ViewedProduct } from './types'
 
 const range = (from: string, to: string) => `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
 
@@ -27,6 +27,26 @@ export class Insights {
 
   static async topViewed(from: string, to: string, limit: number): Promise<ViewedProduct[]> {
     const { data } = await http.get<ViewedProduct[]>(`/products/insights/top-viewed?${range(from, to)}&limit=${limit}`)
+    return data
+  }
+
+  /**
+   * The signed-in seller's own revenue (specs/068): their lines only, never an order's total. There is no
+   * seller id to send - the token says whose, as with `/orders/sales`.
+   */
+  static async sellerRevenue(from: string, to: string): Promise<Revenue> {
+    const { data } = await http.get<Revenue>(`/orders/sales/insights/revenue?${range(from, to)}`)
+    return data
+  }
+
+  static async sellerTopProducts(from: string, to: string, limit: number): Promise<TopProduct[]> {
+    const { data } = await http.get<TopProduct[]>(`/orders/sales/insights/top-products?${range(from, to)}&limit=${limit}`)
+    return data
+  }
+
+  /** The signed-in seller's products: views, ratings, the most viewed - from Catalog, which keeps both. */
+  static async mine(from: string, to: string, limit: number): Promise<SellerProductInsights> {
+    const { data } = await http.get<SellerProductInsights>(`/products/insights/mine?${range(from, to)}&limit=${limit}`)
     return data
   }
 
