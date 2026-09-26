@@ -126,6 +126,9 @@ public class NotificationWordingTests(ActivityTestFixture fixture) : IAsyncLifet
         Assert.Equal(NotificationContract.Kinds.Count, overview.Kinds.Count);
         Assert.Equal(["order", "total"], overview.Kinds.Single(k => k.Kind == "OrderPaid").Placeholders);
         Assert.Equal(["count", "product", "rating"], overview.Kinds.Single(k => k.Kind == "NewReview").Placeholders);
+        // An optional key fills a placeholder too: a parcel names its shop when it has one, and the storefront words
+        // the shop's own otherwise.
+        Assert.Equal(["order", "shop", "tracking"], overview.Kinds.Single(k => k.Kind == "ParcelShipped").Placeholders);
         Assert.Empty(overview.Kinds.Single(k => k.Kind == "ModeratorGranted").Placeholders);
         Assert.Equal("OrderCancelled", Assert.Single(overview.Entries).Key);
     }
