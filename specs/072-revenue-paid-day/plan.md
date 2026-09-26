@@ -4,13 +4,15 @@
 
 ## Design
 
-- `Order.PaidAt` (`DateTime?`). Migration `AddOrderPaidAt` adds a nullable column (expand only), and an index
-  on `PaidAt` for the reports' range.
+- `Order.PaidAt` (`DateTime?`). Migration `AddOrderPaidAt` adds a nullable column (expand only). There is no
+  index: the reports filter on `COALESCE("PaidAt", "CreatedAt")`, which a plain index cannot serve, and the
+  reports already scan the period (#113 is the index work).
 - `OrderRepository.SettleAsync`: the same guarded `UPDATE ... WHERE "Status" = 'Submitted'` also sets `PaidAt`
   to `settledAt` when it settles to `Paid`, and leaves it null when the order failed.
 - `OrderInsights`: `SoldIn` filters on `(o.PaidAt ?? o.CreatedAt)`. Revenue groups by that date's day.
-  `SellerLinesIn` takes its `Day` from it too. There is one expression, `SaleDay`, so the filter and the grouping
-  cannot disagree: that disagreement is exactly what #125 was.
+  `SellerLinesIn` takes its `Day` from it too. The same `PaidAt ?? CreatedAt` is written in all three places,
+  because EF cannot share one expression into an anonymous `GroupBy` key. `RevenueDayTests` holds them together:
+  a period and its days that disagree is exactly what #125 was.
 - `OrderDetailResponse.PaidAt`, mapped in `OrderMapping.ToDetail`.
 
 ## Research

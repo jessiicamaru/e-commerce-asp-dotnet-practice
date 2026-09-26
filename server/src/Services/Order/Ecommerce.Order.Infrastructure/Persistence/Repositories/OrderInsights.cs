@@ -16,13 +16,19 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
 
     private readonly OrderDbContext _context = context;
 
+    /// <summary>
+    /// Sold orders in the period, dated by when they were PAID (specs/072, #116) - or, for an order from before
+    /// that was recorded, when it was placed. ⚠️ The same <c>PaidAt ?? CreatedAt</c> is written in the grouping
+    /// below and in <see cref="SellerLinesIn"/>: the period and the day an order is counted on must agree (#125),
+    /// and EF cannot share one expression into an anonymous GroupBy key, so InsightsTests holds them together.
+    /// </summary>
     private IQueryable<Domain.Entities.Order> SoldIn(DateTime from, DateTime to) =>
-        _context.Orders.AsNoTracking().Where(o => Sold.Contains(o.Status) && o.CreatedAt >= from && o.CreatedAt < to);
+        _context.Orders.AsNoTracking().Where(o => Sold.Contains(o.Status) && (o.PaidAt ?? o.CreatedAt) >= from && (o.PaidAt ?? o.CreatedAt) < to);
 
     public async Task<List<RevenueRow>> RevenueByDayAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var rows = await SoldIn(from, to)
-            .GroupBy(o => new { o.CreatedAt.Date, o.Currency })
+            .GroupBy(o => new { (o.PaidAt ?? o.CreatedAt).Date, o.Currency })
             .Select(g => new { g.Key.Date, g.Key.Currency, Revenue = g.Sum(o => o.TotalAmount), Orders = g.Count() })
             .ToListAsync(cancellationToken);
 
@@ -61,7 +67,7 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
             .Select(x => new SellerLine
             {
                 OrderId = x.Order.Id,
-                Day = x.Order.CreatedAt.Date,
+                Day = (x.Order.PaidAt ?? x.Order.CreatedAt).Date,
                 CreatedAt = x.Order.CreatedAt,
                 Currency = x.Order.Currency,
                 ProductId = x.Item.ProductId,
