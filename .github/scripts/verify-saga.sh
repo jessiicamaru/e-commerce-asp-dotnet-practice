@@ -224,6 +224,22 @@ CATEGORY_ID="$(post_json "$CATALOG_URL/api/categories" \
   "$ADMIN_TOKEN" | json_field id)"
 [ -n "$CATEGORY_ID" ] || fail "Could not create a category. The administrator signed in, so this is Catalog rejecting the request rather than an authorization problem."
 
+# Whatever happens next - pass, fail, stall - this run's product and category go at the end
+# (specs/073, #118): every run used to leave both behind, and enough leftovers pushed a later
+# run's own product off the first page of a search. Through Catalog's own DELETE, as the
+# administrator. A delete that fails is said, never fatal, and the script's own exit status is
+# kept: a trap on EXIT that does not call exit leaves it as it was.
+cleanup() {
+  local code
+  if [ -n "${PRODUCT_ID:-}" ]; then
+    code="$(status -X DELETE -H "Authorization: Bearer $ADMIN_TOKEN" "$CATALOG_URL/api/products/$PRODUCT_ID")"
+    echo "      cleanup: product $PRODUCT_ID -> HTTP $code"
+  fi
+  code="$(status -X DELETE -H "Authorization: Bearer $ADMIN_TOKEN" "$CATALOG_URL/api/categories/$CATEGORY_ID")"
+  echo "      cleanup: category $CATEGORY_ID -> HTTP $code"
+}
+trap cleanup EXIT
+
 # The catalogue price, named once so the order assertion can compare against it
 # rather than against a number repeated in two places.
 #

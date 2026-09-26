@@ -67,8 +67,11 @@ ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py        # say
 ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py --yes  # does it
 ```
 
-`verify-saga.sh`, `verify-auth.sh` and Bruno each create a real product on every run and none of them
-clean up; there were 97 of them against 14 cameras. The cleaner **keeps what `cameras.json` names and
+`verify-saga.sh`, `verify-auth.sh` and Bruno each create a real product on every run, and **since specs/073
+(#118) each removes what it made**: the scripts in a `trap ... EXIT` (a failed run cleans up too, and keeps
+its exit status), Bruno in a last `teardown` folder (`seq: 17`, after `seller` at 16 - a folder without an
+`info:` seq runs last, which is how `seller` used to). Before that there were 97 of them against 14 cameras.
+For what older runs left, the cleaner **keeps what `cameras.json` names and
 deletes the rest**, which is the safe way round - a keep list cannot miss a new kind of debris, a
 delete-pattern list can. It goes through `DELETE /api/products/{id}` (Admin, specs/024), which
 announces `ProductDeletedEvent` so Inventory drops the stock rows too.

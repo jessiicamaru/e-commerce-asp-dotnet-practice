@@ -105,9 +105,9 @@ the answer before it can continue. Details: [microservices design](../architectu
 | Database tables (excluding outbox) | 45 ([reference](../reference/data-model.md)) |
 | Service, saga and gateway tests | 731, in 9 projects |
 | Storefront unit tests | 399 |
-| Bruno requests | 229 |
-| Design records (`specs/`) | 60 |
-| Merged pull requests | 77 |
+| Bruno requests | 232 |
+| Design records (`specs/`) | 61 |
+| Merged pull requests | 78 |
 | Published images | 10 - eight services, the gateway and the storefront |
 
 ## Status

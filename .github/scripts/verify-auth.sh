@@ -184,6 +184,14 @@ print(json.dumps({
   )
   [ -n "$auth_product_id" ] || fail "Could not create a product for the order checks."
 
+  # This run's product and category go when the script ends, whatever the outcome (specs/073,
+  # #118) - a delete that fails is said, never fatal, and the exit status is kept.
+  auth_cleanup() {
+    echo "      cleanup: product $auth_product_id -> HTTP $(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $admin_token" "$CATALOG_URL/api/products/$auth_product_id" || true)"
+    echo "      cleanup: category $auth_category_id -> HTTP $(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $admin_token" "$CATALOG_URL/api/categories/$auth_category_id" || true)"
+  }
+  trap auth_cleanup EXIT
+
   # An order is placed THROUGH THE CART now (feature 010): put the product in the
   # customer's cart, then check out with no body. What is bought comes from the
   # cart, who is buying from the token, and what it costs from Catalog.

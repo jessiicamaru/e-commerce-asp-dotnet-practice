@@ -1,0 +1,13 @@
+info:
+  name: teardown
+  type: folder
+  seq: 17
+
+request:
+  auth: inherit
+
+docs: |-
+  Last, always (specs/073, #118) - `seq: 17`, after `seller` (16), whose product it deletes: what this run created goes, so the next run's lists and searches are not
+  pushed around by leftovers - 57 products had piled up by 2026-09-24 and failed a search test. As an
+  administrator, through the same `DELETE` a person uses. Products first, then the category they were in.
+  Customers and orders stay: they are records of what happened, and nothing a later run reads is paged by them.

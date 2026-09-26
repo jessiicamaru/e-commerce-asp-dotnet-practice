@@ -1,0 +1,28 @@
+info:
+  name: delete the product this run listed
+  type: http
+  seq: 1
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/{{productId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("gone: 204, or 404 when something earlier already removed it", function() {
+          expect([204, 404]).to.include(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The product `product/create product` listed. Deleting it announces `ProductDeletedEvent`, so Inventory drops its stock rows too (specs/024).
