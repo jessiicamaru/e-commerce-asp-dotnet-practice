@@ -32,7 +32,8 @@ to buy it.
    - The first answer is `UPDATE ... WHERE "AnsweredAt" IS NULL`.
    - The rewrite is `... WHERE "AnsweredAt" IS NOT NULL AND "AnswerHiddenAt" IS NULL`.
 4. **Only a product on sale can be asked about.** Anything else is the public lookup's 404 (specs/045). A seller
-   asking about their own product gets a 403 in words.
+   asking about their own product gets a 403 in words. Off the shelf, the questions already asked are a 404 too,
+   except to its seller and staff (`ProductReview.MaySee`, specs/081); its seller can still answer them.
 5. **Hidden, never deleted.**
    - A hidden **question** leaves the product page together with its answer, and its asker is told why.
    - A hidden **answer** leaves the question reading as unanswered, and whoever answered is told why.
