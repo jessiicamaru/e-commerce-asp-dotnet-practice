@@ -1,7 +1,7 @@
 info:
   name: checkout
   type: http
-  seq: 5
+  seq: 8
 
 http:
   method: POST
@@ -11,7 +11,8 @@ http:
     data: |-
       {
         "addressId": "{{addressId}}",
-        "shippingOption": "express"
+        "shippingOption": "express",
+        "voucherCodes": ["{{voucherCode}}"]
       }
   auth:
     type: bearer
@@ -40,10 +41,11 @@ runtime:
           const cents = v => Math.round(v * 100);
           expect(cents(b.subtotal) + cents(b.shippingPrice) + cents(b.taxTotal) - cents(b.discountTotal)).to.equal(cents(b.totalAmount));
           expect(b.taxRate).to.be.a("number");
-          expect(b.discountTotal).to.equal(0);
         });
-        test("charged exactly what the quote said", function() {
-          expect(res.body.totalAmount).to.equal(bru.getVar("quoteTotal"));
+        test("charged exactly what the quote with the voucher said, the voucher frozen on the order", function() {
+          expect(res.body.totalAmount).to.equal(bru.getVar("voucherQuoteTotal"));
+          expect(res.body.discountTotal).to.equal(bru.getVar("voucherDiscount"));
+          expect(res.body.vouchers.map(v => v.code)).to.deep.equal([bru.getVar("voucherCode")]);
         });
 
 settings:
@@ -53,8 +55,9 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  The body says **where** (`addressId`, omitted = your default) and **how** (`shippingOption`,
-  required). What is bought comes from the cart, who is buying from the token, and what it costs
+  The body says **where** (`addressId`, omitted = your default), **how** (`shippingOption`,
+  required) and which **voucher codes** to try (specs/069) - here the platform voucher made above, so the
+  claim of a use runs through the gateway with the order it belongs to. What is bought comes from the cart, who is buying from the token, and what it costs
   from Catalog plus the delivery option. Any other field is ignored.
 
   - Empty cart -> **409**; no address and no default -> **409**

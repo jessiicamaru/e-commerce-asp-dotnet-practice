@@ -1,0 +1,38 @@
+info:
+  name: a customer cannot create a voucher
+  type: http
+  seq: 65
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/vouchers"
+  body:
+    type: json
+    data: |-
+      {
+        "code": "CUSTOMER-TRY",
+        "name": "Mine",
+        "benefit": "Percent",
+        "percent": 90,
+        "amounts": [{ "currency": "VND" }]
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Administrators and sellers make vouchers; a customer uses one by its code at checkout.

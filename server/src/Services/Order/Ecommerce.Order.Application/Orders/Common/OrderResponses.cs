@@ -72,8 +72,15 @@ public record OrderItemDetailResponse(
     Guid? VariantId = null,
     string? Sku = null,
     string? OptionSummary = null,
-    string? SellerName = null
+    string? SellerName = null,
+    decimal Discount = 0m
 );
+
+/// <summary>
+/// A voucher used on an order (specs/069), as frozen with it: which, whose, and what it took off in the order's
+/// own currency. <paramref name="IsShop"/> is a seller's own voucher; <paramref name="SellerName"/> names the shop.
+/// </summary>
+public record AppliedVoucherResponse(string Code, string Name, bool IsShop, string? SellerName, string Benefit, decimal Amount);
 
 /// <summary>
 /// One order in full. <paramref name="UserId"/> is echoed because it is always the caller's own, so
@@ -107,7 +114,8 @@ public record OrderDetailResponse(
     string Currency = "",
     string Language = "",
     List<ShipmentResponse>? Shipments = null,
-    string? CancelledBy = null
+    string? CancelledBy = null,
+    List<AppliedVoucherResponse>? Vouchers = null
 );
 
 /// <summary>

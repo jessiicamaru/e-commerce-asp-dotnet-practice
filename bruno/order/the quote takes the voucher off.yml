@@ -1,0 +1,50 @@
+info:
+  name: the quote takes the voucher off
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/quote?addressId={{addressId}}&shippingOption=express&voucherCodes={{voucherCode}}"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.totalAmount !== undefined) {
+          bru.setVar("voucherQuoteTotal", res.body.totalAmount);
+          bru.setVar("voucherDiscount", res.body.discountTotal);
+        }
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the voucher is named and its amount is the discount part", function() {
+          const b = res.body;
+          expect(b.vouchers).to.have.length(1);
+          expect(b.vouchers[0].code).to.equal(bru.getVar("voucherCode"));
+          expect(b.vouchers[0].isShop).to.equal(false);
+          expect(b.discountTotal).to.equal(b.vouchers[0].amount);
+          expect(b.discountTotal).to.be.above(0);
+          expect(b.discountTotal).to.be.at.most(50000);
+        });
+        test("the parts still add up, with tax on what is paid", function() {
+          const b = res.body;
+          expect(b.subtotal + b.shippingPrice + b.taxTotal - b.discountTotal).to.equal(b.totalAmount);
+          expect(b.totalAmount).to.be.below(bru.getVar("quoteTotal"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The same quote as `checkout quote`, with the code the administrator just made (specs/069). The server works out
+  what it takes off; the request only names the code. The cart is left as it is, so `checkout` below still
+  charges the voucher-free total it asserts.

@@ -38,6 +38,7 @@ public static class DependencyInjection
 
         // Returns (specs/066): the window is also the hold on a seller's money, so a bad value refuses to start.
         services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();
+        services.AddScoped<Ecommerce.Order.Application.Vouchers.IVoucherRepository, VoucherRepository>();
         services.AddOptions<Ecommerce.Order.Application.Returns.ReturnOptions>()
             .Bind(configuration.GetSection(Ecommerce.Order.Application.Returns.ReturnOptions.SectionName))
             .Validate(o => o.WindowDays >= 1, "Returns:WindowDays must be at least 1.")

@@ -2,7 +2,7 @@
 
 Since specs/066 (#107), a buyer can send a delivered parcel back. They ask within 7 days of delivery. The
 parcel's seller decides, or an administrator decides for the shop's own parcel. A refused return can be
-disputed. Once the parcel is back, the buyer is refunded its goods and their tax, and its units return
+disputed. Once the parcel is back, the buyer is refunded what they paid for its goods and their tax, and its units return
 to the shelf, each exactly once.
 
 The server came in #149 (specs/066) and the storefront screens in #151 (specs/067).
@@ -53,7 +53,8 @@ stateDiagram-v2
   also carry `AND "DecidedAt" > now - window`. The step runs in a transaction with its `stage`: the audit
   entry, the notice and, for "received", the event. A second or late step changes no row and answers 409.
 - **Receiving it triggers the refund and the restock.** "Received" computes the refund from the prices the
-  order froze: the parcel's lines (the `order_items` of that seller), `UnitPrice × Quantity + TaxAmount`.
+  order froze: the parcel's lines (the `order_items` of that seller), `UnitPrice × Quantity - discount + TaxAmount` -
+  what was paid, after any voucher (specs/069).
   The delivery is not refunded. It publishes `ParcelReturnedEvent(ReturnId, OrderId, ShipmentId, Items,
   Amount, Currency)`.
   - **Payment** (`RefundReturnedParcelConsumer`) records a refund of that amount. The row is tied to the

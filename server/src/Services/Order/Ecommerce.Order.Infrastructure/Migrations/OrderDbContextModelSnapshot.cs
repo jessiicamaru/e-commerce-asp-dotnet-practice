@@ -110,7 +110,7 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_orders_commission_rate_range", "\"CommissionRate\" IS NULL OR (\"CommissionRate\" >= 0 AND \"CommissionRate\" < 1)");
 
-                            t.HasCheckConstraint("CK_orders_no_discount_yet", "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" = 0");
+                            t.HasCheckConstraint("CK_orders_discount_not_negative", "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" >= 0");
 
                             t.HasCheckConstraint("CK_orders_parts_sum_to_total", "\"Subtotal\" IS NULL OR \"Subtotal\" + COALESCE(\"ShippingPrice\", 0) + \"TaxTotal\" - \"DiscountTotal\" = \"TotalAmount\"");
 
@@ -131,6 +131,12 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("PlatformDiscount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -148,6 +154,12 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Property<string>("SellerName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("ShopDiscount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("Sku")
                         .HasMaxLength(50)
@@ -170,7 +182,10 @@ namespace Ecommerce.Order.Infrastructure.Migrations
 
                     b.HasIndex("SellerId");
 
-                    b.ToTable("order_items", (string)null);
+                    b.ToTable("order_items", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_order_items_discounts", "\"ShopDiscount\" >= 0 AND \"PlatformDiscount\" >= 0 AND \"ShopDiscount\" + \"PlatformDiscount\" <= \"UnitPrice\" * \"Quantity\"");
+                        });
                 });
 
             modelBuilder.Entity("Ecommerce.Order.Domain.Entities.OrderShipment", b =>
@@ -341,6 +356,211 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         {
                             t.HasCheckConstraint("CK_payouts_covers_something", "\"PartCount\" > 0");
                         });
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Voucher", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Benefit")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("PerCustomerLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("Percent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<Guid?>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("TotalLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UsedCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("SellerId", "CreatedAt");
+
+                    b.ToTable("vouchers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_vouchers_used_count", "\"UsedCount\" >= 0 AND (\"TotalLimit\" IS NULL OR \"UsedCount\" <= \"TotalLimit\")");
+                        });
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherAmount", b =>
+                {
+                    b.Property<Guid>("VoucherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<decimal?>("FixedValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("MaxDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("MinSubtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("VoucherId", "Currency");
+
+                    b.ToTable("voucher_amounts", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherCondition", b =>
+                {
+                    b.Property<Guid>("VoucherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int?>("Value")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VoucherId", "Type");
+
+                    b.ToTable("voucher_conditions", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherCustomerUse", b =>
+                {
+                    b.Property<Guid>("VoucherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Uses")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VoucherId", "CustomerId");
+
+                    b.ToTable("voucher_customer_uses", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_voucher_customer_uses_uses", "\"Uses\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherRedemption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Benefit")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReleasedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SellerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VoucherId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("VoucherId", "OrderId")
+                        .IsUnique();
+
+                    b.ToTable("voucher_redemptions", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherTarget", b =>
+                {
+                    b.Property<Guid>("VoucherId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("VoucherId", "Type", "TargetId");
+
+                    b.ToTable("voucher_targets", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.InboxState", b =>
@@ -612,6 +832,48 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Navigation("Shipment");
                 });
 
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherAmount", b =>
+                {
+                    b.HasOne("Ecommerce.Order.Domain.Entities.Voucher", null)
+                        .WithMany("Amounts")
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherCondition", b =>
+                {
+                    b.HasOne("Ecommerce.Order.Domain.Entities.Voucher", null)
+                        .WithMany("Conditions")
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherRedemption", b =>
+                {
+                    b.HasOne("Ecommerce.Order.Domain.Entities.Order", null)
+                        .WithMany("Vouchers")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Ecommerce.Order.Domain.Entities.Voucher", null)
+                        .WithMany()
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.VoucherTarget", b =>
+                {
+                    b.HasOne("Ecommerce.Order.Domain.Entities.Voucher", null)
+                        .WithMany("Targets")
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
                 {
                     b.HasOne("MassTransit.EntityFrameworkCoreIntegration.OutboxState", null)
@@ -629,11 +891,22 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Shipments");
+
+                    b.Navigation("Vouchers");
                 });
 
             modelBuilder.Entity("Ecommerce.Order.Domain.Entities.OrderShipment", b =>
                 {
                     b.Navigation("Return");
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Voucher", b =>
+                {
+                    b.Navigation("Amounts");
+
+                    b.Navigation("Conditions");
+
+                    b.Navigation("Targets");
                 });
 #pragma warning restore 612, 618
         }

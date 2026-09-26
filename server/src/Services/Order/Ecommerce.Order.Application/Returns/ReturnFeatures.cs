@@ -61,11 +61,15 @@ public record ReturnParcel(
     string Currency,
     List<ReturnParcelLine> Lines)
 {
-    /// <summary>Goods plus their tax, as frozen at checkout (specs/012). The delivery is not refunded.</summary>
-    public decimal RefundAmount => Lines.Sum(l => l.UnitPrice * l.Quantity + (l.TaxAmount ?? 0m));
+    /// <summary>
+    /// What was paid for the goods: their price less what vouchers took off (specs/069), plus their tax - all as
+    /// frozen at checkout (specs/012). The delivery is not refunded.
+    /// </summary>
+    public decimal RefundAmount => Lines.Sum(l => l.UnitPrice * l.Quantity - l.Discount + (l.TaxAmount ?? 0m));
 }
 
-public record ReturnParcelLine(Guid SellableId, int Quantity, decimal UnitPrice, decimal? TaxAmount);
+/// <param name="Discount">What vouchers took off the line, the seller's and the platform's (specs/069).</param>
+public record ReturnParcelLine(Guid SellableId, int Quantity, decimal UnitPrice, decimal? TaxAmount, decimal Discount = 0m);
 
 /// <summary>One step of a return: from which states, to which, and what it writes on the way.</summary>
 public record ReturnMove(

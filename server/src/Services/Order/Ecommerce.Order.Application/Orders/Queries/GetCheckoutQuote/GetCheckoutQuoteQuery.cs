@@ -15,7 +15,7 @@ namespace Ecommerce.Order.Application.Orders.Queries.GetCheckoutQuote;
 /// quote, not a reservation: a price, the cart or the address can change before the customer commits,
 /// and the order is then priced again, by the same code.
 /// </remarks>
-public record GetCheckoutQuoteQuery(Guid? AddressId, string ShippingOption) : IRequest<CheckoutQuoteResponse>;
+public record GetCheckoutQuoteQuery(Guid? AddressId, string ShippingOption, IReadOnlyList<string>? VoucherCodes = null) : IRequest<CheckoutQuoteResponse>;
 
 public record CheckoutQuoteResponse(
     List<OrderItemResponse> Items,
@@ -27,13 +27,15 @@ public record CheckoutQuoteResponse(
     decimal DiscountTotal,
     decimal TaxRate,
     decimal TotalAmount,
-    string Currency = "");
+    string Currency = "",
+    List<AppliedVoucherResponse>? Vouchers = null);
 
 public class GetCheckoutQuoteQueryValidator : AbstractValidator<GetCheckoutQuoteQuery>
 {
     public GetCheckoutQuoteQueryValidator(IShippingOptions shippingOptions)
     {
         RuleFor(x => x.ShippingOption).MustBeADeliveryOption(shippingOptions);
+        RuleFor(x => x.VoucherCodes).MustBeVoucherCodes();
     }
 }
 
@@ -44,7 +46,7 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
 
     public async Task<CheckoutQuoteResponse> Handle(GetCheckoutQuoteQuery request, CancellationToken cancellationToken)
     {
-        var priced = await _pricing.PriceAsync(request.AddressId, request.ShippingOption, cancellationToken);
+        var priced = await _pricing.PriceAsync(request.AddressId, request.ShippingOption, cancellationToken, request.VoucherCodes);
         var a = priced.Address;
 
         return new CheckoutQuoteResponse(
@@ -53,7 +55,8 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
                 l.VariantId == default ? null : l.VariantId,
                 string.IsNullOrEmpty(l.Sku) ? null : l.Sku,
                 string.IsNullOrEmpty(l.OptionSummary) ? null : l.OptionSummary,
-                l.SellerName)).ToList(),
+                l.SellerName,
+                l.Discount)).ToList(),
             new ShippingAddressResponse(a.RecipientName, a.Line1, a.Line2, a.City, a.Region, a.PostalCode, a.Country, a.Phone),
             new ShippingOptionResponse(
                 priced.Shipping.Code, priced.Shipping.Name, priced.DeliveryPrice, priced.Currency),
@@ -63,6 +66,7 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
             priced.Totals.Discount,
             priced.TaxRate,
             priced.Totals.Total,
-            priced.Currency);
+            priced.Currency,
+            priced.VoucherResponses());
     }
 }

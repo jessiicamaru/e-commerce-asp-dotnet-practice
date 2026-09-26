@@ -1,0 +1,48 @@
+info:
+  name: an administrator creates a platform voucher
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/vouchers"
+  body:
+    type: json
+    data: |-
+      {
+        "code": "{{voucherCode}}",
+        "name": "Bruno ten percent",
+        "benefit": "Percent",
+        "percent": 10,
+        "amounts": [{ "currency": "VND", "maxDiscount": 50000 }]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("voucherCode", "BRUNO-" + Date.now());
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the platform's, active, stored upper-case", function() {
+          expect(res.body.isPlatform).to.equal(true);
+          expect(res.body.status).to.equal("Active");
+          expect(res.body.code).to.equal(bru.getVar("voucherCode"));
+          expect(res.body.amounts[0].currency).to.equal("VND");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  An administrator's voucher is the platform's (specs/069): whose it is comes from the token, never the body.
+  10% off anything, capped at 50,000 VND, and only in dong - a voucher is never converted between currencies.

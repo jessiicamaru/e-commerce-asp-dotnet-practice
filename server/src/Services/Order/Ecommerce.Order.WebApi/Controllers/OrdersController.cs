@@ -28,7 +28,7 @@ public class OrdersController : ApiControllerBase
     /// from the cart, who is buying from the token, and what it costs from Catalog and the delivery
     /// option. Anything else in the body is ignored.
     /// </summary>
-    public record CheckoutRequest(Guid? AddressId, string? ShippingOption);
+    public record CheckoutRequest(Guid? AddressId, string? ShippingOption, List<string>? VoucherCodes = null);
 
     public record ShipmentRequest(string? TrackingReference);
 
@@ -39,7 +39,7 @@ public class OrdersController : ApiControllerBase
     [HttpPost]
     public async Task<IActionResult> Submit([FromBody] CheckoutRequest request)
     {
-        var result = await Mediator.Send(new SubmitOrderCommand(request.AddressId, request.ShippingOption ?? string.Empty));
+        var result = await Mediator.Send(new SubmitOrderCommand(request.AddressId, request.ShippingOption ?? string.Empty, request.VoucherCodes));
         return Ok(result);
     }
 
@@ -48,9 +48,9 @@ public class OrdersController : ApiControllerBase
     /// same choices would place (#38). Places nothing.
     /// </summary>
     [HttpGet("quote")]
-    public async Task<IActionResult> GetQuote([FromQuery] Guid? addressId, [FromQuery] string? shippingOption)
+    public async Task<IActionResult> GetQuote([FromQuery] Guid? addressId, [FromQuery] string? shippingOption, [FromQuery] List<string>? voucherCodes)
     {
-        return Ok(await Mediator.Send(new GetCheckoutQuoteQuery(addressId, shippingOption ?? string.Empty)));
+        return Ok(await Mediator.Send(new GetCheckoutQuoteQuery(addressId, shippingOption ?? string.Empty, voucherCodes)));
     }
 
     /// <summary>The delivery options and what each costs. Public - prices are not a secret.</summary>

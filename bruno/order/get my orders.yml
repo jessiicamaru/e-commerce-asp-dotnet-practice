@@ -1,7 +1,7 @@
 info:
   name: get my orders
   type: http
-  seq: 8
+  seq: 11
 
 http:
   method: GET

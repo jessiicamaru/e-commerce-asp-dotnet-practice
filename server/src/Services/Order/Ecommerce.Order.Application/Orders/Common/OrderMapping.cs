@@ -63,7 +63,7 @@ public static class OrderMapping
         order.Items
             .Select(x => new OrderItemDetailResponse(
                 x.ProductId, x.ProductName, x.Quantity, x.UnitPrice, x.TotalPrice, x.TaxAmount,
-                x.VariantId, x.Sku, x.OptionSummary, x.SellerName))
+                x.VariantId, x.Sku, x.OptionSummary, x.SellerName, x.ShopDiscount + x.PlatformDiscount))
             .ToList(),
         ToResponse(order.ShipTo),
         order.ShippingOptionCode is null
@@ -86,5 +86,19 @@ public static class OrderMapping
         order.Currency ?? string.Empty,
         order.Language ?? string.Empty,
         ToShipments(order),
-        order.CancelledBy);
+        order.CancelledBy,
+        ToVouchers(order));
+
+    /// <summary>The vouchers frozen on an order (specs/069), each shop's named by the name frozen on its lines.</summary>
+    public static List<AppliedVoucherResponse> ToVouchers(Domain.Entities.Order order) =>
+        order.Vouchers
+            .OrderBy(v => v.SellerId is null).ThenBy(v => v.Code)
+            .Select(v => new AppliedVoucherResponse(
+                v.Code,
+                v.Name,
+                v.SellerId is not null,
+                v.SellerId is null ? null : order.Items.Where(i => i.SellerId == v.SellerId).Select(i => i.SellerName).FirstOrDefault(n => n is not null),
+                v.Benefit.ToString(),
+                v.Amount))
+            .ToList();
 }

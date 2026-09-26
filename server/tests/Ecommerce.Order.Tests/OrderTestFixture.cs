@@ -144,11 +144,16 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddLogging();
         services.AddApplication();
 
-        services.AddDbContext<OrderDbContext>(options => options.UseNpgsql(_connectionString));
+        // The retrying execution strategy production configures (specs/069 found why it matters here): with it, a
+        // transaction opened by hand throws unless it runs inside CreateExecutionStrategy().ExecuteAsync - and a
+        // fixture without it passed code that answered 500 in every container.
+        services.AddDbContext<OrderDbContext>(options => options.UseNpgsql(_connectionString,
+            npgsql => npgsql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null)));
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
         services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();
+        services.AddScoped<Ecommerce.Order.Application.Vouchers.IVoucherRepository, VoucherRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Order.Application.Returns.ReturnOptions()));
         services.AddSingleton<ICommissionRate>(Commission);
 

@@ -66,10 +66,15 @@ public class NotificationTests
 
         await using (var scope = _fixture.NewScope())
         {
+            // The way MassTransit's EF outbox opens it: inside the context's execution strategy, which the fixture
+            // now configures as production does (retries on), and which refuses a transaction opened outside one.
             var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-            await using var consumer = await db.Database.BeginTransactionAsync();
-            await scope.ServiceProvider.GetRequiredService<ISender>().Send(new CompleteOrderCommand(order, DateTime.UtcNow));
-            await consumer.CommitAsync();
+            await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+            {
+                await using var consumer = await db.Database.BeginTransactionAsync();
+                await scope.ServiceProvider.GetRequiredService<ISender>().Send(new CompleteOrderCommand(order, DateTime.UtcNow));
+                await consumer.CommitAsync();
+            });
         }
 
         await using var read = _fixture.NewScope();

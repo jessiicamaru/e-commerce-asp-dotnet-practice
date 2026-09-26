@@ -31,7 +31,8 @@ public record OrderItemResponse(
     Guid? VariantId = null,
     string? Sku = null,
     string? OptionSummary = null,
-    string? SellerName = null
+    string? SellerName = null,
+    decimal Discount = 0m
 );
 
 public record OrderResponse(
@@ -48,7 +49,8 @@ public record OrderResponse(
     decimal? TaxTotal = null,
     decimal? DiscountTotal = null,
     decimal? TaxRate = null,
-    string Currency = ""
+    string Currency = "",
+    List<Common.AppliedVoucherResponse>? Vouchers = null
 );
 
 /// <summary>
@@ -68,4 +70,8 @@ public record OrderResponse(
 /// something the server owns.
 /// </para>
 /// </remarks>
-public record SubmitOrderCommand(Guid? AddressId, string ShippingOption) : IRequest<OrderResponse>;
+/// <param name="VoucherCodes">
+/// Codes the customer typed (specs/069) - a request, never a discount: what each takes off is worked out by
+/// the server, which may refuse any of them.
+/// </param>
+public record SubmitOrderCommand(Guid? AddressId, string ShippingOption, IReadOnlyList<string>? VoucherCodes = null) : IRequest<OrderResponse>;

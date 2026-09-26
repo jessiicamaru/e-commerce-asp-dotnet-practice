@@ -1,5 +1,6 @@
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
+using Ecommerce.Order.Application.Vouchers;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Notifications;
@@ -12,9 +13,11 @@ public class FailOrderCommandHandler(
     IOrderRepository orderRepository,
     INotifier notifier,
     IAuditTrail audit,
-    ILogger<FailOrderCommandHandler> logger
+    ILogger<FailOrderCommandHandler> logger,
+    IVoucherRepository vouchers
 ) : IRequestHandler<FailOrderCommand, bool>
 {
+    private readonly IVoucherRepository _vouchers = vouchers;
     private readonly INotifier _notifier = notifier;
     private readonly IAuditTrail _audit = audit;
 
@@ -40,6 +43,8 @@ public class FailOrderCommandHandler(
             cancellationToken,
             ct => OrderNotices.WithFactsAsync(_orderRepository, request.OrderId, async facts =>
             {
+                // A failed checkout gives its voucher uses back (specs/069), in the settlement's own transaction.
+                await _vouchers.ReleaseForOrderAsync(request.OrderId, request.FailedAt, ct);
                 await OrderNotices.FailedAsync(_notifier, facts, ct);
                 await _audit.RecordAsync(
                     AuditCategory.Order, "OrderFailed", "Order", request.OrderId.ToString(),

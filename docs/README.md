@@ -62,6 +62,7 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 | Ratings and reviews | [Ratings and reviews](features/ratings-and-reviews.md) |
 | The administrator's Overview | [Admin insights](features/admin-insights.md) |
 | A seller's own revenue, best sellers, views and rating | [Seller insights](features/seller-insights.md) |
+| Voucher codes from the shop and from sellers: conditions, targets, limits, who pays | [Vouchers](features/vouchers.md) |
 
 ## Reference (generated)
 

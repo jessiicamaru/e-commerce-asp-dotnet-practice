@@ -1,5 +1,6 @@
 using Ecommerce.Contracts.Order;
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Vouchers;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
@@ -26,9 +27,11 @@ public class CancelMyOrderCommandHandler(
     ICurrentUser currentUser,
     IAuditTrail audit,
     INotifier notifier,
-    ILogger<CancelMyOrderCommandHandler> logger)
+    ILogger<CancelMyOrderCommandHandler> logger,
+    IVoucherRepository vouchers)
     : IRequestHandler<CancelMyOrderCommand, OrderDetailResponse>
 {
+    private readonly IVoucherRepository _vouchers = vouchers;
     private readonly IOrderRepository _orders = orders;
     private readonly IPublishEndpoint _publish = publish;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -41,7 +44,7 @@ public class CancelMyOrderCommandHandler(
         var userId = _currentUser.Id
             ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
-        await CancelStep.RunAsync(_orders, _publish, _audit, _notifier, _logger, request.OrderId, userId, Cancellation.ByCustomer, cancellationToken);
+        await CancelStep.RunAsync(_orders, _publish, _audit, _notifier, _vouchers, _logger, request.OrderId, userId, Cancellation.ByCustomer, cancellationToken);
 
         var order = await _orders.GetByIdForUserAsync(request.OrderId, userId, cancellationToken)
             ?? throw new NotFoundException(Cancellation.NotFound);
@@ -54,9 +57,11 @@ public class CancelOrderCommandHandler(
     IPublishEndpoint publish,
     IAuditTrail audit,
     INotifier notifier,
-    ILogger<CancelOrderCommandHandler> logger)
+    ILogger<CancelOrderCommandHandler> logger,
+    IVoucherRepository vouchers)
     : IRequestHandler<CancelOrderCommand, OrderDetailResponse>
 {
+    private readonly IVoucherRepository _vouchers = vouchers;
     private readonly IOrderRepository _orders = orders;
     private readonly IPublishEndpoint _publish = publish;
     private readonly IAuditTrail _audit = audit;
@@ -65,7 +70,7 @@ public class CancelOrderCommandHandler(
 
     public async Task<OrderDetailResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
     {
-        await CancelStep.RunAsync(_orders, _publish, _audit, _notifier, _logger, request.OrderId, null, Cancellation.ByStaff, cancellationToken);
+        await CancelStep.RunAsync(_orders, _publish, _audit, _notifier, _vouchers, _logger, request.OrderId, null, Cancellation.ByStaff, cancellationToken);
 
         var order = await _orders.GetByIdAsync(request.OrderId, cancellationToken)
             ?? throw new NotFoundException(Cancellation.NotFound);
@@ -80,6 +85,7 @@ internal static class CancelStep
         IPublishEndpoint publish,
         IAuditTrail audit,
         INotifier notifier,
+        IVoucherRepository vouchers,
         ILogger logger,
         Guid orderId,
         Guid? ownerId,
@@ -100,6 +106,8 @@ internal static class CancelStep
             async ct =>
             {
                 await publish.Publish(new OrderCancelledEvent(orderId, at, by), ct);
+                // A cancelled order gives its voucher uses back (specs/069) - in this transaction, so once.
+                await vouchers.ReleaseForOrderAsync(orderId, at, ct);
                 await audit.RecordAsync(
                     AuditCategory.Order, "OrderCancelled", "Order", orderId.ToString(),
                     $"Order cancelled by the {by.ToLowerInvariant()}",

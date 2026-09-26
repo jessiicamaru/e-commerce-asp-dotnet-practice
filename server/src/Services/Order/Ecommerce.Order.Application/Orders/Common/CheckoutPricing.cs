@@ -1,4 +1,7 @@
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Vouchers;
+using Ecommerce.Order.Domain.Enums;
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
@@ -26,8 +29,12 @@ public class CheckoutPricing(
     IAddressReader addressReader,
     IShippingOptions shippingOptions,
     ICatalogPrices catalogPrices,
-    ITaxRates taxRates)
+    ITaxRates taxRates,
+    ICurrentUser currentUser,
+    IVoucherRepository vouchers)
 {
+    private readonly ICurrentUser _currentUser = currentUser;
+    private readonly IVoucherRepository _vouchers = vouchers;
     private readonly IRequestLanguage _requestLanguage = requestLanguage;
     private readonly IRequestCurrency _requestCurrency = requestCurrency;
     private readonly ICartReader _cartReader = cartReader;
@@ -36,7 +43,8 @@ public class CheckoutPricing(
     private readonly ICatalogPrices _catalogPrices = catalogPrices;
     private readonly ITaxRates _taxRates = taxRates;
 
-    public async Task<PricedCheckout> PriceAsync(Guid? addressId, string shippingOption, CancellationToken cancellationToken)
+    public async Task<PricedCheckout> PriceAsync(
+        Guid? addressId, string shippingOption, CancellationToken cancellationToken, IReadOnlyList<string>? voucherCodes = null)
     {
         // What is being bought comes from the caller's CART, not from the request (feature 010).
         // Read over gRPC with the caller's own token forwarded, so Cart identifies them itself.
@@ -115,12 +123,28 @@ public class CheckoutPricing(
         // destination, is computed per line and on delivery and rounded half away from zero (ADR-002).
         // Rounded to the currency's minor unit - no fractional dong (specs/022 research D5). The null
         // prices were refused above, so the `!` here is the check having already happened.
+        // What the vouchers take off (specs/069) - worked out here, from the codes alone, so the quote and the
+        // order agree to the unit. Tax is then on what is left (research D2).
+        var voucherLines = cartItems.Select(item =>
+        {
+            var variant = byVariant[item.SellableId];
+            return new VoucherLine(
+                variant.ProductId == default ? item.ProductId : variant.ProductId,
+                item.SellableId,
+                variant.SellerId,
+                variant.Price!.Value,
+                item.Quantity);
+        }).ToList();
+        var discounts = await VouchersAsync(voucherLines, deliveryPrice, currency.Code, currency.Decimals, voucherCodes, cancellationToken);
+
         var taxRate = _taxRates.RateFor(address.Country);
         var totals = OrderTotals.Compute(
             cartItems.Select(i => (byVariant[i.SellableId].Price!.Value, i.Quantity)).ToList(),
             deliveryPrice,
             taxRate,
-            currency.Decimals);
+            currency.Decimals,
+            discounts.ShopDiscounts.Zip(discounts.PlatformDiscounts, (shop, platform) => shop + platform).ToList(),
+            discounts.DeliveryDiscount);
 
         var lines = cartItems.Select((item, i) =>
         {
@@ -137,11 +161,34 @@ public class CheckoutPricing(
                 variant.Sku,
                 variant.OptionSummary,
                 variant.SellerId,
-                variant.SellerName);
+                variant.SellerName,
+                discounts.ShopDiscounts[i],
+                discounts.PlatformDiscounts[i]);
         }).ToList();
 
         return new PricedCheckout(
-            address, shipping, lines, totals, taxRate, language, currency.Code, deliveryPrice, currency.Decimals);
+            address, shipping, lines, totals, taxRate, language, currency.Code, deliveryPrice, currency.Decimals, discounts.Applied);
+    }
+
+    private async Task<VoucherResult> VouchersAsync(
+        List<VoucherLine> lines, decimal delivery, string currency, int decimals, IReadOnlyList<string>? requested, CancellationToken cancellationToken)
+    {
+        var codes = (requested ?? []).Select(VoucherPricing.Normalise).Where(c => c.Length > 0).Distinct().ToList();
+        if (codes.Count == 0)
+        {
+            return VoucherResult.None(lines.Count);
+        }
+
+        var customer = _currentUser.Id
+            ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
+        var found = codes.Count <= VoucherPricing.MaxCodes ? await _vouchers.FindForCheckoutAsync(codes, customer, cancellationToken) : [];
+
+        // The customer's history is read only when a voucher asks about it.
+        var facts = found.Any(f => f.Voucher.Conditions.Any(c => c.Type is VoucherConditionType.NewCustomer or VoucherConditionType.FirstOrderInShop))
+            ? await _vouchers.CustomerFactsAsync(customer, cancellationToken)
+            : CustomerFacts.None;
+
+        return VoucherPricing.Apply(lines, delivery, currency, decimals, codes, found, facts, DateTime.UtcNow);
     }
 }
 
@@ -159,9 +206,14 @@ public record PricedLine(
     string Sku = "",
     string OptionSummary = "",
     Guid? SellerId = null,
-    string? SellerName = null)
+    string? SellerName = null,
+    decimal ShopDiscount = 0m,
+    decimal PlatformDiscount = 0m)
 {
     public decimal TotalPrice => UnitPrice * Quantity;
+
+    /// <summary>What vouchers took off this line (specs/069): the seller's own and the platform's.</summary>
+    public decimal Discount => ShopDiscount + PlatformDiscount;
 }
 
 /// <param name="Language">The language the words on these lines are in (specs/021).</param>
@@ -186,4 +238,15 @@ public record PricedCheckout(
     string Language = "",
     string Currency = "",
     decimal DeliveryPrice = 0,
-    int Decimals = OrderTotals.DefaultDecimals);
+    int Decimals = OrderTotals.DefaultDecimals,
+    IReadOnlyList<AppliedVoucher>? Vouchers = null)
+{
+    /// <summary>The applied vouchers as the customer reads them, each shop's named by its lines.</summary>
+    public List<AppliedVoucherResponse> VoucherResponses() =>
+        (Vouchers ?? [])
+            .Select(v => new AppliedVoucherResponse(
+                v.Code, v.Name, v.SellerId is not null,
+                v.SellerId is null ? null : Lines.Where(l => l.SellerId == v.SellerId).Select(l => l.SellerName).FirstOrDefault(n => n is not null),
+                v.Benefit.ToString(), v.Amount))
+            .ToList();
+}

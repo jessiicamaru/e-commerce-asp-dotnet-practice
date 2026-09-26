@@ -15,6 +15,9 @@ public class OrderDbContext : DbContext
     public DbSet<OrderShipment> OrderShipments => Set<OrderShipment>();
     public DbSet<Payout> Payouts => Set<Payout>();
     public DbSet<ParcelReturn> ParcelReturns => Set<ParcelReturn>();
+    public DbSet<Voucher> Vouchers => Set<Voucher>();
+    public DbSet<VoucherCustomerUse> VoucherCustomerUses => Set<VoucherCustomerUse>();
+    public DbSet<VoucherRedemption> VoucherRedemptions => Set<VoucherRedemption>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
