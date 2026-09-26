@@ -311,7 +311,7 @@ From [messages.md](../reference/messages.md).
 
 | Message | Fields | Published by | Consumed by |
 | :-- | :-- | :-- | :-- |
-| `AuditEntryRecorded` | `EntryId`, `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `Before`, `After`, `Service`, `OccurredAt` | Identity, Catalog, Inventory, Order, Payment, through `Ecommerce.Shared` | Activity `RecordAuditEntryConsumer` |
+| `AuditEntryRecorded` | `EntryId`, `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `Before`, `After`, `Service`, `OccurredAt` | Identity, Catalog, Inventory, Order, Payment, and Activity itself for notice wording edits (specs/078), through `Ecommerce.Shared` | Activity `RecordAuditEntryConsumer` |
 | `UserNotificationRequested` | `NotificationId`, `RecipientId`, `Kind`, `Data`, `Link`, `OccurredAt` | Identity, Catalog, Order, through `Ecommerce.Shared` | Activity `RecordNotificationConsumer` |
 
 ## Storefront
