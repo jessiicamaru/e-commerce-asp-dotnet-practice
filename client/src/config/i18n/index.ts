@@ -95,6 +95,8 @@ void i18n
       // React escapes what it renders; i18next escaping again would show &#39; to the customer.
       escapeValue: false,
     },
+    // Words laid over the bundle at run time (specs/078: the notices' rewording) re-render what shows them.
+    react: { bindI18nStore: 'added' },
   })
 
 export default i18n

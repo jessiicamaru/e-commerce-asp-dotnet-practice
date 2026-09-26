@@ -14,7 +14,8 @@
     "returns": "Returns",
     "vouchers": "Vouchers",
     "questions": "Questions",
-    "emails": "Emails"
+    "emails": "Emails",
+    "notifications": "Notifications"
   },
   "queue": {
     "title": "Orders to ship",
@@ -394,6 +395,28 @@
     "noVersions": "Never edited - it says the built-in words.",
     "versionLabel": "Version {{version}}",
     "currentVersion": "Current",
+    "restore": "Restore",
+    "restored": "Version {{version}} restored."
+  },
+  "wording": {
+    "title": "Notifications",
+    "subtitle": "What the bell says to people. Each sentence in each language: the storefront's own words, or yours - an edit reaches every reader on their next load.",
+    "search": "Find a notice",
+    "loadFailed": "Could not load the notices.",
+    "failed": "Could not do that.",
+    "edited": "Edited",
+    "edit": "Edit",
+    "close": "Close",
+    "editKey": "Edit {{key}} ({{language}})",
+    "words": "Words",
+    "sample": "Sample",
+    "save": "Save",
+    "saved": "Saved. Readers see it on their next load.",
+    "reset": "Back to the storefront's words",
+    "wasReset": "Back to the storefront's own words.",
+    "versions_one": "{{count}} version",
+    "versions_other": "{{count}} versions",
+    "bundled": "the storefront's words",
     "restore": "Restore",
     "restored": "Version {{version}} restored."
   }

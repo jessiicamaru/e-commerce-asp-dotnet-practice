@@ -51,6 +51,7 @@ import { StatusPage } from '@/pages/status'
 // The one page that brings a rich-text editor (specs/077): loaded when an administrator opens it, so no shopper
 // downloads ProseMirror to look at a camera.
 const AdminEmailsPage = lazy(() => import('@/pages/admin-emails').then((page) => ({ default: page.AdminEmailsPage })))
+const AdminWordingPage = lazy(() => import('@/pages/admin-wording').then((page) => ({ default: page.AdminWordingPage })))
 
 export function AppRoutes() {
   return (
@@ -187,6 +188,16 @@ export function AppRoutes() {
                 <RequireRole role={['Admin']}>
                   <Suspense fallback={<LoadingRows />}>
                     <AdminEmailsPage />
+                  </Suspense>
+                </RequireRole>
+              }
+            />
+            <Route
+              path="notifications"
+              element={
+                <RequireRole role={['Admin']}>
+                  <Suspense fallback={<LoadingRows />}>
+                    <AdminWordingPage />
                   </Suspense>
                 </RequireRole>
               }
