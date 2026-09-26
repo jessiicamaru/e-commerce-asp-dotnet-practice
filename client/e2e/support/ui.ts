@@ -17,18 +17,25 @@ export async function signIn(page: Page, email: string): Promise<void> {
 /**
  * Finds something in a paged list (PAGE_SIZE 12), turning pages until it shows: a queue a machine shares with older
  * runs, or with a person, is not guaranteed to hold this run's item on its first page.
+ *
+ * <p>
+ * Each page is given a few seconds to show it rather than checked at once: after "Next" the counter ("Showing
+ * 13-14") changes at the click, while the list keeps the previous page's rows until the new page arrives.
+ * </p>
  */
 export async function findOnPages(page: Page, item: Locator): Promise<Locator> {
   const seen: string[] = []
   for (let turned = 0; turned < 50; turned++) {
-    await page.getByText(/^Showing |^Nothing here\.$/).first().waitFor()
-    if ((await item.count()) > 0) return item.first()
+    try {
+      await expect(item.first()).toBeVisible({ timeout: 5_000 })
+      return item.first()
+    } catch {
+      // not on this page
+    }
+    seen.push((await page.getByText(/^Showing /).first().textContent().catch(() => null)) ?? '?')
     const next = page.getByLabel('Next')
-    if ((await next.count()) === 0 || !(await next.first().isEnabled()) || (await next.first().getAttribute('aria-disabled')) === 'true') break
-    const before = await page.getByText(/^Showing /).first().textContent()
-    seen.push(before ?? '?')
+    if ((await next.count()) === 0 || (await next.first().getAttribute('aria-disabled')) === 'true') break
     await next.first().click()
-    await expect(page.getByText(/^Showing /).first()).not.toHaveText(before ?? '')
   }
-  throw new Error(`Not found on any page of the list (turned through: ${seen.join('; ') || 'one page'}).`)
+  throw new Error(`Not found on any page of the list (looked at: ${seen.join('; ')}).`)
 }

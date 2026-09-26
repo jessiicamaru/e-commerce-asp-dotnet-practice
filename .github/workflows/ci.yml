@@ -329,7 +329,8 @@ jobs:
     # the event guard every pull request would publish: this workflow triggers on
     # push AND pull_request to main.
     # `client` since specs/051: the storefront is published too, and must not be if its tests failed.
-    needs: [build, auth-smoke, saga-e2e, client]
+    # `browser-e2e` since specs/080: a storefront whose pages cannot reach the API is not a release.
+    needs: [build, auth-smoke, saga-e2e, client, browser-e2e]
     # A merge, or a deliberate manual run. Never a pull request - which is what this
     # guard was protecting against in the first place, and adding a third trigger is
     # exactly how that kind of guard gets loosened by accident.
@@ -1101,3 +1102,84 @@ jobs:
             tail -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
             echo "::endgroup::"
           done
+
+  # The storefront in a real browser against the real stack (specs/080, #117) - the one check that clicks through
+  # the pages, so a page and the API it calls drifting apart (a gateway route missing, a field renamed) fails here.
+  # Everything runs as the containers a person runs: compose builds and starts every service, the gateway, the
+  # storefront (nginx on :8088), Mailpit and SeaweedFS. After the saga job, as the issue asks: a checkout that cannot
+  # settle is reported there first, in words.
+  browser-e2e:
+    name: Browser end-to-end
+    runs-on: ubuntu-latest
+    needs: [saga-e2e, client]
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      # CI-only values, thrown away with the runner - the same kind the other jobs set inline. Real secrets belong in
+      # repository secrets, never here.
+      - name: Write a throwaway .env
+        working-directory: server
+        run: |
+          cat > .env <<'ENV'
+          DB_USER=postgres
+          DB_PASSWORD=ci-postgres
+          PGADMIN_EMAIL=ci@ci.local
+          PGADMIN_PASSWORD=ci-pgadmin
+          JWT_SECRET=ci-only-jwt-secret-at-least-32-bytes-long
+          RABBITMQ_USER=ci
+          RABBITMQ_PASSWORD=ci-password
+          RABBITMQ_PASS=ci-password
+          ADMIN_EMAIL=admin@ci.local
+          ADMIN_PASSWORD=ci-admin-password
+          SEQ_ADMIN_PASSWORD=ci-seq-password
+          PAYMENT_OUTCOME=Approve
+          INVENTORY_RESERVATION_TTL_MINUTES=15
+          ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS=600
+          STOREFRONT_URL=http://localhost:8088
+          SEAWEEDFS_ACCESS_KEY=ci-catalog
+          SEAWEEDFS_SECRET_KEY=ci-catalog-secret
+          ENV
+
+      - name: Build and start the stack
+        working-directory: server
+        run: docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build --wait --wait-timeout 600
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install the storefront's dependencies and Playwright's Chromium
+        working-directory: client
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # Playwright's own Chromium here; a developer's machine uses the Edge it already has (playwright.config.ts).
+      - name: Run the flows
+        working-directory: client
+        env:
+          E2E_BROWSER_CHANNEL: ''
+          E2E_BASE_URL: http://localhost:8088
+          E2E_MAILPIT_URL: http://localhost:8025
+          ADMIN_EMAIL: admin@ci.local
+          ADMIN_PASSWORD: ci-admin-password
+        run: npx playwright test
+
+      # A failure is read in the trace viewer (npx playwright show-trace <trace.zip>), with the services' own logs.
+      - name: Keep the services' logs
+        if: failure()
+        working-directory: server
+        run: docker compose -f docker-compose.yml -f docker-compose.app.yml logs --no-color > ../client/test-results/compose.log 2>&1 || true
+
+      - name: Upload the traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-e2e-traces
+          path: |
+            client/test-results/
+            client/playwright-report/
+          retention-days: 7

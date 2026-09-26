@@ -113,6 +113,7 @@ test.describe.serial('the storefront, end to end', () => {
     await page.getByRole('button', { name: 'Post review' }).click()
 
     await expect(page.getByText('Thank you - your review is up.')).toBeVisible()
-    await expect(page.getByText('Sharp, quiet and it arrived well packed.')).toBeVisible()
+    // In the list of reviews, not only in the form it was typed into.
+    await expect(page.getByRole('listitem').filter({ hasText: 'Sharp, quiet and it arrived well packed.' })).toBeVisible()
   })
 })
