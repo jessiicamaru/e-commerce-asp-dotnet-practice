@@ -6,6 +6,7 @@ using Ecommerce.Contracts.Grpc;
 using Ecommerce.Shared.Money;
 using Microsoft.Extensions.Options;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ecommerce.Catalog.WebApi.Grpc;
 
@@ -25,6 +26,10 @@ namespace Ecommerce.Catalog.WebApi.Grpc;
 /// caller must remember rather than something the shape guarantees.
 /// </para>
 /// </remarks>
+// Service to service on the h2c port, which the gateway does not route: Order asks at checkout and sends
+// no token. Anonymous as it always was, but now by saying so - the fallback policy refuses anything that
+// does not (specs/089).
+[AllowAnonymous]
 public class CatalogPricingService(
     IProductRepository products,
     IOptions<CurrencyOptions> money,

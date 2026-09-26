@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -78,13 +79,20 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<RevokedAccessTokens>();
 
-        services.AddAuthorization();
+        // Signed in unless an endpoint says otherwise (#183, specs/089). Without a fallback, an endpoint with no
+        // [Authorize] is public - which is how AuthController's sign-in was public, and how the next action added
+        // beside it would have been. Now forgetting fails closed: every public endpoint carries [AllowAnonymous]
+        // (or .AllowAnonymous()), and EndpointAccess.Undeclared holds each controller action to saying which.
+        services.AddAuthorization(options => options.FallbackPolicy = SignedIn);
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         return services;
     }
+
+    /// <summary>The policy an endpoint that says nothing is held to: any signed-in caller (specs/089).</summary>
+    public static readonly AuthorizationPolicy SignedIn = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
 
     /// <summary>HMAC-SHA256 needs a key of at least 256 bits; a shorter one fails on every signing.</summary>
     public const int MinimumSecretBytes = 32;

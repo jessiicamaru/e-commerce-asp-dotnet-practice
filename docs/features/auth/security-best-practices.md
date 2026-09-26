@@ -401,7 +401,7 @@ token within seconds.
 4. **An email address cannot be changed.** A new address needs its own confirmation before it replaces
    the one the account signs in with (§4.8, §4.9).
 
-Seven earlier weaknesses were recorded here and are fixed:
+Eight earlier weaknesses were recorded here and are fixed:
 
 1. ~~**Every exception becomes "logged out".**~~ **Fixed in #28.** `Refresh()` used to catch
    `Exception` and return `Unauthorized(ex.Message)`, so a database outage looked like an expired
@@ -419,3 +419,6 @@ Seven earlier weaknesses were recorded here and are fixed:
    a forgotten password can be reset since specs/061 (§4.6).
 7. ~~**An access token outlives a lock or ban** by up to 15 minutes.~~ **Fixed in specs/065 (#112)** -
    refused within seconds, by every service (§4.10).
+8. ~~**The auth endpoints are public only because they lack `[Authorize]`.**~~ **Fixed in specs/089 (#183)** - every
+   service is signed-in by default (a fallback policy in `AddJwtAuthentication`), each public endpoint says
+   `[AllowAnonymous]`, and a test in each service names any controller action that says nothing.

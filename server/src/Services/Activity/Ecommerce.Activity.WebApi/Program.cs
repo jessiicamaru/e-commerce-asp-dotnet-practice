@@ -124,7 +124,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseAuthentication();
@@ -150,7 +150,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions
             })
         });
     }
-});
+}).AllowAnonymous(); // A probe carries no token; the fallback policy would refuse it (specs/089).
 
 // As in every service: a runtime image has no SDK to run `dotnet ef`, so it may migrate itself - when asked.
 if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")

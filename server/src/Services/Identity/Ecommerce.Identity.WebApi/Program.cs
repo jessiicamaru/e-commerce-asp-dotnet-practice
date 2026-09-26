@@ -254,7 +254,7 @@ app.UseExceptionHandler();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseHttpsRedirection();
@@ -266,8 +266,8 @@ app.MapControllers();
 
 // Only reachable on the HTTP/2 endpoint above.
 app.MapGrpcService<AddressReadingService>();
-app.MapGrpcHealthChecksService();
-app.MapGrpcReflectionService();
+app.MapGrpcHealthChecksService().AllowAnonymous();
+app.MapGrpcReflectionService().AllowAnonymous();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
@@ -288,7 +288,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         };
         await context.Response.WriteAsJsonAsync(response);
     }
-});
+}).AllowAnonymous(); // A probe carries no token; the fallback policy would refuse it (specs/089).
 
 
 

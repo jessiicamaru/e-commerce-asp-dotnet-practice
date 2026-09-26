@@ -143,6 +143,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [086](../../specs/086-product-view-limits/) | Honest view counts | #178 | #173: a product view counts once a day per viewer, and the gateway limits the view endpoint per client |
 | [087](../../specs/087-email-delivery/) | Email delivery | #179 | #175: an administrator sees what became of each email - the failed ones with why - and sends a failed one again |
 | [088](../../specs/088-relock-limits/) | Re-lock limits | #187 | #180: locking an account again cannot shorten a lock the caller could not have lifted - a moderator no longer undoes an administrator's long lock with a one-day one |
+| [089](../../specs/089-explicit-anonymous/) | Signed in by default | #188 | #183: every service refuses an anonymous caller at an endpoint that does not say `[AllowAnonymous]`, and a test in each names any controller action that says nothing |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
