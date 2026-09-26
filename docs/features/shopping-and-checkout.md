@@ -271,7 +271,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 - **Checkout depends synchronously on Catalog, Cart and Identity.** Any one being down refuses orders with 503.
 - **A shopper sees `Submitted` for the seconds before settlement.** The order page polls for up to 30 s.
 - **Orders from before specs/012 and specs/022** have no stored parts and no currency; they are left null rather than invented.
-- **One email per order, so far**: the confirmation when it is paid (specs/060, [email](email.md)). Shipping and cancellation are told in the app only.
+- **The buyer's emails stop at the order and its returns**: paid, each parcel shipped, cancelled, and each step of a return (specs/060, 083, [email](email.md)). A failed payment is told in the app only.
 - **Test runs clean up after themselves** since specs/073 (#118). What older runs left is removed by `server/seed/clean-test-debris.py`.
 
 ## History

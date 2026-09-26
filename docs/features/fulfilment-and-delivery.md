@@ -244,7 +244,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 - **Payment is a stub.** A refund is a ledger row recorded through `Provider = "Stub"`; no money moves. A real provider is deliberately deferred.
 - **Shipping is manual.** No carrier integration: a person types the tracking reference, and it cannot be changed after shipping (a different reference is 409). Despatch is not a saga step (specs/011 research D2).
 - **Moderators have no part in fulfilment.** Every fulfilment and staff-cancel endpoint is `Admin` only.
-- **Parcel notices are in-app only**: email (specs/060) carries only the order confirmation so far ([email](email.md)). The bell polls every 30 s rather than being pushed.
+- **A seller's parcel notices are in the app only.** The buyer's shipped parcel is also an email (specs/083, [email](email.md)); a seller's new sale, received parcel and payout are not. The bell polls every 30 s rather than being pushed.
 - **Parcels delivered before specs/046 give no right to review**, and parts from before specs/037 carry no earnings; neither is backfilled.
 
 ## History
