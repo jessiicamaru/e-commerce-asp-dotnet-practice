@@ -73,5 +73,22 @@
     "none": "Nothing yet.",
     "loadFailed": "Could not load this.",
     "period": "Last {{count}} days"
+  },
+  "editor": {
+    "insert": "Insert:",
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strike": "Strikethrough",
+    "heading": "Heading",
+    "bulletList": "Bulleted list",
+    "orderedList": "Numbered list",
+    "quote": "Quote",
+    "link": "Link",
+    "undo": "Undo",
+    "redo": "Redo",
+    "linkAddress": "Link address",
+    "applyLink": "Apply",
+    "removeLink": "Remove link"
   }
 }

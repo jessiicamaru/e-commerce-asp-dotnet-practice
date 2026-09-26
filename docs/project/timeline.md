@@ -131,6 +131,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [074](../../specs/074-search-index/) | Search index | #158 | #113: `f_unaccent` + `pg_trgm` GIN indexes, an escaped `LIKE`, translations as a UNION of ids; 452 ms to 1.2 ms on 100,000 products |
 | [075](../../specs/075-saved-products/) | Saved products | #159 | #109: a heart on every product, `/saved`, and a `SavedBackInStock` notice once per flip of the rollup; `saved_products` in Catalog |
 | [076](../../specs/076-product-questions/) | Product questions | #160 | #110: a customer asks on the product page, only its seller answers (staff for the shop's own, a 404 for anybody else), staff hide a question or only its answer; `product_questions` in Catalog |
+| [077](../../specs/077-email-templates/) | Email templates | #161 | #150 (the email half): administrators edit every email in a rich-text editor; append-only versions, allow-list sanitised HTML, placeholders checked by name, preview, a test to yourself; emails sent as HTML plus text |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

@@ -104,6 +104,8 @@ public class IdentityTestFixture : IAsyncLifetime
 
         // Email (specs/060): the real queue and dispatcher, and a transport that records instead of sending.
         services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();
+        services.AddScoped<IEmailTemplateStore, EmailTemplateStore>();
+        services.AddSingleton<IHtmlSanitizer, AllowListHtmlSanitizer>();
         services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Application.Auth.SignInThrottling.SignInOptions()));
         services.AddScoped<Ecommerce.Application.Auth.SignInThrottling.ISignInThrottle, SignInThrottleRepository>();
@@ -226,26 +228,29 @@ public class IdentityTestFixture : IAsyncLifetime
 [CollectionDefinition(nameof(IdentityTestCollection))]
 public class IdentityTestCollection : ICollectionFixture<IdentityTestFixture>;
 
-/// <summary>A mail server that records what it was given, and can be switched off (specs/060).</summary>
+/// <summary>
+/// A mail server that records what it was given, and can be switched off (specs/060). <c>Body</c> is the plain-text
+/// part, what every assertion before specs/077 read; <c>Html</c> is the HTML part beside it.
+/// </summary>
 public sealed class FakeEmailTransport : IEmailTransport
 {
-    private readonly List<(string To, string Subject, string Body)> _sent = [];
+    private readonly List<(string To, string Subject, string Body, string Html)> _sent = [];
 
     public bool Down { get; set; }
 
-    public IReadOnlyList<(string To, string Subject, string Body)> SentTo(string to)
+    public IReadOnlyList<(string To, string Subject, string Body, string Html)> SentTo(string to)
     {
         lock (_sent) return _sent.Where(m => string.Equals(m.To, to, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
-    public Task SendAsync(string to, string subject, string body, CancellationToken cancellationToken = default)
+    public Task SendAsync(string to, string subject, string text, string html, CancellationToken cancellationToken = default)
     {
         if (Down)
         {
             throw new InvalidOperationException("Connection refused (the test's mail server is down).");
         }
 
-        lock (_sent) _sent.Add((to, subject, body));
+        lock (_sent) _sent.Add((to, subject, text, html));
         return Task.CompletedTask;
     }
 }

@@ -95,7 +95,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (186 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (163 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
@@ -642,6 +642,12 @@ Identity, the one service that knows addresses, keeps it in `outgoing_emails` (i
 and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
 server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
 error after 12 attempts. The first email is the order confirmation, in the order's own language.
+**An administrator edits the emails** (specs/077, #150): `/admin/emails`, a TipTap editor (lazy-loaded). The code's
+words are the defaults; `email_template_versions` is append-only (reset and restore add versions), unique on
+(template, language, version) with the editor's `expectedVersion` - stale is 409. ⚠️ HTML is allow-list sanitised
+(`AllowListHtmlSanitizer`, Ganss.Xss) **on save AND on every send**, and values are escaped as they are filled in;
+a placeholder the email cannot fill is a 400 naming it, and the reset/confirmation emails cannot lose `{link}`.
+`IEmailTransport.SendAsync(to, subject, text, html)` sends `multipart/alternative`. Admin only, not Moderator.
 **A forgotten password** (specs/061): `POST /api/auth/forgot-password` is **202 for any address** (#28) and,
 for a real account, stores a single-use token **as its SHA-256 hash only** (30 minutes, replacing any
 earlier unused one) and queues a `PasswordReset` email in the request's `Accept-Language`. ⚠️ That email is

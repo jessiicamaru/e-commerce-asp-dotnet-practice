@@ -120,6 +120,52 @@ namespace Ecommerce.Infrastructure.Migrations
                     b.ToTable("email_confirmation_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Entities.EmailTemplateVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BodyHtml")
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Template")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Template", "Language", "Version")
+                        .IsUnique();
+
+                    b.ToTable("email_template_versions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_email_template_versions_words", "\"IsDefault\" OR (\"Subject\" IS NOT NULL AND \"BodyHtml\" IS NOT NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Entities.OutgoingEmail", b =>
                 {
                     b.Property<Guid>("Id")

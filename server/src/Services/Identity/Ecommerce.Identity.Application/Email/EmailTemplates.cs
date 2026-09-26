@@ -3,8 +3,14 @@ using Ecommerce.Shared.Email;
 
 namespace Ecommerce.Application.Email;
 
-/// <summary>A rendered email: what it says, in the language it was asked for.</summary>
-public sealed record RenderedEmail(string Subject, string Body);
+/// <summary>
+/// A rendered email: what it says, in the language it was asked for - as HTML, and as the plain text every HTML
+/// email carries beside it (specs/077).
+/// </summary>
+public sealed record RenderedEmail(string Subject, string Html, string Text);
+
+/// <summary>An email's words before they are filled in: a subject and an HTML body with <c>{name}</c> placeholders.</summary>
+public sealed record EmailWords(string Subject, string BodyHtml);
 
 /// <summary>
 /// The words of every email, in Vietnamese and English (specs/060), filled in when the email is SENT - the
@@ -14,6 +20,10 @@ public sealed record RenderedEmail(string Subject, string Body);
 /// Vietnamese is the fallback, as it is for the shop's own text (specs/021). A template this service has no
 /// words for, or data missing a value its words need, renders as nothing: an email with a hole in it is worse
 /// than one never sent, and the caller marks it <c>Failed</c> with the reason.
+/// <para>
+/// Since specs/077 an administrator can replace the words of any template and language; these are then the
+/// DEFAULTS - what an unedited template says, and what "reset to default" goes back to.
+/// </para>
 /// </remarks>
 public static class EmailTemplates
 {
@@ -76,11 +86,46 @@ public static class EmailTemplates
     /// <summary>Every template with words, for a test that holds the list and the constants together.</summary>
     public static IEnumerable<(string Template, string Language)> Known => Words.Keys;
 
+    /// <summary>The templates an administrator can edit, in the order the console lists them.</summary>
+    public static readonly IReadOnlyList<string> Templates = [EmailTemplate.OrderPaid, EmailTemplate.PasswordReset, EmailTemplate.EmailConfirmation];
+
+    /// <summary>The languages an email is written in - the shop's (specs/021).</summary>
+    public static readonly IReadOnlyList<string> Languages = ["vi", "en"];
+
+    /// <summary>What each template's words may use - what <see cref="Values"/> fills in. Anything else is refused on save.</summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> PlaceholdersOf = new Dictionary<string, IReadOnlyList<string>>
+    {
+        [EmailTemplate.OrderPaid] = ["name", "order", "total", "link"],
+        [EmailTemplate.PasswordReset] = ["name", "link"],
+        [EmailTemplate.EmailConfirmation] = ["name", "link"],
+    };
+
+    /// <summary>
+    /// What an edit may not remove (specs/077): a reset or confirmation email without its link is an email that
+    /// cannot do the one thing it is for.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> RequiredOf = new Dictionary<string, IReadOnlyList<string>>
+    {
+        [EmailTemplate.OrderPaid] = [],
+        [EmailTemplate.PasswordReset] = ["link"],
+        [EmailTemplate.EmailConfirmation] = ["link"],
+    };
+
+    /// <summary>The built-in words of a template in a language, as HTML - null when there are none.</summary>
+    public static EmailWords? Default(string template, string language) =>
+        Words.TryGetValue((template, language), out var words) ? new EmailWords(words.Subject, EmailHtml.FromPlainText(words.Body)) : null;
+
+    /// <summary>
+    /// Fills a template's words for one recipient. <paramref name="edited"/> is an administrator's version (already
+    /// sanitised); without one, the built-in words. Null when there are no words or the data lacks a value.
+    /// </summary>
     public static RenderedEmail? Render(
-        string template, string language, IReadOnlyDictionary<string, string> data, string recipientName, string storefrontUrl)
+        string template, string language, IReadOnlyDictionary<string, string> data, string recipientName, string storefrontUrl,
+        EmailWords? edited = null)
     {
         var lang = Words.ContainsKey((template, language)) ? language : DefaultLanguage;
-        if (!Words.TryGetValue((template, lang), out var words))
+        var words = edited ?? Default(template, lang);
+        if (words is null)
         {
             return null;
         }
@@ -91,10 +136,21 @@ public static class EmailTemplates
             return null;
         }
 
-        return new RenderedEmail(Fill(words.Subject, values), Fill(words.Body, values));
+        var html = EmailHtml.FillHtml(words.BodyHtml, values);
+        return new RenderedEmail(EmailHtml.FillSubject(words.Subject, values), html, EmailHtml.ToText(html));
     }
 
-    private static Dictionary<string, string>? Values(
+    /// <summary>
+    /// Made-up data a template renders with in the console's preview and test email (specs/077) - never a real
+    /// order and never a real token.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> SampleData(string template) => template switch
+    {
+        EmailTemplate.OrderPaid => new Dictionary<string, string> { ["orderId"] = "01a0dd2b-sample", ["total"] = "1250000", ["currency"] = "VND" },
+        _ => new Dictionary<string, string> { ["token"] = "sample-token" },
+    };
+
+    public static Dictionary<string, string>? Values(
         string template, string language, IReadOnlyDictionary<string, string> data, string name, string storefrontUrl)
     {
         switch (template)
@@ -157,6 +213,4 @@ public static class EmailTemplates
         return $"{value.ToString("N" + decimals, culture)} {currency}";
     }
 
-    private static string Fill(string text, Dictionary<string, string> values) =>
-        values.Aggregate(text, (current, pair) => current.Replace("{" + pair.Key + "}", pair.Value));
 }

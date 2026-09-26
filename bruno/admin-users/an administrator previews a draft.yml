@@ -1,0 +1,41 @@
+info:
+  name: an administrator previews a draft
+  type: http
+  seq: 20
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/email-templates/OrderPaid/en/preview"
+  body:
+    type: json
+    data: |-
+      {
+        "subject": "Paid: {order}",
+        "bodyHtml": "<p>Thanks, <strong>{name}</strong>!<script>alert(1)</script></p><p><a href=\"{link}\">Your order</a></p>"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("filled with made-up data, the script gone", function() {
+          expect(res.body.subject).to.match(/^Paid: /);
+          expect(res.body.html).to.contain("<strong>");
+          expect(res.body.html).to.not.contain("<script");
+          expect(res.body.text).to.be.a("string").and.not.equal("");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Nothing is saved or sent. The sanitiser runs here as it does on save.

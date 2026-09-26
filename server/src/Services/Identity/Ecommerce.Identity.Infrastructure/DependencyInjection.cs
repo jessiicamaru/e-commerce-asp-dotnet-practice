@@ -53,6 +53,8 @@ public static class DependencyInjection
         services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();
         services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
         services.AddSingleton<IEmailTransport, SmtpEmailTransport>();
+        services.AddScoped<IEmailTemplateStore, EmailTemplateStore>();
+        services.AddSingleton<IHtmlSanitizer, AllowListHtmlSanitizer>();
 
         // Wrong passwords counted per email (specs/062). Bad settings refuse to start rather than disable it.
         services.AddOptions<Ecommerce.Application.Auth.SignInThrottling.SignInOptions>()

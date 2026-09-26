@@ -1,0 +1,36 @@
+info:
+  name: saving over a stale version is 409
+  type: http
+  seq: 22
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/email-templates/OrderPaid/en"
+  body:
+    type: json
+    data: |-
+      {
+        "subject": "Stale",
+        "bodyHtml": "<p>{name}</p>",
+        "expectedVersion": 0
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  An editor opened before the save above: its words would silently replace somebody else's, so it is refused.

@@ -1,0 +1,28 @@
+info:
+  name: a moderator cannot edit the emails is 403
+  type: http
+  seq: 17
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/email-templates"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The emails reach every inbox and two carry the password-reset link: administrators only (specs/077).

@@ -35,7 +35,7 @@ Gaps a shopper or a seller would notice.
 
 | Issue | Title |
 | :-- | :-- |
-| [#150](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/150) | Email templates and notification wording cannot be edited - an administrator needs a rich-text editor |
+| [#150](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/150) | Email templates and notification wording cannot be edited - an administrator needs a rich-text editor. **Emails done in #161 (specs/077); notification wording remains.** |
 
 ## Priority 3 - technical debt
 

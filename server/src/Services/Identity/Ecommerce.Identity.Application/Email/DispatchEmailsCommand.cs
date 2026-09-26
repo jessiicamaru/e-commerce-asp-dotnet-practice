@@ -30,6 +30,7 @@ public class DispatchEmailsCommandHandler(
     IOutgoingEmailRepository emails,
     IUserRepository users,
     IEmailTransport transport,
+    EmailComposer composer,
     IUnitOfWork unitOfWork,
     IOptions<EmailOptions> options,
     ILogger<DispatchEmailsCommandHandler> logger) : IRequestHandler<DispatchEmailsCommand, int>
@@ -40,6 +41,7 @@ public class DispatchEmailsCommandHandler(
     private readonly IOutgoingEmailRepository _emails = emails;
     private readonly IUserRepository _users = users;
     private readonly IEmailTransport _transport = transport;
+    private readonly EmailComposer _composer = composer;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly EmailOptions _options = options.Value;
     private readonly ILogger<DispatchEmailsCommandHandler> _logger = logger;
@@ -76,7 +78,8 @@ public class DispatchEmailsCommandHandler(
         }
 
         var data = JsonSerializer.Deserialize<Dictionary<string, string>>(email.DataJson) ?? [];
-        var rendered = EmailTemplates.Render(email.Template, email.Language, data, recipient.FirstName, _options.StorefrontUrl);
+        // The administrator's current words, or the built-in ones (specs/077).
+        var rendered = await _composer.ComposeAsync(email.Template, email.Language, data, recipient.FirstName, _options.StorefrontUrl, ct);
         if (rendered is null)
         {
             Fail(email, $"No words for template '{email.Template}', or its data is incomplete.");
@@ -85,7 +88,7 @@ public class DispatchEmailsCommandHandler(
 
         try
         {
-            await _transport.SendAsync(recipient.Email, rendered.Subject, rendered.Body, ct);
+            await _transport.SendAsync(recipient.Email, rendered.Subject, rendered.Text, rendered.Html, ct);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
