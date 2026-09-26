@@ -103,6 +103,7 @@ public class NotificationWordingTests(ActivityTestFixture fixture) : IAsyncLifet
     {
         await SendAsync(new SaveNotificationWordingCommand("ParcelShipped", "en", "On its way: {{tracking}}", 0));
         var (reset, audit) = await AuditedAsync(new ResetNotificationWordingCommand("ParcelShipped", "en", 1));
+        Assert.False((await SendAsync(new GetNotificationWordingQuery()))["en"].ContainsKey("ParcelShipped"));   // the bundle again
         await Assert.ThrowsAsync<ConflictException>(() => SendAsync(new ResetNotificationWordingCommand("ParcelShipped", "en", 2)));
         var restored = await SendAsync(new RestoreNotificationWordingCommand("ParcelShipped", "en", 1, 2));
 

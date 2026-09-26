@@ -1,0 +1,42 @@
+info:
+  name: an administrator rewords a notice
+  type: http
+  seq: 28
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/notifications/wording/NewSale/en"
+  body:
+    type: json
+    data: |-
+      {
+        "text": "A <strong>new sale</strong>: {{order}}<script>alert(1)</script>",
+        "expectedVersion": {{wordingVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.version) bru.setVar("wordingVersion", res.body.version);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("sanitised, a new version", function() {
+          expect(res.body.text).to.equal("A <strong>new sale</strong>: {{order}}");
+          expect(res.body.isDefault).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The script goes; the emphasis stays.
