@@ -165,6 +165,57 @@ public class VoucherCheckoutTests
         Assert.Contains("already used", again.Message);
     }
 
+    /// <summary>
+    /// The claim's own guard, without the pricing check in front of it: a checkout priced before another one of the
+    /// same customer's committed still cannot take a use past their limit. The races above rarely reach this
+    /// statement - pricing refuses the late ones first - so it is tested on its own.
+    /// </summary>
+    [Fact]
+    public async Task The_claim_refuses_a_use_past_the_customers_limit_whatever_pricing_said()
+    {
+        var code = await PlatformVoucherAsync("FixedAmount", fixedValue: 1_000m, perCustomerLimit: 1);
+        var customer = Customer();
+        var applied = await AppliedAsync(code);
+
+        Assert.Null(await ClaimAsync(applied, customer));
+        Assert.Equal(code, await ClaimAsync(applied, customer));
+        Assert.Equal((1, 1), (await UsedAsync(code), await CustomerUsesAsync(code, customer)));
+    }
+
+    [Fact]
+    public async Task The_claim_refuses_a_use_past_the_total_whatever_pricing_said()
+    {
+        var code = await PlatformVoucherAsync("FixedAmount", fixedValue: 1_000m, totalLimit: 1);
+        var applied = await AppliedAsync(code);
+
+        Assert.Null(await ClaimAsync(applied, Guid.CreateVersion7()));
+        Assert.Equal(code, await ClaimAsync(applied, Guid.CreateVersion7()));
+        Assert.Equal(1, await UsedAsync(code));
+    }
+
+    /// <summary>
+    /// The release's own guard: <c>TrySettleAsync</c> calls it only for a settlement that happened, but the
+    /// statement must not count twice if it is ever run twice.
+    /// </summary>
+    [Fact]
+    public async Task Releasing_an_order_twice_gives_its_use_back_once()
+    {
+        var code = await PlatformVoucherAsync("FixedAmount", fixedValue: 1_000m);
+        var customer = Customer();
+        Cart((null, 100_000m, 1));
+        var first = (await SendAsync(new SubmitOrderCommand(null, "standard", [code]))).OrderId;
+        await SendAsync(new SubmitOrderCommand(null, "standard", [code]));
+
+        for (var i = 0; i < 2; i++)
+        {
+            await using var scope = _fixture.NewScope();
+            await scope.ServiceProvider.GetRequiredService<IVoucherRepository>().ReleaseForOrderAsync(first, DateTime.UtcNow);
+        }
+
+        Assert.Equal(1, await UsedAsync(code));
+        Assert.Equal(1, await CustomerUsesAsync(code, customer));
+    }
+
     /// <summary>A failed checkout gives its use back once: two orders hold it, one fails twice, one use remains.</summary>
     [Fact]
     public async Task A_failed_order_gives_its_use_back_once()
@@ -305,6 +356,20 @@ public class VoucherCheckoutTests
             _fixture.CurrentUser.Roles.Clear();
             foreach (var r in who.Item2) _fixture.CurrentUser.Roles.Add(r);
         }
+    }
+
+    private async Task<AppliedVoucher> AppliedAsync(string code)
+    {
+        await using var scope = _fixture.NewScope();
+        var v = await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Vouchers.AsNoTracking().SingleAsync(x => x.Code == code);
+        return new AppliedVoucher(v.Id, v.Code, v.Name, v.SellerId, v.Benefit, 1_000m, v.PerCustomerLimit);
+    }
+
+    /// <summary>The claim alone: nothing else is staged, so a success saves only the counters.</summary>
+    private async Task<string?> ClaimAsync(AppliedVoucher applied, Guid customer)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<IVoucherRepository>().ClaimAndSaveAsync([applied], customer);
     }
 
     private async Task SettleAsync(Guid order)
