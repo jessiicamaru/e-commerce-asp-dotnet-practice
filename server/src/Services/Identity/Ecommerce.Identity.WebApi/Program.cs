@@ -2,6 +2,7 @@ using Ecommerce.Infrastructure.Email;
 using Ecommerce.WebApi.Consumers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
@@ -131,6 +132,9 @@ builder.Services.AddAuditTrail("identity");
 
 // Telling people what happened to their account (specs/042, 043).
 builder.Services.AddNotifier();
+
+// Emails about a person's account, through the outbox like everyone's (specs/083) - this service queues them too.
+builder.Services.AddEmailSender();
 
 // Sends what outgoing_emails holds (specs/060). With no mail server it only logs and retries later - the
 // auth-smoke CI job runs Identity with none, which is the check on that.

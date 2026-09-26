@@ -67,6 +67,11 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
         });
     }
 
+    public Task RecordLanguageAsync(Guid userId, string language, CancellationToken cancellationToken = default) =>
+        _context.Users
+            .Where(u => u.Id == userId && (u.Language == null || u.Language != language))
+            .ExecuteUpdateAsync(set => set.SetProperty(u => u.Language, language), cancellationToken);
+
     public Task<int> RevokeAllRefreshTokensAsync(Guid userId, DateTime now, CancellationToken cancellationToken = default) =>
         _context.RefreshTokens
             .Where(t => t.UserId == userId && t.RevokedAt == null)

@@ -8,9 +8,9 @@ works is a test that fails when it does not.
 
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
-| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 790 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
-| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 453 tests in 81 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
-| API collection | Bruno CLI | `bruno/` | 267 requests, 435 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
+| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 798 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
+| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 457 tests in 81 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
+| API collection | Bruno CLI | `bruno/` | 267 requests, 437 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Browser end to end | Playwright (Edge locally, Chromium in CI) | `client/e2e/` | 4 flows | A page and the API it calls drifting apart: a gateway route missing, a field renamed, a toast that never shows |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
@@ -33,10 +33,10 @@ DB_PASSWORD=<your password> dotnet test
 
 | Project | Port | Test cases | Test classes |
 | :-- | :-- | :-- | :-- |
-| `Ecommerce.Identity.Tests` | 5435 | 163 | EmailTemplate (versions, sanitised HTML, placeholders by name), AccessTokenRevocation, Account, AddressBook, Audit, AuthError, Email, EmailCase, EmailConfirmation, ForbiddenProblem, JwtStartup, Moderation, PasswordReset, RefreshTokenReuse, SignInThrottle, RegistrationValidation, SellerRoles, Session, ShopApplication, UserReport |
+| `Ecommerce.Identity.Tests` | 5435 | 170 | AccountEmail (eight more emails, the reader's language learnt from use), EmailTemplate (versions, sanitised HTML, placeholders by name), AccessTokenRevocation, Account, AddressBook, Audit, AuthError, Email, EmailCase, EmailConfirmation, ForbiddenProblem, JwtStartup, Moderation, PasswordReset, RefreshTokenReuse, SignInThrottle, RegistrationValidation, SellerRoles, Session, ShopApplication, UserReport |
 | `Ecommerce.Catalog.Tests` | 5433 (+ S3 on 8333) | 205 | UnlistedProductReads (off the shelf: image by its key only, reviews and questions a 404), S3ProductImageStore (against SeaweedFS: one bucket for every instance), ProductQuestion (only the product's seller answers, the asker told once, hidden parts locked), SavedProduct (once per product, the caller's own, back in stock once per flip), SearchIndex (the plan uses the trigram indexes), SellerProductInsights, Audit, Availability, CategoryTranslation, DeleteCategory, DeleteProduct, LanguageNegotiation, OrphanImage, ProductImage, ProductReview, ProductView, RequestCurrency, Review, SellerOwnership, Translation, VariantOwnership, VariantPrice, VariantSellerPricing, Variant |
 | `Ecommerce.Cart.Tests` | 5439 | 18 | CheckoutOutcome, Validation, VariantLine |
-| `Ecommerce.Order.Tests` | 5434 | 264 | RevenueDay, VoucherPricing, VoucherCheckout, VoucherManagement, SellerInsights, Return, Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
+| `Ecommerce.Order.Tests` | 5434 | 265 | RevenueDay, VoucherPricing, VoucherCheckout, VoucherManagement, SellerInsights, Return, Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
 | `Ecommerce.Inventory.Tests` | 5437 | 51 | RestockReturn, Announcement, Audit, ForgetProduct, ReserveStock, Restock, SellerStock, Settlement |
 | `Ecommerce.Payment.Tests` | 5438 | 25 | ReturnRefund, Audit, ChargeOrder, ConcurrentInsertRecovery, Refund |
 | `Ecommerce.Orchestrator.Tests` | 5436 | 17 | Health (the real host, `/health` 200 and 503), OrderStateMachine (the saga's transitions through MassTransit's harness - the first tests it has had, specs/053), PaymentTimeout (the sweeper's query, the options) |

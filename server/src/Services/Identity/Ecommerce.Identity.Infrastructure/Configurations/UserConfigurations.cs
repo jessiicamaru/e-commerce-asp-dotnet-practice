@@ -39,6 +39,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.LockReason).HasMaxLength(500);
         builder.Property(u => u.BanReason).HasMaxLength(500);
+        builder.Property(u => u.Language).HasMaxLength(8);
 
         builder.HasMany(u => u.Roles)
             .WithMany(r => r.Users)

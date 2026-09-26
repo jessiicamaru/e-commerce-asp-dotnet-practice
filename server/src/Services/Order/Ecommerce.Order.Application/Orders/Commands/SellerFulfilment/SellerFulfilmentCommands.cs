@@ -1,5 +1,6 @@
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
 using Ecommerce.Order.Application.Orders.Common;
@@ -43,16 +44,19 @@ public class PrepareMySaleCommandHandler(IOrderRepository orders, ICurrentUser c
 
 public class ShipMySaleCommandHandler(IOrderRepository orders, ICurrentUser currentUser,
     IAuditTrail audit,
-    INotifier notifier)
+    INotifier notifier,
+    IEmailSender email)
     : IRequestHandler<ShipMySaleCommand, SaleDetailResponse>
 {
     private readonly INotifier _notifier = notifier;
+
+    private readonly IEmailSender _email = email;
 
     private readonly IAuditTrail _audit = audit;
 
     public Task<SaleDetailResponse> Handle(ShipMySaleCommand request, CancellationToken cancellationToken) =>
         SellerStep.MoveAsync(orders, currentUser, request.OrderId,
-            ShipmentStatus.Preparing, ShipmentStatus.Shipped, request.TrackingReference.Trim(), cancellationToken, _audit, _notifier);
+            ShipmentStatus.Preparing, ShipmentStatus.Shipped, request.TrackingReference.Trim(), cancellationToken, _audit, _notifier, _email);
 }
 
 /// <summary>A seller's step on their own part, and what each outcome looks like from outside.</summary>
@@ -67,14 +71,15 @@ internal static class SellerStep
         string? trackingReference,
         CancellationToken cancellationToken,
         IAuditTrail? audit = null,
-        INotifier? notifier = null)
+        INotifier? notifier = null,
+        IEmailSender? email = null)
     {
         var sellerId = currentUser.Id
             ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
         var result = await orders.TryMoveShipmentAsync(
             orderId, sellerId, from, to, trackingReference, DateTime.UtcNow, cancellationToken,
-            audit is null ? null : ct => ParcelAudit.RecordMoveAsync(audit, notifier, orders, orderId, sellerId, from, to, trackingReference, ct));
+            audit is null ? null : ct => ParcelAudit.RecordMoveAsync(audit, notifier, orders, orderId, sellerId, from, to, trackingReference, ct, email));
 
         switch (result.Outcome)
         {

@@ -368,6 +368,14 @@
     "failed": "Could not do that.",
     "template": {
       "OrderPaid": "Order paid",
+      "ParcelShipped": "Parcel shipped",
+      "OrderCancelled": "Order cancelled",
+      "ReturnAccepted": "Return accepted",
+      "ReturnRefused": "Return refused",
+      "ReturnRefunded": "Return refunded",
+      "SavedBackInStock": "Saved product back in stock",
+      "AccountLocked": "Account locked",
+      "AccountBanned": "Account banned",
       "PasswordReset": "Password reset",
       "EmailConfirmation": "Confirm email"
     },

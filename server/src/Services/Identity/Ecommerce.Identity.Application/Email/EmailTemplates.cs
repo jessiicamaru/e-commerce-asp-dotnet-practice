@@ -75,6 +75,112 @@ public static class EmailTemplates
             + "{link}\n\n"
             + "If you did not sign up, ignore this email.\n\n"
             + "- e-commerce"),
+
+        // specs/083: what reached a person only as a notice in the bell until then.
+        [(EmailTemplate.ParcelShipped, "vi")] = (
+            "Đơn hàng {order} đang trên đường đến bạn",
+            "Xin chào {name},\n\n"
+            + "Một kiện hàng của đơn {order} từ {shop} đã được gửi đi.\n"
+            + "Mã vận đơn: {tracking}\n\n"
+            + "Theo dõi đơn hàng: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ParcelShipped, "en")] = (
+            "Your order {order} is on its way",
+            "Hi {name},\n\n"
+            + "A parcel of order {order} from {shop} has shipped.\n"
+            + "Tracking reference: {tracking}\n\n"
+            + "Follow your order: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.OrderCancelled, "vi")] = (
+            "Đơn hàng {order} đã được hủy",
+            "Xin chào {name},\n\n"
+            + "Đơn {order} đã được hủy. Toàn bộ số tiền {total} sẽ được hoàn lại cho bạn.\n\n"
+            + "Xem đơn hàng: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.OrderCancelled, "en")] = (
+            "Your order {order} is cancelled",
+            "Hi {name},\n\n"
+            + "Order {order} has been cancelled. The whole {total} will be refunded to you.\n\n"
+            + "See your order: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ReturnAccepted, "vi")] = (
+            "Yêu cầu trả hàng cho đơn {order} đã được chấp nhận",
+            "Xin chào {name},\n\n"
+            + "Yêu cầu trả hàng của bạn cho đơn {order} đã được chấp nhận.\n"
+            + "Hãy gửi kiện hàng lại và nhập mã vận đơn trên trang đơn hàng.\n\n"
+            + "{link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ReturnAccepted, "en")] = (
+            "Your return for order {order} is accepted",
+            "Hi {name},\n\n"
+            + "Your return for order {order} has been accepted.\n"
+            + "Send the parcel back and enter its tracking reference on the order's page.\n\n"
+            + "{link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ReturnRefused, "vi")] = (
+            "Yêu cầu trả hàng cho đơn {order} bị từ chối",
+            "Xin chào {name},\n\n"
+            + "Yêu cầu trả hàng của bạn cho đơn {order} đã bị từ chối.\n"
+            + "Lý do: {reason}\n\n"
+            + "Xem đơn hàng: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ReturnRefused, "en")] = (
+            "Your return for order {order} was refused",
+            "Hi {name},\n\n"
+            + "Your return for order {order} was refused.\n"
+            + "Reason: {reason}\n\n"
+            + "See your order: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ReturnRefunded, "vi")] = (
+            "Đã nhận hàng trả của đơn {order}",
+            "Xin chào {name},\n\n"
+            + "Kiện hàng bạn trả lại của đơn {order} đã về đến nơi. Số tiền {amount} sẽ được hoàn lại cho bạn.\n\n"
+            + "Xem đơn hàng: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.ReturnRefunded, "en")] = (
+            "Your return for order {order} arrived",
+            "Hi {name},\n\n"
+            + "The parcel you returned from order {order} has arrived. {amount} will be refunded to you.\n\n"
+            + "See your order: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.SavedBackInStock, "vi")] = (
+            "{product} đã có hàng trở lại",
+            "Xin chào {name},\n\n"
+            + "{product}, sản phẩm bạn đã lưu, đã có hàng trở lại.\n\n"
+            + "Xem sản phẩm: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.SavedBackInStock, "en")] = (
+            "{product} is back in stock",
+            "Hi {name},\n\n"
+            + "{product}, which you saved, is back in stock.\n\n"
+            + "See it: {link}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.AccountLocked, "vi")] = (
+            "Tài khoản của bạn đã bị khóa",
+            "Xin chào {name},\n\n"
+            + "Tài khoản của bạn đã bị khóa đến {until}.\n"
+            + "Lý do: {reason}\n\n"
+            + "Sau thời điểm đó bạn có thể đăng nhập lại như bình thường.\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.AccountLocked, "en")] = (
+            "Your account is locked",
+            "Hi {name},\n\n"
+            + "Your account has been locked until {until}.\n"
+            + "Reason: {reason}\n\n"
+            + "After that you can sign in again as usual.\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.AccountBanned, "vi")] = (
+            "Tài khoản của bạn đã bị cấm",
+            "Xin chào {name},\n\n"
+            + "Tài khoản của bạn đã bị cấm và không thể đăng nhập nữa.\n"
+            + "Lý do: {reason}\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.AccountBanned, "en")] = (
+            "Your account is banned",
+            "Hi {name},\n\n"
+            + "Your account has been banned and can no longer sign in.\n"
+            + "Reason: {reason}\n\n"
+            + "- e-commerce"),
     };
 
     /// <summary>
@@ -87,10 +193,27 @@ public static class EmailTemplates
     public static IEnumerable<(string Template, string Language)> Known => Words.Keys;
 
     /// <summary>The templates an administrator can edit, in the order the console lists them.</summary>
-    public static readonly IReadOnlyList<string> Templates = [EmailTemplate.OrderPaid, EmailTemplate.PasswordReset, EmailTemplate.EmailConfirmation];
+    public static readonly IReadOnlyList<string> Templates =
+    [
+        EmailTemplate.OrderPaid, EmailTemplate.ParcelShipped, EmailTemplate.OrderCancelled,
+        EmailTemplate.ReturnAccepted, EmailTemplate.ReturnRefused, EmailTemplate.ReturnRefunded,
+        EmailTemplate.SavedBackInStock,
+        EmailTemplate.PasswordReset, EmailTemplate.EmailConfirmation, EmailTemplate.AccountLocked, EmailTemplate.AccountBanned,
+    ];
 
     /// <summary>The languages an email is written in - the shop's (specs/021).</summary>
     public static readonly IReadOnlyList<string> Languages = ["vi", "en"];
+
+    /// <summary>
+    /// <paramref name="language"/> when an email can be written in it ("en-US" counts as "en"), else null - so a
+    /// header asking for Klingon records nothing rather than a language no email is written in (specs/083).
+    /// </summary>
+    public static string? Supported(string? language)
+    {
+        var tag = language?.Trim().ToLowerInvariant() ?? string.Empty;
+        tag = tag.Length > 2 ? tag[..2] : tag;
+        return Languages.Contains(tag) ? tag : null;
+    }
 
     /// <summary>What each template's words may use - what <see cref="Values"/> fills in. Anything else is refused on save.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> PlaceholdersOf = new Dictionary<string, IReadOnlyList<string>>
@@ -98,6 +221,14 @@ public static class EmailTemplates
         [EmailTemplate.OrderPaid] = ["name", "order", "total", "link"],
         [EmailTemplate.PasswordReset] = ["name", "link"],
         [EmailTemplate.EmailConfirmation] = ["name", "link"],
+        [EmailTemplate.ParcelShipped] = ["name", "order", "shop", "tracking", "link"],
+        [EmailTemplate.OrderCancelled] = ["name", "order", "total", "link"],
+        [EmailTemplate.ReturnAccepted] = ["name", "order", "link"],
+        [EmailTemplate.ReturnRefused] = ["name", "order", "reason", "link"],
+        [EmailTemplate.ReturnRefunded] = ["name", "order", "amount", "link"],
+        [EmailTemplate.SavedBackInStock] = ["name", "product", "link"],
+        [EmailTemplate.AccountLocked] = ["name", "until", "reason"],
+        [EmailTemplate.AccountBanned] = ["name", "reason"],
     };
 
     /// <summary>
@@ -109,6 +240,14 @@ public static class EmailTemplates
         [EmailTemplate.OrderPaid] = [],
         [EmailTemplate.PasswordReset] = ["link"],
         [EmailTemplate.EmailConfirmation] = ["link"],
+        [EmailTemplate.ParcelShipped] = [],
+        [EmailTemplate.OrderCancelled] = [],
+        [EmailTemplate.ReturnAccepted] = [],
+        [EmailTemplate.ReturnRefused] = [],
+        [EmailTemplate.ReturnRefunded] = [],
+        [EmailTemplate.SavedBackInStock] = [],
+        [EmailTemplate.AccountLocked] = [],
+        [EmailTemplate.AccountBanned] = [],
     };
 
     /// <summary>The built-in words of a template in a language, as HTML - null when there are none.</summary>
@@ -144,9 +283,20 @@ public static class EmailTemplates
     /// Made-up data a template renders with in the console's preview and test email (specs/077) - never a real
     /// order and never a real token.
     /// </summary>
+    private const string SampleOrder = "01a0dd2b-sample";
+
     public static IReadOnlyDictionary<string, string> SampleData(string template) => template switch
     {
-        EmailTemplate.OrderPaid => new Dictionary<string, string> { ["orderId"] = "01a0dd2b-sample", ["total"] = "1250000", ["currency"] = "VND" },
+        EmailTemplate.OrderPaid or EmailTemplate.OrderCancelled =>
+            new Dictionary<string, string> { ["orderId"] = SampleOrder, ["total"] = "1250000", ["currency"] = "VND" },
+        EmailTemplate.ParcelShipped =>
+            new Dictionary<string, string> { ["orderId"] = SampleOrder, ["tracking"] = "VNPOST-123456", ["shop"] = "Leica Corner" },
+        EmailTemplate.ReturnAccepted => new Dictionary<string, string> { ["orderId"] = SampleOrder },
+        EmailTemplate.ReturnRefused => new Dictionary<string, string> { ["orderId"] = SampleOrder, ["reason"] = "The seal is broken." },
+        EmailTemplate.ReturnRefunded => new Dictionary<string, string> { ["orderId"] = SampleOrder, ["amount"] = "990000", ["currency"] = "VND" },
+        EmailTemplate.SavedBackInStock => new Dictionary<string, string> { ["productId"] = "01a0dd2b-0000-7000-8000-000000000000", ["product"] = "Fujifilm X-T5" },
+        EmailTemplate.AccountLocked => new Dictionary<string, string> { ["until"] = "2031-01-15T03:30:00.0000000Z", ["reason"] = "Repeated spam in questions." },
+        EmailTemplate.AccountBanned => new Dictionary<string, string> { ["reason"] = "Fraud." },
         _ => new Dictionary<string, string> { ["token"] = "sample-token" },
     };
 
@@ -195,10 +345,86 @@ public static class EmailTemplates
                     ["link"] = $"{storefrontUrl.TrimEnd('/')}/confirm-email?token={Uri.EscapeDataString(confirmation)}",
                 };
 
+            case EmailTemplate.ParcelShipped when data.TryGetValue("orderId", out var shipped):
+                return new()
+                {
+                    ["name"] = name,
+                    ["order"] = Short(shipped),
+                    // The shop's own parcel names no seller; it is the shop's.
+                    ["shop"] = data.TryGetValue("shop", out var shop) && !string.IsNullOrWhiteSpace(shop) ? shop : "e-commerce",
+                    ["tracking"] = data.TryGetValue("tracking", out var tracking) && !string.IsNullOrWhiteSpace(tracking) ? tracking : "-",
+                    ["link"] = OrderLink(storefrontUrl, shipped),
+                };
+
+            case EmailTemplate.OrderCancelled
+                when data.TryGetValue("orderId", out var cancelled)
+                     && data.TryGetValue("total", out var refund)
+                     && data.TryGetValue("currency", out var refundCurrency):
+                return new()
+                {
+                    ["name"] = name,
+                    ["order"] = Short(cancelled),
+                    ["total"] = Money(refund, refundCurrency, language),
+                    ["link"] = OrderLink(storefrontUrl, cancelled),
+                };
+
+            case EmailTemplate.ReturnAccepted when data.TryGetValue("orderId", out var accepted):
+                return new() { ["name"] = name, ["order"] = Short(accepted), ["link"] = OrderLink(storefrontUrl, accepted) };
+
+            case EmailTemplate.ReturnRefused when data.TryGetValue("orderId", out var refused):
+                return new()
+                {
+                    ["name"] = name,
+                    ["order"] = Short(refused),
+                    ["reason"] = data.GetValueOrDefault("reason") ?? string.Empty,
+                    ["link"] = OrderLink(storefrontUrl, refused),
+                };
+
+            case EmailTemplate.ReturnRefunded
+                when data.TryGetValue("orderId", out var returned)
+                     && data.TryGetValue("amount", out var amount)
+                     && data.TryGetValue("currency", out var amountCurrency):
+                return new()
+                {
+                    ["name"] = name,
+                    ["order"] = Short(returned),
+                    ["amount"] = Money(amount, amountCurrency, language),
+                    ["link"] = OrderLink(storefrontUrl, returned),
+                };
+
+            case EmailTemplate.SavedBackInStock
+                when data.TryGetValue("productId", out var productId) && data.TryGetValue("product", out var product):
+                return new()
+                {
+                    ["name"] = name,
+                    ["product"] = product,
+                    ["link"] = $"{storefrontUrl.TrimEnd('/')}/products/{Uri.EscapeDataString(productId)}",
+                };
+
+            case EmailTemplate.AccountLocked
+                when data.TryGetValue("until", out var until)
+                     && DateTime.TryParse(until, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var lockedUntil):
+                return new()
+                {
+                    ["name"] = name,
+                    // In UTC and saying so: an email has no reader's time zone to write in.
+                    ["until"] = lockedUntil.ToString(language == "vi" ? "HH:mm dd/MM/yyyy" : "MMM d, yyyy HH:mm", CultureInfo.GetCultureInfo(language == "vi" ? "vi-VN" : "en-US")) + " UTC",
+                    ["reason"] = data.GetValueOrDefault("reason") ?? string.Empty,
+                };
+
+            case EmailTemplate.AccountBanned:
+                return new() { ["name"] = name, ["reason"] = data.GetValueOrDefault("reason") ?? string.Empty };
+
             default:
                 return null;
         }
     }
+
+    /// <summary>An order as a person reads it: the first eight characters of its id, as the storefront shows it.</summary>
+    private static string Short(string orderId) => orderId.Length >= 8 ? orderId[..8] : orderId;
+
+    private static string OrderLink(string storefrontUrl, string orderId) =>
+        $"{storefrontUrl.TrimEnd('/')}/orders/{Uri.EscapeDataString(orderId)}";
 
     /// <summary>The amount in the reader's number format, in its currency's minor unit - dong has none.</summary>
     private static string Money(string amount, string currency, string language)

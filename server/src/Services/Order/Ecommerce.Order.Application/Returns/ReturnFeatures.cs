@@ -3,6 +3,7 @@ using Ecommerce.Contracts.Order;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Notifications;
@@ -59,7 +60,8 @@ public record ReturnParcel(
     ShipmentStatus ShipmentStatus,
     DateTime? DeliveredAt,
     string Currency,
-    List<ReturnParcelLine> Lines)
+    List<ReturnParcelLine> Lines,
+    string Language = "")   // the order's (specs/021) - what its emails are written in (specs/083)
 {
     /// <summary>
     /// What was paid for the goods: their price less what vouchers took off (specs/069), plus their tax - all as
@@ -183,7 +185,8 @@ public class ReturnHandlers(
     IOptions<ReturnOptions> options,
     IPublishEndpoint publish,
     IAuditTrail audit,
-    INotifier notifier) :
+    INotifier notifier,
+    IEmailSender email) :
     IRequestHandler<RequestReturnCommand, ReturnResponse>,
     IRequestHandler<EscalateReturnCommand, ReturnResponse>,
     IRequestHandler<SendReturnBackCommand, ReturnResponse>,
@@ -194,6 +197,7 @@ public class ReturnHandlers(
     IRequestHandler<GetReturnsQuery, ReturnPage>
 {
     private readonly IReturnRepository _returns = returns;
+    private readonly IEmailSender _email = email;
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly TimeSpan _window = options.Value.Window;
     private readonly IPublishEndpoint _publish = publish;
@@ -352,10 +356,14 @@ public class ReturnHandlers(
             async ct =>
             {
                 await AuditAsync(current, $"Return{to}", accept ? "The return was accepted" : $"The return was {to.ToString().ToLowerInvariant()}: {why}", ct);
+                var refused = new Dictionary<string, string>(About(parcel.OrderId)) { ["reason"] = why ?? string.Empty };
                 await (accept
                     ? _notifier.NotifyAsync(parcel.BuyerId, NotificationKind.ReturnAccepted, About(parcel.OrderId), $"/orders/{parcel.OrderId}", ct)
-                    : _notifier.NotifyAsync(parcel.BuyerId, NotificationKind.ReturnRefused,
-                        new Dictionary<string, string>(About(parcel.OrderId)) { ["reason"] = why ?? string.Empty }, $"/orders/{parcel.OrderId}", ct));
+                    : _notifier.NotifyAsync(parcel.BuyerId, NotificationKind.ReturnRefused, refused, $"/orders/{parcel.OrderId}", ct));
+                // And by email, in the order's language (specs/083): a decision somebody waits for.
+                await (accept
+                    ? _email.SendAsync(parcel.BuyerId, EmailTemplate.ReturnAccepted, About(parcel.OrderId), parcel.Language, ct)
+                    : _email.SendAsync(parcel.BuyerId, EmailTemplate.ReturnRefused, refused, parcel.Language, ct));
             },
             cancellationToken);
 
@@ -382,12 +390,13 @@ public class ReturnHandlers(
                     parcel.Lines.Select(l => new ReturnedItemDto(l.SellableId, l.Quantity)).ToList(),
                     amount, parcel.Currency, now), ct);
                 await AuditAsync(current, "ReturnReceived", $"The parcel came back; {amount.ToString(CultureInfo.InvariantCulture)} {parcel.Currency} to refund", ct);
-                await _notifier.NotifyAsync(parcel.BuyerId, NotificationKind.ReturnRefunded,
-                    new Dictionary<string, string>(About(parcel.OrderId))
-                    {
-                        ["amount"] = amount.ToString("0.##", CultureInfo.InvariantCulture),
-                        ["currency"] = parcel.Currency,
-                    }, $"/orders/{parcel.OrderId}", ct);
+                var refund = new Dictionary<string, string>(About(parcel.OrderId))
+                {
+                    ["amount"] = amount.ToString("0.##", CultureInfo.InvariantCulture),
+                    ["currency"] = parcel.Currency,
+                };
+                await _notifier.NotifyAsync(parcel.BuyerId, NotificationKind.ReturnRefunded, refund, $"/orders/{parcel.OrderId}", ct);
+                await _email.SendAsync(parcel.BuyerId, EmailTemplate.ReturnRefunded, refund, parcel.Language, ct);
             },
             cancellationToken);
 

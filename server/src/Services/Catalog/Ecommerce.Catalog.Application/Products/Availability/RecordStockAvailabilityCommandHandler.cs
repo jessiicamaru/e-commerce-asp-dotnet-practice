@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -9,11 +10,13 @@ public class RecordStockAvailabilityCommandHandler(
     IProductRepository productRepository,
     ILogger<RecordStockAvailabilityCommandHandler> logger,
     ISavedProductRepository saved,
-    INotifier notifier
+    INotifier notifier,
+    IEmailSender email
 ) : IRequestHandler<RecordStockAvailabilityCommand, bool>
 {
     private readonly ISavedProductRepository _saved = saved;
     private readonly INotifier _notifier = notifier;
+    private readonly IEmailSender _email = email;
     private readonly IProductRepository _productRepository = productRepository;
     private readonly ILogger<RecordStockAvailabilityCommandHandler> _logger = logger;
 
@@ -91,6 +94,11 @@ public class RecordStockAvailabilityCommandHandler(
             await _notifier.NotifyAsync(
                 saver, NotificationKind.SavedBackInStock, new Dictionary<string, string> { ["product"] = product.Name },
                 $"/products/{productId}", cancellationToken);
+            // And by email (specs/083) - in the saver's own language, which only Identity knows.
+            await _email.SendAsync(
+                saver, EmailTemplate.SavedBackInStock,
+                new Dictionary<string, string> { ["productId"] = productId.ToString(), ["product"] = product.Name },
+                EmailTemplate.ReadersLanguage, cancellationToken);
         }
 
         _logger.LogInformation("Product {ProductId} is back in stock; told {Count} shopper(s) who saved it.", productId, savers.Count);

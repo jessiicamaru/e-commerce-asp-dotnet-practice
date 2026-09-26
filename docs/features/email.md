@@ -12,6 +12,14 @@ it. In development every email lands in **Mailpit**, and nothing leaves the mach
 | Order confirmation (`OrderPaid`) | the buyer | the order settles `Paid` | the language the order was placed in (`orders.Language`) |
 | Password reset (`PasswordReset`) | the account's owner | they ask at `/forgot-password` (specs/061) | the request's `Accept-Language` |
 | Address confirmation (`EmailConfirmation`) | a new account | they register, or ask again from the banner (specs/063) | the request's `Accept-Language` |
+| Parcel shipped (`ParcelShipped`) | the buyer | a seller or the shop ships their parcel (specs/083) | the order's |
+| Order cancelled (`OrderCancelled`) | the buyer | a paid order is cancelled, by them or by staff | the order's |
+| Return accepted / refused (`ReturnAccepted`, `ReturnRefused`) | the buyer | the seller or staff decide their return | the order's |
+| Return refunded (`ReturnRefunded`) | the buyer | the returned parcel is received | the order's |
+| Back in stock (`SavedBackInStock`) | each shopper who saved the product | it comes back in stock (specs/075) | the reader's |
+| Account locked / banned (`AccountLocked`, `AccountBanned`) | the person | staff lock or ban them (specs/043) | the reader's |
+
+"The reader's" language is the one the person last used the shop in (rule 5).
 
 The confirmation greets the buyer by first name. It gives the short order number and the total in the
 order's currency, in the reader's number format (`20.416.000 VND`, `22,462,000 VND`), and links to the
@@ -71,7 +79,13 @@ sequenceDiagram
    the person, and an email with a hole in it is worse than none.
 5. **Its language is the thing's language.** An order is confirmed in the language it was placed in, the
    language the order itself keeps (specs/021). An unknown language falls back to Vietnamese, the shop's
-   default. A person's preferred language is not stored on the account yet.
+   default. **Anything else is written in the reader's language** (specs/083): Identity records
+   `users.Language` from `Accept-Language` at sign-up, at sign-in and at every session renewal. It records
+   only a language an email is written in, and "en-US" counts as "en". A sender that cannot know the language
+   asks for `EmailTemplate.ReadersLanguage` (empty), and `QueueEmailCommand` fills it in, or falls back to the
+   default for somebody who never said. Why no setting: a setting is a screen nobody visits, while the storefront
+   already sends its language on every request. A renewal every few minutes carries a switch to the emails, at
+   the cost of one guarded `UPDATE` that writes nothing when the language is unchanged.
 6. **Nothing leaves a development machine.** Identity sends to `SMTP_HOST`:`SMTP_PORT`, which defaults
    to Mailpit on `localhost:1025`, and the containers point at the `mailpit` service. `SmtpEmailTransport`
    is plain SMTP with no authentication. It is the seam a real provider replaces, the way
@@ -119,6 +133,14 @@ reach every customer's inbox, and two of them carry the link that resets a passw
      | `OrderPaid` | `{name}`, `{order}`, `{total}`, `{link}` |
      | `PasswordReset` | `{name}`, `{link}` |
      | `EmailConfirmation` | `{name}`, `{link}` |
+     | `ParcelShipped` | `{name}`, `{order}`, `{shop}`, `{tracking}`, `{link}` |
+     | `OrderCancelled` | `{name}`, `{order}`, `{total}`, `{link}` |
+     | `ReturnAccepted` | `{name}`, `{order}`, `{link}` |
+     | `ReturnRefused` | `{name}`, `{order}`, `{reason}`, `{link}` |
+     | `ReturnRefunded` | `{name}`, `{order}`, `{amount}`, `{link}` |
+     | `SavedBackInStock` | `{name}`, `{product}`, `{link}` |
+     | `AccountLocked` | `{name}`, `{until}` (UTC, and it says so), `{reason}` |
+     | `AccountBanned` | `{name}`, `{reason}` |
 
 6. **Per language.** A language without an edit uses **its own** built-in words, never the other language's
    edit.
@@ -141,6 +163,7 @@ downloads it.
 | Table | Service | What |
 | :-- | :-- | :-- |
 | [`email_template_versions`](../reference/data-model.md#email_template_versions) | Identity | Every saved version of an email's words: `Template`, `Language`, `Version` (unique together), `IsDefault`, `Subject`, `BodyHtml`, `CreatedAt`, `CreatedBy`. A CHECK makes a version either the default or both a subject and a body. |
+| [`users`](../reference/data-model.md#users) `.Language` | Identity | The language the person last used the shop in (specs/083); null until they say. |
 | [`outgoing_emails`](../reference/data-model.md#outgoing_emails) | Identity | One row per requested email: recipient, template, data (jsonb), language, `Status` (Pending / Sent / Failed), `Attempts`, `NextAttemptAt`, `SentAt`, `LastError`. A partial index on `NextAttemptAt` covers pending rows. |
 
 ## Configuration
@@ -159,7 +182,7 @@ Mailpit's inbox is at **http://localhost:8025**. It keeps its mail on the `mailp
 
 | Message | Publisher | Consumer |
 | :-- | :-- | :-- |
-| [`EmailRequested`](../reference/messages.md) (email id, recipient, template, data, language) | any service, through `IEmailSender`; today Order | Identity (`QueueEmailConsumer`) |
+| [`EmailRequested`](../reference/messages.md) (email id, recipient, template, data, language) | any service, through `IEmailSender`: Order, Catalog and Identity itself | Identity (`QueueEmailConsumer`) |
 
 ## Tests
 
@@ -167,9 +190,12 @@ Mailpit's inbox is at **http://localhost:8025**. It keeps its mail on the `mailp
 | :-- | :-- |
 | `Ecommerce.Identity.Tests/EmailTests` | A request delivered twice is kept and sent once; Vietnamese and English words, Vietnamese as the fallback; a mail server that is down delays the email, and it goes out once it is back; after 12 failed attempts the email is `Failed` with its reason; an unknown recipient, an unknown template and incomplete data fail rather than retry; the backoff doubles to an hour. |
 | `Ecommerce.Identity.Tests/PasswordResetTests` | The reset email carries the link to the storefront, in the language asked for, and once sent its row holds no token. |
-| `Ecommerce.Order.Tests/NotificationTests` | A paid order asks for one confirmation in its language, a redelivered settlement asks for no second one, and a failed order asks for none. |
+| `Ecommerce.Order.Tests/NotificationTests` | A paid order asks for one confirmation in its language, a redelivered settlement asks for no second one, and a failed order asks for none. Shipping asks for one email and preparing for none; a cancellation asks for one, with the order's total (specs/083). |
+| `Ecommerce.Order.Tests/ReturnTests` | Accepting, refusing and receiving a return each ask for one email in the order's language; a refused attempt and a second "received" ask for nothing. |
+| `Ecommerce.Catalog.Tests/SavedProductTests` | Back in stock asks for one email per saver per flip, in the reader's language, and none for a product off the shelf. |
+| `Ecommerce.Identity.Tests/AccountEmailTests` (7) | Every template has words in both languages and renders its sample whole. The shipped and locked wording. A lock and a ban ask for one email each, and a refused lock for none. The language is learnt at sign-up, sign-in and renewal, and nonsense changes nothing. The reader's language is filled in, with the default for somebody who never said. |
 | `Ecommerce.Identity.Tests/EmailTemplateTests` (13) | An unedited email is the built-in words as HTML plus text. A saved edit is what the next email says, in that language only. An unknown placeholder is refused by name. A security email keeps `{link}`. Scripts, handlers, `javascript:`, images and frames are stripped, and a name is escaped. A stale editor is a 409, and two saves at once make one version. The store gives a number once. A future version is a 409. Reset and restore are versions, audited with before and after. The list, the preview and a test to the caller. An unknown template is a 404. |
-| `client/src/pages/admin-emails/index.test.tsx`, `components/shared/rich-text-editor/index.test.tsx` | The page opens on the first email and says what a security email must keep. A save goes on top of the version it opened, with a placeholder inserted at the cursor. Every refusal is listed. The preview is sandboxed. A restore goes on top of the current version. The editor inserts placeholders and toggles bold. |
+| `client/src/pages/admin-emails/index.test.tsx`, `components/shared/rich-text-editor/index.test.tsx` | Every email the server sends has a name in both languages. The page opens on the first email and says what a security email must keep. A save goes on top of the version it opened, with a placeholder inserted at the cursor. Every refusal is listed. The preview is sandboxed. A restore goes on top of the current version. The editor inserts placeholders and toggles bold. |
 | `bruno/admin-users/` 17-23 | 403 for a moderator; the list; a placeholder refused by name (400); a preview with the script gone; a save as a new version; 409 on a stale version; a reset. |
 
 Mutation checks (specs/077): each of these turns `EmailTemplateTests` red.
@@ -190,9 +216,12 @@ It was verified end to end against Mailpit (specs/060):
 
 ## Known limits
 
-- **Three emails so far.** Other notices are not emails yet.
-- **No preferred language on the account.** An email about an order uses the order's language, and one
-  about nothing in particular would use the default.
+- **Sellers are not emailed** about a new sale, a return or a payout. They read the shop console daily, and the
+  bell tells them.
+- **No language setting on the account.** The language is learnt from use (rule 5), so somebody who never signs
+  in again keeps the language they last used.
+- **A saved product is named in its default language** in the back-in-stock email, as in the notice. Catalog does
+  not know the saver's language.
 - **No unsubscribe and no bounce handling.** A real provider would add both.
 - **Images cannot be used** (no logo): the allow-list leaves them out, because a remote image in an email is also
   a read receipt.
@@ -206,3 +235,4 @@ It was verified end to end against Mailpit (specs/060):
 | [061-password-reset](../../specs/061-password-reset/) | #144 | The password reset email, queued by Identity itself and scrubbed once sent (#103). |
 | [063-email-confirmation](../../specs/063-email-confirmation/) | #146 | The address-confirmation email, staged in the account's own save and scrubbed once sent (#106). |
 | [077-email-templates](../../specs/077-email-templates/) | #161 | Administrators edit every email: versions, sanitised HTML, placeholders checked, preview and test, multipart sending (#150, the email half). |
+| [083-more-emails](../../specs/083-more-emails/) | #171 | Eight more emails: parcel shipped, order cancelled, return accepted, refused and refunded, back in stock, account locked and banned. The reader's language is learnt from use (`users.Language`) (#167). |

@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `485b621`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `14f91e1`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -171,6 +171,7 @@ Entity `User`.
 | `EmailConfirmedAt` | timestamp with time zone | yes |
 | `FirstName` | character varying(100) |  |
 | `IsActive` | boolean |  |
+| `Language` | character varying(8) | yes |
 | `LastName` | character varying(100) |  |
 | `LockReason` | character varying(500) | yes |
 | `LockedUntil` | timestamp with time zone | yes |

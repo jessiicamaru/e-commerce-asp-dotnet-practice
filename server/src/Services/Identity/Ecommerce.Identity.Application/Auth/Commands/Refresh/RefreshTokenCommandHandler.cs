@@ -1,3 +1,4 @@
+using Ecommerce.Application.Email;
 using Ecommerce.Contracts.Identity;
 using MassTransit;
 using Ecommerce.Application.Common;
@@ -113,6 +114,11 @@ public class RefreshTokenCommandHandler(
             // Another request rotated this token between our read and our write: a concurrent
             // refresh, handled as the grace case above.
             throw new UnauthorizedAccessException(NotValid);
+        }
+
+        if (EmailTemplates.Supported(request.Language) is { } language && language != user.Language)
+        {
+            await _userRepository.RecordLanguageAsync(user.Id, language, cancellationToken);
         }
 
         return new AuthResponse(

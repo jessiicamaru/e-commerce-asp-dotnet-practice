@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Insights;
@@ -178,6 +179,9 @@ builder.Services.AddInsightsCalendar(builder.Configuration);
 
 // Telling a seller what the moderators decided (specs/045).
 builder.Services.AddNotifier();
+
+// A saver told by email that a product is back (specs/083), through the outbox like the notice.
+builder.Services.AddEmailSender();
 
 // Which language a request wants to be answered in (specs/021). A service whose responses carry text
 // a customer reads needs this; it refuses to start if the default is not one it supports.

@@ -115,7 +115,7 @@ public class InsightsTests(OrderTestFixture fixture)
     [Fact]
     public async Task An_order_paid_late_at_night_UTC_counts_on_the_next_morning_in_Hanoi()
     {
-        var hanoiDay = new DateOnly(2031, 1, 1).AddDays(Random.Shared.Next(0, 3000));
+        var hanoiDay = InsightDays.Next();
         var utcEvening = hanoiDay.AddDays(-1).ToDateTime(new TimeOnly(23, 30), DateTimeKind.Utc);
         var order = await PlaceAsync(Guid.CreateVersion7(), "VND", 1_000m, OrderStatus.Paid, utcEvening);
         await MoveAsync(order, utcEvening);
@@ -186,8 +186,7 @@ public class InsightsTests(OrderTestFixture fixture)
 
     /// <summary>The instant a shop day begins (specs/082: the shop's days are Hanoi's, UTC+7), as a UTC value.</summary>
     private static DateTime Day() =>
-        Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone)
-            .StartOf(new DateOnly(2031, 1, 1).AddDays(Random.Shared.Next(0, 3000)));
+        InsightDays.NextStart();
 
     /// <summary>Places an order in this currency, puts it in this state, and moves it to this day.</summary>
     private async Task<Guid> PlaceAsync(Guid buyer, string currency, decimal price, OrderStatus status, DateTime day,

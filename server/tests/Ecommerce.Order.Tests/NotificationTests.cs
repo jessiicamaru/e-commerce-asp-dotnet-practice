@@ -169,6 +169,36 @@ public class NotificationTests
         Assert.DoesNotContain(Sent(order), n => n.Kind == "ParcelReceived");   // nobody clicked
     }
 
+    /// <summary>
+    /// #167 (specs/083): a parcel on its way and a cancelled order reached the buyer only in the bell. Each is now
+    /// one email, in the order's language - and preparing, which is not news, is none.
+    /// </summary>
+    [Fact]
+    public async Task Shipping_and_cancelling_each_ask_for_one_email_in_the_orders_language()
+    {
+        var alice = Guid.CreateVersion7();
+        var (order, buyer) = await PaidAsync(alice);
+        await As(alice, () => SendAsync(new PrepareMySaleCommand(order)));
+        Assert.Empty(Emailed(order, "ParcelShipped"));
+
+        await As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-MAIL")));
+        await Record.ExceptionAsync(() => As(alice, () => SendAsync(new ShipMySaleCommand(order, "VNPOST-MAIL"))));   // again: refused
+
+        var shipped = Assert.Single(Emailed(order, "ParcelShipped"));
+        Assert.Equal((buyer, await LanguageAsync(order)), (shipped.RecipientId, shipped.Language));
+        Assert.Equal(("VNPOST-MAIL", "Shop of " + alice.ToString("N")[..6]), (shipped.Data["tracking"], shipped.Data["shop"]));
+
+        var (other, otherBuyer) = await PaidAsync(alice, null);
+        await As(otherBuyer, () => SendAsync(new CancelMyOrderCommand(other)));
+        await Record.ExceptionAsync(() => As(otherBuyer, () => SendAsync(new CancelMyOrderCommand(other))));   // again: nothing new
+
+        var cancelled = Assert.Single(Emailed(other, "OrderCancelled"));
+        Assert.Equal((otherBuyer, await LanguageAsync(other)), (cancelled.RecipientId, cancelled.Language));
+        await using var scope = _fixture.NewScope();
+        var total = await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders.Where(o => o.Id == other).Select(o => o.TotalAmount).SingleAsync();
+        Assert.Equal((total.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), "VND"), (cancelled.Data["total"], cancelled.Data["currency"]));
+    }
+
     [Fact]
     public async Task A_cancellation_tells_the_buyer_and_every_seller()
     {
@@ -214,6 +244,18 @@ public class NotificationTests
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private List<Ecommerce.Contracts.Identity.EmailRequested> Emailed(Guid order, string template) =>
+        _fixture.Harness.Published.Select<Ecommerce.Contracts.Identity.EmailRequested>().Select(x => x.Context.Message)
+            .Where(m => m.Template == template && m.Data.GetValueOrDefault("orderId") == order.ToString())
+            .ToList();
+
+    private async Task<string?> LanguageAsync(Guid order)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders
+            .Where(o => o.Id == order).Select(o => o.Language).SingleAsync();
+    }
 
     /// <summary>What was sent about an order - each checked against what the storefront reads (specs/048).</summary>
     private List<UserNotificationRequested> Sent(Guid order)

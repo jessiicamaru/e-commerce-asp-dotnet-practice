@@ -22,6 +22,36 @@ public static class EmailTemplate
     /// itself, never through the broker, and scrubbed from the row once sent.
     /// </summary>
     public const string EmailConfirmation = "EmailConfirmation";
+
+    /// <summary>A parcel of an order left (specs/083). Data: <c>orderId</c>, <c>tracking</c>, and <c>shop</c> for a seller's.</summary>
+    public const string ParcelShipped = "ParcelShipped";
+
+    /// <summary>A paid order was cancelled and will be refunded in full (specs/083). Data: <c>orderId</c>, <c>total</c>, <c>currency</c>.</summary>
+    public const string OrderCancelled = "OrderCancelled";
+
+    /// <summary>A return was accepted - send the parcel back (specs/083). Data: <c>orderId</c>.</summary>
+    public const string ReturnAccepted = "ReturnAccepted";
+
+    /// <summary>A return was refused, by the seller or finally by the shop (specs/083). Data: <c>orderId</c>, <c>reason</c>.</summary>
+    public const string ReturnRefused = "ReturnRefused";
+
+    /// <summary>A returned parcel came back and its refund is on the way (specs/083). Data: <c>orderId</c>, <c>amount</c>, <c>currency</c>.</summary>
+    public const string ReturnRefunded = "ReturnRefunded";
+
+    /// <summary>A product the reader saved is back in stock (specs/083). Data: <c>productId</c>, <c>product</c>.</summary>
+    public const string SavedBackInStock = "SavedBackInStock";
+
+    /// <summary>The reader's account was locked (specs/083). Data: <c>until</c> (ISO 8601, UTC), <c>reason</c>.</summary>
+    public const string AccountLocked = "AccountLocked";
+
+    /// <summary>The reader's account was banned (specs/083). Data: <c>reason</c>.</summary>
+    public const string AccountBanned = "AccountBanned";
+
+    /// <summary>
+    /// The language to ask for when the sender does not know the reader's (specs/083): Identity writes the email in
+    /// the language the person last used the shop in, or the default.
+    /// </summary>
+    public const string ReadersLanguage = "";
 }
 
 /// <summary>

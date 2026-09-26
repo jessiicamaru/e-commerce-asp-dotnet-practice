@@ -368,6 +368,14 @@
     "failed": "Không làm được việc đó.",
     "template": {
       "OrderPaid": "Đơn đã thanh toán",
+      "ParcelShipped": "Kiện hàng đã gửi",
+      "OrderCancelled": "Đơn đã hủy",
+      "ReturnAccepted": "Trả hàng được chấp nhận",
+      "ReturnRefused": "Trả hàng bị từ chối",
+      "ReturnRefunded": "Hoàn tiền trả hàng",
+      "SavedBackInStock": "Sản phẩm đã lưu có hàng lại",
+      "AccountLocked": "Tài khoản bị khóa",
+      "AccountBanned": "Tài khoản bị cấm",
       "PasswordReset": "Đặt lại mật khẩu",
       "EmailConfirmation": "Xác nhận email"
     },

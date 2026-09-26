@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Catalog.Application;
@@ -149,6 +150,7 @@ public class CatalogTestFixture : IAsyncLifetime
         // The shop's days, as production counts them (specs/082).
         services.AddSingleton(Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone));
         services.AddNotifier();
+        services.AddEmailSender();
 
         return services.BuildServiceProvider(true);
     }
