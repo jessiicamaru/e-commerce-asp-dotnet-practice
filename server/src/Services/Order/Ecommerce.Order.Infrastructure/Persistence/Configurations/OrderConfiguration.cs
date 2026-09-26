@@ -69,8 +69,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<Domain.Entities.Order
         {
             t.HasCheckConstraint("CK_orders_parts_sum_to_total",
                 "\"Subtotal\" IS NULL OR \"Subtotal\" + COALESCE(\"ShippingPrice\", 0) + \"TaxTotal\" - \"DiscountTotal\" = \"TotalAmount\"");
-            t.HasCheckConstraint("CK_orders_no_discount_yet",
-                "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" = 0");
+            // Until specs/069 the discount part had to be zero ("CK_orders_no_discount_yet"): a discount appearing
+            // before the code that computes one would have been a bug. Now vouchers make one, and what is kept
+            // is that it is never negative - the parts still have to sum to the total above.
+            t.HasCheckConstraint("CK_orders_discount_not_negative",
+                "\"DiscountTotal\" IS NULL OR \"DiscountTotal\" >= 0");
             t.HasCheckConstraint("CK_orders_tax_rate_range",
                 "\"TaxRate\" IS NULL OR (\"TaxRate\" >= 0 AND \"TaxRate\" < 1)");
             t.HasCheckConstraint("CK_orders_commission_rate_range",

@@ -64,4 +64,7 @@ public class Order
     /// the order at checkout; created on demand for an order written by an image that predates them.
     /// </summary>
     public List<OrderShipment> Shipments { get; set; } = new();
+
+    /// <summary>The vouchers used on this order (specs/069), frozen with it: code, name and what each took off.</summary>
+    public List<VoucherRedemption> Vouchers { get; set; } = new();
 }

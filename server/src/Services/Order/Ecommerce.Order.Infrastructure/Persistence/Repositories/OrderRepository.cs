@@ -14,6 +14,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         return await _context.Orders
             .Include(x => x.Items)
             .Include(x => x.Shipments).ThenInclude(s => s.Return)
+            .Include(x => x.Vouchers)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
@@ -342,7 +343,11 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                         i.TaxAmount,
                         i.VariantId,
                         i.Sku,
-                        i.OptionSummary))
+                        i.OptionSummary,
+                        null,
+                        // Theirs to see: what their own voucher took off (specs/069). A platform voucher is the
+                        // shop's cost and changes nothing they earn.
+                        i.ShopDiscount))
                     .ToList()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -807,6 +812,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             .AsNoTracking()
             .Include(x => x.Items)
             .Include(x => x.Shipments).ThenInclude(s => s.Return)
+            .Include(x => x.Vouchers)
             .FirstOrDefaultAsync(x => x.Id == orderId && x.UserId == userId, cancellationToken);
     }
 }

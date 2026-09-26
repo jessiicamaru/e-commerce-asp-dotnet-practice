@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Ecommerce.Contracts.Order;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
+using Ecommerce.Order.Application.Vouchers;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Shared.Authentication;
@@ -21,8 +22,10 @@ public class SubmitOrderCommandHandler(
     ICommissionRate commission,
     ILogger<SubmitOrderCommandHandler> logger
 ,
-    IAuditTrail audit) : IRequestHandler<SubmitOrderCommand, OrderResponse>
+    IAuditTrail audit,
+    IVoucherRepository vouchers) : IRequestHandler<SubmitOrderCommand, OrderResponse>
 {
+    private readonly IVoucherRepository _vouchers = vouchers;
     private readonly IAuditTrail _audit = audit;
 
     private readonly IOrderRepository _orderRepository = orderRepository;
@@ -47,7 +50,7 @@ public class SubmitOrderCommandHandler(
         // refusal leaves no row, no event and no reservation - all-or-nothing by construction.
         // Putting it between the publish and the save would widen the window between staging and
         // commit whenever another service is slow, and Principle III is non-negotiable.
-        var priced = await _pricing.PriceAsync(request.AddressId, request.ShippingOption, cancellationToken);
+        var priced = await _pricing.PriceAsync(request.AddressId, request.ShippingOption, cancellationToken, request.VoucherCodes);
         var address = priced.Address;
         var shipping = priced.Shipping;
         var totals = priced.Totals;
@@ -82,7 +85,12 @@ public class SubmitOrderCommandHandler(
 
             // ...and the shop's name as it is now (specs/036): who the customer bought from, which a
             // rename next month must not change.
-            SellerName = line.SellerName
+            SellerName = line.SellerName,
+
+            // ...and what vouchers took off it (specs/069), split by who pays: the seller for their own, the
+            // shop for the platform's. A refund of the line later is what was actually paid.
+            ShopDiscount = line.ShopDiscount,
+            PlatformDiscount = line.PlatformDiscount
         }).ToList();
 
         // ...and what each part earns whoever ships it (specs/037), frozen here with the prices it is
@@ -98,8 +106,10 @@ public class SubmitOrderCommandHandler(
         var shares = Earnings.SplitDelivery(priced.DeliveryPrice, sellers.Count, priced.Decimals);
         var parts = sellers.Select((sellerId, i) =>
         {
+            // A seller's own voucher comes out of their goods (specs/069 research D1) - so their commission is
+            // on less and their payout drops; a platform voucher is the shop's cost and changes neither.
             var terms = Earnings.ForPart(
-                orderItems.Where(item => item.SellerId == sellerId).Sum(item => item.TotalPrice),
+                orderItems.Where(item => item.SellerId == sellerId).Sum(item => item.TotalPrice - item.ShopDiscount),
                 commissionRate,
                 shares[i],
                 isShop: sellerId is null,
@@ -163,7 +173,23 @@ public class SubmitOrderCommandHandler(
             // One part per seller whose goods are on this order, plus the shop's own (specs/035),
             // saved with the order in the same transaction - so there is never an order whose parts
             // are missing because a second write failed.
-            Shipments = parts
+            Shipments = parts,
+
+            // The vouchers used, frozen with the order (specs/069): disabling one later changes no order.
+            Vouchers = (priced.Vouchers ?? []).Select(v => new VoucherRedemption
+            {
+                Id = Guid.CreateVersion7(),
+                VoucherId = v.VoucherId,
+                OrderId = orderId,
+                CustomerId = userId,
+                Code = v.Code,
+                Name = v.Name,
+                SellerId = v.SellerId,
+                Benefit = v.Benefit,
+                Amount = v.Amount,
+                Currency = priced.Currency,
+                CreatedAt = DateTime.UtcNow
+            }).ToList()
         };
 
         // 1. Stage Order Entity in DbContext
@@ -194,10 +220,20 @@ public class SubmitOrderCommandHandler(
             after: new
             {
                 order.TotalAmount, order.Currency, order.Subtotal, order.ShippingPrice, order.TaxTotal,
-                order.ShippingOptionCode, Lines = orderItems.Select(i => new { i.Sku, i.Quantity, i.UnitPrice, i.SellerId })
+                order.ShippingOptionCode, order.DiscountTotal,
+                Vouchers = order.Vouchers.Select(v => new { v.Code, v.Amount }),
+                Lines = orderItems.Select(i => new { i.Sku, i.Quantity, i.UnitPrice, i.SellerId, i.ShopDiscount, i.PlatformDiscount })
             },
             cancellationToken: cancellationToken);
-        await _orderRepository.SaveChangesAsync(cancellationToken);
+
+        // The order, its outbox message and its audit entry - and a use of every voucher, each claimed by a
+        // guarded statement - in ONE transaction (specs/069 research D5). Taking the last use and placing the
+        // order cannot come apart: if another checkout took it first, nothing here is saved.
+        var usedUp = await _vouchers.ClaimAndSaveAsync(priced.Vouchers ?? [], userId, cancellationToken);
+        if (usedUp is not null)
+        {
+            throw new ConflictException($"Voucher {usedUp} was just used up. Try again without it.");
+        }
 
         // Where a checkout's trace begins to carry the order id (feature 013). Everything downstream -
         // every consumer and the saga - adds it through OrderIdLogScopeFilter.
@@ -216,7 +252,8 @@ public class SubmitOrderCommandHandler(
             x.VariantId,
             x.Sku,
             x.OptionSummary,
-            x.SellerName
+            x.SellerName,
+            x.ShopDiscount + x.PlatformDiscount
         )).ToList();
 
         return new OrderResponse(
@@ -233,7 +270,8 @@ public class SubmitOrderCommandHandler(
             totals.Tax,
             totals.Discount,
             taxRate,
-            order.Currency ?? string.Empty
+            order.Currency ?? string.Empty,
+            OrderMapping.ToVouchers(order)
         );
     }
 }

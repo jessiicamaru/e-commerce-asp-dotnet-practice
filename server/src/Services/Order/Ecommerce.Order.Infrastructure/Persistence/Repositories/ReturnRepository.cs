@@ -34,7 +34,7 @@ public class ReturnRepository(OrderDbContext context) : IReturnRepository
                 // The part's lines: an order's lines belong to the part of their seller (specs/035).
                 Lines = s.Order.Items
                     .Where(i => i.SellerId == s.SellerId)
-                    .Select(i => new ReturnParcelLine(i.VariantId ?? i.ProductId, i.Quantity, i.UnitPrice, i.TaxAmount))
+                    .Select(i => new ReturnParcelLine(i.VariantId ?? i.ProductId, i.Quantity, i.UnitPrice, i.TaxAmount, i.ShopDiscount + i.PlatformDiscount))
                     .ToList(),
             })
             .FirstOrDefaultAsync(cancellationToken);

@@ -86,7 +86,7 @@ public class SellerInsightsTests(OrderTestFixture fixture)
     {
         var day = Day();
         var mai = Guid.CreateVersion7();
-        var kept = await PlaceAsync("VND", OrderStatus.Shipped, day, (mai, 1_000m, 1));
+        await PlaceAsync("VND", OrderStatus.Shipped, day, (mai, 1_000m, 1));   // kept
         var returned = await PlaceAsync("VND", OrderStatus.Shipped, day, (mai, 20_000m, 1));
         var open = await PlaceAsync("VND", OrderStatus.Shipped, day, (mai, 300_000m, 1));
         await ReturnAsync(returned, mai, ReturnStatus.Received);
@@ -97,7 +97,6 @@ public class SellerInsightsTests(OrderTestFixture fixture)
 
         Assert.Equal((301_000m, 2), (dong.Revenue, dong.Orders));
         Assert.Equal(2, top.Count);
-        Assert.NotNull(kept);
     }
 
     /// <summary>Only Mai's part came back: Bao's line on the same order is still his revenue.</summary>

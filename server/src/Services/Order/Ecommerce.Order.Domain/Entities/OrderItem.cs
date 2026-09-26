@@ -46,6 +46,18 @@ public class OrderItem
     /// <summary>Tax charged on this line, as rounded at checkout (feature 012). Null on older lines.</summary>
     public decimal? TaxAmount { get; set; }
 
+    /// <summary>
+    /// Taken off this line by its seller's own voucher (specs/069) - the seller pays it, so their goods total,
+    /// commission and payout are on the price less this. 0 when none; frozen at checkout.
+    /// </summary>
+    public decimal ShopDiscount { get; set; }
+
+    /// <summary>Taken off this line by a platform voucher - the shop pays it; the seller's terms are untouched.</summary>
+    public decimal PlatformDiscount { get; set; }
+
+    /// <summary>What the customer paid for the goods on this line, before tax.</summary>
+    public decimal NetPrice => TotalPrice - ShopDiscount - PlatformDiscount;
+
     // Navigation property
     public Order? Order { get; set; }
 }

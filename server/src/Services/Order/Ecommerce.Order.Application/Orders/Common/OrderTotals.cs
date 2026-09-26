@@ -34,11 +34,18 @@ public static class OrderTotals
     /// The parts are summed <i>after</i> rounding and the total is computed from them, so the CHECK
     /// constraint on the order's parts holds exactly whatever this is.
     /// </param>
+    /// <param name="lineDiscounts">
+    /// What vouchers took off each line (specs/069), in the order of <paramref name="lines"/>; null for none.
+    /// Tax is on what is left - the customer pays tax on what they pay (research D2).
+    /// </param>
+    /// <param name="deliveryDiscount">What a free-delivery voucher took off the delivery; its tax goes with it.</param>
     public static Result Compute(
         IReadOnlyList<(decimal UnitPrice, int Quantity)> lines,
         decimal delivery,
         decimal rate,
-        int decimals = DefaultDecimals)
+        int decimals = DefaultDecimals,
+        IReadOnlyList<decimal>? lineDiscounts = null,
+        decimal deliveryDiscount = 0m)
     {
         if (rate < 0 || rate >= 1)
         {
@@ -50,11 +57,26 @@ public static class OrderTotals
             throw new ArgumentOutOfRangeException(nameof(decimals), decimals, "A currency has no negative decimals.");
         }
 
-        var lineTaxes = lines.Select(l => TaxOn(l.UnitPrice * l.Quantity, rate, decimals)).ToList();
+        if (lineDiscounts is not null && lineDiscounts.Count != lines.Count)
+        {
+            throw new ArgumentException("One discount per line.", nameof(lineDiscounts));
+        }
+
+        var discounts = lineDiscounts ?? Enumerable.Repeat(0m, lines.Count).ToList();
+        if (discounts.Where((d, i) => d < 0 || d > lines[i].UnitPrice * lines[i].Quantity).Any()
+            || deliveryDiscount < 0 || deliveryDiscount > delivery)
+        {
+            throw new ArgumentOutOfRangeException(nameof(lineDiscounts), "A discount is never negative nor more than what it is off.");
+        }
+
+        var lineTaxes = lines.Select((l, i) => TaxOn(l.UnitPrice * l.Quantity - discounts[i], rate, decimals)).ToList();
         var subtotal = lines.Sum(l => l.UnitPrice * l.Quantity);
-        var deliveryTax = TaxOn(delivery, rate, decimals);
+        var deliveryTax = TaxOn(delivery - deliveryDiscount, rate, decimals);
         var tax = lineTaxes.Sum() + deliveryTax;
-        const decimal discount = 0m;   // discounts are out of scope (FR-007); the part exists for later
+
+        // The discount part (specs/012) is every voucher's amount: the goods' and the delivery's. Subtotal and
+        // delivery stay the prices before it, so the order's parts still add up to its total - the CHECK holds.
+        var discount = discounts.Sum() + deliveryDiscount;
 
         return new Result(subtotal, delivery, lineTaxes, deliveryTax, tax, discount, subtotal + delivery + tax - discount);
     }

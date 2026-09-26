@@ -31,6 +31,14 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.TaxAmount)
             .HasPrecision(18, 2);
 
+        // What vouchers took off (specs/069). Defaulted in the DATABASE, so an older image writing a line
+        // without them writes 0 rather than failing - an expand-only change.
+        builder.Property(x => x.ShopDiscount).HasPrecision(18, 2).HasDefaultValue(0m);
+        builder.Property(x => x.PlatformDiscount).HasPrecision(18, 2).HasDefaultValue(0m);
+        builder.Ignore(x => x.NetPrice);
+        builder.ToTable(t => t.HasCheckConstraint("CK_order_items_discounts",
+            "\"ShopDiscount\" >= 0 AND \"PlatformDiscount\" >= 0 AND \"ShopDiscount\" + \"PlatformDiscount\" <= \"UnitPrice\" * \"Quantity\""));
+
         // Both of a seller's reads start from "lines of this seller" (specs/034). Without this, every
         // page a seller opens scans every order line in the shop.
         builder.HasIndex(x => x.SellerId);

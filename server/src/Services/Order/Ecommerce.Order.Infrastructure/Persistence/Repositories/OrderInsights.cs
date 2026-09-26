@@ -67,7 +67,9 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
                 ProductId = x.Item.ProductId,
                 ProductName = x.Item.ProductName,
                 Quantity = x.Item.Quantity,
-                Revenue = x.Item.Quantity * x.Item.UnitPrice,
+                // Less their own voucher (specs/069): what the seller gave away is not revenue. A platform voucher
+                // is the shop's cost, and the seller is paid as if it were not there.
+                Revenue = x.Item.Quantity * x.Item.UnitPrice - x.Item.ShopDiscount,
             });
 
     public async Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken)
