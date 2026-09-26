@@ -25,9 +25,8 @@ Every database that publishes or consumes messages also holds MassTransit's `Inb
 `OutboxMessage` and `OutboxState` tables. Every column of every table is in the generated
 [reference/data-model.md](../reference/data-model.md).
 
-Product **images** are not in any database: Catalog keeps them on the `catalog_images` volume
-(specs/019), which only the container path mounts - under `start-dev` they go to the directory named by
-`ProductImages:Root`.
+Product **images** are not in any database. The containers keep them in the `product-images` bucket on SeaweedFS
+(specs/079). Under `start-dev` they go to the directory named by `ProductImages:Root`.
 
 ---
 

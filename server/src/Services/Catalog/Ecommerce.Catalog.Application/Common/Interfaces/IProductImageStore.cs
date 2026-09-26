@@ -6,9 +6,9 @@ namespace Ecommerce.Catalog.Application.Common.Interfaces;
 /// <remarks>
 /// <para>
 /// <b>This is the seam object storage plugs into.</b> The first implementation is a directory, which
-/// assumes one Catalog instance; two would each see only their own files. Replacing it with S3, Azure
-/// Blob or MinIO changes this interface's implementation and nothing that calls it, as
-/// <c>StubPaymentGateway</c> is Payment's seam for a real provider.
+/// assumes one Catalog instance; two would each see only their own files. Since specs/079 the containers use
+/// <c>S3ProductImageStore</c> - an S3-compatible bucket every instance shares - and nothing that calls this
+/// interface changed.
 /// </para>
 /// <para>
 /// Keys come from <see cref="Products.Images.ProductImageKey"/>, derived from the product row, so the
@@ -43,6 +43,13 @@ public interface IProductImageStore
     /// </para>
     /// </remarks>
     IAsyncEnumerable<StoredImage> ListAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Whether every Catalog instance sees this same store (specs/079) - object storage does, a directory does not.
+    /// The orphan report says which it is, because with a store that is NOT shared a second instance would call the
+    /// first one's images orphans.
+    /// </summary>
+    bool SharedAcrossInstances => false;
 }
 
 /// <summary>

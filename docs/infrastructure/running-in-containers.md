@@ -148,14 +148,18 @@ container on an empty volume crash-looped with `relation "roles" does not exist`
 | `postgres_identity_data`, `postgres_catalog_data`, `postgres_order_data`, `postgres_orchestrator_data`, `postgres_inventory_data`, `postgres_payment_data`, `postgres_cart_data`, `postgres_activity_data` | `docker-compose.yml` | one PostgreSQL data directory each |
 | `rabbitmq_data` | `docker-compose.yml` | the broker's queues and messages |
 | `seq_data` | `docker-compose.yml` | logs and traces |
-| `catalog_images` | `docker-compose.app.yml` | product and variant photographs (specs/019, 032) |
+| `seaweedfs_data` | `docker-compose.yml` | the `product-images` bucket: product and variant photographs (specs/079) |
+| `catalog_images` | `docker-compose.app.yml` | the photographs from before specs/079, mounted **read-only** at `/app/legacy` and copied into the bucket at startup |
 
-`catalog_images` is mounted on `/app/data`, **not** on the `product-images` subdirectory
-(`ProductImages__Root` is `/app/data/product-images`): a mount point the image lacks is created
-root-owned, and the non-root service then fails its startup write check. The store creates the
-subdirectory itself. A directory on one volume assumes **one** Catalog instance - two instances would
-each see only their own images, and the orphan reclaim (specs/033) would report the other's images as
-orphans.
+**Product images are in object storage since specs/079 (#114).** `seaweedfs` in `docker-compose.yml`
+(`chrislusf/seaweedfs:4.47`, `weed mini`) serves S3 on **:8333**, and it alone is published: the master, filer and
+admin UI stay inside, and telemetry is off. Its one identity comes from `SEAWEEDFS_ACCESS_KEY` and
+`SEAWEEDFS_SECRET_KEY` in `.env`, which compose requires, and Catalog signs with the same keys.
+- MinIO was the plan, but it no longer publishes community images: `docker pull minio/minio` says the repository
+  does not exist, and quay.io answers 401.
+- Because the bucket is shared, any number of Catalog containers serve every image and agree on the orphan report.
+- The old volume is imported, never written. Once the bucket has everything, `ProductImages__ImportFrom` and the
+  mount can go.
 
 Compose prefixes volume names with the project name - `server_` when run from `server/` - so
 `docker volume ls` shows `server_postgres_catalog_data`, `server_catalog_images` and so on.

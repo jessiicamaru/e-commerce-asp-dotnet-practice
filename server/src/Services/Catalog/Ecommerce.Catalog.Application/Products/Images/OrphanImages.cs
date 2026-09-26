@@ -70,6 +70,13 @@ public class OrphanImageScan(
         "One Catalog instance is assumed (specs/019). With two, each sees only its own directory "
         + "and would report the other's images as orphans.";
 
+    public const string SharedNote =
+        "The store is shared object storage (specs/079): every Catalog instance reads and writes the same bucket, "
+        + "so this report is the same whichever one answers it.";
+
+    /// <summary>What the report says about the store it read - a warning only when the store is one instance's own.</summary>
+    public string Note => _store.SharedAcrossInstances ? SharedNote : OneInstanceNote;
+
     public async Task<(List<OrphanImage> Orphans, int Scanned, int LiveKeys, int GraceHours)> RunAsync(
         CancellationToken cancellationToken)
     {
@@ -120,7 +127,7 @@ public class FindOrphanImagesQueryHandler(OrphanImageScan scan)
         var (orphans, scanned, live, grace) = await _scan.RunAsync(cancellationToken);
 
         return new OrphanImageReport(
-            grace, scanned, live, orphans, orphans.Sum(o => o.Bytes), [], OrphanImageScan.OneInstanceNote);
+            grace, scanned, live, orphans, orphans.Sum(o => o.Bytes), [], _scan.Note);
     }
 }
 
@@ -186,6 +193,6 @@ if (removed.Count > 0)
     await _products.SaveChangesAsync(cancellationToken);
 }
         return new OrphanImageReport(
-            grace, scanned, live, removed, removed.Sum(o => o.Bytes), failed, OrphanImageScan.OneInstanceNote);
+            grace, scanned, live, removed, removed.Sum(o => o.Bytes), failed, _scan.Note);
     }
 }

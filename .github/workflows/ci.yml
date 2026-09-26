@@ -174,9 +174,25 @@ jobs:
       # concurrency, a unique constraint stopping a duplicate payment, a guarded UPDATE refusing
       # to re-settle an order — is the database's behaviour, and an in-memory provider would pass
       # against broken code.
+      # ...and a real S3 server, for the same reason (specs/079): the product image store's guarantees - a key
+      # stored only when new, a listing paged through, two instances seeing one bucket - are the server's. A
+      # step rather than a service container, because a service cannot be given `weed mini`'s command. The
+      # keys are throwaway, like the databases' `postgres`.
+      - name: Start SeaweedFS (S3)
+        run: |
+          docker run -d --name seaweedfs -p 8333:8333             -e AWS_ACCESS_KEY_ID=ci-catalog -e AWS_SECRET_ACCESS_KEY=ci-catalog-secret             chrislusf/seaweedfs:4.47 mini -dir=/data -master.telemetry=false -admin.ui=false
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:8333/healthz && exit 0
+            sleep 2
+          done
+          docker logs seaweedfs
+          exit 1
+
       - name: Test
         env:
           DB_PASSWORD: postgres
+          SEAWEEDFS_ACCESS_KEY: ci-catalog
+          SEAWEEDFS_SECRET_KEY: ci-catalog-secret
         run: dotnet test Ecommerce.slnx --configuration Release --no-build --verbosity normal
 
       # Informational only: Microsoft.OpenApi 2.0.0 currently trips this.

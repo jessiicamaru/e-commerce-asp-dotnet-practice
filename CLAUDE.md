@@ -46,7 +46,7 @@ All commands run from `server/` (the solution root; solution file is `Ecommerce.
 ./start-dev.ps1        # Windows PowerShell
 ./start-dev.sh         # Git Bash / Linux
 
-# Infrastructure only (8 Postgres containers, RabbitMQ, pgAdmin, Seq)
+# Infrastructure only (8 Postgres containers, RabbitMQ, pgAdmin, Seq, Mailpit, SeaweedFS)
 docker compose up -d
 
 dotnet build                                          # whole solution
@@ -94,7 +94,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (186 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (198 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (163 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -179,7 +179,7 @@ so.
 | :-- | :-- | :-- | :-- |
 | ApiGateway (YARP) | 5000 | — | routes configured in [appsettings.json](server/src/ApiGateway/Ecommerce.ApiGateway/appsettings.json) |
 | Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027); **shop applications** wait for staff (specs/044); **sends every email** - `outgoing_emails`, a dispatcher over SMTP (specs/060) |
-| Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images on the `catalog_images` volume** |
+| Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images in an S3 bucket every instance shares** (SeaweedFS in compose, specs/079) |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
 | Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031); **puts a cancelled order's units back** (specs/039) |
@@ -187,7 +187,7 @@ so.
 | Activity | 5063 | 5440 / `ecommerce_activity_db` | **The audit log** (specs/041): keeps `AuditEntryRecorded` from every service, one row per entry id, with a field-level diff; Admin-only reads at `/api/audit`; **everyone's in-app notifications** (specs/042) at `/api/notifications` |
 | Cart | 5062 (REST) + **6062 (gRPC)** | 5439 / `ecommerce_cart_db` | one cart per signed-in customer; **stores no price**; serves `CartReading` to Order at checkout |
 
-pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`), **Mailpit `:8025`** (every email the stack sends; SMTP on `:1025`, specs/060).
+pgAdmin `:5050`, RabbitMQ management `:15672`, **Seq `:5380`** (logs and traces; ingestion on `:5341`), **Mailpit `:8025`** (every email the stack sends; SMTP on `:1025`, specs/060), **SeaweedFS S3 `:8333`** (product images, specs/079).
 
 **Following one order** (feature 013): every service and the gateway ship logs and traces to Seq over
 OpenTelemetry when `OTLP_ENDPOINT` is set (containers set it; unset, nothing is exported and nothing
@@ -834,12 +834,16 @@ Three traps, each of which cost time to find:
   order failing for no visible reason. Before trusting any container result:
   `Get-Process | Where-Object { $_.ProcessName -like 'Ecommerce.*' }` must be empty.
 
-**Product images live on a volume, not in the image or the database** (specs/019). Catalog stores
-them behind `IProductImageStore`. The first implementation is a directory, `ProductImages:Root`,
-which is the `catalog_images` volume in containers. That **assumes one Catalog instance**; object
-storage is what the seam is for. The volume is mounted on `/app/data`, **not** on the subdirectory: a
-mount point the image lacks is created root-owned, and the non-root service then refuses to start
-(its startup write check). Replacing an image writes the new file, switches the row with a guarded
+**Product images live in object storage, not in the image or the database** (specs/019; specs/079, #114). Catalog
+stores them behind `IProductImageStore`, chosen by `ProductImages:Store`: **`S3`** in the containers - an
+S3-compatible bucket (`product-images`) every Catalog instance shares, **SeaweedFS** in `docker-compose.yml` and CI
+(`chrislusf/seaweedfs:4.47`, `weed mini`; ⚠️ MinIO no longer publishes community images) - or **`FileSystem`**, a
+directory (`ProductImages:Root`) and `dotnet run`'s default, which assumes one instance. ⚠️ A key is stored **only
+when new** (`If-None-Match: *`, a 412 is an `IOException`, like the directory's `File.Move(overwrite: false)`);
+startup creates the bucket and writes a probe or refuses to start. The images from the old `catalog_images` volume
+(mounted read-only at `/app/legacy`) are copied in at startup by `ProductImageImport` (`ProductImages:ImportFrom`) -
+idempotent by key, safe on several instances, never deleting. Verified with two live Catalog containers: an image
+uploaded through one is served by the other, and the orphan report is clean from both. Replacing an image writes the new file, switches the row with a guarded
 `UPDATE`, and only then deletes the old one, so the row never names a missing file. **Deleting the
 product deletes its image too** (specs/029) - it did not until then, and the row going while the
 bytes stayed was invisible because nothing broke: two orphans were found by listing the directory
@@ -857,9 +861,9 @@ one. A file younger than `ProductImages:OrphanGraceHours` (default 24) is never 
 an upload between its two steps has written bytes no row names **yet**; that number covers the
 operator, not the window, which is milliseconds. The reclaim **takes no key list** - it reconciles
 again and removes what it finds, since the caller's list is minutes old by the time a person has
-read it. ⚠️ **The one-instance assumption is now destructive if broken**: two Catalog instances each
-see only their own directory and would report the other's images as orphans, which is why the
-response carries a line saying so. The type comes
+read it. ⚠️ **With the directory store the one-instance assumption is destructive if broken**: two Catalog
+instances would each see only their own directory and report the other's images as orphans - the report's `note`
+comes from `IProductImageStore.SharedAcrossInstances` and says which store it read. The type comes
 from the file's bytes, never from its `Content-Type`, and SVG is refused.
 
 **A VARIANT can have its own photograph too** (specs/032), so choosing "silver" changes the picture.

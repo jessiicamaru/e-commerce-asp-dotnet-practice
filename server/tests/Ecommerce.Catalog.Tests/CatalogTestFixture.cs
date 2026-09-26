@@ -237,6 +237,8 @@ public sealed class TestImageStore(FileSystemProductImageStore inner) : IProduct
 
     public IAsyncEnumerable<StoredImage> ListAsync(CancellationToken cancellationToken = default) =>
         Inner.ListAsync(cancellationToken);
+
+    public bool SharedAcrossInstances => ((IProductImageStore)Inner).SharedAcrossInstances;
 }
 
 /// <summary>A settable <see cref="IRequestLanguage"/>: the tests' way of saying "asked in Vietnamese".</summary>
