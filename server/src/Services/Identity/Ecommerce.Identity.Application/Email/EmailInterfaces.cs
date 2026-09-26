@@ -29,7 +29,11 @@ public interface IOutgoingEmailRepository
 /// <summary>Hands one message to a mail server. Throws when it cannot - the caller retries later.</summary>
 public interface IEmailTransport
 {
-    Task SendAsync(string to, string subject, string body, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Sends <paramref name="html"/> with <paramref name="text"/> as its plain-text alternative
+    /// (<c>multipart/alternative</c>, specs/077): a mail program that shows no HTML shows the text.
+    /// </summary>
+    Task SendAsync(string to, string subject, string text, string html, CancellationToken cancellationToken = default);
 }
 
 public sealed class EmailOptions
