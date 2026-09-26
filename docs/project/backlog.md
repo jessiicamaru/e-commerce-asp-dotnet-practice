@@ -26,13 +26,18 @@ disagrees with its own rules. **All ten (#119-#128) are fixed** - see Fixed belo
 
 A person cannot recover or manage their own account, and sign-in can be guessed at freely.
 
-Nothing open.
+| Issue | Title |
+| :-- | :-- |
+| [#166](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/166) | A product that is not on sale still serves its image, reviews and questions |
 
 ## Priority 2 - buying and selling
 
 Gaps a shopper or a seller would notice.
 
-Nothing open.
+| Issue | Title |
+| :-- | :-- |
+| [#167](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/167) | People are emailed only about a paid order, a reset and a confirmation |
+| [#168](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/168) | Insights count UTC days, so a Vietnamese morning lands on yesterday |
 
 ## Priority 3 - technical debt
 
@@ -83,4 +88,4 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 ## Suggested order
 
 The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done, and returns (#107) and seller insights (#111). Vouchers (#108) are done, and so are saved products (#109), product questions (#110), editable emails and notices (#150) and object storage (#114);
-and the storefront is tested in a browser (#117). The backlog is empty.
+and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168.
