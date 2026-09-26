@@ -42,7 +42,7 @@
 - [X] T018 Negative controls: header-trusting detection, unguarded switch, delete-before-write
 - [X] T019 Verify through the gateway on the containerised stack, including after a container restart (the volume)
 - [X] T020 [P] Docs: CLAUDE.md (service map, test count), the Catalog docs that describe product fields
-- [ ] T021 PR `Closes #45`; CI green; squash-merge
+- [X] T021 PR `Closes #45`; CI green; squash-merge — *Merged as #54; every check green (success, publish skipped on the PR). Ticked on 2026-09-27 from the PR's record.*
 
 ## Dependencies
 

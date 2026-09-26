@@ -100,7 +100,7 @@ cannot compile after FR-003 was a test that relied on the defect.
 
 - [X] T026 Confirm the `.proto` reaches the image — check `server/.dockerignore` does not exclude it, and that `docker build` produces working generated code for both Catalog and Order
 - [X] T027 ~~Add Catalog's gRPC port to the `saga-e2e` job~~ **No job change needed** — services run natively there, so Catalog binds its default gRPC port 5157 and Order's default address is `http://localhost:5157`. But **`verify-auth.sh` did need changing**: it ordered product id `11111111-…-111111111111`, which has never existed in any catalogue, and that worked because Order believed whatever it was told. It now creates a real product first. That script's fictional order is further evidence for the defect, not a coincidence
-- [ ] T028 Open a pull request and confirm every job is green, including the new scenario
+- [X] T028 Open a pull request and confirm every job is green, including the new scenario — *Merged as #24; every check green (success, publish skipped on the PR). Ticked on 2026-09-27 from the PR's record.*
 
 ---
 

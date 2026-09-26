@@ -35,7 +35,7 @@
 - [X] T019 Negative controls: drop the fallback; ignore the language on the gRPC call; search only the default text
 - [X] T020 Through the gateway on the containerised stack, in both languages
 - [X] T021 Docs: CLAUDE.md, client/README.md, the spec's status
-- [ ] T022 PR; CI green; squash-merge
+- [X] T022 PR; CI green; squash-merge — *Merged as #58; every check green (success, publish skipped on the PR). Ticked on 2026-09-27 from the PR's record.*
 
 ## Dependencies
 

@@ -66,7 +66,7 @@ a row lock and a guarded flag that only a real database exercises.
 
 - [X] T034 [P] `CLAUDE.md`: service map row, the second synchronous dependency, the three-event design and why
 - [X] T035 [P] `docs/README.md` and the architecture doc
-- [ ] T036 Open the PR; confirm every job green, including both scenarios in `saga-e2e`
+- [X] T036 Open the PR; confirm every job green, including both scenarios in `saga-e2e` — *Merged as #25; every check green (success, publish skipped on the PR). Ticked on 2026-09-27 from the PR's record.*
 
 ## Dependencies
 

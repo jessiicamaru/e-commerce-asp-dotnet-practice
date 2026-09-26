@@ -54,7 +54,7 @@
 - [X] T029 **The upgrade rehearsal**: against a database populated by the old images, upgrade and place an order naming no variant (FR-009, FR-010)
 - [X] T030 Negative controls: price from the product instead of the variant; reserve by product id; drop the backfill
 - [X] T031 Docs: CLAUDE.md (the id-reuse trap, the variant chain, test counts), README/docs where products are described
-- [ ] T032 PR; CI green; squash-merge
+- [X] T032 PR; CI green; squash-merge — *Merged as #57; every check green (success, publish skipped on the PR). Ticked on 2026-09-27 from the PR's record.*
 
 ## Dependencies
 

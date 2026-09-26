@@ -70,7 +70,7 @@ guards are database guarantees (constitution V), and Identity has never had a te
 
 - [X] T036 [P] `specs/003-order-lifecycle/data-model.md`: `Paid` reachable, `Completed` no longer written — **change the decision, not around it**
 - [X] T037 [P] `CLAUDE.md` (service map: Identity 5056 + **6056 gRPC**; checkout's third synchronous dependency; fulfilment), `docs/architecture/microservices-design.md`, `service-to-service-communication.md`, `jwt-setup.md` access table, `docs/README.md` ports
-- [ ] T038 Open the PR (`Closes #20`); every CI job green, both saga branches
+- [X] T038 Open the PR (`Closes #20`); every CI job green, both saga branches — *Merged as #31; every check green (success, publish skipped on the PR). Ticked on 2026-09-27 from the PR's record.*
 
 ## Dependencies
 
