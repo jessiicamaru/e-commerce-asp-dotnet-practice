@@ -74,7 +74,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
-| [#186](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/186) | Behaviour that is fixed or promised but not held by a test | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/193) (specs/094) |
+| [#186](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/186) | Behaviour that is fixed or promised but not held by a test | [#201](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/201) (specs/094) |
 | [#184](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/184) | During a rollback a seller's new product goes on sale unreviewed | [#192](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/192) (specs/093) |
 | [#185](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/185) | Off the shelf is IsListed for reads but IsListed and IsActive for writes | [#191](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/191) (specs/092) |
 | [#182](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/182) | A saved product back on sale by any route but Inventory's tells nobody | [#190](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/190) (specs/091) |
