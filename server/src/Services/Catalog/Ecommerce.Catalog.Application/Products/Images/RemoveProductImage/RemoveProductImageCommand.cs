@@ -45,7 +45,7 @@ public class RemoveProductImageCommandHandler(
             return;
         }
 
-        if (await _products.TrySetImageAsync(product.Id, product.ImageUpdatedAt, null, null, cancellationToken) == 0)
+        if (await _products.TrySetImageAsync(product.Id, product.ImageUpdatedAt, null, null, null, cancellationToken) == 0)
         {
             throw new ConflictException("The product's image was changed by someone else meanwhile. Try again.");
         }

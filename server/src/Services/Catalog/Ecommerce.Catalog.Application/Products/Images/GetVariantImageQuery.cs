@@ -14,7 +14,7 @@ namespace Ecommerce.Catalog.Application.Products.Images;
 /// route was told to, and answering with the product's bytes under a variant address would give two
 /// addresses the same body and break the immutable cache the version exists for.
 /// </remarks>
-public record GetVariantImageQuery(Guid ProductId, Guid VariantId) : IRequest<ProductImage?>;
+public record GetVariantImageQuery(Guid ProductId, Guid VariantId, Guid? Key = null) : IRequest<ProductImage?>;
 
 public class GetVariantImageQueryHandler(
     IProductRepository products,
@@ -31,7 +31,9 @@ public class GetVariantImageQueryHandler(
 
         if (variant is null
             || variant.ProductId != request.ProductId
-            || ProductImageKey.ForVariant(variant) is not { } key)
+            || ProductImageKey.ForVariant(variant) is not { } key
+            || variant.Product is not { } product
+            || !ProductImageKey.MayServe(product, variant.ImageAccessKey, request.Key))
         {
             return null;
         }
@@ -46,6 +48,6 @@ public class GetVariantImageQueryHandler(
         }
 
         return new ProductImage(
-            content, variant.ImageContentType!, ProductImageKey.Version(variant.ImageUpdatedAt!.Value));
+            content, variant.ImageContentType!, ProductImageKey.Version(variant.ImageUpdatedAt!.Value), product.IsListed);
     }
 }

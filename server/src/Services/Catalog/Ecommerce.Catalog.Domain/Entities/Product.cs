@@ -80,6 +80,13 @@ public class Product
     /// <see cref="ImageContentType"/> or not at all; the database enforces it.
     /// </summary>
     public DateTime? ImageUpdatedAt { get; set; }
+
+    /// <summary>
+    /// The unguessable part of the image's address (specs/081, #166), new with every image. A product that is not
+    /// on sale serves its image only to an address carrying it - an address only its seller and staff are given, in
+    /// the responses they may read - so knowing the id no longer shows the photograph of something off the shelf.
+    /// </summary>
+    public Guid? ImageAccessKey { get; set; }
     /// <summary>
     /// Whether the catalogue may show and sell it (specs/045). A seller's new product waits for a
     /// moderator; the shop's own are approved as listed. Stored as text, and every product from before

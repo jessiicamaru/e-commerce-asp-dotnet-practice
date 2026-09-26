@@ -81,7 +81,7 @@ public class UploadVariantImageCommandHandler(
         await _store.SaveAsync(newKey, bytes, cancellationToken);
 
         var switched = await _products.TrySetVariantImageAsync(
-            variant.Id, seen, format.ContentType, now, cancellationToken);
+            variant.Id, seen, format.ContentType, now, Guid.NewGuid(), cancellationToken);
 
         if (switched == 0)
         {
@@ -176,7 +176,7 @@ public class RemoveVariantImageCommandHandler(
         }
 
         if (await _products.TrySetVariantImageAsync(
-                variant.Id, variant.ImageUpdatedAt, null, null, cancellationToken) == 0)
+                variant.Id, variant.ImageUpdatedAt, null, null, null, cancellationToken) == 0)
         {
             throw new ConflictException("This shape's image was changed by someone else meanwhile. Try again.");
         }

@@ -50,7 +50,8 @@ public class ProductImageTests(CatalogTestFixture fixture) : IDisposable
 
         var row = await ReadAsync(productId);
         Assert.Equal("image/png", row.ImageContentType);
-        Assert.Equal($"/api/products/{productId}/image?v={ProductImageKey.Version(row.ImageUpdatedAt!.Value)}", response.ImageUrl);
+        // The version, then the image's own key (specs/081) - what opens it while the product is off the shelf.
+        Assert.Equal($"/api/products/{productId}/image?v={ProductImageKey.Version(row.ImageUpdatedAt!.Value)}&k={row.ImageAccessKey:N}", response.ImageUrl);
 
         var image = await SendAsync(new GetProductImageQuery(productId));
         Assert.NotNull(image);
@@ -167,7 +168,7 @@ public class ProductImageTests(CatalogTestFixture fixture) : IDisposable
             var repository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
             var current = (await ReadAsync(productId)).ImageUpdatedAt;
             Assert.Equal(1, await repository.TrySetImageAsync(
-                productId, current, "image/png", ProductImageKey.Truncate(DateTime.UtcNow.AddMinutes(1))));
+                productId, current, "image/png", ProductImageKey.Truncate(DateTime.UtcNow.AddMinutes(1)), Guid.NewGuid()));
         };
 
         await Assert.ThrowsAsync<ConflictException>(() => UploadAsync(productId, WebP));

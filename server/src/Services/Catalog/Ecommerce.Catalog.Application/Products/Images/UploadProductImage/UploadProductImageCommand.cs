@@ -83,7 +83,9 @@ public class UploadProductImageCommandHandler(
         await _store.SaveAsync(newKey, bytes, cancellationToken);
 
         // 2. Switch - only if nobody else switched it since we looked.
-        var switched = await _products.TrySetImageAsync(product.Id, seen, format.ContentType, now, cancellationToken);
+        // A new image, a new key (specs/081): an address handed out for the old one opens nothing new.
+        var access = Guid.NewGuid();
+        var switched = await _products.TrySetImageAsync(product.Id, seen, format.ContentType, now, access, cancellationToken);
 
         if (switched == 0)
         {
@@ -104,6 +106,7 @@ public class UploadProductImageCommandHandler(
 
         product.ImageContentType = format.ContentType;
         product.ImageUpdatedAt = now;
+        product.ImageAccessKey = access;
         return ProductResponse.From(product);
     }
 
