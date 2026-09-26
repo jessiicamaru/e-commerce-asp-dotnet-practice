@@ -113,6 +113,42 @@ public class SellerInsightsTests(OrderTestFixture fixture)
         Assert.Equal(5_000m, Assert.Single((await AsSellerAsync(bao, new GetSellerRevenueQuery(day, day))).Totals).Revenue);
     }
 
+    /// <summary>
+    /// #172 (specs/084): the administrator's Overview kept a parcel that came back and was refunded as revenue, while
+    /// the seller's page left it out - two screens disagreeing about one sale. Now both leave it out: the Overview's
+    /// revenue, its top products and its top buyers, less exactly what was refunded. A return still open changes
+    /// nothing on either, and the order is still one order - its delivery was not refunded.
+    /// </summary>
+    [Fact]
+    public async Task The_admin_overview_leaves_a_received_return_out_the_way_the_sellers_page_does()
+    {
+        var day = Day();
+        var mai = Guid.CreateVersion7();
+        var bao = Guid.CreateVersion7();
+        var maisLens = Guid.CreateVersion7();
+        var baosBody = Guid.CreateVersion7();
+        var order = await PlaceAsync("VND", OrderStatus.Shipped, day, (mai, 20_000m, 1, maisLens), (bao, 5_000m, 1, baosBody));
+        var open = await PlaceAsync("VND", OrderStatus.Shipped, day, (mai, 300_000m, 1));
+        await ReturnAsync(order, mai, ReturnStatus.Received, refund: 22_000m);   // her goods and their tax
+        await ReturnAsync(open, mai, ReturnStatus.Requested);
+
+        var admin = Assert.Single((await AsSellerAsync(Guid.CreateVersion7(), new GetRevenueQuery(day, day))).Totals);
+        Assert.Equal(await TotalOfAsync(order) - 22_000m + await TotalOfAsync(open), admin.Revenue);
+        Assert.Equal(2, admin.Orders);
+
+        var top = await AsSellerAsync(Guid.CreateVersion7(), new GetTopProductsQuery(day, day, Limit: 50));
+        Assert.DoesNotContain(top, p => p.ProductId == maisLens);
+        Assert.Contains(top, p => p.ProductId == baosBody);
+
+        var buyer = await BuyerOfAsync(order);
+        var spent = Assert.Single(await AsSellerAsync(Guid.CreateVersion7(), new GetTopBuyersQuery(day, day, Limit: 50)), b => b.CustomerId == buyer);
+        Assert.Equal(await TotalOfAsync(order) - 22_000m, Assert.Single(spent.Spent).Amount);
+
+        // The seller's page, as before: her part is gone, his is not.
+        Assert.Equal(300_000m, Assert.Single((await AsSellerAsync(mai, new GetSellerRevenueQuery(day, day))).Totals).Revenue);
+        Assert.Equal(5_000m, Assert.Single((await AsSellerAsync(bao, new GetSellerRevenueQuery(day, day))).Totals).Revenue);
+    }
+
     /// <summary>Three of her lines on one order are one order, not three.</summary>
     [Fact]
     public async Task An_order_is_counted_once_however_many_of_the_sellers_lines_it_holds()
@@ -253,7 +289,7 @@ public class SellerInsightsTests(OrderTestFixture fixture)
     }
 
     /// <summary>Gives the seller's part of this order a return in this state, as the return flow would have left it.</summary>
-    private async Task ReturnAsync(Guid order, Guid seller, ReturnStatus status)
+    private async Task ReturnAsync(Guid order, Guid seller, ReturnStatus status, decimal? refund = null)
     {
         await using var scope = _fixture.NewScope();
         var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
@@ -263,8 +299,16 @@ public class SellerInsightsTests(OrderTestFixture fixture)
             Id = Guid.CreateVersion7(), OrderId = order, ShipmentId = part.Id, CustomerId = Guid.CreateVersion7(), SellerId = seller,
             Status = status, Reason = "Broken", RequestedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow,
             ReceivedAt = status == ReturnStatus.Received ? DateTime.UtcNow : null,
+            RefundAmount = refund,
         });
         await db.SaveChangesAsync();
+    }
+
+    private async Task<Guid> BuyerOfAsync(Guid order)
+    {
+        await using var scope = _fixture.NewScope();
+        return await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders
+            .Where(o => o.Id == order).Select(o => o.UserId).SingleAsync();
     }
 
     private async Task<decimal> TotalOfAsync(Guid order)

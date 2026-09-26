@@ -31,7 +31,7 @@ Neither service is told who the seller is: the token says (Constitution IV).
    seller's parcel, so another seller's line on the same order still counts.
    - *Why (decision 51):* the seller's earnings already leave a returned part out. Two answers on one console
      would be read as a bug.
-   - The admin Overview still counts it. That is a known limit, below.
+   - The admin Overview leaves it out too, since specs/084.
 4. **An order counts once** per day and currency, however many of the seller's lines it holds.
 5. **Money is never added across currencies.**
 6. **One period rule** (specs/055): whole days of the shop (specs/082), both ends included, at most 366.
@@ -73,8 +73,6 @@ No message and no table is new. The reads use `order_items`, `order_shipments`, 
 
 ## Known limits
 
-- **The admin Overview still counts a returned sale.** Its revenue is order totals, and refunds do not reduce
-  it (specs/066).
 - **No comparison with a previous period, and no export.**
 
 ## History

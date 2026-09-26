@@ -9,6 +9,13 @@ namespace Ecommerce.Order.Infrastructure.Persistence.Repositories;
 /// list, here: an order the saga paid for - including one being prepared or shipped - and never one that
 /// failed, was cancelled, or is still settling.
 /// </summary>
+/// <remarks>
+/// A parcel that came back - its return <c>Received</c>, and so refunded (specs/066) - is not a sale either, on the
+/// admin's pages as on a seller's (#172, specs/084): revenue and a buyer's spending are less its refund, and its
+/// lines leave the top products. It counts on the day the order was paid, like the rest of the order, so a period
+/// already past can go down when a return is received - the seller's page has always done the same. A return still
+/// open is revenue: it may yet be refused.
+/// </remarks>
 public class OrderInsights(OrderDbContext context) : IOrderInsights
 {
     private static readonly OrderStatus[] Sold =
@@ -34,13 +41,40 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
             .Select(g => new { g.Key.Date, g.Key.Currency, Revenue = g.Sum(o => o.TotalAmount), Orders = g.Count() })
             .ToListAsync(cancellationToken);
 
-        return rows.Select(r => new RevenueRow(r.Date, r.Currency, r.Revenue, r.Orders)).ToList();
+        // What came back, by the same day and currency (specs/084). The order stays one order: its delivery was kept.
+        var refunded = (await ReturnedIn(from, to)
+                .GroupBy(x => new { TimeZoneInfo.ConvertTimeBySystemTimeZoneId(x.PaidAt ?? x.CreatedAt, timeZone).Date, x.Currency })
+                .Select(g => new { g.Key.Date, g.Key.Currency, Refund = g.Sum(x => x.Refund) })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(r => (r.Date, r.Currency), r => r.Refund);
+
+        return rows.Select(r => new RevenueRow(r.Date, r.Currency, r.Revenue - refunded.GetValueOrDefault((r.Date, r.Currency)), r.Orders)).ToList();
+    }
+
+    /// <summary>The refund of each parcel of a sold order in the period that came back (specs/084).</summary>
+    private IQueryable<ReturnedParcel> ReturnedIn(DateTime from, DateTime to) =>
+        SoldIn(from, to).SelectMany(
+            o => _context.ParcelReturns.Where(r => r.OrderId == o.Id && r.Status == ReturnStatus.Received),
+            (o, r) => new ReturnedParcel { UserId = o.UserId, PaidAt = o.PaidAt, CreatedAt = o.CreatedAt, Currency = o.Currency, Refund = r.RefundAmount ?? 0m });
+
+    /// <summary>An object initializer rather than a record, so EF can group over it (see <see cref="SellerLine"/>).</summary>
+    private sealed class ReturnedParcel
+    {
+        public Guid UserId { get; init; }
+        public DateTime? PaidAt { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public string? Currency { get; init; }
+        public decimal Refund { get; init; }
     }
 
     public async Task<List<ProductSalesRow>> ProductSalesAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
     {
         var rows = await SoldIn(from, to)
-            .SelectMany(o => o.Items, (o, i) => new { i.ProductId, o.Currency, o.CreatedAt, i.ProductName, i.Quantity, i.UnitPrice })
+            .SelectMany(o => o.Items, (o, i) => new { Order = o, Item = i })
+            // Not the lines of a parcel that came back (specs/084) - a line belongs to its seller's parcel (specs/035).
+            .Where(x => !_context.OrderShipments.Any(s =>
+                s.OrderId == x.Order.Id && s.SellerId == x.Item.SellerId && s.Return != null && s.Return.Status == ReturnStatus.Received))
+            .Select(x => new { x.Item.ProductId, x.Order.Currency, x.Order.CreatedAt, x.Item.ProductName, x.Item.Quantity, x.Item.UnitPrice })
             .GroupBy(x => new { x.ProductId, x.Currency })
             .Select(g => new
             {
@@ -131,6 +165,13 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
             .Select(g => new { g.Key.UserId, g.Key.Currency, Orders = g.Count(), Spent = g.Sum(o => o.TotalAmount) })
             .ToListAsync(cancellationToken);
 
-        return rows.Select(r => new BuyerRow(r.UserId, r.Currency, r.Orders, r.Spent)).ToList();
+        // Less what they were given back (specs/084).
+        var refunded = (await ReturnedIn(from, to)
+                .GroupBy(x => new { x.UserId, x.Currency })
+                .Select(g => new { g.Key.UserId, g.Key.Currency, Refund = g.Sum(x => x.Refund) })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(r => (r.UserId, r.Currency), r => r.Refund);
+
+        return rows.Select(r => new BuyerRow(r.UserId, r.Currency, r.Orders, r.Spent - refunded.GetValueOrDefault((r.UserId, r.Currency)))).ToList();
     }
 }
