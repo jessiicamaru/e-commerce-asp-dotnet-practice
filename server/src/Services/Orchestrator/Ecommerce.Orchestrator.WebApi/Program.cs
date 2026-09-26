@@ -3,6 +3,7 @@ using Ecommerce.Orchestrator.WebApi.StateMachines;
 using Ecommerce.Orchestrator.WebApi.Timeouts;
 using Ecommerce.Shared.Middlewares;
 using MassTransit;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -146,6 +147,12 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// /health, like every other service (specs/071, #115): the saga database, plus the broker - MassTransit adds its
+// own "masstransit-bus" check to these. Until this the Orchestrator was the one service nothing could probe, and
+// an order stuck in Submitted usually means it.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<OrchestratorDbContext>(name: "orchestrator_postgres_db");
+
 // Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
 builder.AddObservability("orchestrator");
 
@@ -162,6 +169,27 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.MapGet("/", () => Results.Ok(new { Service = "Ecommerce.Orchestrator", Status = "Running", Environment = app.Environment.EnvironmentName }));
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            service = "Orchestrator",
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.ToString()
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
 
 
 // Applying migrations from inside the service exists for one reason: a runtime image has neither

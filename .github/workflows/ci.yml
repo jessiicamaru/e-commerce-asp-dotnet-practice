@@ -1013,13 +1013,13 @@ jobs:
           # answered, so a non-2xx tells us it is up but reporting unhealthy.
           probe() { curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$1" || true; }
 
-          # The orchestrator has NO /health endpoint - it has no controllers -
-          # so it is deliberately absent here. Nothing can wait for it, which is
-          # why verify-saga.sh names it first when an order stalls.
+          # The orchestrator answers /health since specs/071 (#115) - the saga
+          # database and the broker - so it is waited for like the rest. Before,
+          # it was the one service nothing could probe.
           ready=0
           for _ in $(seq 1 120); do
             ok=1
-            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061 cart:5062; do
+            for pair in identity:5056 catalog:5057 order:5059 orchestrator:5058 inventory:5060 payment:5061 cart:5062; do
               [ "$(probe "http://localhost:${pair##*:}/health")" = "200" ] || ok=0
             done
             if [ "$ok" = "1" ]; then ready=1; break; fi
@@ -1027,12 +1027,12 @@ jobs:
           done
 
           if [ "$ready" != "1" ]; then
-            for pair in identity:5056 catalog:5057 order:5059 inventory:5060 payment:5061 cart:5062; do
+            for pair in identity:5056 catalog:5057 order:5059 orchestrator:5058 inventory:5060 payment:5061 cart:5062; do
               echo "::error::${pair%%:*} did not become healthy (last code: $(probe "http://localhost:${pair##*:}/health"); 000 = not listening)."
             done
             exit 1
           fi
-          echo "Five probed services are healthy; the orchestrator has no /health to probe."
+          echo "All seven services are healthy, the orchestrator included."
 
       # Payment resolves its outcome ONCE, in StubPaymentGateway's constructor,
       # so one running instance produces one of the two scenarios. Two instances
