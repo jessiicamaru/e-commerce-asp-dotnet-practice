@@ -1,7 +1,7 @@
 info:
   name: an email that did not fail is not sent again
   type: http
-  seq: 33
+  seq: 36
 
 http:
   method: POST

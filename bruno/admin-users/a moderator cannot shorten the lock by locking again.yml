@@ -1,0 +1,39 @@
+info:
+  name: a moderator cannot shorten the lock by locking again
+  type: http
+  seq: 19
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users/{{longLockId}}/lock"
+  body:
+    type: json
+    data: |-
+      {
+        "days": 1,
+        "reason": "Shorter"
+      }
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("says only an administrator shortens it", function() {
+          expect(res.body.detail).to.contain("shorten");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/088 (#180): locking again replaced the end date, so a one-day lock undid a 300-day one - the unlock
+  specs/050 refuses, by another route. It now obeys the same reach.

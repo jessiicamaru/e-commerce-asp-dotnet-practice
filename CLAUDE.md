@@ -595,7 +595,9 @@ for at most 30 days (an administrator for up to a year); only an administrator *
 Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
 depend on the target's row, so they live in `ModerationRules`, not in an attribute. **Unlocking obeys the
 same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody unlocks themselves, only an
-administrator unlocks a moderator, and a moderator lifts only a lock with at most 30 days still to run. A lock or ban ends
+administrator unlocks a moderator, and a moderator lifts only a lock with at most 30 days still to run - and **locking
+again** is a partial release too (`EnsureMayShorten`, specs/088, #180): a moderator's lock that would end sooner than
+one with more than 30 days to run is 403, where it used to replace the end date. A lock or ban ends
 every session at once, refresh refuses the account whatever its token, and sign-in answers **403 with
 the reason only after the right password** - before it, a locked account and a wrong password must
 look the same (#28). **A stop reaches a signed-in session within seconds** (specs/065, #112): Identity

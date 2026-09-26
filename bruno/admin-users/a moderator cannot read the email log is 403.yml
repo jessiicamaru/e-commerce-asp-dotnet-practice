@@ -1,7 +1,7 @@
 info:
   name: a moderator cannot read the email log is 403
   type: http
-  seq: 31
+  seq: 34
 
 http:
   method: GET

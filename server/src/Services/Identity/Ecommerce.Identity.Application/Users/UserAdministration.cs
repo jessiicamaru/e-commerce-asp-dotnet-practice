@@ -156,6 +156,21 @@ public static class ModerationRules
         if (target.LockedUntil is { } until && until - now > TimeSpan.FromDays(ModeratorMaxLockDays))
             throw new ForbiddenException($"Only an administrator can lift a lock with more than {ModeratorMaxLockDays} days to run.");
     }
+
+    /// <summary>
+    /// Locking again replaces the end date, so a lock that ends sooner than the one in place lifts part of it
+    /// (#180, specs/088) - and obeys the unlock rule's reach: a moderator shortens only a lock with at most
+    /// <see cref="ModeratorMaxLockDays"/> days still to run. Extending is always a lock the caller could set.
+    /// </summary>
+    /// <remarks>Runs after <see cref="EnsureMayStop"/>, which has already refused self and a moderator's moderator.</remarks>
+    public static void EnsureMayShorten(ICurrentUser caller, User target, DateTime newUntil, DateTime now)
+    {
+        if (caller.IsInRole(RoleNames.Admin) || target.LockedUntil is not { } until || newUntil >= until)
+            return;
+
+        if (until - now > TimeSpan.FromDays(ModeratorMaxLockDays))
+            throw new ForbiddenException($"Only an administrator can shorten a lock with more than {ModeratorMaxLockDays} days to run.");
+    }
 }
 
 public class UserAdministrationHandlers(
@@ -235,8 +250,11 @@ public class UserAdministrationHandlers(
         ModerationRules.EnsureMayStop(_currentUser, user);
 
         var now = DateTime.UtcNow;
+        var until = now.AddDays(request.Days);
+        ModerationRules.EnsureMayShorten(_currentUser, user, until, now);
+
         var before = Snapshot(user);
-        user.LockedUntil = now.AddDays(request.Days);
+        user.LockedUntil = until;
         user.LockReason = request.Reason.Trim();
         user.UpdatedAt = now;
 

@@ -1,7 +1,7 @@
 info:
   name: an administrator previews a draft
   type: http
-  seq: 20
+  seq: 23
 
 http:
   method: POST
