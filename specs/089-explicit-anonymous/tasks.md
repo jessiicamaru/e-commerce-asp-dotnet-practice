@@ -34,7 +34,7 @@ description: "Task list for Signed in unless an endpoint says otherwise"
 - [X] T010 Mutation checks (quickstart Scenario 6) - each red
 - [X] T011 All seven service test suites; Bruno and `verify-saga.sh` against the seven containers rebuilt from this branch
 - [X] T012 Docs: `docs/features/auth/jwt-setup.md`, `docs/features/auth/security-best-practices.md`, `docs/project/backlog.md`, `docs/project/timeline.md`, CLAUDE.md
-- [ ] T013 Merged as #188, closing #183
+- [X] T013 Merged as #188 (2026-09-27), closing #183
 
 ## Verification
 
