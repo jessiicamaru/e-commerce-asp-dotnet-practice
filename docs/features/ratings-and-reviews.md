@@ -123,7 +123,10 @@ The plan records two mutation checks: counting hidden reviews, and removing the 
 - **Reviews are not tied to the product's review status.** A product that is pending or taken down still accepts reviews from eligible customers, and its visible reviews are readable by id.
 - **No photos in reviews, no replies from sellers, no "was this helpful" votes** (out of scope in the spec).
 - **Eligibility rows outlive a deleted product**: `review_eligibility` has no foreign key, while the reviews themselves are deleted with the product.
-- Related, not built: asking a seller a question about a product ([#110](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/110)), and a seller's own view of how their shop is doing, including ratings ([#111](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/111)).
+- Related, and built since:
+  - asking a seller about a product, in [product questions](product-questions.md) (specs/076);
+  - a seller's own view of how their shop is doing, including ratings, in [seller insights](seller-insights.md)
+    (specs/068).
 
 ## History
 

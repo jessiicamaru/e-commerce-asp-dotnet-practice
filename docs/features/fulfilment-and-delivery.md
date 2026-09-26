@@ -243,7 +243,6 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 - **Cancellation is whole-order only.** There is no cancelling one seller's part.
 - **Payment is a stub.** A refund is a ledger row recorded through `Provider = "Stub"`; no money moves. A real provider is deliberately deferred.
 - **Shipping is manual.** No carrier integration: a person types the tracking reference, and it cannot be changed after shipping (a different reference is 409). Despatch is not a saga step (specs/011 research D2).
-- **An automatically delivered parcel does not notify its seller.** ([#128](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/128)) `ParcelReceived` is sent only when the customer confirms; the sweep records an audit entry and publishes `ParcelDeliveredEvent` but no notice.
 - **Moderators have no part in fulfilment.** Every fulfilment and staff-cancel endpoint is `Admin` only.
 - **Parcel notices are in-app only**: email (specs/060) carries only the order confirmation so far ([email](email.md)). The bell polls every 30 s rather than being pushed.
 - **Parcels delivered before specs/046 give no right to review**, and parts from before specs/037 carry no earnings; neither is backfilled.

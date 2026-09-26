@@ -352,12 +352,10 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
   `Moderator`; there is no endpoint to close a shop or remove `Seller`. Locking the account
   ([moderation](moderation-and-staff.md)) stops the person, not their listings.
 - **A new role reaches a session at its next refresh**, and an access token lives out its 15 minutes.
-- **A seller cannot see how their shop is doing** beyond sales and balance -
-  [#111](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/111).
-- **Nobody can ask a seller about a product** -
-  [#110](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/110).
-- **A delivered parcel cannot be returned**, so an earning once due is never reversed -
-  [#107](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/107).
+- Built since, and described on their own pages:
+  - how a seller's shop is doing, in [seller insights](seller-insights.md) (specs/068);
+  - questions to a seller, in [product questions](product-questions.md) (specs/076);
+  - [returns](returns.md) (specs/066). A return is a hold before money is due, never a debt after a payout.
 - **Shop names are not unique** - two shops may trade under the same name.
 - **Orders before specs/034 belong to no seller and orders before specs/037 are owed nothing**, by
   design (rule 20).

@@ -226,8 +226,8 @@ Bruno: `bruno/product/` (variants, translations, search without diacritics, doll
 - **Pending products would show during a rollback** to an image from before specs/045, which ignores `ReviewStatus` (specs/045 D1).
 - **Prices entered before specs/022's rule keep fractional dong amounts** until somebody reprices them.
 - **Order lines freeze no image.** An order for a deleted product loses its picture (specs/029 D1, specs/032 D8).
-- **Test scripts leave products behind.** Bruno and `verify-saga.sh` create products on every run ([#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118)). `seed/clean-test-debris.py` removes them.
-- **Not built:** saving a product for later ([#109](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/109)) and asking a seller about a product ([#110](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/110)).
+- **Products left by older test runs stay** until somebody cleans them. Since specs/073 (#118) Bruno's `teardown` folder and the scripts' `trap ... EXIT` remove what each run makes. What earlier runs left is still there, and `seed/clean-test-debris.py` removes it.
+- Saving a product for later is [saved products](saved-products.md) (specs/075), and asking its seller is [product questions](product-questions.md) (specs/076).
 
 ## History
 
