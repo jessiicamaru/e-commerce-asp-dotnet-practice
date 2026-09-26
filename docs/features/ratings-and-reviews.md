@@ -58,6 +58,7 @@ sequenceDiagram
 13. **What a shopper reads carries no moderation data.** The public list returns only visible reviews. The staff list adds `productName`, `hiddenAt` and `hiddenReason`. `edited` is true when a review was updated more than a second after it was created.
 14. **No backfill.** Parcels delivered before this feature give no right to review. Why: Catalog can learn who received what only from the event. Asking Order after the fact would add the synchronous dependency that rule 2 avoids, for a one-off.
 15. **Nobody reviews what they sell.** A seller who received their own product is refused with 403, "You cannot review your own product.", and `GET .../reviews/mine` reports them not eligible (specs/057, #127). Why: it is the one signal a shopper reads as independent.
+16. **Off the shelf, nobody reviews it** (specs/085, #174). Writing or changing a review of a product that is pending, rejected, taken down or inactive is the 404 `Product not found.`, the same answer as asking a question there and as a product that does not exist. `GET .../reviews/mine` reports the customer not eligible. Its reviews are read only by its seller and staff (specs/081). Back on sale, writing works again. Why: a review there would move a rating nobody can see.
 
 ## Data
 
@@ -120,8 +121,6 @@ The plan records two mutation checks: counting hidden reviews, and removing the 
 ## Known limits
 
 - **No backfill.** Customers whose parcels were delivered before specs/046 cannot review those products.
-- **A product that is pending or taken down still accepts reviews from eligible customers.** Only its seller and
-  staff can read them there: its reviews are a 404 to anybody else, as the product is (specs/081).
 - **No photos in reviews, no replies from sellers, no "was this helpful" votes** (out of scope in the spec).
 - **Eligibility rows outlive a deleted product**: `review_eligibility` has no foreign key, while the reviews themselves are deleted with the product.
 - Related, and built since:
@@ -136,3 +135,4 @@ The plan records two mutation checks: counting hidden reviews, and removing the 
 | [040-delivery-confirmation](../../specs/040-delivery-confirmation/) | [#85](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/85) | Parcels delivered by the customer's confirmation or after 7 days: the moment eligibility is taken from. |
 | [042-in-app-notifications](../../specs/042-in-app-notifications/) | [#94](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/94) | `INotifier`, used for `NewReview`. |
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | `ParcelDeliveredEvent`, the sweep's row lock, the `given_name` claim, `review_eligibility`, `product_reviews`, the rating columns, the reviews UI and `/admin/reviews`. |
+| [085-unlisted-review-writes](../../specs/085-unlisted-review-writes/) | #177 | A product off the shelf accepts no new review (#174). |

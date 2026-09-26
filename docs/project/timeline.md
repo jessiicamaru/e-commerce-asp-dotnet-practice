@@ -139,6 +139,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [082](../../specs/082-insights-local-days/) | Insights in the shop's days | #170 | #168: every insight counts the shop's days (`Insights:TimeZone`, Asia/Ho_Chi_Minh) - an order paid at 06:30 in Hanoi is that morning's - and the chart draws the days the server counted |
 | [083](../../specs/083-more-emails/) | More emails | #171 | #167: eight more emails - parcel shipped, order cancelled, return accepted/refused/refunded, back in stock, account locked/banned - editable like the rest; the reader's language is learnt from use (`users.Language`) |
 | [084](../../specs/084-admin-revenue-returns/) | Admin revenue less returns | #176 | #172: a parcel returned and refunded leaves the Overview's revenue, top products and top buyers, as it leaves the seller's page |
+| [085](../../specs/085-unlisted-review-writes/) | No reviews off the shelf | #177 | #174: writing a review of a product off the shelf is the same 404 as asking a question there, so no hidden rating moves |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.
