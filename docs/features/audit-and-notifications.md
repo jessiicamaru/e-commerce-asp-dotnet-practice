@@ -368,8 +368,9 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 - **A product sent back to review by the seller's own edit tells nobody**: the seller made the edit, and
   the product page shows its status.
 - **No retention or archiving.** Both tables grow without bound; exporting is out of scope (specs/041).
-- **Notices are in-app only; no push or SMS.** Email exists since specs/060, but so far only the order
-  confirmation is also an email ([email](email.md)). No notification preferences.
+- **No push or SMS.** A buyer's paid order, shipped parcel, cancellation and return steps, a saver's product
+  back in stock, and a locked or banned account are also emails (specs/060, 083 - [email](email.md)); the
+  sellers' notices are in the app only. No notification preferences.
 - **Up to 30 seconds of delay** on the bell, by design.
 - **Activity down means nothing is lost but nothing is visible**: messages wait in the publishers'
   outboxes and the broker until it returns.

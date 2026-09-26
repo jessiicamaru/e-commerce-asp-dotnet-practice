@@ -106,7 +106,7 @@ All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#c
 | [`categories`](../reference/data-model.md#categories) | Name, slug, description, optional parent. |
 | [`category_translations`](../reference/data-model.md#category_translations) | Category name and description per language. |
 | [`sellers`](../reference/data-model.md#sellers) | Read model of shop names, fed by Identity's events. |
-| [`product_views`](../reference/data-model.md#product_views) | Views per product per UTC day. |
+| [`product_views`](../reference/data-model.md#product_views) | Views per product per shop day (UTC before specs/082). |
 | [`product_reviews`](../reference/data-model.md#product_reviews), [`review_eligibility`](../reference/data-model.md#review_eligibility) | See [ratings and reviews](ratings-and-reviews.md). |
 
 **Off the shelf, nothing hangs on it for the public either** (specs/081, #166).

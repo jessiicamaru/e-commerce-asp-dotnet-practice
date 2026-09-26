@@ -107,4 +107,5 @@ Mutation checks (specs/075): each of these turns `SavedProductTests` red.
 
 - **No "price dropped" notice**, and no sharing a list.
 - **A shopper with many saved products gets one notice per product that flips.** There is no digest.
-- **The back-in-stock notice is in-app only.** It sends no email (specs/060 could carry one).
+- **The back-in-stock email names the product in its default language**, as the notice does: Catalog does not
+  know the saver's language, and Identity writes the rest of the email in it (specs/083).
