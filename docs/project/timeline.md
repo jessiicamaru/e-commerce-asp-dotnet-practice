@@ -128,6 +128,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [071](../../specs/071-orchestrator-health/) | Orchestrator health | #155 | #115: `/health` with the saga database and the broker, routed by the gateway; compose, CI and verify-saga wait for it |
 | [072](../../specs/072-revenue-paid-day/) | Revenue on the paid day | #156 | #116: `orders.PaidAt` written by the settlement; every insight dates a sale by `PaidAt ?? CreatedAt` |
 | [073](../../specs/073-test-debris/) | Test runs clean up | #157 | #118: Bruno's `teardown` folder and the scripts' `trap ... EXIT` delete what each run made; the seller folder's run order made explicit |
+| [074](../../specs/074-search-index/) | Search index | #158 | #113: `f_unaccent` + `pg_trgm` GIN indexes, an escaped `LIKE`, translations as a UNION of ids; 452 ms to 1.2 ms on 100,000 products |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

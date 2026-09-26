@@ -94,7 +94,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (167 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (169 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -305,9 +305,12 @@ product's own columns as the default-language text and the per-field fallback. E
 which language it wants - `?lang=`, then `Accept-Language` - negotiated by ASP.NET Core's
 `RequestLocalization` and read by handlers through `IRequestLanguage`, the way `ICurrentUser` is read.
 Responses carry `Content-Language` **and `Vary: Accept-Language`**, without which a cache serves one
-shopper's Vietnamese to the next shopper asking in English. Search is diacritic-insensitive through
-`unaccent` over both the translation and the original, with **no index** - recorded, and the first
-thing to fix at scale. **Category names are translated too** since specs/026, the same way and with
+shopper's Vietnamese to the next shopper asking in English. Search is diacritic-insensitive over both the translation and the original,
+and **indexed since specs/074 (#113)**: `f_unaccent` (an IMMUTABLE wrapper naming `unaccent`'s dictionary, mapped
+as `SearchFunctions.Unaccent`) under `pg_trgm` GIN indexes, matched with a `LIKE` whose `%`/`_`/`\` are escaped -
+⚠️ name the escape (`SearchFunctions.Escape`): Npgsql writes `ESCAPE ''` otherwise. ⚠️ The translations are a
+UNION of ids, not an `OR EXISTS` - that shape kept every product scanned even with the indexes; `SearchIndexTests`
+reads the plan. 452 ms to 1.2 ms on 100,000 products. **Category names are translated too** since specs/026, the same way and with
 the same per-field fallback; they were called out of scope twice before a redesigned storefront made
 an English page full of `Máy ảnh không gương lật` impossible to keep calling that. ⚠️ **An order freezes its words in the language it was placed in**
 (`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an
