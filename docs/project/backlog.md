@@ -26,7 +26,6 @@ Filed 2026-09-27 from the features' known limits, each a place where a number or
 
 | Issue | Title |
 | :-- | :-- |
-| [#172](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/172) | The admin Overview counts a returned and refunded parcel as revenue |
 | [#174](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/174) | A product that is off the shelf still accepts new reviews |
 
 ## Priority 1 - accounts and security
@@ -70,6 +69,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#166](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/166) | A product that is not on sale still serves its image, reviews and questions | [#169](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/169) (specs/081) |
 | [#168](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/168) | Insights count UTC days, so a Vietnamese morning lands on yesterday | [#170](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/170) (specs/082) |
 | [#167](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/167) | People are emailed only about a paid order, a reset and a confirmation | [#171](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/171) (specs/083) |
+| [#172](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/172) | The admin Overview counts a returned and refunded parcel as revenue | [#176](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/176) (specs/084) |
 | [#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118) | Every Bruno and verify-saga run leaves products behind | [#157](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/157) (specs/073) |
 | [#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116) | Revenue is counted on the day an order was placed, not paid | [#156](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/156) (specs/072) |
 | [#115](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/115) | The orchestrator has no health endpoint | [#155](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/155) (specs/071) |

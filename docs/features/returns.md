@@ -135,7 +135,8 @@ A parcel's return also appears on the buyer's order (`shipments[].return`) and o
 
 - **The sales list has no return badge.** A seller learns of a return from the `ReturnRequested` notice, which links to the sale.
 - **Whole parcels only, and no photos.**
-- **The admin overview still counts a returned sale as a sale.** Revenue is not reduced by refunds.
+- **Insights take a refund off the day the order was paid**, not the day the parcel came back (specs/084), so a past
+  period's revenue falls when a return is received.
 
 ## History
 

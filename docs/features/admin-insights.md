@@ -70,6 +70,7 @@ sequenceDiagram
 13. **Revenue is the order's `TotalAmount`; product revenue is goods only.** Revenue includes delivery and tax, as charged. A top product's revenue is `Quantity * UnitPrice` of its lines, before tax and without delivery. The two are different measures and are not expected to reconcile.
 14. **A product's name in "top selling" is the one frozen on its most recent order line**, in the language that order was placed in. Order does not ask Catalog. A deleted product still appears. "Most viewed" names the product by Catalog's current default-language `Name`, and a deleted product drops out of it (its `product_views` rows are deleted with it).
 15. **A day is the shop's day** (specs/082, #168). `Insights:TimeZone` - an IANA id, `Asia/Ho_Chi_Minh` by default - is read once at startup by `AddInsightsCalendar`, and an id the machine does not know stops the service rather than counting in UTC. Every insight, Order's and Catalog's, counts that zone's days: the period's ends, the grouping and a view's day. *Why:* the shop's customers are in Vietnam (UTC+7), so with UTC days an order paid at 06:30 in Hanoi was revenue of the day before. One zone for the whole shop, not the reader's, so two people see the same numbers.
+16. **A parcel that came back is not a sale** (specs/084, #172). A parcel whose return reached `Received` was refunded (specs/066): revenue and a buyer's spending are less its `RefundAmount` (goods and their tax, never delivery), and its lines leave the top products. The order is still one order, since its delivery was kept. The refund counts on the day the order was paid, so a period already past can go down when a return is received. A return still open is revenue, because it may yet be refused. *Why:* the seller's page already left the parcel out, and two screens disagreeing about one sale read as a bug.
 
 ## Data
 
@@ -117,6 +118,7 @@ None. The insights are reads, and the view counter is a single SQL statement. No
 | Where | What it proves |
 | :-- | :-- |
 | `Ecommerce.Order.Tests/InsightsTests` | `Revenue_counts_paid_orders_per_currency_and_nothing_else`: Paid, Shipped and Preparing count; Cancelled, Failed and Submitted do not; VND and USD are separate totals; one day row per currency per day. `Top_products_count_units_and_keep_revenue_per_currency`: a cancelled order's 50 units do not count. `Top_buyers_rank_by_spend_in_the_asked_currency`. |
+| `Ecommerce.Order.Tests/SellerInsightsTests` | `The_admin_overview_leaves_a_received_return_out_the_way_the_sellers_page_does` (specs/084): admin revenue and the buyer's spending are less exactly the refund, the returned product leaves the top products, an open return changes nothing, and the seller's page agrees. |
 | `Ecommerce.Catalog.Tests/ProductViewTests` | `A_shopper_opening_a_product_page_counts_and_twenty_at_once_count_twenty`; `Staff_and_the_seller_do_not_count_and_neither_does_what_is_not_on_the_shelf`; `The_most_viewed_come_first`. |
 | `Ecommerce.Identity.Tests/UserReportTests` | `Ids_are_turned_into_emails_and_unknown_ones_are_left_out`; `The_counts_follow_the_roles`. |
 | `client/src/pages/admin-overview/index.test.tsx` | Revenue per currency, never added together; top buyers named by email; waiting counts shown; a different period asks again; the request covers exactly the days the chart draws. |
@@ -135,7 +137,8 @@ The plan records two mutation checks: counting cancelled orders as revenue, and 
 - **Views are not deduplicated.** The endpoint is anonymous and has no rate limit, so repeated requests inflate a count. The storefront sends one per product opened, per page load.
 - **Headline counts are now, not for the period.** "Customers" includes sellers, who also hold `Customer`. "Stopped" adds locked and banned, so an account that is both counts twice.
 - **Revenue and product revenue measure different things** (with and without tax and delivery). The Overview shows units for top products and does not display product revenue.
-- **A seller's own view is a separate page**, [Seller insights](seller-insights.md) (specs/068). It leaves a returned and refunded parcel out of revenue; this Overview does not yet.
+- **A seller's own view is a separate page**, [Seller insights](seller-insights.md) (specs/068). Both leave a returned and refunded parcel out (specs/084).
+- **Revenue is net of returns, with no separate refunded figure.** A period's revenue falls when a return is received, and the page does not say how much came back.
 - **Out of scope in the spec:** charts beyond a daily bar per currency, exports, and custom date ranges in the storefront.
 
 ## History
@@ -147,3 +150,4 @@ The plan records two mutation checks: counting cancelled orders as revenue, and 
 | [047-admin-insights](../../specs/047-admin-insights/) | [#99](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/99) | Order insights endpoints, `product_views` and the view endpoint, Identity's lookup and stats, and the Overview page. |
 | - | [#101](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/101) | The daily chart shows every day of the period, with labels, the peak and a tooltip. |
 | [082-insights-local-days](../../specs/082-insights-local-days/) | #170 | Days are the shop's (`InsightsCalendar`, `Insights:TimeZone`), and the chart draws the server's `firstDay`..`lastDay` (#168). |
+| [084-admin-revenue-returns](../../specs/084-admin-revenue-returns/) | #176 | A parcel returned and refunded leaves the Overview's revenue, top products and top buyers, as it leaves the seller's page (#172). |
