@@ -120,7 +120,8 @@ The plan records two mutation checks: counting hidden reviews, and removing the 
 ## Known limits
 
 - **No backfill.** Customers whose parcels were delivered before specs/046 cannot review those products.
-- **Reviews are not tied to the product's review status.** A product that is pending or taken down still accepts reviews from eligible customers, and its visible reviews are readable by id.
+- **A product that is pending or taken down still accepts reviews from eligible customers.** Only its seller and
+  staff can read them there: its reviews are a 404 to anybody else, as the product is (specs/081).
 - **No photos in reviews, no replies from sellers, no "was this helpful" votes** (out of scope in the spec).
 - **Eligibility rows outlive a deleted product**: `review_eligibility` has no foreign key, while the reviews themselves are deleted with the product.
 - Related, and built since:
