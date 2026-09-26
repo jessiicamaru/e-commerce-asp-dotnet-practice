@@ -1,0 +1,34 @@
+info:
+  name: a seller lists their own vouchers
+  type: http
+  seq: 61
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/vouchers/mine"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("theirs only", function() {
+          const codes = res.body.items.map(v => v.code);
+          expect(codes).to.include(bru.getVar("sellerVoucherCode"));
+          expect(codes).to.not.include(bru.getVar("voucherCode"));
+          res.body.items.forEach(v => expect(v.isPlatform).to.equal(false));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The caller's own (specs/069): a seller never sees another's, nor the platform's.

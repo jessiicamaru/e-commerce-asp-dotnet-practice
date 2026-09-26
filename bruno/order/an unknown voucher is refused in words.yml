@@ -1,0 +1,31 @@
+info:
+  name: an unknown voucher is refused in words
+  type: http
+  seq: 7
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/quote?addressId={{addressId}}&shippingOption=express&voucherCodes=NO-SUCH-CODE"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("names the code, and reads like a disabled one", function() {
+          expect(res.body.detail).to.equal("Voucher NO-SUCH-CODE cannot be used.");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A code nobody made is the same 409 as a disabled one (specs/069 research D6): guessing learns nothing.

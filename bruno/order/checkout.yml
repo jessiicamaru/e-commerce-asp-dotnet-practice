@@ -1,7 +1,7 @@
 info:
   name: checkout
   type: http
-  seq: 5
+  seq: 8
 
 http:
   method: POST

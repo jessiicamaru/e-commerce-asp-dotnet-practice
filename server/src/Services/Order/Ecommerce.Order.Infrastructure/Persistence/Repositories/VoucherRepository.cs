@@ -52,42 +52,51 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
             return null;
         }
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        var now = DateTime.UtcNow;
+        // Inside the execution strategy, like every transaction this service opens by hand: the context retries
+        // transient failures (EnableRetryOnFailure), and a user-opened transaction outside a strategy throws.
+        // A retried attempt re-runs the claims in a new transaction; what the handler staged is still Added, so
+        // the save repeats it too - the failed attempt's transaction rolled back, so nothing is written twice.
+        var strategy = _context.Database.CreateExecutionStrategy();
 
-        foreach (var voucher in applied)
+        return await strategy.ExecuteAsync(async () =>
         {
-            // The total: a guarded increment, so of two checkouts taking the last use one moves the row and the
-            // other re-reads it after the first commits and moves nothing (research D5).
-            var claimed = await _context.Database.ExecuteSqlInterpolatedAsync($"""
-                UPDATE vouchers SET "UsedCount" = "UsedCount" + 1, "UpdatedAt" = {now}
-                WHERE "Id" = {voucher.VoucherId} AND "Status" = 'Active'
-                  AND ("TotalLimit" IS NULL OR "UsedCount" < "TotalLimit")
-                """, cancellationToken);
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var now = DateTime.UtcNow;
 
-            if (claimed == 0)
+            foreach (var voucher in applied)
             {
-                return voucher.Code;   // disposing the transaction rolls back the claims before it
+                // The total: a guarded increment, so of two checkouts taking the last use one moves the row and
+                // the other re-reads it after the first commits and moves nothing (research D5).
+                var claimed = await _context.Database.ExecuteSqlInterpolatedAsync($"""
+                    UPDATE vouchers SET "UsedCount" = "UsedCount" + 1, "UpdatedAt" = {now}
+                    WHERE "Id" = {voucher.VoucherId} AND "Status" = 'Active'
+                      AND ("TotalLimit" IS NULL OR "UsedCount" < "TotalLimit")
+                    """, cancellationToken);
+
+                if (claimed == 0)
+                {
+                    return voucher.Code;   // disposing the transaction rolls back the claims before it
+                }
+
+                // The customer's: kept for every voucher, so a release is symmetrical; limited when it has a limit.
+                var limit = voucher.PerCustomerLimit ?? int.MaxValue;
+                var uses = await _context.Database.SqlQuery<int>($"""
+                    INSERT INTO voucher_customer_uses ("VoucherId", "CustomerId", "Uses") VALUES ({voucher.VoucherId}, {customerId}, 1)
+                    ON CONFLICT ("VoucherId", "CustomerId") DO UPDATE SET "Uses" = voucher_customer_uses."Uses" + 1
+                    WHERE voucher_customer_uses."Uses" < {limit}
+                    RETURNING "Uses" AS "Value"
+                    """).ToListAsync(cancellationToken);
+
+                if (uses.Count == 0)
+                {
+                    return voucher.Code;
+                }
             }
 
-            // The customer's: kept for every voucher, so a release is symmetrical; limited when it has a limit.
-            var limit = voucher.PerCustomerLimit ?? int.MaxValue;
-            var uses = await _context.Database.SqlQuery<int>($"""
-                INSERT INTO voucher_customer_uses ("VoucherId", "CustomerId", "Uses") VALUES ({voucher.VoucherId}, {customerId}, 1)
-                ON CONFLICT ("VoucherId", "CustomerId") DO UPDATE SET "Uses" = voucher_customer_uses."Uses" + 1
-                WHERE voucher_customer_uses."Uses" < {limit}
-                RETURNING "Uses" AS "Value"
-                """).ToListAsync(cancellationToken);
-
-            if (uses.Count == 0)
-            {
-                return voucher.Code;
-            }
-        }
-
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return null;
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return (string?)null;
+        });
     }
 
     public Task ReleaseForOrderAsync(Guid orderId, DateTime at, CancellationToken cancellationToken = default) =>
@@ -168,22 +177,28 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
             return (DisableOutcome.NotFound, null);
         }
 
-        // The guarded statement and its audit entry in one transaction: of two at once, one disables it and is
-        // recorded, the other moves nothing.
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        var moved = await _context.Vouchers
-            .Where(v => v.Id == id && v.Status == VoucherStatus.Active)
-            .ExecuteUpdateAsync(x => x.SetProperty(v => v.Status, VoucherStatus.Disabled).SetProperty(v => v.UpdatedAt, at), cancellationToken);
-        if (moved == 0)
-        {
-            return (DisableOutcome.AlreadyDisabled, voucher);
-        }
+        // The guarded statement and its audit entry in one transaction, inside the execution strategy: of two at
+        // once, one disables it and is recorded, the other moves nothing.
+        var strategy = _context.Database.CreateExecutionStrategy();
 
-        voucher.Status = VoucherStatus.Disabled;
-        voucher.UpdatedAt = at;
-        await stage(voucher, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-        return (DisableOutcome.Disabled, voucher);
+        return await strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();   // a retried attempt must not save the audit entry of the failed one
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var moved = await _context.Vouchers
+                .Where(v => v.Id == id && v.Status == VoucherStatus.Active)
+                .ExecuteUpdateAsync(x => x.SetProperty(v => v.Status, VoucherStatus.Disabled).SetProperty(v => v.UpdatedAt, at), cancellationToken);
+            if (moved == 0)
+            {
+                return (DisableOutcome.AlreadyDisabled, voucher);
+            }
+
+            voucher.Status = VoucherStatus.Disabled;
+            voucher.UpdatedAt = at;
+            await stage(voucher, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return (DisableOutcome.Disabled, (Voucher?)voucher);
+        });
     }
 }

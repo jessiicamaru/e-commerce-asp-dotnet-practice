@@ -1,0 +1,31 @@
+info:
+  name: a seller disables their voucher
+  type: http
+  seq: 63
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/vouchers/{{sellerVoucherId}}/disable"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("disabled", function() {
+          expect(res.body.status).to.equal("Disabled");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Stops it being used from now on; orders that used it keep it, frozen on them.
