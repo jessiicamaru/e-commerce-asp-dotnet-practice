@@ -13,7 +13,9 @@ namespace Ecommerce.ApiGateway;
 /// <list type="bullet">
 /// <item><c>sign-in</c> - login, register, register-seller, reset-password (30 a minute);</item>
 /// <item><c>email</c> - forgot-password, which sends a real email (5 a minute);</item>
-/// <item><c>session</c> - refresh, looser because two tabs share one cookie (60 a minute).</item>
+/// <item><c>session</c> - refresh, looser because two tabs share one cookie (60 a minute);</item>
+/// <item><c>views</c> - <c>POST /api/products/{id}/view</c>, the one anonymous write that feeds a number people read
+/// (specs/086, #173; 30 a minute - a shopper opens nothing like that many product pages).</item>
 /// </list>
 /// Each is <c>RateLimits:&lt;policy&gt;:PermitLimit</c> / <c>WindowSeconds</c>. Counted in memory, per
 /// gateway instance: a restart forgives, which costs nothing for limits about one client's pace.
@@ -23,12 +25,14 @@ public static class AuthRateLimits
     public const string SignIn = "sign-in";
     public const string Email = "email";
     public const string Session = "session";
+    public const string Views = "views";
 
     private static readonly (string Name, int PermitLimit, int WindowSeconds)[] Defaults =
     [
         (SignIn, 30, 60),
         (Email, 5, 60),
         (Session, 60, 60),
+        (Views, 30, 60),
     ];
 
     public static IServiceCollection AddAuthRateLimits(this IServiceCollection services, IConfiguration configuration)

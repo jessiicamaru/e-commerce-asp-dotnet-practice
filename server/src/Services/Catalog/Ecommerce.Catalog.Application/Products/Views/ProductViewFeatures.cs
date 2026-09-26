@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Ecommerce.Shared.Insights;
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
@@ -12,7 +14,15 @@ namespace Ecommerce.Catalog.Application.Products.Views;
 /// shopper - not its seller checking their own listing, not staff reviewing it - and quiet either way,
 /// so the answer says nothing about the product.
 /// </summary>
-public record RecordProductViewCommand(Guid ProductId) : IRequest;
+/// <param name="Viewer">
+/// The random id the storefront keeps for a visitor (specs/086, #173), so opening the page again today adds nothing.
+/// A signed-in person is their token's id whatever this says. Without either, every call counts - the gateway's
+/// per-client limit is what bounds that.
+/// </param>
+public record RecordProductViewCommand(Guid ProductId, Guid? Viewer = null) : IRequest;
+
+/// <summary>The body of <c>POST /api/products/{id}/view</c> - optional, and an older storefront sends none.</summary>
+public record ProductViewRequest(Guid? Viewer);
 
 /// <summary>What people look at most, for administrators.</summary>
 public record GetTopViewedQuery(DateTime? From = null, DateTime? To = null, int Limit = 10) : IRequest<List<ViewedProduct>>;
@@ -57,8 +67,19 @@ public class ProductViewHandlers(IProductViewRepository views, IProductRepositor
             return;
         }
 
-        // Counted on the shop's day (specs/082), the same days the insights read it back by.
-        await views.RecordAsync(product.Id, calendar.DayOf(DateTime.UtcNow), cancellationToken);
+        // Counted on the shop's day (specs/082), the same days the insights read it back by - once per viewer (specs/086).
+        await views.RecordAsync(product.Id, calendar.DayOf(DateTime.UtcNow), ViewerOf(request), cancellationToken);
+    }
+
+    /// <summary>
+    /// Who is looking, as a hash (specs/086): the token's id for a signed-in person - never the body, which anybody
+    /// writes (Constitution IV) - else the visitor's id. The table keeps who looked at what only for a day, and not
+    /// even then in a form that names anyone.
+    /// </summary>
+    private string? ViewerOf(RecordProductViewCommand request)
+    {
+        var who = currentUser.Id is { } id ? $"user:{id}" : request.Viewer is { } visitor ? $"visitor:{visitor}" : null;
+        return who is null ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(who)));
     }
 
     public Task<List<ViewedProduct>> Handle(GetTopViewedQuery request, CancellationToken cancellationToken)

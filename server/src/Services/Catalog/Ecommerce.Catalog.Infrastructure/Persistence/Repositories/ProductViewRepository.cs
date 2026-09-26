@@ -7,12 +7,28 @@ public class ProductViewRepository(CatalogDbContext context) : IProductViewRepos
 {
     private readonly CatalogDbContext _context = context;
 
-    public Task RecordAsync(Guid productId, DateOnly day, CancellationToken cancellationToken = default) =>
-        // An upsert that increments in the database: read-then-write would lose views that arrive together.
-        _context.Database.ExecuteSqlInterpolatedAsync($"""
-            INSERT INTO product_views ("ProductId", "Day", "Views") VALUES ({productId}, {day}, 1)
-            ON CONFLICT ("ProductId", "Day") DO UPDATE SET "Views" = product_views."Views" + 1
-            """, cancellationToken);
+    public Task RecordAsync(Guid productId, DateOnly day, string? viewer, CancellationToken cancellationToken = default) =>
+        viewer is null
+            // An upsert that increments in the database: read-then-write would lose views that arrive together.
+            ? _context.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO product_views ("ProductId", "Day", "Views") VALUES ({productId}, {day}, 1)
+                ON CONFLICT ("ProductId", "Day") DO UPDATE SET "Views" = product_views."Views" + 1
+                """, cancellationToken)
+            // Specs/086: the viewer's row is the claim - only the insert that succeeds feeds the counter, so twenty
+            // at once from one viewer count once. The product's viewers from earlier days go in the same statement,
+            // which keeps the table at a day of viewers per product with no sweeper.
+            : _context.Database.ExecuteSqlInterpolatedAsync($"""
+                WITH gone AS (
+                    DELETE FROM product_viewers WHERE "ProductId" = {productId} AND "Day" < {day}
+                ), seen AS (
+                    INSERT INTO product_viewers ("ProductId", "Day", "Viewer") VALUES ({productId}, {day}, {viewer})
+                    ON CONFLICT DO NOTHING
+                    RETURNING 1
+                )
+                INSERT INTO product_views ("ProductId", "Day", "Views")
+                SELECT {productId}, {day}, 1 FROM seen
+                ON CONFLICT ("ProductId", "Day") DO UPDATE SET "Views" = product_views."Views" + 1
+                """, cancellationToken);
 
     public async Task<List<ViewedProduct>> TopAsync(DateOnly from, DateOnly to, int limit, CancellationToken cancellationToken = default)
     {
