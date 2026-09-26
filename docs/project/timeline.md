@@ -134,6 +134,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [077](../../specs/077-email-templates/) | Email templates | #161 | #150 (the email half): administrators edit every email in a rich-text editor; append-only versions, allow-list sanitised HTML, placeholders checked by name, preview, a test to yourself; emails sent as HTML plus text |
 | [078](../../specs/078-notification-wording/) | Notification wording | #162 | #150 (closes it): administrators reword every notice; versions in Activity, placeholders declared per kind in `notification-kinds.json`, emphasis and links only, notices shown as sanitised HTML with escaped values over the bundled words |
 | [079](../../specs/079-object-storage/) | Object storage | #163 | #114: product images in an S3-compatible bucket every Catalog instance shares - SeaweedFS in compose and CI (MinIO no longer publishes images); the old volume imported at startup; verified with two live instances |
+| [080](../../specs/080-e2e-browser/) | Browser end to end | #164 | #117: Playwright drives the storefront against the compose stack - a moderator approves, a customer buys and pays, the seller ships, the customer confirms and reviews; Edge locally, Chromium in CI; found and fixed a toast lost whenever saving remounts its form |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

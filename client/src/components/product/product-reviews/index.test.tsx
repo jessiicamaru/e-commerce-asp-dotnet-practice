@@ -1,5 +1,6 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import type { Product } from '@/services/product/types'
@@ -59,6 +60,28 @@ describe('ProductReviews (specs/046)', () => {
     await user.click(post)
 
     await waitFor(() => expect(write).toHaveBeenCalledWith('p1', 4, 'Good grip'))
+  })
+
+  /**
+   * Found by the browser tests (specs/080): the form is keyed by the review's id, so the first review remounts it
+   * before the save's own callback runs - and a callback handed to `mutate` does not run once its form is gone. The
+   * review was saved; nobody was told. Here the form is gone before the save answers, which is that race made certain.
+   */
+  it('says the review is up even when the form is gone by the time the save answers', async () => {
+    vi.spyOn(Reviews, 'forProduct').mockResolvedValue(page())
+    vi.spyOn(Reviews, 'mine').mockResolvedValue({ eligible: true, review: null })
+    let answer: (saved: Review) => void = () => {}
+    vi.spyOn(Reviews, 'write').mockReturnValue(new Promise<Review>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsSeller(<ProductReviews product={camera} />)
+
+    await user.click(await screen.findByRole('button', { name: '4 stars' }))
+    await user.click(screen.getByRole('button', { name: 'Post review' }))
+    unmount()
+    answer(review({ rating: 4 }))
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith('Thank you - your review is up.'))
   })
 
   /** One review each: theirs fills the form, and saving it again is an update. */

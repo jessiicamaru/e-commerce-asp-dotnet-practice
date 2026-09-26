@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright (specs/080): what a run leaves behind - traces, screenshots, the HTML report
+test-results/
+playwright-report/
+blob-report/

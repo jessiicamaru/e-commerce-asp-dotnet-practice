@@ -102,7 +102,13 @@ function ReviewForm({ productId, existing }: { productId: string; existing: Revi
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    write.mutate({ rating, body: body.trim() }, { onSuccess: () => toast.success(t('reviews.saved')) })
+    // mutateAsync, not mutate's own onSuccess: the first review gives the form a new key, so it remounts before that
+    // callback would run - and a callback handed to mutate does not run for a form that is gone (found by the
+    // browser tests, specs/080). A refusal is shown by `write.error`; the promise's rejection needs no handling here.
+    write.mutateAsync({ rating, body: body.trim() }).then(
+      () => toast.success(t('reviews.saved')),
+      () => {},
+    )
   }
 
   return (

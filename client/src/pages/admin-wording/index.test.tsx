@@ -1,9 +1,10 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { NotificationWording } from '@/services/notification-wording'
-import type { WordingOverview } from '@/services/notification-wording/types'
+import type { WordingEntry, WordingOverview } from '@/services/notification-wording/types'
 import { refusal } from '@/test/refusal'
 import { renderAsAdmin } from '@/test/render'
 import { AdminWordingPage } from '.'
@@ -76,5 +77,23 @@ describe('AdminWordingPage (specs/078)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText('{{total}} is not something a NewSale notice can fill in.')).toBeInTheDocument()
+  })
+
+  /** A save gives the editor a new version and remounts it: the toast must not go with it (specs/080). */
+  it('says it was saved even when the editor is gone by the time the save answers', async () => {
+    vi.spyOn(NotificationWording, 'overview').mockResolvedValue(overview())
+    let answer: (saved: WordingEntry) => void = () => {}
+    vi.spyOn(NotificationWording, 'save').mockReturnValue(new Promise<WordingEntry>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsAdmin(<AdminWordingPage />, '/admin/notifications')
+
+    await user.click(await screen.findByRole('button', { name: 'Edit NewSale (en)' }))
+    await user.type(screen.getByLabelText('Words'), '!')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    unmount()
+    answer({ key: 'NewSale', language: 'en', text: 'x', isDefault: false, version: 1, updatedAt: '', updatedBy: 'u1' })
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith('Saved. Readers see it on their next load.'))
   })
 })
