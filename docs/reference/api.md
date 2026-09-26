@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `4f7d17d`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `451aecf`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**134 endpoints** across 7 services.
+**143 endpoints** across 7 services.
 
 ## Identity (34)
 
@@ -45,7 +45,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (43)
+## Catalog (52)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -86,9 +86,18 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/products/{id}/variants/{variantId}/prices/{currency}` | Seller, Admin | Stops selling this variant in this currency. It is then reported with no price rather than with a converted one. Refused for the default currency, which has no row to remove. |
 | `PUT` | `/api/products/{id}/variants/{variantId}/prices/{currency}` | Seller, Admin | What this variant costs in one currency (specs/022). An upsert, like a translation. |
 | `POST` | `/api/products/{id}/view` | anyone | The product page was opened. Anonymous, and always 204 - counted or not. |
+| `GET` | `/api/products/{productId}/questions` | anyone | A product's questions, newest first. A hidden answer reads as none; no reasons. |
+| `POST` | `/api/products/{productId}/questions` | Customer | Ask about a product on sale. Its seller is told; asking about your own is 403. |
 | `GET` | `/api/products/{productId}/reviews` | anyone |  |
 | `GET` | `/api/products/{productId}/reviews/mine` | signed in |  |
 | `PUT` | `/api/products/{productId}/reviews/mine` | Customer |  |
+| `GET` | `/api/questions` | Admin, Moderator | Every question, visible or with something hidden, with the reasons. |
+| `GET` | `/api/questions/to-answer` | Seller, Admin, Moderator | What the caller answers for: a seller's own products, or for staff the shop's own. |
+| `PUT` | `/api/questions/{id}/answer` | Seller, Admin, Moderator | Answer, or rewrite the answer. Only the product's seller - staff for the shop's own; anybody else is 404, a hidden question or answer 409. |
+| `POST` | `/api/questions/{id}/answer/hide` | Admin, Moderator | Hide only the answer: the question reads as unanswered, and the answer is locked until restored. |
+| `POST` | `/api/questions/{id}/answer/restore` | Admin, Moderator | Show a hidden answer again. |
+| `POST` | `/api/questions/{id}/hide` | Admin, Moderator | Hide a question and its answer from the product page. The asker is told why. |
+| `POST` | `/api/questions/{id}/restore` | Admin, Moderator | Show a hidden question again. |
 | `GET` | `/api/reviews` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/hide` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/restore` | Admin, Moderator |  |

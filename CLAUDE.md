@@ -94,7 +94,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (176 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (186 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -384,6 +384,13 @@ and `/saved/ids`, all the caller's own. Only a listed product can be saved (the 
 since stays with `available: false`, one deleted cascades away. ⚠️ **Back in stock is the rollup's own flip**:
 `RecomputeProductRollupAsync` returns true only when its one `UPDATE` (a CTE reads the value it started from) turned
 availability false → true, and only then is each saver sent `SavedBackInStock` - another "still in stock" tells nobody.
+
+**A shopper asks about a product and its seller answers** (specs/076, #110): `product_questions` in Catalog, one
+answer per question. ⚠️ **Only the product's seller answers** - staff for the shop's own - and anybody else, **an
+administrator on a seller's product included**, gets the one `Question not found.` 404: an answer is published as
+the seller's words, so `SellerOwnership`'s "an administrator passes every check" does NOT apply here. The first
+answer (`WHERE "AnsweredAt" IS NULL`) tells the asker once; staff hide a question (off the page) or only its answer
+(which is then locked against a rewrite until restored). Routes: `/api/products/{id}/questions`, `/api/questions/...`.
 
 **An administrator sees how the shop is doing** at `/admin/overview` (specs/047) - composed by the
 client from three services, each answering from its own data: Order (`/api/orders/insights/revenue`,

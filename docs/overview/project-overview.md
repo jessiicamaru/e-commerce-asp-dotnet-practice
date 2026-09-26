@@ -102,12 +102,12 @@ the answer before it can continue. Details: [microservices design](../architectu
 | HTTP endpoints | 130 ([reference](../reference/api.md)) |
 | Integration messages | 24 ([reference](../reference/messages.md)) |
 | gRPC services | 4 ([reference](../reference/grpc.md)) |
-| Database tables (excluding outbox) | 46 ([reference](../reference/data-model.md)) |
-| Service, saga and gateway tests | 740, in 9 projects |
-| Storefront unit tests | 407 |
-| Bruno requests | 238 |
-| Design records (`specs/`) | 63 |
-| Merged pull requests | 80 |
+| Database tables (excluding outbox) | 47 ([reference](../reference/data-model.md)) |
+| Service, saga and gateway tests | 750, in 9 projects |
+| Storefront unit tests | 427 |
+| Bruno requests | 249 |
+| Design records (`specs/`) | 64 |
+| Merged pull requests | 81 |
 | Published images | 10 - eight services, the gateway and the storefront |
 
 ## Status
