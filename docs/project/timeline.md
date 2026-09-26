@@ -148,6 +148,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [091](../../specs/091-back-on-sale-notices/) | Back on sale by any route | #190 | #182: a saved product that can be bought again tells whoever saved it by every route - a variant reactivated, an edit whose rollup flips, a moderator's approval while in stock - in the transaction of the change; the words say "available again" |
 | [092](../../specs/092-one-shelf-rule/) | One shelf rule | #191 | #185: "on the shelf" is one property, `Product.OnShelf` (approved and not withdrawn), asked by every public read, shopper write and sale - a withdrawn product is the same 404 as a taken-down one |
 | [093](../../specs/093-review-default-pending/) | Pending by default | #192 | #184: `products.ReviewStatus` defaults to `'Pending'`, so an earlier image inserting a seller's product after a rollback files it for review instead of on sale; set by SQL, because a model default would drop `Approved` from EF's inserts |
+| [094](../../specs/094-untested-promises/) | Untested promises | #193 | #186: fourteen tests for seven behaviours that were fixed or promised but not held - remount toasts, the wording fallback, frozen tax, the saga's relay, concurrent retries and applications - each shown by a mutation; the staff review list gains the paging rule it lacked |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

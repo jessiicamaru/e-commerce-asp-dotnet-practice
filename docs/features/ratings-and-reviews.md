@@ -78,7 +78,7 @@ Reviews are in Catalog. The gateway routes `/api/products/**` and `/api/reviews/
 | `GET` | `/api/products/{productId}/reviews` | anyone (visible reviews, newest first, `pageNumber` / `pageSize` up to 50) |
 | `GET` | `/api/products/{productId}/reviews/mine` | signed in (`{ eligible, review }`) |
 | `PUT` | `/api/products/{productId}/reviews/mine` | Customer (`{ rating, body }`) |
-| `GET` | `/api/reviews` | Admin, Moderator (`hidden` = `true` or `false`) |
+| `GET` | `/api/reviews` | Admin, Moderator (`hidden` = `true` or `false`; `pageNumber` / `pageSize` up to 50 since specs/094 - it had no limit) |
 | `POST` | `/api/reviews/{id}/hide` | Admin, Moderator (`{ reason }`, required, at most 500 characters) |
 | `POST` | `/api/reviews/{id}/restore` | Admin, Moderator |
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/received` (Order) | signed in, owner only - the confirmation that makes a customer eligible |
@@ -136,3 +136,4 @@ The plan records two mutation checks: counting hidden reviews, and removing the 
 | [042-in-app-notifications](../../specs/042-in-app-notifications/) | [#94](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/94) | `INotifier`, used for `NewReview`. |
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | `ParcelDeliveredEvent`, the sweep's row lock, the `given_name` claim, `review_eligibility`, `product_reviews`, the rating columns, the reviews UI and `/admin/reviews`. |
 | [085-unlisted-review-writes](../../specs/085-unlisted-review-writes/) | #177 | A product off the shelf accepts no new review (#174). |
+| [094-untested-promises](../../specs/094-untested-promises/) | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/193) | The staff list's paging rule (1-50), which it lacked (#186). |

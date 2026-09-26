@@ -48,6 +48,32 @@ public sealed class OrderStateMachineTests : IAsyncLifetime
         Assert.Null(await _saga.NotExists(order)); // null: the instance is gone (finalized)
     }
 
+    /// <summary>
+    /// #186 (specs/094): the saga relays what Order froze - the currency into the payment (specs/022 SC-004, until now
+    /// only half automated) and each line's variant into the reservation (the specs/020 relay gotcha: a saga built
+    /// against an older contract dropped VariantId and the wrong variant's stock moved).
+    /// </summary>
+    [Fact]
+    public async Task The_saga_relays_the_currency_to_Payment_and_the_variant_to_Inventory()
+    {
+        var order = Guid.NewGuid();
+        var customer = Guid.NewGuid();
+        var variant = Guid.NewGuid();
+
+        await _harness.Bus.Publish(new OrderSubmittedEvent(order, customer, 49.99m,
+            [new OrderItemDto(Guid.NewGuid(), 2, 24.995m, variant)], DateTime.UtcNow, "USD"));
+        Assert.NotNull(await _saga.Exists(order, m => m.Submitted));
+        var reserve = Assert.Single(PublishedFor<ReserveInventoryCommand>(order));
+        Assert.Equal((variant, 2), (Assert.Single(reserve.Items).VariantId, reserve.Items[0].Quantity));
+
+        await _harness.Bus.Publish(new InventoryReservedEvent(order, DateTime.UtcNow));
+        Assert.NotNull(await _saga.Exists(order, m => m.InventoryReservedState));
+        Assert.True(await _harness.Published.Any<ProcessPaymentCommand>(m => m.Context.Message.OrderId == order));
+
+        var pay = Assert.Single(PublishedFor<ProcessPaymentCommand>(order));
+        Assert.Equal((customer, 49.99m, "USD"), (pay.UserId, pay.Amount, pay.Currency));
+    }
+
     [Fact]
     public async Task A_rejected_payment_releases_the_stock_and_fails_the_order()
     {
