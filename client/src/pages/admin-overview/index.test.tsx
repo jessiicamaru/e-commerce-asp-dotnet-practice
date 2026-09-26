@@ -27,11 +27,11 @@ beforeEach(async () => {
       { currency: 'USD', revenue: 1_700, orders: 1, averageOrderValue: 1_700 },
     ],
     days: [
-      { day: '2026-09-20', currency: 'VND', revenue: 84_000_000, orders: 2 },
-      { day: '2026-09-21', currency: 'USD', revenue: 1_700, orders: 1 },
+      { day: '2031-01-25', currency: 'VND', revenue: 84_000_000, orders: 2 },
+      { day: '2031-01-26', currency: 'USD', revenue: 1_700, orders: 1 },
     ],
-    firstDay: '2026-08-28',
-    lastDay: '2026-09-26',
+    firstDay: '2031-01-02',
+    lastDay: '2031-01-31',
   })
   vi.spyOn(Insights, 'topProducts').mockResolvedValue([{ productId: 'p1', productName: 'Fujifilm X-T5', units: 3, revenue: [] }])
   vi.spyOn(Insights, 'topViewed').mockResolvedValue([{ productId: 'p2', name: 'Sony A7 IV', views: 41 }])
@@ -90,9 +90,9 @@ describe('AdminOverviewPage (specs/047)', () => {
     const chart = await screen.findByRole('list', { name: 'Revenue per day' })
     const columns = within(chart).getAllByRole('listitem')
     expect(columns).toHaveLength(30)
-    expect(columns[0]).toHaveAccessibleName(/^Aug 28:/)
-    expect(columns[29]).toHaveAccessibleName(/^Sep 26:/)
-    expect(columns[23]).toHaveAccessibleName(/^Sep 20: ₫84,000,000/)
+    expect(columns[0]).toHaveAccessibleName(/^Jan 2:/)
+    expect(columns[29]).toHaveAccessibleName(/^Jan 31:/)
+    expect(columns[23]).toHaveAccessibleName(/^Jan 25: ₫84,000,000/)
   })
 
   it('asks again for a different period', async () => {
