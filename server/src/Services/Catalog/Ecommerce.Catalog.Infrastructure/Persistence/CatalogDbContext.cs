@@ -20,6 +20,7 @@ public class CatalogDbContext : DbContext
     public DbSet<VariantPrice> VariantPrices => Set<VariantPrice>();
     public DbSet<Seller> Sellers => Set<Seller>();
     public DbSet<ProductTranslation> ProductTranslations => Set<ProductTranslation>();
+    public DbSet<SavedProduct> SavedProducts => Set<SavedProduct>();
     public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
     public DbSet<VariantOptionTranslation> VariantOptionTranslations => Set<VariantOptionTranslation>();
 

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ProductImage } from '@/components/product/product-image'
+import { SaveButton } from '@/components/product/save-button'
 import { StarRating } from '@/components/product/star-rating'
 import { Price } from '@/components/shared/price'
 import type { Product } from '@/services/product/types'
@@ -23,6 +24,9 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
   const inStock = product.availability === 'InStock'
 
   return (
+    // The heart sits ON the card, beside the link rather than inside it: a button inside a link is two
+    // controls in one and invalid HTML (specs/075).
+    <div className="relative h-full">
     <Link
       to={`/products/${product.id}`}
       className="group bg-card ring-border/60 hover:ring-primary/60 flex h-full flex-col gap-3 rounded-3xl p-3 ring-1 transition-all hover:-translate-y-0.5 hover:shadow-lg"
@@ -63,5 +67,7 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
         </div>
       </div>
     </Link>
+    <SaveButton productId={product.id} className="absolute top-5 right-5" />
+    </div>
   )
 }

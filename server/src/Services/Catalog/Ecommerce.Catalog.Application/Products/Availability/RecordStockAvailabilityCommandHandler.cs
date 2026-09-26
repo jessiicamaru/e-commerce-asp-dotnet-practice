@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Shared.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -6,9 +7,13 @@ namespace Ecommerce.Catalog.Application.Products.Availability;
 
 public class RecordStockAvailabilityCommandHandler(
     IProductRepository productRepository,
-    ILogger<RecordStockAvailabilityCommandHandler> logger
+    ILogger<RecordStockAvailabilityCommandHandler> logger,
+    ISavedProductRepository saved,
+    INotifier notifier
 ) : IRequestHandler<RecordStockAvailabilityCommand, bool>
 {
+    private readonly ISavedProductRepository _saved = saved;
+    private readonly INotifier _notifier = notifier;
     private readonly IProductRepository _productRepository = productRepository;
     private readonly ILogger<RecordStockAvailabilityCommandHandler> _logger = logger;
 
@@ -26,9 +31,10 @@ public class RecordStockAvailabilityCommandHandler(
         {
             var variant = await _productRepository.GetVariantAsync(request.VariantId, cancellationToken);
 
-            if (variant is not null)
+            if (variant is not null
+                && await _productRepository.RecomputeProductRollupAsync(variant.ProductId, cancellationToken))
             {
-                await _productRepository.RecomputeProductRollupAsync(variant.ProductId, cancellationToken);
+                await TellWhoSavedItAsync(variant.ProductId, cancellationToken);
             }
 
             _logger.LogInformation(
@@ -64,5 +70,29 @@ public class RecordStockAvailabilityCommandHandler(
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// The product came back in stock (specs/075): each shopper who saved it is told, once per flip - Inventory
+    /// announces per variant and often, and only none-to-some is news. Through the consumer's outbox, so the notices
+    /// commit with the availability they announce. Not for a product off the shelf: there is nothing to buy.
+    /// </summary>
+    private async Task TellWhoSavedItAsync(Guid productId, CancellationToken cancellationToken)
+    {
+        var product = await _productRepository.GetByIdAsync(productId, cancellationToken);
+        if (product is null || !product.IsListed || !product.IsActive)
+        {
+            return;
+        }
+
+        var savers = await _saved.SaverIdsAsync(productId, cancellationToken);
+        foreach (var saver in savers)
+        {
+            await _notifier.NotifyAsync(
+                saver, NotificationKind.SavedBackInStock, new Dictionary<string, string> { ["product"] = product.Name },
+                $"/products/{productId}", cancellationToken);
+        }
+
+        _logger.LogInformation("Product {ProductId} is back in stock; told {Count} shopper(s) who saved it.", productId, savers.Count);
     }
 }

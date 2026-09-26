@@ -81,5 +81,14 @@
     "onlyBuyers": "Chỉ khách đã nhận được sản phẩm này mới đánh giá được.",
     "signIn": "Đăng nhập để đánh giá sản phẩm bạn đã mua.",
     "loadFailed": "Không tải được đánh giá."
+  },
+  "saved": {
+    "save": "Lưu để xem sau",
+    "unsave": "Bỏ lưu",
+    "title": "Đã lưu",
+    "none": "Chưa lưu gì - bấm vào trái tim trên sản phẩm để giữ ở đây.",
+    "browse": "Xem cửa hàng",
+    "unavailable": "Không còn bán",
+    "loadFailed": "Không tải được danh sách đã lưu."
   }
 }

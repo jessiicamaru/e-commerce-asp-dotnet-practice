@@ -94,7 +94,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (169 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (176 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -377,6 +377,13 @@ through `ON CONFLICT DO NOTHING`, specs/057), never by the product's own seller,
 test double still compiles. `products.RatingAverage` / `RatingCount` are **recomputed from the visible
 rows** in the transaction of every write, hide and restore, never incremented. Hidden, not deleted.
 Parcels delivered before this give no right to review; there is no backfill.
+
+**A shopper saves a product for later** (specs/075, #109): `saved_products` in Catalog, keyed `(CustomerId,
+ProductId)`, saved with `ON CONFLICT DO NOTHING`; `PUT`/`DELETE /api/products/{id}/saved`, `GET /api/products/saved`
+and `/saved/ids`, all the caller's own. Only a listed product can be saved (the public lookup's 404); one taken down
+since stays with `available: false`, one deleted cascades away. ⚠️ **Back in stock is the rollup's own flip**:
+`RecomputeProductRollupAsync` returns true only when its one `UPDATE` (a CTE reads the value it started from) turned
+availability false → true, and only then is each saver sent `SavedBackInStock` - another "still in stock" tells nobody.
 
 **An administrator sees how the shop is doing** at `/admin/overview` (specs/047) - composed by the
 client from three services, each answering from its own data: Order (`/api/orders/insights/revenue`,

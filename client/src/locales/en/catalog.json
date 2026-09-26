@@ -84,5 +84,14 @@
     "onlyBuyers": "Only customers who have received this product can review it.",
     "signIn": "Sign in to review a product you bought.",
     "loadFailed": "Could not load reviews."
+  },
+  "saved": {
+    "save": "Save for later",
+    "unsave": "Remove from saved",
+    "title": "Saved for later",
+    "none": "Nothing saved yet - tap the heart on a product to keep it here.",
+    "browse": "Browse the shop",
+    "unavailable": "No longer available",
+    "loadFailed": "Could not load what you saved."
   }
 }

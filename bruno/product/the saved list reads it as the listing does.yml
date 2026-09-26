@@ -1,0 +1,34 @@
+info:
+  name: the saved list reads it as the listing does
+  type: http
+  seq: 64
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/saved?page=1&pageSize=12"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the product, in the listing's words, with when it was saved and whether it can be bought", function() {
+          const item = res.body.items.find(i => i.product.id === bru.getVar("productId"));
+          expect(item).to.exist;
+          expect(item).to.have.all.keys("product", "savedAt", "available");
+          expect(item.available).to.be.a("boolean");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Newest first, each product read now - today's price in the shopper's currency, in their language.

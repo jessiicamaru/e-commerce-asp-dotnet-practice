@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bea126c`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `4f7d17d`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**130 endpoints** across 7 services.
+**134 endpoints** across 7 services.
 
 ## Identity (34)
 
@@ -45,7 +45,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (39)
+## Catalog (43)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -62,6 +62,8 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/products/insights/top-viewed` | Admin |  |
 | `GET` | `/api/products/mine` | Seller | The caller's own listings, and only theirs (specs/027). Takes no seller id. |
 | `GET` | `/api/products/review` | Admin, Moderator | The moderators' queue (Pending, oldest first) or the history of one status. |
+| `GET` | `/api/products/saved` | signed in | The caller's saved products, newest first, as the listing reads them now. |
+| `GET` | `/api/products/saved/ids` | signed in | The ids alone - for drawing a filled heart on a page of cards. |
 | `DELETE` | `/api/products/{id}` | Seller, Admin | Removes a product and every shape of it from the catalogue, for good (specs/024). |
 | `GET` | `/api/products/{id}` | anyone |  |
 | `POST` | `/api/products/{id}/approve` | Admin, Moderator |  |
@@ -71,6 +73,8 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/products/{id}/options/{optionId}/translations/{language}` | Seller, Admin | One option in one language - Kit: Body only → Bộ: Chỉ thân máy. Option values are read by customers as much as names are. |
 | `POST` | `/api/products/{id}/reject` | Admin, Moderator |  |
 | `POST` | `/api/products/{id}/resubmit` | Seller, Admin | Sends a rejected product back to the queue. The caller's own - somebody else's is 404. |
+| `DELETE` | `/api/products/{id}/saved` | signed in | Unsave it. Something not saved is no error. |
+| `PUT` | `/api/products/{id}/saved` | signed in | Save it. Again is fine; a product not on sale is a 404, like its public page. |
 | `POST` | `/api/products/{id}/take-down` | Admin, Moderator |  |
 | `DELETE` | `/api/products/{id}/translations/{language}` | Seller, Admin | Takes a language away; the product falls back to its default text. |
 | `PUT` | `/api/products/{id}/translations/{language}` | Seller, Admin | This product's name and description in one language (specs/021). An upsert: writing it twice leaves the second text, not a conflict. |

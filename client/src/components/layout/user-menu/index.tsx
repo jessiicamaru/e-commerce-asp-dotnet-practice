@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { LogOutIcon, MapPinIcon, PackageIcon, ShieldCheckIcon, StoreIcon, UserIcon } from 'lucide-react'
+import { HeartIcon, LogOutIcon, MapPinIcon, PackageIcon, ShieldCheckIcon, StoreIcon, UserIcon } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -66,6 +66,9 @@ export function UserMenu({
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/orders')}>
             <PackageIcon /> {t('nav.orders')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate('/saved')}>
+            <HeartIcon /> {t('nav.saved')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => navigate('/addresses')}>
             <MapPinIcon /> {t('nav.addresses')}
