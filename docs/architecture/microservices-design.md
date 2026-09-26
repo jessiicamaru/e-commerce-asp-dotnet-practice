@@ -68,7 +68,7 @@ graph TD
     Payment --> DB6[(payment_db :5438)]
     Cart --> DB7[(cart_db :5439)]
     Activity --> DB8[(activity_db :5440)]
-    Catalog --> Images[/catalog_images volume/]
+    Catalog --> Images[/product-images bucket - S3/]
 ```
 
 Every database is PostgreSQL, one per service, and no service reads another's. The Orchestrator has
@@ -104,8 +104,8 @@ database that publishes or consumes also holds MassTransit's `InboxState`, `Outb
 * **Responsibility**: categories and products. A product is sold in **variants** (specs/020): the
   variant carries the SKU, the options, the price per currency (specs/022) and its own availability;
   **the first variant reuses the product's id**. Product and category text is translated
-  (specs/021, 026). Photographs for products and for single variants (specs/019, 032) live on the
-  `catalog_images` volume behind `IProductImageStore`.
+  (specs/021, 026). Photographs for products and for single variants (specs/019, 032) live in an
+  S3-compatible bucket every instance shares (specs/079), behind `IProductImageStore`.
 * **The owner of price**: checkout asks Catalog over gRPC (`CatalogPricing.PriceVariants`) and
   freezes the answer onto the order line. A variant not priced in the requested currency has no price
   and cannot be bought - there is no conversion.

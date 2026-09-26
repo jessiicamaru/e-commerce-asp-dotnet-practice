@@ -91,7 +91,7 @@ Deeper detail — the configuration surface, image builds, secret scanning — i
 
 ```bash
 cd server
-docker compose up -d     # infrastructure only: 8 PostgreSQL, RabbitMQ, Seq, pgAdmin, Mailpit (emails at http://localhost:8025)
+docker compose up -d     # infrastructure only: 8 PostgreSQL, RabbitMQ, Seq, pgAdmin, Mailpit (emails at http://localhost:8025), SeaweedFS (S3 on :8333)
 ./start-dev.sh           # or ./start-dev.ps1 on Windows PowerShell
 ```
 

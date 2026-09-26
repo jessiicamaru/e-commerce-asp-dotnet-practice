@@ -54,7 +54,13 @@ sequenceDiagram
     C-->>B: approved products, localized, priced in X-Currency, "InStock"
 ```
 
-**Photographs.** Bytes live behind `IProductImageStore`. The one implementation, `FileSystemProductImageStore`, writes to a directory (`ProductImages:Root`, the `catalog_images` volume in containers). There is no file-name column: the key is derived from the row as `{productId:N}-{ImageUpdatedAt ticks}.{ext}`, or `variant-{variantId:N}-{ticks}.{ext}` for a variant. An upload writes the new file first. It then switches the row with a guarded `UPDATE ... WHERE "ImageUpdatedAt" = @seen`, and only after that deletes the old file. The image address is `/api/products/{id}/image?v={ticks}`, which is cacheable for good when `v` matches. A variant with no photograph of its own reports the product's address in `VariantResponse.ImageUrl`. Deleting a product deletes its images after the row. Administrators can list and reclaim files that no row names (`/api/products/images/orphans`).
+**Photographs.** Bytes live behind `IProductImageStore`. There are two implementations:
+- `S3ProductImageStore` (specs/079) writes to an S3-compatible bucket that every Catalog instance shares. It is
+  what the containers use, with SeaweedFS in development.
+- `FileSystemProductImageStore` writes to a directory (`ProductImages:Root`). It is `dotnet run`'s default and
+  assumes one instance.
+
+`ProductImages:Store` chooses between them. There is no file-name column: the key is derived from the row as `{productId:N}-{ImageUpdatedAt ticks}.{ext}`, or `variant-{variantId:N}-{ticks}.{ext}` for a variant. An upload writes the new file first. It then switches the row with a guarded `UPDATE ... WHERE "ImageUpdatedAt" = @seen`, and only after that deletes the old file. The image address is `/api/products/{id}/image?v={ticks}`, which is cacheable for good when `v` matches. A variant with no photograph of its own reports the product's address in `VariantResponse.ImageUrl`. Deleting a product deletes its images after the row. Administrators can list and reclaim files that no row names (`/api/products/images/orphans`).
 
 **Search and sort.** `GetPaginatedAsync` finds the ids whose `f_unaccent(lower(Name))` or `lower(Sku)` is `LIKE` the escaped term, UNIONed with the ids whose translation into the requested language matches the same way, and reads the page of those (specs/074). Sorting is by name (the default-language `Name`), or by price in the **requested** currency. Products with no price in that currency sort last.
 
@@ -103,7 +109,24 @@ All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#c
 | [`product_views`](../reference/data-model.md#product_views) | Views per product per UTC day. |
 | [`product_reviews`](../reference/data-model.md#product_reviews), [`review_eligibility`](../reference/data-model.md#review_eligibility) | See [ratings and reviews](ratings-and-reviews.md). |
 
-Image bytes are not in the database. They are files on the `catalog_images` volume, named by the key derived from the row.
+Image bytes are not in the database. They are objects in the `product-images` bucket (specs/079), or files in the
+store's directory under `dotnet run`, named by the key derived from the row.
+
+**Object storage** (specs/079, #114):
+- A key is stored **only when new**, with `If-None-Match: *`, as the directory's move is.
+- A read copies the object into memory; images are at most 2 MB.
+- The listing pages through `ListObjectsV2` and never holds the bucket.
+- Startup creates the bucket and writes a probe, or **refuses to start** and says why.
+- The orphan report reads the same bucket from any instance, and its `note` says the store is shared.
+- The images from the old `catalog_images` volume are copied in at startup (`ProductImages:ImportFrom`, the volume
+  mounted read-only). The copy is idempotent by key and safe on several instances at once, and it never deletes the
+  directory.
+
+| Setting | Meaning |
+| :-- | :-- |
+| `ProductImages:Store` | `FileSystem` (the default) or `S3`. |
+| `ProductImages:S3:ServiceUrl`, `Bucket`, `AccessKey`, `SecretKey`, `Region` | Where the bucket is and who Catalog is to it. A missing one refuses to start, naming it. |
+| `ProductImages:ImportFrom` | A directory whose images the bucket lacks are copied in at startup. |
 
 ## API
 
@@ -182,6 +205,7 @@ Server tests run against a real PostgreSQL (`Ecommerce.Catalog.Tests`, port 5433
 | `TranslationTests`, `CategoryTranslationTests`, `LanguageNegotiationTests` | Translated reads say which language they are in; the fallback is per field; writes are upserts; unsupported languages are refused on write; option text is translated; search ignores diacritics and looks at both the translation and the original; `?lang=` beats `Accept-Language`; `Content-Language` and `Vary` are set. |
 | `VariantPriceTests`, `RequestCurrencyTests` | A variant with no price in a currency is not sold in it; the "from" price and "price varies" use only variants priced in the asked currency; zero and amounts the currency cannot hold are refused; the default currency's price cannot be removed; currency is not taken from language; dong has no decimals. |
 | `ProductImageTests` | Upload, replace, remove; the bytes decide the type; oversize, empty or lying files are refused and the old image stays; a failed write or delete leaves the row correct; a lost race is 409 with no file left behind; CHECK constraints; product deletion deletes every image; variant photographs fall back to the product's; a product and its first variant never share a file. |
+| `S3ProductImageStoreTests` (12, against SeaweedFS) | What is saved reads back and is gone once deleted. A key is stored once, and a second write is refused. Keys that are not image keys are refused before any request. The listing pages (2 at a time) and leaves out the probe. Two instances see each other's images. The orphan report from either instance finds only what no row names. The import copies what the bucket lacks and nothing twice, even run four times at once. A wrong secret or a missing setting refuses to start. Every one of seven mutations turns one of these red. |
 | `OrphanImageTests` | Live product and variant images are never orphans; young files are skipped; a catalogue read that fails reports nothing rather than everything; one refusing key does not stop the rest; the store's own probe file is not waste. |
 | `DeleteProductTests`, `DeleteCategoryTests` | A deleted product takes its variants, options, prices and translations, announces every variant, and frees its SKU; a category with products is refused with the count. |
 | `ProductViewTests` | A shopper's view counts and twenty concurrent views count twenty; staff, the seller and unlisted products do not count; the most viewed come first. |
@@ -194,7 +218,9 @@ Bruno: `bruno/product/` (variants, translations, search without diacritics, doll
 
 ## Known limits
 
-- **Product images work with one Catalog instance only.** A second instance has its own directory, serves 404 for the first one's images, and would report them as orphans. The orphan report says so in its `note`. See [#114](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/114).
+- **Catalog still streams every image itself.** There is no CDN and no presigned URL straight to the bucket
+  (specs/079, out of scope).
+- **The directory store still assumes one instance.** It is `dotnet run`'s default. The containers use the bucket.
 - **Sorting by name uses the default-language `Name`**, not the translated one. Search matches the SKU with a plain `LIKE` and does not search descriptions.
 - **A product that is not approved still serves its image** at `GET /api/products/{id}/image` to anyone who knows the id. Its reviews are also readable at `GET /api/products/{id}/reviews`.
 - **Pending products would show during a rollback** to an image from before specs/045, which ignores `ReviewStatus` (specs/045 D1).
@@ -225,3 +251,4 @@ Bruno: `bruno/product/` (variants, translations, search without diacritics, doll
 | [045-product-review](../../specs/045-product-review/) | [#97](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/97) | Review before sale, the moderators' queue, edits that send a product back. |
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | `RatingAverage` and `RatingCount` on products. See [ratings and reviews](ratings-and-reviews.md). |
 | [047-admin-insights](../../specs/047-admin-insights/) | [#99](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/99) | `product_views` and top viewed. See [admin insights](admin-insights.md). |
+| [079-object-storage](../../specs/079-object-storage/) | [#163](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/163) | Images in an S3-compatible bucket shared by every instance (SeaweedFS in development), the old volume imported at startup (#114). |
