@@ -74,6 +74,16 @@ public class PagingValidators :
     }
 }
 
+/// <summary>The staff list, held to the same pages as every other (#186, specs/094) - it had no validator at all.</summary>
+public class GetReviewsForStaffQueryValidator : AbstractValidator<GetReviewsForStaffQuery>
+{
+    public GetReviewsForStaffQueryValidator()
+    {
+        RuleFor(x => x.PageNumber).GreaterThan(0);
+        RuleFor(x => x.PageSize).InclusiveBetween(1, 50);
+    }
+}
+
 public class ReviewHandlers(
     IReviewRepository reviews,
     IProductRepository products,
