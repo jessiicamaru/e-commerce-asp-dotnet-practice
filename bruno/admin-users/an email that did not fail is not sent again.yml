@@ -1,0 +1,28 @@
+info:
+  name: an email that did not fail is not sent again
+  type: http
+  seq: 33
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/emails/{{sentEmailId}}/retry"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409 - only a failed email, and never a link that expires, is sent again", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  One guarded UPDATE ... WHERE "Status" = 'Failed': a sent email is not moved, and nothing is sent twice.

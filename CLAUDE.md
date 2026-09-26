@@ -99,7 +99,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (266 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (210 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (170 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (174 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (13 tests, no database - the
@@ -659,6 +659,9 @@ words are the defaults; `email_template_versions` is append-only (reset and rest
 (`AllowListHtmlSanitizer`, Ganss.Xss) **on save AND on every send**, and values are escaped as they are filled in;
 a placeholder the email cannot fill is a 400 naming it, and the reset/confirmation emails cannot lose `{link}`.
 `IEmailTransport.SendAsync(to, subject, text, html)` sends `multipart/alternative`. Admin only, not Moderator.
+**What became of each email** (specs/087, #175): `/admin/email-delivery`, `GET /api/emails` (Admin) - never an email's data -
+and `POST /api/emails/{id}/retry`, one guarded `UPDATE ... WHERE "Status" = 'Failed'`. ⚠️ A reset or confirmation email is
+never retried (`canRetry: false`, 409): its link has expired.
 **An administrator rewords the notices** (specs/078, closes #150): `/admin/notifications`; `notification_wording_versions`
 in **Activity**, versioned the same way. The bundle stays the default - the storefront fetches the edits (public
 `GET /api/notifications/wording`) and lays them over it. ⚠️ `notification-kinds.json` now also declares

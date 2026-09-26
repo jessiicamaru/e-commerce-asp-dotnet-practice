@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
-import { BellIcon, GavelIcon, LayoutDashboardIcon, MailIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
+import { BellIcon, GavelIcon, LayoutDashboardIcon, MailIcon, MailWarningIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth/useAuth'
 import { cn } from '@/utils/shared'
 
@@ -32,6 +32,7 @@ export function AdminLayout() {
     { to: '/admin/questions', end: false, icon: MessageCircleQuestionIcon, label: t('menu.questions'), adminOnly: false },
     { to: '/admin/users', end: false, icon: UsersIcon, label: t('menu.users'), adminOnly: false },
     { to: '/admin/emails', end: false, icon: MailIcon, label: t('menu.emails'), adminOnly: true },
+    { to: '/admin/email-delivery', end: false, icon: MailWarningIcon, label: t('menu.emailDelivery'), adminOnly: true },
     { to: '/admin/notifications', end: false, icon: BellIcon, label: t('menu.notifications'), adminOnly: true },
     { to: '/admin/audit', end: false, icon: ScrollTextIcon, label: t('menu.audit'), adminOnly: true },
   ].filter((link) => isAdmin || !link.adminOnly)

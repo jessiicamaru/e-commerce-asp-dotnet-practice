@@ -15,6 +15,7 @@
     "vouchers": "Mã giảm giá",
     "questions": "Hỏi đáp",
     "emails": "Email",
+    "emailDelivery": "Tình trạng gửi email",
     "notifications": "Thông báo"
   },
   "queue": {
@@ -427,5 +428,25 @@
     "bundled": "lời có sẵn",
     "restore": "Khôi phục",
     "restored": "Đã khôi phục phiên bản {{version}}."
+  },
+  "delivery": {
+    "title": "Tình trạng gửi email",
+    "subtitle": "Email cửa hàng đã gửi ra sao. Email gửi thất bại có ghi lý do và gửi lại được - trừ liên kết đặt lại mật khẩu hay xác nhận, vì đã hết hạn.",
+    "state": {
+      "Failed": "Thất bại",
+      "Pending": "Đang chờ",
+      "Sent": "Đã gửi"
+    },
+    "search": "Tìm theo email người nhận",
+    "none": "Không có gì ở đây.",
+    "loadFailed": "Không tải được danh sách email.",
+    "retryFailed": "Không gửi lại được.",
+    "noRecipient": "Tài khoản không còn tồn tại",
+    "sentAt": "Đã gửi {{at}}",
+    "attempts_one": "{{count}} lần thử · xếp hàng {{at}}",
+    "attempts_other": "{{count}} lần thử · xếp hàng {{at}}",
+    "retry": "Gửi lại",
+    "retried": "Đã đưa lại vào hàng đợi - sẽ gửi trong vòng một phút.",
+    "linkExpired": "Liên kết có hạn dùng - người nhận hãy yêu cầu liên kết mới."
   }
 }

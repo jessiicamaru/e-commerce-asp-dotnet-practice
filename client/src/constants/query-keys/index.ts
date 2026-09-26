@@ -35,6 +35,7 @@ export const queryKeys = {
   questionQueue: (answered: boolean, page: number) => ['questions', 'queue', answered, page] as const,
   staffQuestions: (hidden: boolean, page: number) => ['questions', 'staff', hidden, page] as const,
   emailTemplates: () => ['email-templates'] as const,
+  outgoingEmails: (status: string, search: string, page: number) => ['outgoing-emails', status, search, page] as const,
   notificationWording: () => ['notification-wording', 'current'] as const,
   wordingOverview: () => ['notification-wording', 'all'] as const,
   wordingVersions: (key: string, language: string) => ['notification-wording', key, language, 'versions'] as const,

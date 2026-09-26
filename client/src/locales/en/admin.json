@@ -15,6 +15,7 @@
     "vouchers": "Vouchers",
     "questions": "Questions",
     "emails": "Emails",
+    "emailDelivery": "Email delivery",
     "notifications": "Notifications"
   },
   "queue": {
@@ -427,5 +428,25 @@
     "bundled": "the storefront's words",
     "restore": "Restore",
     "restored": "Version {{version}} restored."
+  },
+  "delivery": {
+    "title": "Email delivery",
+    "subtitle": "What became of the emails the shop sent. A failed one says why, and can be sent again - except a reset or confirmation link, which has expired.",
+    "state": {
+      "Failed": "Failed",
+      "Pending": "Waiting",
+      "Sent": "Sent"
+    },
+    "search": "Search by recipient's email",
+    "none": "Nothing here.",
+    "loadFailed": "Could not load the emails.",
+    "retryFailed": "Could not send it again.",
+    "noRecipient": "No such account any more",
+    "sentAt": "Sent {{at}}",
+    "attempts_one": "{{count}} attempt · queued {{at}}",
+    "attempts_other": "{{count}} attempts · queued {{at}}",
+    "retry": "Send again",
+    "retried": "Back in the queue - it goes out within a minute.",
+    "linkExpired": "A link that expires - the person asks for a new one."
   }
 }
