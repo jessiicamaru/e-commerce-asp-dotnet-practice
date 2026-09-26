@@ -946,6 +946,27 @@ wins and this file is what gets corrected.
 Feature designs are checked against it in `/speckit-plan`. A violation belongs in that plan's
 Complexity Tracking with a justification and the rejected simpler alternative — not waived.
 
+⚠️ **Every feature gets the full design record, to the standard of
+[specs/001](specs/001-inventory-reservations/)**. Each file, and what it must contain:
+
+| File | Contents |
+| :-- | :-- |
+| `spec.md` | User stories with priorities and acceptance scenarios; FRs; measurable success criteria; edge cases; assumptions |
+| `plan.md` | Summary, Technical Context, a **Constitution Check** against all five principles, Project Structure, Complexity Tracking |
+| `research.md` | Each decision, its rationale, and the alternatives rejected |
+| `data-model.md` | Tables, columns, migrations and state transitions |
+| `contracts/` | The HTTP, message and gRPC shapes |
+| `quickstart.md` | Runnable validation scenarios with expected results |
+| `checklists/requirements.md` | The requirements-quality checklist |
+| `tasks.md` | Every task ticked, with the PR that merged it |
+
+A small feature gets short files, never missing ones; a section that does not apply says why in a sentence.
+
+- *Why:* by specs/081 the record had shrunk to spec + tasks, and plans 070-080 had no Constitution Check. It
+  happened under exactly the pressure to ship quickly, and on 2026-09-27 every record was backfilled to this
+  standard.
+- *How to apply:* write the full set **before** the code, even while stacking branches ahead of CI.
+
 ## Documentation
 
 [docs/](docs/) is substantial and kept current — [docs/README.md](docs/README.md) is the index, and it
