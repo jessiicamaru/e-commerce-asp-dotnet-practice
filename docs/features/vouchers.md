@@ -7,7 +7,19 @@ of it on the order. There are two kinds:
 - **Shop vouchers**, made by a seller. They apply to that seller's lines only, and **the seller pays for them**
   out of their payout.
 
-The storefront screens are part 2 of #108. Until then, vouchers are made and used through the API.
+The server came in #153 (specs/069) and the screens in #154 (specs/070).
+
+## Where it happens in the storefront
+
+| Who | Page | What |
+| :-- | :-- | :-- |
+| **Customer** | `/checkout`, in the summary | A voucher box. **Apply** tries the code with the server first, by asking for the quote with it, and keeps the code only if the server takes it. A refusal appears in the server's words beside the box, and the summary stays as it was (research D1). Applied codes appear as chips and can be removed. The order is placed with exactly those codes. |
+| **Customer** | `/orders/:id` and the checkout summary | Each voucher by its code, with the shop's name for a shop voucher and its amount. Each line's discount appears under its price. |
+| **Seller** | `/shop/vouchers` (menu: Vouchers) | Their vouchers in words, for example "10% off · up to ₫100,000 · on orders from ₫500,000", with the uses, the dates and the status. **New voucher**: percent or amount off, the amounts per currency, dates and limits, first order in the shop, a minimum quantity, and their own products. **Disable** asks for confirmation first. |
+| **Administrator** | `/admin/vouchers` (menu: Vouchers, Admin only) | The same page for the platform. It adds **free delivery** and **new customers**, and products are picked from the whole catalogue. |
+
+The form offers a role only what the server accepts from it, and the server refuses the rest in its own words
+(specs/070 research D2).
 
 ## What people can do
 
@@ -102,6 +114,7 @@ and `VoucherDisabled` (category Order).
 | `Ecommerce.Order.Tests/VoucherCheckoutTests` | The quote and the order agree, and the order freezes the discounts. Free delivery. The seller's terms. A refusal places nothing. The race for the last use. The per-customer limit, both through checkout and at the claim itself. Release on failure and on cancellation, once. New customers. The refund. The seller's revenue. |
 | `Ecommerce.Order.Tests/VoucherManagementTests` | Whose a voucher is. Codes are upper-case and unique. What a voucher may say. Each owner sees only theirs. Disabling is by the owner, or an administrator for any. |
 | Bruno `order/` 5-8 | An administrator makes a voucher. The quote takes it off. An unknown code is a 409. **The checkout claims it through the gateway.** |
+| Vitest `pages/checkout`, `pages/order`, `pages/shop-vouchers`, `components/voucher`, `utils/voucher`, `services/voucher` | Checkout: a code is tried before it is kept, a refusal is shown beside the box, and the order is placed with the codes. The totals name each voucher. What the form sends for each role. How a voucher is worded. Disable asks for confirmation first. The URLs, and codes repeated in the quote. |
 | Bruno `seller/` 60-66 | A seller's voucher. The seller's list. No free delivery for a seller. Disable, and again (409). A customer is refused (403), and so is a request without a token (401). |
 
 ⚠️ **The Order test fixture now uses the retries production configures** (`EnableRetryOnFailure`). Without them,
@@ -110,7 +123,7 @@ container. Both voucher transactions did exactly that until Bruno disabled a vou
 
 ## Known limits
 
-- **No screens yet.** They are part 2 of #108.
+- **Variant targets only through the API.** The screens pick products (specs/070 research D3).
 - **No category targets** (research D4). Order's lines do not know their category, and Catalog's pricing answer
   would have to carry it.
 - **A voucher cannot be edited.** Disable it and create another. Orders keep what they used.
@@ -122,3 +135,4 @@ container. Both voucher transactions did exactly that until Bruno disabled a vou
 | Spec | PR | Added |
 | :-- | :-- | :-- |
 | [069-vouchers](../../specs/069-vouchers/) | #153 | Vouchers on the server: the model, pricing, claims and releases, and the management API (#108, part 1). |
+| [070-voucher-screens](../../specs/070-voucher-screens/) | #154 | The checkout's voucher box, vouchers on the order, and the voucher pages for sellers and administrators (#108, part 2). |

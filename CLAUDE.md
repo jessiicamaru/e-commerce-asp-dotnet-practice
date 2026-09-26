@@ -513,7 +513,7 @@ unreachable - a seller was refused at the door and the code deciding whether the
 never ran, while every unit test still passed. And `/api/sellers` needed a **gateway route**, without
 which the rename endpoint was a 404 that looked like a missing feature.
 
-**Vouchers** (specs/069, #108; screens are part 2): a customer sends up to 5 `voucherCodes` with the quote and
+**Vouchers** (specs/069, #108; screens in specs/070 - the checkout box, `/shop/vouchers`, `/admin/vouchers`): a customer sends up to 5 `voucherCodes` with the quote and
 the order, and `VoucherPricing.Apply` - pure, called by `CheckoutPricing` - works out what each takes off. A
 voucher is composed: `vouchers` (`SellerId` null = the platform's), `voucher_conditions`, `voucher_targets`
 (product/variant), `voucher_amounts` per currency (**no row, not usable - even a percentage**; never converted).
