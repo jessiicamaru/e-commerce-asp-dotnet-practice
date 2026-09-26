@@ -15,6 +15,13 @@ public interface IReservationRepository
 
     Task<List<StockReservation>> GetExpiredAsync(DateTime asOfUtc, int batchSize, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Ends every <see cref="ReservationStatus.Held"/> reservation of these variants as
+    /// <see cref="ReservationStatus.Released"/> with <paramref name="reason"/>, in one guarded statement, and
+    /// returns how many (#181, specs/090). Settled reservations are left as they are.
+    /// </summary>
+    Task<int> ReleaseHeldAsync(IReadOnlyCollection<Guid> productIds, string reason, DateTime now, CancellationToken cancellationToken = default);
+
     Task<bool> ExistsForOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     Task AddRangeAsync(IEnumerable<StockReservation> reservations, CancellationToken cancellationToken = default);

@@ -76,9 +76,9 @@ public class StockRepository(InventoryDbContext context) : IStockRepository
         var wanted = productIds.Distinct().ToList();
 
         // One statement, and no read first: there is nothing to decide. A row that is not there was
-        // already forgotten, which is the answer the caller wanted either way. Reservations cascade
-        // from the stock row, and any that survive a deleted product were for a product nobody can
-        // order any more.
+        // already forgotten, which is the answer the caller wanted either way. Nothing cascades - there is
+        // no foreign key from stock_reservations - so the caller releases the variants' held reservations in
+        // the same transaction and leaves the settled ones as the orders' history (#181, specs/090).
         return _context.StockItems
             .Where(s => wanted.Contains(s.ProductId))
             .ExecuteDeleteAsync(cancellationToken);
