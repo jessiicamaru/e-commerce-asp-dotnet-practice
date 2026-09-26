@@ -298,7 +298,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseHttpsRedirection();
@@ -323,8 +323,8 @@ app.MapGrpcService<CatalogOwnershipService>();
 // probing REST /health and is deliberately not repointed here - a probe that cannot fail is worse
 // than no probe. The consequence, stated rather than left to be found: Catalog can report healthy
 // over REST while this endpoint is broken, and what catches that is the end-to-end check.
-app.MapGrpcHealthChecksService();
-app.MapGrpcReflectionService();
+app.MapGrpcHealthChecksService().AllowAnonymous();
+app.MapGrpcReflectionService().AllowAnonymous();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
@@ -345,7 +345,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         };
         await context.Response.WriteAsJsonAsync(response);
     }
-});
+}).AllowAnonymous(); // A probe carries no token; the fallback policy would refuse it (specs/089).
 
 
 // Applying migrations from inside the service exists for one reason: a runtime image has neither

@@ -1,6 +1,7 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Contracts.Grpc;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ecommerce.Catalog.WebApi.Grpc;
 
@@ -26,6 +27,10 @@ namespace Ecommerce.Catalog.WebApi.Grpc;
 /// worded identically at the edge.
 /// </para>
 /// </remarks>
+// Service to service on the h2c port, which the gateway does not route: Inventory asks before it lets a
+// seller stock, and sends no token. Anonymous as it always was, but now by saying so - the fallback policy
+// refuses anything that does not (specs/089).
+[AllowAnonymous]
 public class CatalogOwnershipService(
     IProductRepository products,
     ILogger<CatalogOwnershipService> logger) : CatalogOwnership.CatalogOwnershipBase

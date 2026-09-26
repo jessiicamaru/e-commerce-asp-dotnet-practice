@@ -267,6 +267,14 @@ registers `ICurrentUser` — how the Application layer learns who the caller is 
 `MapInboundClaims = false` (otherwise `sub` is renamed), `RoleClaimType = "role"` (the signing side
 writes the short name, not the `ClaimTypes.Role` URI), and `ClockSkew = Zero`.
 
+**Signed in unless an endpoint says otherwise** (specs/089, #183). `AddJwtAuthentication` sets a **fallback policy**
+(`SignedIn`), so an endpoint with no attribute is refused anonymously in every service that calls it - until then
+`AuthController`'s sign-in was public only because nothing said otherwise. ⚠️ A public endpoint says
+`[AllowAnonymous]` (or `.AllowAnonymous()` on a mapping - `/health`, gRPC health/reflection, OpenAPI, and Catalog's
+service-to-service `CatalogPricing`/`CatalogOwnership`, which receive no token); forget it and the endpoint is 401,
+which a container health check or Bruno finds at once. Every controller action also says which it is:
+`EndpointAccess.Undeclared(assembly)` is asserted empty by `EndpointAccessTests` in each service.
+
 **Neither does the price.** `OrderItemRequest` carries only `ProductId` and `Quantity`; Order asks
 Catalog over gRPC at submission and **freezes** the price and name onto the order line. Before
 feature 009 the price came from the request body and a product listed at 40,000,000 was bought for

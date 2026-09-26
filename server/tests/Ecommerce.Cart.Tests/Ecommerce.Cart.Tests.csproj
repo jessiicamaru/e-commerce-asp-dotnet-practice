@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\Cart\Ecommerce.Cart.Application\Ecommerce.Cart.Application.csproj" />
     <ProjectReference Include="..\..\src\Services\Cart\Ecommerce.Cart.Infrastructure\Ecommerce.Cart.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Services\Cart\Ecommerce.Cart.WebApi\Ecommerce.Cart.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

@@ -186,7 +186,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseRequestLanguage();
@@ -200,8 +200,8 @@ app.MapControllers();
 // Reachable only on the HTTP/2 endpoint. The container health check keeps probing REST /health:
 // curl cannot speak gRPC health, and a probe that cannot fail is worse than none.
 app.MapGrpcService<CartReadingService>();
-app.MapGrpcHealthChecksService();
-app.MapGrpcReflectionService();
+app.MapGrpcHealthChecksService().AllowAnonymous();
+app.MapGrpcReflectionService().AllowAnonymous();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
@@ -221,7 +221,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions
             })
         });
     }
-});
+}).AllowAnonymous(); // A probe carries no token; the fallback policy would refuse it (specs/089).
 
 if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
 {

@@ -146,7 +146,16 @@ runs [`verify-auth.sh`](../../../.github/scripts/verify-auth.sh) against
 real logins.
 
 ## 4. Verifying JWT Token in Endpoints
-To protect an endpoint, add the `[Authorize]` attribute above your Controller class or actions:
+**Every endpoint is signed-in unless it says otherwise** (specs/089, #183). `AddJwtAuthentication` sets the
+authorization **fallback policy** to "an authenticated user", so an endpoint with no attribute refuses an anonymous
+caller with 401. A public endpoint says `[AllowAnonymous]` - or `.AllowAnonymous()` on a mapping such as `/health`.
+And every controller action says which it is, on itself or its controller: each service's `EndpointAccessTests`
+asserts `EndpointAccess.Undeclared` is empty, and names the action that says nothing.
+
+Before specs/089 the default was the other way round: `AuthController`'s sign-in, registrations and refresh were
+public only because the controller had no `[Authorize]`, and an action added beside them would have been public too.
+
+Say who may call each action, on the action or its controller:
 
 ```csharp
 using Microsoft.AspNetCore.Authorization;
@@ -189,7 +198,8 @@ Who reaches which endpoint (the full, generated list is [api.md](../../reference
 
 | Endpoints | Access |
 | :--- | :--- |
-| `POST /api/auth/*` (register, register-seller, login, refresh, logout) | Anonymous |
+| `POST /api/auth/*` (register, register-seller, login, refresh, logout, forgot-password, reset-password, confirm-email) - each `[AllowAnonymous]` on a controller that is `[Authorize]` | Anonymous |
+| `/health` of every service, gRPC health and reflection, OpenAPI (Development) - `.AllowAnonymous()` | Anonymous |
 | Catalogue reads - products, categories, images, a product's reviews, `GET /api/stock`, `GET /api/orders/shipping-options`, `POST /api/products/{id}/view` | Anonymous |
 | `/api/cart`, `/api/addresses`, `/api/notifications`, `POST /api/orders`, `GET /api/orders/quote`, `GET /api/orders`, `GET /api/orders/{id}`, cancelling one's own order, confirming a parcel arrived, `GET /api/shop-applications/mine` | Any signed-in user - always **their own**; somebody else's is **404** |
 | `POST /api/shop-applications`, `PUT /api/products/{id}/reviews/mine` | `Customer` |

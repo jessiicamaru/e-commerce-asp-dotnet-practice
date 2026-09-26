@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\Payment\Ecommerce.Payment.Application\Ecommerce.Payment.Application.csproj" />
     <ProjectReference Include="..\..\src\Services\Payment\Ecommerce.Payment.Infrastructure\Ecommerce.Payment.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Services\Payment\Ecommerce.Payment.WebApi\Ecommerce.Payment.WebApi.csproj" />
   </ItemGroup>
 
 </Project>

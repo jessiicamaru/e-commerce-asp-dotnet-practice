@@ -177,7 +177,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().AllowAnonymous();
 }
 
 app.UseHttpsRedirection();
@@ -206,7 +206,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions
         };
         await context.Response.WriteAsJsonAsync(response);
     }
-});
+}).AllowAnonymous(); // A probe carries no token; the fallback policy would refuse it (specs/089).
 
 
 // Applying migrations from inside the service exists for one reason: a runtime image has neither
