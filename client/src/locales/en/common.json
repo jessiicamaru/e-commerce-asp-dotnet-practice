@@ -61,5 +61,16 @@
   },
   "searchable": {
     "none": "Nothing matches."
+  },
+  "insights": {
+    "daily": "Revenue per day",
+    "peak": "Highest day {{amount}}",
+    "noSales": "no sales",
+    "orders_one": "{{count}} order",
+    "orders_other": "{{count}} orders",
+    "average": "Average order {{amount}}",
+    "none": "Nothing yet.",
+    "loadFailed": "Could not load this.",
+    "period": "Last {{count}} days"
   }
 }

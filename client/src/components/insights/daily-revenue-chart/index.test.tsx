@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import i18n from '@/config/i18n'
-import { DailyRevenueChart } from './daily-chart'
+import { DailyRevenueChart } from '.'
 
 const days = ['2026-09-20', '2026-09-21', '2026-09-22', '2026-09-23']
 const rows = [

@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `6149cdc`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92d89ba`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**124 endpoints** across 7 services.
+**127 endpoints** across 7 services.
 
 ## Identity (34)
 
@@ -45,7 +45,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (38)
+## Catalog (39)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -58,6 +58,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/products` | Seller, Admin | Lists a product. A seller's product is theirs; an administrator's belongs to the shop itself (specs/027) - who it belongs to comes from the token, never from the body. |
 | `DELETE` | `/api/products/images/orphans` | Admin | Reclaims them, and answers with what it removed. |
 | `GET` | `/api/products/images/orphans` | Admin | What the image store holds that the catalogue cannot name (specs/033). Changes nothing. |
+| `GET` | `/api/products/insights/mine` | Seller | The signed-in seller's own products: views, ratings, the most viewed (specs/068). |
 | `GET` | `/api/products/insights/top-viewed` | Admin |  |
 | `GET` | `/api/products/mine` | Seller | The caller's own listings, and only theirs (specs/027). Takes no seller id. |
 | `GET` | `/api/products/review` | Admin, Moderator | The moderators' queue (Pending, oldest first) or the history of one status. |
@@ -98,7 +99,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (33)
+## Order (35)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -119,6 +120,8 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/orders/returns` | Admin | Returns by state, oldest waiting first - ?status=Escalated is the dispute queue. |
 | `GET` | `/api/orders/sales` | Seller | A seller's sales: paid orders holding at least one of their lines, with figures over those lines only. Seller, not Admin - an administrator sees every order through fulfilment already. |
 | `GET` | `/api/orders/sales/balance` | Seller | A seller's money per currency: on the way, due, paid out. |
+| `GET` | `/api/orders/sales/insights/revenue` | Seller |  |
+| `GET` | `/api/orders/sales/insights/top-products` | Seller |  |
 | `GET` | `/api/orders/sales/payouts` | Seller | The payouts made to a seller, newest first. |
 | `GET` | `/api/orders/sales/{id}` | Seller | One sale, the seller's own lines only. 404 - one wording - for no such order, nothing of theirs on it, failed, or still settling. |
 | `POST` | `/api/orders/sales/{id}/preparing` | Seller | A seller starts preparing THEIR part of this order (specs/035). 404 - one wording - when it is not their sale, not there, not paid or failed; 409 when their part is not waiting. |

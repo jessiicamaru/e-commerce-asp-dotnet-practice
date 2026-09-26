@@ -4,12 +4,12 @@ import type { RevenueDay } from '@/services/insights/types'
 import { cn, money } from '@/utils/shared'
 
 /**
- * Revenue per day in one currency (specs/047): one bar per day of the period on a shared baseline, a day
+ * Revenue per day in one currency (specs/047; a seller's own too since specs/068): one bar per day of the period on a shared baseline, a day
  * with nothing sold left empty, the peak named above and the first and last day named below. Hovering or
  * focusing a bar says the day, the amount and the orders.
  */
 export function DailyRevenueChart({ days, rows, currency }: { days: string[]; rows: RevenueDay[]; currency: string }) {
-  const { t, i18n } = useTranslation('admin')
+  const { t, i18n } = useTranslation('common')
   const [active, setActive] = useState<number | null>(null)
   const byDay = new Map(rows.filter((r) => r.currency === currency).map((r) => [r.day, r]))
   const peak = Math.max(0, ...days.map((d) => byDay.get(d)?.revenue ?? 0))
@@ -18,16 +18,16 @@ export function DailyRevenueChart({ days, rows, currency }: { days: string[]; ro
   const describe = (day: string) => {
     const row = byDay.get(day)
     return row
-      ? `${label(day)}: ${money(row.revenue, currency)} · ${t('overview.orders', { count: row.orders })}`
-      : `${label(day)}: ${t('overview.noSales')}`
+      ? `${label(day)}: ${money(row.revenue, currency)} · ${t('insights.orders', { count: row.orders })}`
+      : `${label(day)}: ${t('insights.noSales')}`
   }
 
   return (
     <figure className="grid gap-1.5">
       <figcaption className="flex items-baseline justify-between gap-2 text-sm">
-        <span className="font-medium">{t('overview.daily')}</span>
+        <span className="font-medium">{t('insights.daily')}</span>
         {peak > 0 && (
-          <span className="text-muted-foreground text-xs tabular-nums">{t('overview.peak', { amount: money(peak, currency) })}</span>
+          <span className="text-muted-foreground text-xs tabular-nums">{t('insights.peak', { amount: money(peak, currency) })}</span>
         )}
       </figcaption>
 
@@ -53,7 +53,7 @@ export function DailyRevenueChart({ days, rows, currency }: { days: string[]; ro
 
         <ol
           className="border-border flex h-36 items-end gap-[2px] border-b"
-          aria-label={t('overview.daily')}
+          aria-label={t('insights.daily')}
           onMouseLeave={() => setActive(null)}
         >
           {days.map((day, index) => {

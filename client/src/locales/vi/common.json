@@ -61,5 +61,16 @@
   },
   "searchable": {
     "none": "Không có kết quả phù hợp."
+  },
+  "insights": {
+    "daily": "Doanh thu theo ngày",
+    "peak": "Ngày cao nhất {{amount}}",
+    "noSales": "không có đơn",
+    "orders_one": "{{count}} đơn",
+    "orders_other": "{{count}} đơn",
+    "average": "Trung bình mỗi đơn {{amount}}",
+    "none": "Chưa có gì.",
+    "loadFailed": "Không tải được.",
+    "period": "{{count}} ngày qua"
   }
 }

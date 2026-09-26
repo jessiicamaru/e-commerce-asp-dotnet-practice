@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Insights;
 using Ecommerce.Shared.Money;
 using FluentValidation;
@@ -33,6 +34,16 @@ public record GetTopProductsQuery(DateTime? From = null, DateTime? To = null, st
 public record GetTopBuyersQuery(DateTime? From = null, DateTime? To = null, string? Currency = null, int Limit = 10)
     : IRequest<List<TopBuyer>>;
 
+/// <summary>
+/// The signed-in seller's revenue (specs/068, #111): the sum of THEIR lines - unit price × quantity, before tax -
+/// on sold orders, per currency. Never the order's total, which holds other sellers' goods, delivery and tax
+/// (specs/034), and never a part that came back and was refunded (specs/066). The seller is the token's.
+/// </summary>
+public record GetSellerRevenueQuery(DateTime? From = null, DateTime? To = null) : IRequest<RevenueResponse>;
+
+/// <summary>The signed-in seller's best-selling products, by units - the same rows as their revenue.</summary>
+public record GetSellerTopProductsQuery(DateTime? From = null, DateTime? To = null, int Limit = 10) : IRequest<List<TopProduct>>;
+
 /// <summary>The rows the insights are built from; the repository does the grouping in SQL.</summary>
 public interface IOrderInsights
 {
@@ -41,6 +52,12 @@ public interface IOrderInsights
     Task<List<ProductSalesRow>> ProductSalesAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 
     Task<List<BuyerRow>> BuyersAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
+
+    /// <summary>One seller's own lines per day and currency: revenue over the lines, orders counted once each.</summary>
+    Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken);
+
+    /// <summary>One seller's own lines per product and currency.</summary>
+    Task<List<ProductSalesRow>> SellerProductSalesAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken);
 }
 
 /// <summary>One currency's paid orders on one day. Currency null: an order from before specs/022.</summary>
@@ -75,19 +92,60 @@ public class GetTopBuyersQueryValidator : AbstractValidator<GetTopBuyersQuery>
     }
 }
 
-public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions> money) :
+public class GetSellerRevenueQueryValidator : AbstractValidator<GetSellerRevenueQuery>
+{
+    public GetSellerRevenueQueryValidator() => this.ValidPeriod(x => x.From, x => x.To);
+}
+
+public class GetSellerTopProductsQueryValidator : AbstractValidator<GetSellerTopProductsQuery>
+{
+    public GetSellerTopProductsQueryValidator()
+    {
+        this.ValidPeriod(x => x.From, x => x.To);
+        RuleFor(x => x.Limit).InclusiveBetween(1, 50);
+    }
+}
+
+public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions> money, ICurrentUser currentUser) :
     IRequestHandler<GetRevenueQuery, RevenueResponse>,
     IRequestHandler<GetTopProductsQuery, List<TopProduct>>,
-    IRequestHandler<GetTopBuyersQuery, List<TopBuyer>>
+    IRequestHandler<GetTopBuyersQuery, List<TopBuyer>>,
+    IRequestHandler<GetSellerRevenueQuery, RevenueResponse>,
+    IRequestHandler<GetSellerTopProductsQuery, List<TopProduct>>
 {
     private readonly IOrderInsights _insights = insights;
     private readonly string _default = money.Value.DefaultCurrency;
+    private readonly ICurrentUser _currentUser = currentUser;
 
     public async Task<RevenueResponse> Handle(GetRevenueQuery request, CancellationToken cancellationToken)
     {
         var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        return Revenue(period, await _insights.RevenueByDayAsync(period.Start, period.End, cancellationToken));
+    }
+
+    // Research D2: the seller's answers have the admin's shapes, grouped by the same code - one chart draws both.
+
+    public async Task<RevenueResponse> Handle(GetSellerRevenueQuery request, CancellationToken cancellationToken)
+    {
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        return Revenue(period, await _insights.SellerRevenueByDayAsync(SellerId(), period.Start, period.End, cancellationToken));
+    }
+
+    public async Task<List<TopProduct>> Handle(GetSellerTopProductsQuery request, CancellationToken cancellationToken)
+    {
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var rows = await _insights.SellerProductSalesAsync(SellerId(), period.Start, period.End, cancellationToken);
+        return TopProducts(rows, "units", _default, request.Limit);
+    }
+
+    /// <summary>The caller - never read as "the shop's own" when the token names nobody.</summary>
+    private Guid SellerId() =>
+        _currentUser.Id ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
+
+    private RevenueResponse Revenue(InsightsPeriod period, List<RevenueRow> found)
+    {
         var (from, to) = (period.Start, period.End);
-        var rows = (await _insights.RevenueByDayAsync(from, to, cancellationToken))
+        var rows = found
             .Select(r => r with { Currency = r.Currency ?? _default })
             .ToList();
 
@@ -114,10 +172,12 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
     public async Task<List<TopProduct>> Handle(GetTopProductsQuery request, CancellationToken cancellationToken)
     {
         var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
-        var (from, to) = (period.Start, period.End);
-        var currency = request.Currency ?? _default;
-        var rows = await _insights.ProductSalesAsync(from, to, cancellationToken);
+        var rows = await _insights.ProductSalesAsync(period.Start, period.End, cancellationToken);
+        return TopProducts(rows, request.By, request.Currency ?? _default, request.Limit);
+    }
 
+    private List<TopProduct> TopProducts(List<ProductSalesRow> rows, string by, string currency, int limit)
+    {
         var products = rows
             .GroupBy(r => r.ProductId)
             .Select(g => new TopProduct(
@@ -131,11 +191,11 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
                     .ToList()))
             .ToList();
 
-        var ordered = request.By == "revenue"
+        var ordered = by == "revenue"
             ? products.OrderByDescending(p => p.Revenue.FirstOrDefault(r => r.Currency == currency)?.Amount ?? 0).ThenByDescending(p => p.Units)
             : products.OrderByDescending(p => p.Units).ThenBy(p => p.ProductName);
 
-        return ordered.Take(request.Limit).ToList();
+        return ordered.Take(limit).ToList();
     }
 
     public async Task<List<TopBuyer>> Handle(GetTopBuyersQuery request, CancellationToken cancellationToken)

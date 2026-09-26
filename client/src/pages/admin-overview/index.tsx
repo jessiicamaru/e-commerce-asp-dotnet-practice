@@ -1,16 +1,18 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { InsightPanel as Panel } from '@/components/insights/insight-panel'
+import { PeriodPicker } from '@/components/insights/period-picker'
+import { RankedList as Ranked } from '@/components/insights/ranked-list'
+import { RevenuePanel } from '@/components/insights/revenue-panel'
 import { PageTitle } from '@/components/seller/page-title'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
-import { Button } from '@/components/ui/button'
 import { useInsights } from '@/hooks/insights'
 import { useReviewQueue } from '@/hooks/moderation'
 import { useShopApplications } from '@/hooks/shop-applications'
-import { PERIODS, type Period, type Revenue } from '@/services/insights/types'
+import type { Period } from '@/services/insights/types'
 import { cn, money } from '@/utils/shared'
-import { periodDays } from '@/utils/insights'
-import { DailyRevenueChart } from './daily-chart'
+import { periodDays, periodRange } from '@/utils/insights'
 
 /**
  * How the shop is doing (specs/047), for administrators: people, what waits for review, revenue per
@@ -25,12 +27,7 @@ export function AdminOverviewPage() {
   const { t } = useTranslation('admin')
   const [period, setPeriod] = useState<Period>(30)
   // Fixed per choice, not per render: a "now" that moved every render would be a new query every time.
-  // The server counts WHOLE UTC days, both ends included (specs/055): today and the period - 1 days before
-  // it are exactly the days the chart draws. Asking from period x 24 h ago touched one day more (#125).
-  const { from, to } = useMemo(() => {
-    const end = new Date()
-    return { from: new Date(end.getTime() - (period - 1) * 86_400_000).toISOString(), to: end.toISOString() }
-  }, [period])
+  const { from, to } = useMemo(() => periodRange(period), [period])
   const [currency, setCurrency] = useState('VND')
 
   const data = useInsights(from, to, currency)
@@ -43,20 +40,7 @@ export function AdminOverviewPage() {
     <section className="grid gap-6">
       <PageTitle title={t('overview.title')} subtitle={t('overview.subtitle')} />
 
-      <div className="bg-card ring-border/60 flex gap-1 justify-self-start rounded-full p-1 ring-1">
-        {PERIODS.map((p) => (
-          <Button
-            key={p}
-            size="sm"
-            variant={p === period ? 'default' : 'ghost'}
-            className="rounded-full"
-            aria-pressed={p === period}
-            onClick={() => setPeriod(p)}
-          >
-            {t('overview.period', { count: p })}
-          </Button>
-        ))}
-      </div>
+      <PeriodPicker period={period} onChange={setPeriod} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
         <Stat label={t('overview.people.customers')} value={stats?.customers} />
@@ -115,46 +99,6 @@ export function AdminOverviewPage() {
   )
 }
 
-function RevenuePanel({
-  revenue,
-  days,
-  currency,
-  onCurrency,
-}: {
-  revenue: Revenue
-  days: string[]
-  currency: string
-  onCurrency: (c: string) => void
-}) {
-  const { t } = useTranslation('admin')
-  const shown = revenue.totals.some((r) => r.currency === currency) ? currency : revenue.totals[0].currency
-  return (
-    <div className="grid gap-5">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {revenue.totals.map((total) => (
-          <button
-            key={total.currency}
-            type="button"
-            aria-pressed={total.currency === shown}
-            onClick={() => onCurrency(total.currency)}
-            className={cn(
-              'grid gap-1 rounded-3xl p-4 text-left ring-1 transition-colors',
-              total.currency === shown ? 'bg-primary/10 ring-primary' : 'ring-border/60 hover:bg-secondary',
-            )}
-          >
-            <span className="text-2xl font-bold tabular-nums">{money(total.revenue, total.currency)}</span>
-            <span className="text-muted-foreground text-sm">
-              {t('overview.orders', { count: total.orders })} · {t('overview.average', { amount: money(total.averageOrderValue, total.currency) })}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <DailyRevenueChart days={days} rows={revenue.days} currency={shown} />
-    </div>
-  )
-}
-
 function Stat({ label, value, to }: { label: string; value: number | undefined; to?: string }) {
   const body = (
     <>
@@ -169,33 +113,5 @@ function Stat({ label, value, to }: { label: string; value: number | undefined; 
     </Link>
   ) : (
     <div className={style}>{body}</div>
-  )
-}
-
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="bg-card ring-border/60 grid content-start gap-4 rounded-3xl p-5 ring-1">
-      <h2 className="font-semibold">{title}</h2>
-      {children}
-    </div>
-  )
-}
-
-function Ranked({ rows, failed }: { rows?: { key: string; label: ReactNode; value: string }[]; failed: boolean }) {
-  const { t } = useTranslation('admin')
-  if (failed) return <ErrorMessage>{t('overview.loadFailed')}</ErrorMessage>
-  if (!rows) return <LoadingRows rows={3} />
-  if (rows.length === 0) return <p className="text-muted-foreground text-sm">{t('overview.none')}</p>
-
-  return (
-    <ol className="grid gap-2 text-sm">
-      {rows.map((row, index) => (
-        <li key={row.key} className="grid grid-cols-[1.5rem_1fr_auto] items-baseline gap-2">
-          <span className="text-muted-foreground tabular-nums">{index + 1}</span>
-          <span className="min-w-0 truncate">{row.label}</span>
-          <span className="text-muted-foreground text-xs tabular-nums">{row.value}</span>
-        </li>
-      ))}
-    </ol>
   )
 }

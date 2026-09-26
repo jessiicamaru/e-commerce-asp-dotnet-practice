@@ -284,7 +284,6 @@
   "overview": {
     "title": "Tổng quan",
     "subtitle": "Tình hình cửa hàng. Tiền được hiển thị theo từng loại tiền - đồng và đô không bao giờ cộng chung.",
-    "period": "{{count}} ngày qua",
     "people": {
       "customers": "Khách hàng",
       "sellers": "Người bán",
@@ -298,9 +297,7 @@
     "revenue": "Doanh thu",
     "orders_one": "{{count}} đơn",
     "orders_other": "{{count}} đơn",
-    "average": "Trung bình mỗi đơn {{amount}}",
     "noRevenue": "Không có đơn đã thanh toán trong khoảng này.",
-    "daily": "Doanh thu theo ngày",
     "topSelling": "Bán chạy nhất",
     "topViewed": "Xem nhiều nhất",
     "topBuyers": "Mua nhiều nhất",
@@ -309,9 +306,7 @@
     "views_one": "{{count}} lượt xem",
     "views_other": "{{count}} lượt xem",
     "none": "Chưa có gì.",
-    "loadFailed": "Không tải được.",
-    "noSales": "không có đơn",
-    "peak": "Ngày cao nhất {{amount}}"
+    "loadFailed": "Không tải được."
   },
   "returns": {
     "title": "Trả hàng",

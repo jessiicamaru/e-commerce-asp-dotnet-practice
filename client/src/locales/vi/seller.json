@@ -100,7 +100,8 @@
     "overview": "Tổng quan",
     "products": "Sản phẩm",
     "sales": "Đơn đã bán",
-    "payouts": "Thanh toán"
+    "payouts": "Thanh toán",
+    "insights": "Thống kê"
   },
   "overview": {
     "subtitle": "Tình hình gian hàng và những việc cần bạn xử lý.",
@@ -266,5 +267,22 @@
     "receiveBody": "Người mua được hoàn tiền hàng và thuế, và hàng được nhập lại kho. Không hoàn tác được.",
     "receiveConfirm": "Đúng, đã nhận lại",
     "receivedDone": "Đã nhận lại - người mua đang được hoàn tiền."
+  },
+  "insights": {
+    "title": "Thống kê",
+    "subtitle": "Tình hình gian hàng của bạn: đã bán gì, gì bán chạy, người ta xem gì. Tiền tính theo từng loại tiền, là tiền hàng của bạn trước thuế - không gồm phí giao hàng, và không gồm kiện đã trả lại và hoàn tiền.",
+    "revenue": "Doanh thu của bạn",
+    "noRevenue": "Không có đơn bán trong khoảng này.",
+    "topSelling": "Bán chạy nhất",
+    "topViewed": "Xem nhiều nhất",
+    "views": "Lượt xem sản phẩm",
+    "rating": "Đánh giá",
+    "noRating": "Chưa có đánh giá",
+    "reviews_one": "{{count}} đánh giá",
+    "reviews_other": "{{count}} đánh giá",
+    "units_one": "đã bán {{count}}",
+    "units_other": "đã bán {{count}}",
+    "viewCount_one": "{{count}} lượt xem",
+    "viewCount_other": "{{count}} lượt xem"
   }
 }
