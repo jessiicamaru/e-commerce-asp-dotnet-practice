@@ -402,6 +402,9 @@ and `/saved/ids`, all the caller's own. Only a listed product can be saved (the 
 since stays with `available: false`, one deleted cascades away. ⚠️ **Back in stock is the rollup's own flip**:
 `RecomputeProductRollupAsync` returns true only when its one `UPDATE` (a CTE reads the value it started from) turned
 availability false → true, and only then is each saver sent `SavedBackInStock` - another "still in stock" tells nobody.
+**Every route tells, not only Inventory's** (specs/091, #182): an edit that recomputes the rollup goes through
+`SaveAndRecomputeRollupAsync` (save, recompute, notices - one transaction), and approval tells when the product is in
+stock. ⚠️ A new caller of the recompute uses that method, or its flip is lost again. The words say "available again".
 
 **A shopper asks about a product and its seller answers** (specs/076, #110): `product_questions` in Catalog, one
 answer per question. ⚠️ **Only the product's seller answers** - staff for the shop's own - and anybody else, **an
