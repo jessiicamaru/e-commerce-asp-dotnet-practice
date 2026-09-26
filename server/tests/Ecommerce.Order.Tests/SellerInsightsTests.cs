@@ -204,8 +204,10 @@ public class SellerInsightsTests(OrderTestFixture fixture)
 
     // ------------------------------------------------------------------ helpers
 
+    /// <summary>The instant a shop day begins (specs/082: the shop's days are Hanoi's, UTC+7), as a UTC value.</summary>
     private static DateTime Day() =>
-        new DateTime(2031, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(Random.Shared.Next(0, 3000));
+        Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone)
+            .StartOf(new DateOnly(2031, 1, 1).AddDays(Random.Shared.Next(0, 3000)));
 
     private async Task<T> AsSellerAsync<T>(Guid seller, IRequest<T> request)
     {

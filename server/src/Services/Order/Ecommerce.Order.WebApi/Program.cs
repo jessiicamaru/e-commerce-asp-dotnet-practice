@@ -1,6 +1,7 @@
 using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Insights;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Observability;
@@ -85,6 +86,9 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Who did what, through the outbox with every change (specs/041).
 builder.Services.AddAuditTrail("order");
+
+// The shop's days for every insight (specs/082): Insights:TimeZone, Asia/Ho_Chi_Minh by default.
+builder.Services.AddInsightsCalendar(builder.Configuration);
 builder.Services.AddNotifier();
 // Order confirmations (specs/060): requested through the outbox, sent by Identity.
 builder.Services.AddEmailSender();

@@ -81,7 +81,9 @@ public class ProductViewTests(CatalogTestFixture fixture) : IDisposable
         await SendAsync(new RecordProductViewCommand(product.Id));
 
         As(Guid.CreateVersion7(), "Admin");
-        var today = DateTime.UtcNow.Date;
+        // The start of the shop's today (specs/082: Hanoi's day, which is not the UTC one), as a UTC instant.
+        var calendar = Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone);
+        var today = calendar.StartOf(calendar.DayOf(DateTime.UtcNow));
         var top = await SendAsync(new GetTopViewedQuery(today.AddHours(23).AddMinutes(59), today.AddMinutes(1), 50));
 
         Assert.Contains(top, v => v.ProductId == product.Id);

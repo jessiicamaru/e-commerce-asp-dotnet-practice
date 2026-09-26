@@ -3,8 +3,9 @@ using FluentValidation;
 namespace Ecommerce.Shared.Insights;
 
 /// <summary>
-/// What a period means to every administrator insight (specs/055, #125): <b>whole UTC days</b>, from the day
-/// <c>from</c> falls on to the day <c>to</c> falls on, both included.
+/// What a period means to every insight (specs/055, #125): <b>whole days</b>, from the day <c>from</c> falls on to
+/// the day <c>to</c> falls on, both included - the shop's days, in its own time zone since specs/082 (#168), where
+/// before they were UTC days and a Vietnamese morning counted on the day before.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,29 +19,26 @@ namespace Ecommerce.Shared.Insights;
 /// is snapped to its day.
 /// </para>
 /// </remarks>
-public readonly record struct InsightsPeriod(DateOnly FirstDay, DateOnly LastDay)
+/// <param name="Start">The instant the first day begins in the shop's zone, in UTC.</param>
+/// <param name="End"><b>Exclusive</b>: the instant after the last day ends, so <c>t &gt;= Start &amp;&amp; t &lt; End</c> is the period.</param>
+public readonly record struct InsightsPeriod(DateOnly FirstDay, DateOnly LastDay, DateTime Start, DateTime End)
 {
     public const int MaxDays = 366;
     public const int DefaultDays = 30;
 
-    /// <summary>The first day, at midnight UTC.</summary>
-    public DateTime Start => FirstDay.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-
-    /// <summary><b>Exclusive</b>: midnight UTC after the last day, so <c>t &gt;= Start &amp;&amp; t &lt; End</c> is the period.</summary>
-    public DateTime End => LastDay.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-
     /// <summary>How many days, both ends counted.</summary>
     public int Days => LastDay.DayNumber - FirstDay.DayNumber + 1;
 
-    /// <summary>The period a request names; the last <see cref="DefaultDays"/> days, today included, by default.</summary>
-    public static InsightsPeriod Resolve(DateTime? from, DateTime? to, DateTime now)
+    /// <summary>
+    /// The period a request names, in <paramref name="calendar"/>'s days; the last <see cref="DefaultDays"/> days,
+    /// today included, by default.
+    /// </summary>
+    public static InsightsPeriod Resolve(DateTime? from, DateTime? to, DateTime now, InsightsCalendar calendar)
     {
-        var last = Day(to ?? now);
-        var first = from is { } f ? Day(f) : last.AddDays(-(DefaultDays - 1));
-        return new InsightsPeriod(first, last);
+        var last = calendar.DayOf(to ?? now);
+        var first = from is { } f ? calendar.DayOf(f) : last.AddDays(-(DefaultDays - 1));
+        return new InsightsPeriod(first, last, calendar.StartOf(first), calendar.StartOf(last.AddDays(1)));
     }
-
-    private static DateOnly Day(DateTime value) => DateOnly.FromDateTime(value.Kind == DateTimeKind.Unspecified ? value : value.ToUniversalTime());
 }
 
 public static class InsightsPeriodRules
@@ -49,9 +47,11 @@ public static class InsightsPeriodRules
     /// The one validation every insight query runs: <c>from</c> not after <c>to</c> (a single day is a
     /// period), and at most <see cref="InsightsPeriod.MaxDays"/> days.
     /// </summary>
-    public static void ValidPeriod<T>(this AbstractValidator<T> validator, Func<T, DateTime?> from, Func<T, DateTime?> to)
+    public static void ValidPeriod<T>(this AbstractValidator<T> validator, Func<T, DateTime?> from, Func<T, DateTime?> to, InsightsCalendar calendar)
     {
-        validator.RuleFor(x => InsightsPeriod.Resolve(from(x), to(x), DateTime.UtcNow))
+        // In the shop's days, as the handler resolves it (specs/082): two instants on one Hanoi day can straddle a UTC
+        // midnight, and counted in UTC days "from" would fall after "to".
+        validator.RuleFor(x => InsightsPeriod.Resolve(from(x), to(x), DateTime.UtcNow, calendar))
             .Must(p => p.FirstDay <= p.LastDay)
             .WithName("Period")
             .WithMessage("The period must not start after it ends.")

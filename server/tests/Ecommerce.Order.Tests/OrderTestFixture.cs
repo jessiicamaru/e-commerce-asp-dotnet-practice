@@ -189,6 +189,8 @@ public class OrderTestFixture : IAsyncLifetime
         {
             x.AddConsumer<OrderCompletedConsumer>();
         services.AddAuditTrail("order");
+        // The shop's days, as production counts them (specs/082).
+        services.AddSingleton(Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone));
         services.AddNotifier();
         services.AddEmailSender();
             x.AddConsumer<OrderFailedConsumer>();

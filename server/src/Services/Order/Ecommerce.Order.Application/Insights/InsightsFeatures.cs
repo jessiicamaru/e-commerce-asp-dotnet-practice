@@ -15,7 +15,9 @@ public record RevenueTotal(string Currency, decimal Revenue, int Orders, decimal
 
 public record RevenueDay(DateOnly Day, string Currency, decimal Revenue, int Orders);
 
-public record RevenueResponse(DateTime From, DateTime To, List<RevenueTotal> Totals, List<RevenueDay> Days);
+/// <param name="FirstDay">The first of the shop's days the period covers (specs/082) - the chart draws from it.</param>
+/// <param name="LastDay">The last of them, included.</param>
+public record RevenueResponse(DateTime From, DateTime To, List<RevenueTotal> Totals, List<RevenueDay> Days, DateOnly FirstDay, DateOnly LastDay);
 
 public record CurrencyAmount(string Currency, decimal Amount);
 
@@ -47,17 +49,18 @@ public record GetSellerTopProductsQuery(DateTime? From = null, DateTime? To = nu
 /// <summary>The rows the insights are built from; the repository does the grouping in SQL.</summary>
 public interface IOrderInsights
 {
-    Task<List<RevenueRow>> RevenueByDayAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
+    /// <summary>Sold orders per shop day (in <paramref name="timeZone"/>, an IANA id - specs/082) and currency.</summary>
+    Task<List<RevenueRow>> RevenueByDayAsync(DateTime from, DateTime to, string timeZone, CancellationToken cancellationToken);
 
     Task<List<ProductSalesRow>> ProductSalesAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 
     Task<List<BuyerRow>> BuyersAsync(DateTime from, DateTime to, CancellationToken cancellationToken);
 
     /// <summary>One seller's own lines per day and currency: revenue over the lines, orders counted once each.</summary>
-    Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken);
+    Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, string timeZone, CancellationToken cancellationToken);
 
     /// <summary>One seller's own lines per product and currency.</summary>
-    Task<List<ProductSalesRow>> SellerProductSalesAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken);
+    Task<List<ProductSalesRow>> SellerProductSalesAsync(Guid sellerId, DateTime from, DateTime to, string timeZone, CancellationToken cancellationToken);
 }
 
 /// <summary>One currency's paid orders on one day. Currency null: an order from before specs/022.</summary>
@@ -70,14 +73,14 @@ public record BuyerRow(Guid CustomerId, string? Currency, int Orders, decimal Sp
 public class GetRevenueQueryValidator : AbstractValidator<GetRevenueQuery>
 {
     // One period rule for every insight, Catalog's included (specs/055, #125).
-    public GetRevenueQueryValidator() => this.ValidPeriod(x => x.From, x => x.To);
+    public GetRevenueQueryValidator(InsightsCalendar calendar) => this.ValidPeriod(x => x.From, x => x.To, calendar);
 }
 
 public class GetTopProductsQueryValidator : AbstractValidator<GetTopProductsQuery>
 {
-    public GetTopProductsQueryValidator()
+    public GetTopProductsQueryValidator(InsightsCalendar calendar)
     {
-        this.ValidPeriod(x => x.From, x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To, calendar);
         RuleFor(x => x.By).Must(b => b is "units" or "revenue").WithMessage("By must be units or revenue.");
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
     }
@@ -85,28 +88,28 @@ public class GetTopProductsQueryValidator : AbstractValidator<GetTopProductsQuer
 
 public class GetTopBuyersQueryValidator : AbstractValidator<GetTopBuyersQuery>
 {
-    public GetTopBuyersQueryValidator()
+    public GetTopBuyersQueryValidator(InsightsCalendar calendar)
     {
-        this.ValidPeriod(x => x.From, x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To, calendar);
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
     }
 }
 
 public class GetSellerRevenueQueryValidator : AbstractValidator<GetSellerRevenueQuery>
 {
-    public GetSellerRevenueQueryValidator() => this.ValidPeriod(x => x.From, x => x.To);
+    public GetSellerRevenueQueryValidator(InsightsCalendar calendar) => this.ValidPeriod(x => x.From, x => x.To, calendar);
 }
 
 public class GetSellerTopProductsQueryValidator : AbstractValidator<GetSellerTopProductsQuery>
 {
-    public GetSellerTopProductsQueryValidator()
+    public GetSellerTopProductsQueryValidator(InsightsCalendar calendar)
     {
-        this.ValidPeriod(x => x.From, x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To, calendar);
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
     }
 }
 
-public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions> money, ICurrentUser currentUser) :
+public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions> money, ICurrentUser currentUser, InsightsCalendar calendar) :
     IRequestHandler<GetRevenueQuery, RevenueResponse>,
     IRequestHandler<GetTopProductsQuery, List<TopProduct>>,
     IRequestHandler<GetTopBuyersQuery, List<TopBuyer>>,
@@ -117,24 +120,27 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
     private readonly string _default = money.Value.DefaultCurrency;
     private readonly ICurrentUser _currentUser = currentUser;
 
+    /// <summary>The shop's days (specs/082): a morning in Hanoi is that day's, not the previous UTC day's.</summary>
+    private readonly InsightsCalendar _calendar = calendar;
+
     public async Task<RevenueResponse> Handle(GetRevenueQuery request, CancellationToken cancellationToken)
     {
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
-        return Revenue(period, await _insights.RevenueByDayAsync(period.Start, period.End, cancellationToken));
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, _calendar);
+        return Revenue(period, await _insights.RevenueByDayAsync(period.Start, period.End, _calendar.ZoneId, cancellationToken));
     }
 
     // Research D2: the seller's answers have the admin's shapes, grouped by the same code - one chart draws both.
 
     public async Task<RevenueResponse> Handle(GetSellerRevenueQuery request, CancellationToken cancellationToken)
     {
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
-        return Revenue(period, await _insights.SellerRevenueByDayAsync(SellerId(), period.Start, period.End, cancellationToken));
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, _calendar);
+        return Revenue(period, await _insights.SellerRevenueByDayAsync(SellerId(), period.Start, period.End, _calendar.ZoneId, cancellationToken));
     }
 
     public async Task<List<TopProduct>> Handle(GetSellerTopProductsQuery request, CancellationToken cancellationToken)
     {
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
-        var rows = await _insights.SellerProductSalesAsync(SellerId(), period.Start, period.End, cancellationToken);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, _calendar);
+        var rows = await _insights.SellerProductSalesAsync(SellerId(), period.Start, period.End, _calendar.ZoneId, cancellationToken);
         return TopProducts(rows, "units", _default, request.Limit);
     }
 
@@ -166,12 +172,12 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
             .OrderByDescending(t => t.Revenue)
             .ToList();
 
-        return new RevenueResponse(from, to, totals, days);
+        return new RevenueResponse(from, to, totals, days, period.FirstDay, period.LastDay);
     }
 
     public async Task<List<TopProduct>> Handle(GetTopProductsQuery request, CancellationToken cancellationToken)
     {
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, _calendar);
         var rows = await _insights.ProductSalesAsync(period.Start, period.End, cancellationToken);
         return TopProducts(rows, request.By, request.Currency ?? _default, request.Limit);
     }
@@ -200,7 +206,7 @@ public class InsightsHandlers(IOrderInsights insights, IOptions<CurrencyOptions>
 
     public async Task<List<TopBuyer>> Handle(GetTopBuyersQuery request, CancellationToken cancellationToken)
     {
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, _calendar);
         var (from, to) = (period.Start, period.End);
         var currency = request.Currency ?? _default;
         var rows = await _insights.BuyersAsync(from, to, cancellationToken);
