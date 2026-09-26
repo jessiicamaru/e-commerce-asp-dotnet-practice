@@ -1,5 +1,7 @@
 # Implementation Plan: Two Price Lists, Not One Price Converted
 
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
 **Branch**: `022-multi-currency-prices` | **Date**: 2026-09-22 | **Spec**: [spec.md](spec.md)
 
 ## Summary
@@ -23,6 +25,17 @@ administrator sets. Convert nothing, ever, at runtime.
 **Constraints**: an earlier image of every service keeps running; no existing amount changes value
 **Scope**: Catalog, Order, Payment, Orchestrator, `Ecommerce.Shared`, `Ecommerce.Contracts`, one
 proto, the storefront
+**Target Platform** (added 2026-09-27): Catalog 5057 (+ gRPC), Order 5059, Payment 5061, Orchestrator 5058
+and Cart 5062, behind the gateway on 5000; the storefront through Vite's proxy
+**Performance Goals** (added 2026-09-27): none stated; the price per currency is loaded with the variants
+the read already loads
+**Project Type** (added 2026-09-27): backend microservices, Clean Architecture, plus the React storefront
+
+*Corrected on 2026-09-27:* **Storage** above says "one nullable column each on Order and Payment". The
+merge also added a third, `order_state_data.Currency` in the Orchestrator's saga table (migration
+`20260922130744_AddSagaCurrency`), because the payment command is published from a later transition than
+the one that receives the currency. Cart gained currency plumbing too (`AddRequestCurrency`, a `Money`
+section, `DescribeVariants` in the requested currency) with no schema change.
 
 ## Constitution Check
 
@@ -38,6 +51,15 @@ proto, the storefront
 
 No violations, so Complexity Tracking is empty.
 
+**Post-design re-check** (2026-09-27, against the merged code): still no violations. Principle III holds -
+no new publisher or consumer; the saga stores the currency on its own instance and relays it within its
+existing outbox-backed publish. Principle V is met with one stated gap: the far end of the relay (saga →
+`ProcessPaymentCommand` → `payments.Currency`) had no automated test, because the Orchestrator had no test
+project; it was verified by reading the payments row on the running stack (`6597.80 USD`). One change the
+plan did not foresee touched `Ecommerce.Shared`: `GlobalExceptionHandler` now shows the message of the four
+deliberately mapped exceptions outside Development, because FR-003's refusal "Not sold in USD: Sony A7 IV"
+was otherwise replaced by a generic sentence in every deployed image.
+
 **One thing is recorded rather than solved**: `decimal(18,2)` is two decimal places wider than VND
 needs, and narrowing it would strand an earlier image. Recorded in research D5.
 
@@ -47,6 +69,16 @@ would be a lie that reads as a free camera. The storefront is changed in the sam
 collection asserts the null case.
 
 ## Project Structure
+
+*Corrected on 2026-09-27 against the merge:* the migrations are `20260922090031_AddVariantPrices` (Catalog),
+`20260922091458_AddOrderCurrency` (Order), `20260922130728_AddPaymentCurrency` (Payment) and
+`20260922130744_AddSagaCurrency` (Orchestrator); the currency helper is
+`Catalog.Application/Products/Common/Priced.cs` and the price commands are in
+`Catalog.Application/Products/Prices/SetVariantPriceCommand.cs`; `Ecommerce.Shared/Money/` holds
+`Currency.cs`, `RequestCurrency.cs` and `DependencyInjection.cs`; `Ecommerce.Shared/Localization/` and
+`Middlewares/GlobalExceptionHandler.cs` changed too (research D9, tasks "What building this found" 3); the
+storefront added `components/shared/price/` beside the switcher. Tests: `RequestCurrencyTests`,
+`VariantPriceTests` (Catalog) and `OrderCurrencyTests` (Order). The tree below is the plan as written.
 
 ```text
 server/src/BuildingBlocks/
@@ -93,7 +125,28 @@ bruno/                                      a USD read, a price write, the unpri
 **Step 4 is the one to get right.** It is the relay this project has already broken once, and the
 failure mode here is undetectable after the fact.
 
+## Complexity Tracking
+
+> No Constitution Check violations to justify. Table intentionally empty.
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+| :--- | :--- | :--- |
+| - | - | - |
+
+## What this feature does not finish
+
+(Recorded 2026-09-27; the full list is "What is deliberately not done" in [tasks.md](tasks.md).)
+
+- No conversion, rate feed or "approximately" display - by design.
+- Stored prices from before this feature that the currency cannot hold keep their amounts until re-priced.
+- `decimal(18,2)` stays two places wider than dong needs (research D5).
+- Category names had no translation (closed by specs/026).
+- Nobody clicked through the storefront in a browser at this merge.
+- The saga's relay of the currency has no automated test. The Orchestrator gained a test project in
+  specs/053, but as of 2026-09-27 none of its tests asserts the currency on `ProcessPaymentCommand`.
+
 ## Design artifacts
 
 [research.md](research.md) · [data-model.md](data-model.md) · [contracts/api.md](contracts/api.md) ·
-[quickstart.md](quickstart.md)
+[contracts/messages.md](contracts/messages.md) · [contracts/grpc.md](contracts/grpc.md) ·
+[quickstart.md](quickstart.md) · [checklists/requirements.md](checklists/requirements.md)

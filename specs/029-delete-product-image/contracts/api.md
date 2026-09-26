@@ -1,5 +1,7 @@
 # Contracts: A deleted product takes its picture with it
 
+> Completed on 2026-09-27, after the feature merged (#68), from the code at that merge, the pull request and docs/features/catalog.md.
+
 ## No contract changes
 
 No endpoint, request, response or message record changes shape.
@@ -29,3 +31,9 @@ DELETE /api/products/{id}   -> 204      # even when the store cannot delete
 ```
 
 and a warning in the log naming the key, worded as `RemoveProductImage` already words it.
+
+## Messages and gRPC
+
+None changed. `ProductDeletedEvent` is still published through the outbox in the deletion's own
+transaction ([specs/024 messages](../../024-delete-product/contracts/messages.md)); the file delete happens
+after that transaction and publishes nothing.

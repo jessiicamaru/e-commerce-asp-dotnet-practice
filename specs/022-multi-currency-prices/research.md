@@ -1,7 +1,12 @@
 # Research: Two Price Lists, Not One Price Converted
 
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
 The spec named six decisions to take before building. This is what they were settled as, and why the
 rejected alternatives were rejected.
+
+On 2026-09-27 each decision was given explicit **Rationale** and **Alternatives considered** headings around
+the original wording; nothing was removed, and where no alternative was recorded that is said.
 
 ## D1 - Where the currency is decided, and how a request asks for one
 
@@ -15,11 +20,13 @@ the same way, resolved per request in this order:
 An unsupported code falls back to the default rather than 404, exactly as an unsupported language
 does (FR-004).
 
-**Why a custom header rather than reusing content negotiation**: there is no standard request header
+**Rationale** - **Why a custom header rather than reusing content negotiation**: there is no standard request header
 for currency. `Accept-Language` exists because a language is a property of the *representation*;
 a currency is a property of the *offer*, and HTTP has never had an opinion about it. Inventing a
 meaning for a standard header would be worse than a clearly non-standard one, so the header is
 `X-Currency` and the query string is the shareable form.
+
+**Alternatives considered**:
 
 **Rejected: deriving the currency from the language.** It is one line of code and it is wrong in both
 directions. Most of this shop's customers are Vietnamese people who read English; they pay in dong.
@@ -38,7 +45,7 @@ overridden by the person it is wrong about, and it is wrong for every traveller 
 **Decision**: off the **variant**. `variant_prices (VariantId, Currency, Amount)`, unique on
 `(VariantId, Currency)`.
 
-The variant is the sellable unit (specs/020): it carries the SKU, the stock and today's single price.
+**Rationale**: The variant is the sellable unit (specs/020): it carries the SKU, the stock and today's single price.
 A price list on the product would have to be divided among variants by some rule, and there is no
 rule - a body and a kit are different prices in both currencies, independently.
 
@@ -46,6 +53,8 @@ rule - a body and a kit are different prices in both currencies, independently.
 default currency, what an image built before this feature reads, and what makes the change additive.
 `products.Price` - the "from" price, the cheapest active variant - stays too, and gains a per-currency
 equivalent computed the same way.
+
+**Alternatives considered**:
 
 **Rejected: `PriceVnd`/`PriceUsd` columns.** A third currency becomes a migration, which FR-009 and
 the spec's own test both forbid.
@@ -58,7 +67,7 @@ is what US2 exists to refuse.
 **Decision**: it is **not sellable in that currency**, and the catalogue says so rather than hiding it
 or converting.
 
-This is the single most important difference from the translation design in specs/021, and the two
+**Rationale**: This is the single most important difference from the translation design in specs/021, and the two
 look similar enough to be worth writing down:
 
 | | A missing translation | A missing price |
@@ -77,6 +86,8 @@ So:
 - **The product's "from" price** in a currency is the cheapest variant **that has a price in it**, and
   is null when none does.
 
+**Alternatives considered**:
+
 **Rejected: falling back to the default currency's amount.** Covered above. The failure is silent, the
 number looks plausible in a listing, and the first person to notice is whoever reconciles the money.
 
@@ -88,7 +99,7 @@ found" would send an administrator hunting for a deleted product.
 **Decision**: `OrderSubmittedEvent` gains `Currency`, the saga stores it on `OrderStateData`, and
 relays it into `ProcessPaymentCommand`. Payment stores it on the row.
 
-**This crosses the exact relay that specs/020 broke.** The saga consumes `OrderSubmittedEvent` and
+**Rationale**: **This crosses the exact relay that specs/020 broke.** The saga consumes `OrderSubmittedEvent` and
 republishes parts of it; when `OrderItemDto` gained `VariantId`, every service was rebuilt except the
 Orchestrator, which deserialised the event into its older record, dropped the field, and moved the
 wrong variant's stock. The identical omission here would charge the right number in the wrong
@@ -103,6 +114,8 @@ Two consequences, both deliberate:
    actually meant. An empty currency is **not** an error, because on the day of the deploy it is the
    truth.
 
+**Alternatives considered**:
+
 **Rejected: Payment reading the currency back from Order.** It would make Payment synchronously
 depend on Order in the middle of the saga, to learn something the message could simply carry.
 
@@ -114,7 +127,7 @@ defect the spec opens with, preserved in the one table where money is recorded.
 **Decision**: the currency carries its number of decimal places - `USD` 2, `VND` **0** - and every
 computed amount is rounded to it, halves away from zero, exactly as `OrderTotals` already rounds to 2.
 
-`OrderTotals.Compute` gains a `decimals` parameter. Its default stays `2`, so its existing callers and
+**Rationale**: `OrderTotals.Compute` gains a `decimals` parameter. Its default stays `2`, so its existing callers and
 its existing tests are unchanged.
 
 **What this affects**: tax per line, tax on delivery. Nothing else computes - unit prices and delivery
@@ -131,6 +144,8 @@ without loss, and narrowing the column would be a contracting migration that str
 (constitution: expand then contract). It is recorded that the column is two decimals wider than VND
 needs, and that this is harmless.
 
+**Alternatives considered**:
+
 **Rejected: storing minor units as integers** (`4000000000` for 40,000,000.00). It is the textbook
 answer and it is a rewrite of every money column, every DTO and every test in six services, to fix a
 problem this project does not have.
@@ -141,7 +156,7 @@ problem this project does not have.
 language, and is sent as `X-Currency` on every request by the same axios interceptor that already
 sends `Accept-Language`.
 
-Formatting is `Intl.NumberFormat(language, { style: 'currency', currency })` - **two inputs, and they
+**Rationale**: Formatting is `Intl.NumberFormat(language, { style: 'currency', currency })` - **two inputs, and they
 are not the same input**. The language decides the separators and the symbol's position; the currency
 decides the symbol and the number of decimals. `40.000.000 ₫` in Vietnamese and `₫40,000,000` in
 English are the same amount, and both are correct for their reader.
@@ -152,6 +167,9 @@ cached answer was fetched in the old currency and a price is the thing most like
 **The seam for a third currency**: `Intl` knows every currency's decimals already, so the storefront
 needs no table. The server does need one, because it computes; it is three fields in configuration.
 
+**Alternatives considered**: deriving the currency from the language (rejected in D1). No other storefront
+alternative is recorded.
+
 ## D7 - The existing amounts are dong, and saying so is a decision (found while writing)
 
 `products.Price` holds `40000000`; `Shipping:Options` holds `5.0`. The first is plainly dong and the
@@ -161,10 +179,12 @@ second is plainly not - it was written when neither meant anything.
 **the delivery prices are corrected** to `30000` and `60000` dong with a dollar list beside them.
 Product prices are left exactly as they are.
 
-This is not cosmetic. Until now, every order ever placed added a forty-million-dong camera to a
+**Rationale**: This is not cosmetic. Until now, every order ever placed added a forty-million-dong camera to a
 five-dollar delivery charge and charged the sum. Nothing was wrong in any row, because no row claimed
 a currency - which is the whole argument of this feature, and it is sitting in the repository's own
 configuration file rather than in a hypothetical.
+
+**Alternatives considered**: not recorded.
 
 ## D8 - Rounding what is computed is not enough (found while building)
 
@@ -174,8 +194,10 @@ times an integer, so there is nothing in it to round. The fractional dong came f
 price*, which had been entered as `9.99` when nothing in the system had an opinion about currencies.
 
 **Decision**: every command that sets a price refuses an amount the currency cannot hold.
-`Currency.Fits` is the one rule; `SetVariantPrice`, `CreateProduct`, `AddProductVariant` and
+**Rationale**: `Currency.Fits` is the one rule; `SetVariantPrice`, `CreateProduct`, `AddProductVariant` and
 `UpdateProductVariant` all apply it. 9.99 is a price in dollars and is not one in dong.
+
+**Alternatives considered** - rewriting stored prices to fit: rejected in the next paragraph.
 
 **The cost, recorded**: rows written before this keep their amounts - validation is on writes, not on
 reads, and rewriting somebody's stored prices to satisfy a new rule would be inventing data. The
@@ -198,3 +220,9 @@ which is exactly why nobody noticed.
 **Decision**: neither options type has a default any more. A service that wants languages or
 currencies configures them; one that does not, does not start. The duplicate check stays, because it
 is what found this.
+
+**Rationale**: a default that the binder appends to is worse than no default: it is silently doubled, and
+the list is no longer the configured one.
+
+**Alternatives considered**: not recorded. (De-duplicating after binding would have hidden the defect the
+duplicate check found.)

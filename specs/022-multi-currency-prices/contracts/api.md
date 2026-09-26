@@ -1,5 +1,10 @@
 # Contracts: Two Price Lists
 
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
+The **Messages** and **gRPC** sections below are also written out, with publishers, consumers and
+compatibility, in [messages.md](messages.md) and [grpc.md](grpc.md) (added 2026-09-27).
+
 ## How a request says which currency it wants
 
 Every public read accepts, in order of precedence:
@@ -9,7 +14,9 @@ Every public read accepts, in order of precedence:
 3. the configured default (`VND`).
 
 An unsupported code falls back to the default. Responses carry `X-Currency` saying which currency
-their amounts are in - so a client never has to assume it got what it asked for.
+their amounts are in - so a client never has to assume it got what it asked for. They also carry
+`Vary: X-Currency`, without which a cache would serve one shopper's dollar prices to the next shopper asking
+in dong.
 
 There is no standard request header for a currency and none is pretended (research D1).
 
@@ -18,7 +25,7 @@ There is no standard request header for a currency and none is pretended (resear
 | Endpoint | Change |
 | :-- | :-- |
 | `GET /api/products`, `GET /api/products/{id}` | prices come back in the requested currency; **null** where the variant has no price in it |
-| `PUT /api/products/{id}/variants/{variantId}/prices/{currency}` — **Admin** | `{ amount }` → 200. Creates or replaces that currency's price |
+| `PUT /api/products/{id}/variants/{variantId}/prices/{currency}` — **Admin** | `{ amount }` → 200. Creates or replaces that currency's price. `400` for an unsupported currency, an amount of zero or less, or one the currency cannot hold; `404` for an unknown product or variant (added 2026-09-27) |
 | `DELETE /api/products/{id}/variants/{variantId}/prices/{currency}` — **Admin** | 204; the variant stops being sold in that currency. Refused with 409 for the default currency, which lives on the variant itself |
 
 `ProductResponse` and `VariantResponse` gain `currency` - which currency the amounts in this response
@@ -110,3 +117,10 @@ default currency's prices, which is what it gets today.
   language decides the separators, the currency decides the symbol and the decimals.
 - A variant with no price in the chosen currency shows "not sold in USD" in place of a price, and
   cannot be added to the cart.
+
+## Refusals shown outside Development (added 2026-09-27)
+
+`GlobalExceptionHandler` in `Ecommerce.Shared` now keeps the `detail` of the deliberately mapped exceptions
+in every environment, so checkout's 409 names the variant and the currency ("Not sold in USD: ...") in a
+deployed image. Unmapped exceptions still hide their message, because that text can carry internals.
+Found by a Bruno test asserting on the wording of a 409 (tasks, "What building this found" 3).

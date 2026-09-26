@@ -1,6 +1,8 @@
 # Feature Specification: The Shop Is a Marketplace
 
-**Feature Branch**: `027-seller-accounts` · **Created**: 2026-09-23 · **Status**: Draft
+> Completed on 2026-09-27, after the feature merged (#64), from the code at that merge, the pull request and docs/features/marketplace.md.
+
+**Feature Branch**: `027-seller-accounts` · **Created**: 2026-09-23 · **Status**: Merged as [#64](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/64) on 2026-09-22 (written as Draft; corrected on 2026-09-27)
 
 **Input**: the owner asked for real sellers — people who list what they sell — with the administrator
 managing the platform rather than stocking it.
@@ -43,6 +45,9 @@ Somebody registers as a seller with a shop name, and can immediately create prod
 A seller can edit, price, translate, stock and withdraw their own products, and cannot do any of
 those things to anybody else's.
 
+*Corrected on 2026-09-27:* "stock" was not delivered by this feature. Inventory's `PUT /api/stock/{id}`
+stayed `Admin` only at this merge; a seller stocking their own variant arrived with specs/031.
+
 **Why this priority**: the correctness half, and the reason ownership is worth recording at all. A
 marketplace where any seller can re-price any listing is not a marketplace.
 
@@ -67,6 +72,9 @@ person expected to list products.
 
 **Why this priority**: it is the owner's stated intent, and it decides what Admin means from here on.
 
+**Independent Test**: as an administrator, edit a seller's product and create one of your own; the
+first succeeds, the second reads back with no seller.
+
 **Acceptance Scenarios**:
 
 1. **Given** an administrator, **When** they withdraw or edit any seller's product, **Then** it is
@@ -80,6 +88,11 @@ person expected to list products.
 
 The 14 products in the catalogue today have no seller, and must keep being sold.
 
+**Why this priority**: a marketplace that stops selling the shop's own cameras is a regression, not a
+feature.
+
+**Independent Test**: after the migration, read, add to cart and check out one of the seeded cameras.
+
 **Acceptance Scenarios**:
 
 1. **Given** a product created before this feature, **When** it is read, **Then** it reports the shop
@@ -88,6 +101,31 @@ The 14 products in the catalogue today have no seller, and must keep being sold.
    it bought and does not care who sold it.
 
 ---
+
+### Edge Cases
+
+(Added 2026-09-27 from the code and the PR.)
+
+- **A seller adopting the shop's own product.** Refused as not found: a product with no seller is an
+  administrator's to manage and nobody else's (`The_shops_own_product_cannot_be_adopted_by_a_seller`).
+- **A product whose seller Catalog has not heard of yet.** Reads as the shop's own until the
+  registration event arrives - the same as an older product (research D1).
+- **A rename that arrives after a newer one.** Loses: the read model keeps the newer `ObservedAt`
+  (`An_overtaken_rename_does_not_win`).
+- **A redelivered registration or rename.** Changes nothing.
+- **RabbitMQ down when a seller registers.** Registration still succeeds; the announcement waits in
+  Identity's outbox and reaches Catalog when the broker returns (verified on the stack, research D6).
+- **A customer creating a product.** 403 at the door: create is a role check.
+- **A second shop for one account.** Impossible: `seller_profiles.UserId` is the primary key.
+- **An account that is not a seller asking for its shop.** `GET /api/sellers/me` is `Seller` only; a
+  seller with no profile row gets 404 "This account does not sell on the shop."
+
+## Key Entities
+
+- **Seller profile** (Identity): one per seller account - the shop name. The truth.
+- **Seller** (Catalog): a read model of `(SellerId, ShopName, ObservedAt)`, fed by events, used only to
+  show a name.
+- **Product's seller** (Catalog): the seller id on a product, null for the shop itself.
 
 ## Requirements *(mandatory)*
 
@@ -112,6 +150,14 @@ The 14 products in the catalogue today have no seller, and must keep being sold.
 - **SC-002**: A product listing page shows shop names with no increase in cross-service calls.
 - **SC-003**: Every product that existed before this feature still reads, sells and checks out.
 - **SC-004**: Renaming a shop changes the name on its products with no write to any product.
+
+Measured at the merge (from the PR): SC-001 by 16 new Catalog tests including one per cross-seller
+write, Bruno's exact-status refusal, and on the containerised stack (Bob **404** on all four of Alice's
+products it tried); SC-002 by one batched read-model lookup per page (`SellerRepository.GetNamesAsync`);
+SC-003 by 278 passing tests, `verify-auth.sh` and `verify-saga.sh`; SC-004 by
+`Renaming_a_shop_changes_what_its_products_say_without_writing_one` and on the stack, with the product
+row's `UpdatedAt` unchanged. The two image writes (upload, remove) had no cross-seller test at this merge;
+`SellerOwnershipTests` gained one later (docs/features/catalog.md).
 
 ## Assumptions
 

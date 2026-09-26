@@ -1,4 +1,23 @@
+---
+description: "Task list for A seller can actually sell"
+---
+
 # Tasks: A seller can actually sell
+
+> Completed on 2026-09-27, after the feature merged (#65), from the code at that merge, the pull request, docs/features/marketplace.md and docs/architecture/storefront.md.
+
+**Input**: Design documents from `/specs/028-seller-console/`
+
+**Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/](./contracts/)
+
+**Tests**: Included - Identity's `SellerRolesTests` and, added while building, the client's first 33 unit
+tests.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: The original tasks carry their story in the phase heading rather than a label: Phase 3 is
+  US1, Phase 4 US2, Phase 5 US3, Phase 6 US4; Phases 1-2 are foundational.
 
 ## Phase 1: The server says who you are
 
@@ -55,3 +74,8 @@
 - [X] T028 `Product.get(id, currency)` and `useProductInEveryCurrency` - a response carries one
       currency's prices, so the price editor reads the product once per currency
 - [X] T029 The axios interceptor sets `X-Currency` only when the caller did not
+
+## Completed on 2026-09-27
+
+- [X] T030 [P] Write `specs/028-seller-console/data-model.md`, `quickstart.md` and `checklists/requirements.md`, and complete the spec, plan, research and contract to the specs/001 standard
+- [X] T031 Merged as [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65) (`57d25b9`) on 2026-09-22

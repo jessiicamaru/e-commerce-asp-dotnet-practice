@@ -1,5 +1,11 @@
 # Data Model: Two Price Lists, Not One Price Converted
 
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
+Four migrations, all additive: `20260922090031_AddVariantPrices` (Catalog), `20260922091458_AddOrderCurrency`
+(Order), `20260922130728_AddPaymentCurrency` (Payment) and `20260922130744_AddSagaCurrency` (Orchestrator).
+An earlier image of each service runs against its new schema.
+
 ## Catalog
 
 ### `variant_prices` (new)
@@ -13,6 +19,12 @@
 
 Unique on `(VariantId, Currency)`. **No row means not sold in that currency** (research D3) - the
 absence is the meaning, which is why the column is not nullable.
+
+Exact names (from the migration): PK `PK_variant_prices`; FK `FK_variant_prices_product_variants_VariantId`
+`ON DELETE CASCADE`; unique index `IX_variant_prices_VariantId_Currency`; CHECK `CK_variant_prices_amount`
+`"Amount" >= 0`; `Amount` is `numeric(18,2)`, `Currency` `character varying(3)`. The database allows `0`;
+the command validator refuses it (`Amount > 0`, `A_price_of_zero_is_refused_because_zero_is_a_price`) and
+refuses an amount the currency cannot hold (research D8).
 
 ### Unchanged, and now meaning "the default currency"
 
@@ -39,6 +51,12 @@ Every existing amount on an order - `TotalAmount`, `Subtotal`, `ShippingPrice`, 
 `DiscountTotal`, and each item's `UnitPrice`/`TotalPrice` - is in it. Nothing about their shape or
 their CHECK constraint changes.
 
+## Orchestrator (added 2026-09-27 - missing from this page as written)
+
+| Column | Type | Null | Notes |
+| :-- | :-- | :-- | :-- |
+| `order_state_data.Currency` | `varchar(3)` | yes | Stored when `OrderSubmittedEvent` arrives, because `ProcessPaymentCommand` is published from a later transition, by which time the event is gone. Relayed as `Currency ?? ""` |
+
 ## Payment
 
 | Column | Type | Null | Notes |
@@ -48,6 +66,9 @@ their CHECK constraint changes.
 Nullable rather than defaulted, for the same reason as the order: a row written last week recorded an
 amount whose currency nobody stated, and writing `VND` into it would be inventing a fact. Reads
 present null as the shop's default and say so.
+
+New rows always carry a currency: `ChargeOrderCommandHandler` writes the one the saga sent, or the configured
+default when it sent `""` (an in-flight message from before the deploy).
 
 ## Configuration
 

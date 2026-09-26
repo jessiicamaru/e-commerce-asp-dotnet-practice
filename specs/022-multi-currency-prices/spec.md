@@ -1,6 +1,8 @@
 # Feature Specification: Two Price Lists, Not One Price Converted
 
-**Feature Branch**: `022-multi-currency-prices` · **Created**: 2026-09-22 · **Status**: Implemented (see [tasks.md](tasks.md) for what building it found)
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
+**Feature Branch**: `022-multi-currency-prices` · **Created**: 2026-09-22 · **Status**: Implemented, merged as [#59](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/59) on 2026-09-22 (see [tasks.md](tasks.md) for what building it found)
 
 **Input**: the owner asked for two kinds of price, dollars and dong.
 
@@ -105,6 +107,9 @@ not restate it.
 **Why this priority**: the same reason an order freezes its prices, its words and its address. An
 order is a record of a purchase.
 
+**Independent Test** (added 2026-09-27): place an order in VND, then read it with `X-Currency: USD`;
+every amount still reads in VND and the response says `currency: "VND"`.
+
 **Acceptance Scenarios**:
 
 1. **Given** an order placed in VND, **When** it is opened by a shopper whose currency is USD,
@@ -113,6 +118,35 @@ order is a record of a purchase.
    whatever the configuration says today.
 
 ---
+
+### Edge Cases
+
+(Added 2026-09-27 from the code, the tests and the PR.)
+
+- **An unsupported currency code** (`?currency=EUR`) falls back to the default, like an unsupported
+  language, rather than 404.
+- **A request that asks for nothing** reads the default currency, exactly as before the feature
+  (`A_request_that_asks_for_nothing_reads_the_default_currency`).
+- **Setting the default currency's price** writes `product_variants.Price` itself; there is no `VND` row,
+  and removing the default currency's price is refused with 409.
+- **A price of zero** is refused: zero is a price. **A price the currency cannot hold** (9.99 dong) is
+  refused on every command that sets one (research D8).
+- **Stored prices from before the feature** that the currency cannot hold keep their amounts; validation is
+  on writes.
+- **A message from an older Order or saga** carries no currency (`""`); Payment reads it as the default,
+  because on the day of the deploy that is the truth (research D4).
+- **An Orchestrator image not rebuilt** would drop the currency on the relay - the specs/020 defect on the
+  field where it cannot be detected afterwards.
+- **A delivery option with no price in the checkout's currency** is not offered, and choosing it anyway is
+  refused.
+- **A product none of whose variants is priced in the currency** is still listed, with no "from" price.
+
+## Key Entities
+
+- **Currency**: a code with a number of decimal places (`VND` 0, `USD` 2), from configuration.
+- **Variant price**: an amount a person set for one variant in one currency. No row means not sold in it.
+- **An order's currency**: frozen at checkout; every amount on the order is in it.
+- **A payment's currency**: the currency of the amount the payment row records.
 
 ## Requirements *(mandatory)*
 
@@ -146,6 +180,14 @@ order is a record of a purchase.
 - **SC-004**: An automated check fails if an amount is ever paired with the wrong currency by the
   saga - the relay defect that specs/020 hit with `VariantId` is the same shape, and this feature
   crosses the same relay.
+
+Measured at the merge (from the PR): SC-001 by `VariantPriceTests` with 40,000,000₫ against $1,499; SC-002
+on the running stack - a USD checkout produced `payments.Amount 6597.80, Currency USD`; SC-003 by
+`A_dong_total_has_no_fractional_part_and_the_parts_still_sum` and on the stack (tax a whole `3,003`); SC-004
+only **half-automated**: `The_currency_travels_with_the_amount_to_the_saga` proves Order puts the currency on
+the event, while the saga's relay into `ProcessPaymentCommand` was verified only by reading the payments row
+on the stack - the Orchestrator had no test project at this merge, and the one added in specs/053 does not
+assert the currency either (see tasks T036).
 
 ## Assumptions
 

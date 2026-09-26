@@ -1,5 +1,7 @@
 # Quickstart: proving the shop has two price lists
 
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
 Everything below runs against the containerised stack, through the gateway on `:5000`.
 
 ```bash
@@ -11,6 +13,30 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 `OrderSubmittedEvent` into `ProcessPaymentCommand`; an Orchestrator image built before this change
 drops it silently (research D4). A stale image is the one failure this feature has that nothing
 downstream can detect.
+
+### Variables used below (added 2026-09-27)
+
+```bash
+BASE=http://localhost:5000
+export ADMIN_EMAIL=... ADMIN_PASSWORD=...          # on a line of its own
+ADMIN=$(curl -fsS -X POST $BASE/api/auth/login -H 'Content-Type: application/json'   -d '{"email":"'"$ADMIN_EMAIL"'","password":"'"$ADMIN_PASSWORD"'"}' | jq -r .token)
+C=<a customer's token, from POST /api/auth/register or /login>
+P=<a product id>; V=<one of its variant ids>        # e.g. from GET $BASE/api/products
+```
+
+The checkout steps need the customer to have a cart line and a delivery address; `POST /api/orders` at this
+merge also takes the `addressId` (specs/011) alongside `shippingOption`.
+
+## 0. The automated checks (added 2026-09-27)
+
+```bash
+cd server
+DB_PASSWORD=<your password> dotnet test tests/Ecommerce.Catalog.Tests --filter "FullyQualifiedName~RequestCurrencyTests|FullyQualifiedName~VariantPriceTests"
+DB_PASSWORD=<your password> dotnet test tests/Ecommerce.Order.Tests   --filter "FullyQualifiedName~OrderCurrencyTests"
+```
+
+**At the merge**: 243 tests across six projects (Catalog 76, Order 61, Identity 50, Inventory 26, Cart 14,
+Payment 13); Bruno 81/81 requests, 122 tests; `verify-saga.sh` on both branches and `verify-auth.sh` passing.
 
 ## 1. A price is decided, not converted
 
@@ -94,6 +120,18 @@ then the labels change and the prices do not. A variant with no price in the cho
 ## Negative controls
 
 Each of these must make a test fail; if one passes, that test proves nothing.
+
+*Corrected on 2026-09-27:* the test names in this table were written before the tests. The names that
+exist, and what the PR recorded going red:
+
+| Break this | What went red at the merge |
+| :-- | :-- |
+| Fall back to the default currency's amount | 3 `VariantPriceTests` (among them `A_variant_without_a_price_in_the_currency_is_not_sold_in_it`) |
+| Round VND tax to 2 decimals | `OrderCurrencyTests.A_dong_total_has_no_fractional_part_and_the_parts_still_sum` |
+| Drop the currency from the saga relay | `OrderCurrencyTests.The_currency_travels_with_the_amount_to_the_saga` (the event end); the payment row in step 3 (the saga end) - there is no `SagaCurrencyRelayTests` |
+| Derive the currency from the language | `RequestCurrencyTests.The_currency_is_not_taken_from_the_language` |
+
+As originally written:
 
 | Break this | The test that must go red |
 | :-- | :-- |

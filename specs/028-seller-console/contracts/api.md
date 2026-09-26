@@ -1,5 +1,7 @@
 # Contracts: A seller can actually sell
 
+> Completed on 2026-09-27, after the feature merged (#65), from the code at that merge, the pull request, docs/features/marketplace.md and docs/architecture/storefront.md.
+
 ## The one backend change
 
 ### `AuthResponse` gains `Roles`
@@ -40,7 +42,9 @@ decide what to draw. Authorization stays where it is: the controller attributes 
 | :-- | :-- | :-- | :-- |
 | `GET` | `/api/products/mine` | Seller | the shop page |
 | `POST` | `/api/products` | Seller, Admin | the create form |
+| `GET` | `/api/products/{id}` with `X-Currency` set per request | anyone | the price editor, once per currency (added 2026-09-27: missing from this table, used by `useProductInEveryCurrency`) |
 | `PUT` | `/api/products/{id}/variants/{variantId}/prices/{currency}` | Seller, Admin | price edit |
+| `DELETE` | `/api/products/{id}/variants/{variantId}/prices/{currency}` | Seller, Admin | remove a price (added 2026-09-27: `Product.removePrice`, missing from this table) |
 | `PUT` | `/api/products/{id}/image` | Seller, Admin | image upload |
 | `DELETE` | `/api/products/{id}` | Seller, Admin | withdraw |
 | `GET` | `/api/sellers/me` | Seller | shop name |
@@ -62,3 +66,13 @@ Development for the three mapped domain exceptions:
 
 The 404 is what a seller gets for somebody else's product. The storefront must **not** translate it
 into "you are not allowed" - that would undo the reason it is a 404.
+
+## Messages and gRPC
+
+None. No integration message and no proto changed.
+
+## One client-side contract that changed
+
+The axios interceptor now sets `X-Currency` with `??=`: a request that already carries the header keeps
+it. Before, the interceptor overwrote it with the browsing currency, so asking for one product "in VND"
+and "in USD" sent two identical requests.

@@ -1,5 +1,7 @@
 # Implementation Plan: The Shop Is a Marketplace
 
+> Completed on 2026-09-27, after the feature merged (#64), from the code at that merge, the pull request and docs/features/marketplace.md.
+
 **Branch**: `027-seller-accounts` | **Date**: 2026-09-23 | **Spec**: [spec.md](spec.md)
 
 ## Summary
@@ -28,6 +30,12 @@ If the answer comes back "approval", the shape here survives it: a status column
 **Testing**: xUnit against real PostgreSQL (Identity, Catalog); Bruno; the storefront builds
 **Constraints**: every existing product keeps selling; an anonymous catalogue read must not need Identity
 **Scope**: Identity, Catalog, `Ecommerce.Contracts`, the storefront
+**Target Platform** (added 2026-09-27): Identity (5056) and Catalog (5057) behind the gateway (5000);
+Identity's first RabbitMQ connection
+**Performance Goals** (added 2026-09-27): none as a number; FR-003's rule - a page of products costs one
+read-model query, never a call to Identity per product
+**Project Type** (added 2026-09-27): backend microservices, Clean Architecture, plus two lines of the
+storefront
 
 ## Constitution Check
 
@@ -43,11 +51,29 @@ If the answer comes back "approval", the shape here survives it: a status column
 
 No violations, so Complexity Tracking is empty.
 
+**Post-design re-check** (2026-09-27, against the merged code): still no violations, with one design
+cost found while building and paid within the principles: Identity had no broker, so D1's event needed
+MassTransit, the EF outbox and its tables in Identity (research D6), wired with `UseBusOutbox()` so the
+registration and its announcement commit together (Principle III). Principle V caught what unit tests
+could not: with the write endpoints still `[Authorize(Roles = "Admin")]`, every handler test passed and a
+real seller got 403 on her own product; the attributes became `Seller,Admin` and Bruno now asserts the
+exact status.
+
 **Recorded rather than solved**: the shop-name read model is eventually consistent, and for a few
 seconds a new seller's products read as the shop's own (research D1). That is the same thing an older
 product reads as, so it is invisible rather than wrong.
 
 ## Project Structure
+
+*Corrected on 2026-09-27 against the merge:* the migrations are `20260922173126_AddSellerProfilesAndOutbox`
+(Identity) and `20260922173905_AddSellers` (Catalog); the rename and "my shop" live in one file,
+`Application/Sellers/SellerCommands.cs`; Catalog's read-model write is `Application/Sellers/RecordSellerCommand.cs`
+and both consumers are in `WebApi/Consumers/SellerConsumers.cs`; Identity also gained
+`WebApi/Controllers/SellersController.cs`. `ICurrentUser` in `Ecommerce.Shared` gained `IsInRole`, and the
+gateway gained `sellers-route` and `sellers-root-route` to Identity. **The storefront's sign-up page was not
+changed**: #64 touched only the product card, the product page and the product type (the "Sold by" line),
+so there was no seller option at sign-up; registering a seller was API-only. The tree below is the plan as
+written.
 
 ```text
 server/src/BuildingBlocks/
@@ -85,3 +111,26 @@ bruno/                                             registration, ownership refus
 ## Design artifacts
 
 [research.md](research.md) · [data-model.md](data-model.md) · [contracts/api.md](contracts/api.md)
+
+## Complexity Tracking
+
+> No Constitution Check violations to justify. Table intentionally empty.
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+| :--- | :--- | :--- |
+| - | - | - |
+
+## What this feature does not finish
+
+(From the PR, recorded 2026-09-27.)
+
+- **No seller console.** Managing listings is the API's surface; the storefront gets the shop name
+  (research D5). specs/028 built the console.
+- **No seller sign-up in the storefront** (see the correction above).
+- **No approval, suspension or payouts.** Approval arrived as shop applications in specs/044; payouts in
+  specs/037.
+- **A seller cannot set stock** - Inventory's stock write stayed Admin only until specs/031.
+- **One order is still one shipment from one warehouse** - per-seller shipments are specs/035.
+- **The image writes had no cross-seller test** at this merge, although they call the same check.
+- Identity was left with an `IdentitySvc` endpoint-name prefix and no consumers, so that the first consumer
+  it gains cannot collide with another service's queue.

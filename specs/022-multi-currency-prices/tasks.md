@@ -1,6 +1,17 @@
+---
+description: "Task list for Two Price Lists, Not One Price Converted"
+---
+
 # Tasks: Two Price Lists, Not One Price Converted
 
+> Completed on 2026-09-27, after the feature merged (#59), from the code at that merge, the pull request, docs/features/catalog.md and docs/features/shopping-and-checkout.md.
+
 **Feature**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
+
+**Format** (added 2026-09-27): `[ID] [P?] Description`. The original tasks carry their story in the phase
+rather than a label: Phases 2 and 5 serve US2 (decided prices), Phase 3 serves US1 and US4 (every amount has
+a currency; the order freezes it), Phase 4 serves US1 (the payment row), Phase 6 serves US3 (the shopper's
+choice). Phase 1 is foundational and Phase 7 is evidence.
 
 ## Phase 1 - The currency itself (blocking; everything needs it)
 
@@ -68,6 +79,11 @@
 - [X] T038 Bruno: a USD read, a price write, the unpriced refusal, the quote in both currencies
 - [X] T039 `verify-saga.sh` in both currencies, and `verify-auth.sh` unchanged
 - [X] T040 Update `CLAUDE.md` and the docs that state a price has no currency
+
+## Phase 8 - Completed on 2026-09-27
+
+- [X] T041 [P] Write `specs/022-multi-currency-prices/checklists/requirements.md`, `contracts/messages.md` and `contracts/grpc.md`, record the Orchestrator's `order_state_data.Currency` in `data-model.md`, and correct the test names in `quickstart.md`
+- [X] T042 Merged as [#59](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/59) (`f3aca10`) on 2026-09-22
 
 ## Dependencies
 

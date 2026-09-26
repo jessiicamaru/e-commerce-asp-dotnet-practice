@@ -1,4 +1,22 @@
+---
+description: "Task list for A deleted product takes its picture with it"
+---
+
 # Tasks: A deleted product takes its picture with it
+
+> Completed on 2026-09-27, after the feature merged (#68), from the code at that merge, the pull request and docs/features/catalog.md.
+
+**Input**: Design documents from `/specs/029-delete-product-image/`
+
+**Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/](./contracts/)
+
+**Tests**: Included, and required to be seen red first (spec FR-006).
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story the task serves (US1-US3). The original tasks carried no story label; the
+  mapping is: T001, T004-T006, T008 serve US1; T002, T013 serve US2; T007 covers US3's regression test.
 
 ## Phase 1: The red test
 
@@ -30,3 +48,8 @@
       `A_failing_store_does_not_stop_a_product_being_deleted` fail with `IOException: Simulated
       storage failure`, so the test guards the behaviour rather than passing because nothing calls
       the store. It DID pass before the fix, for exactly that wrong reason.
+
+## Completed on 2026-09-27
+
+- [X] T014 [P] Record what the image data is and the order of a deletion in `specs/029-delete-product-image/data-model.md`, and complete the plan, research and spec to the specs/001 standard
+- [X] T015 Merged as [#68](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/68) (`70f7f67`) on 2026-09-23, closing #66

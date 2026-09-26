@@ -1,9 +1,20 @@
 # Research: A seller can actually sell
 
+> Completed on 2026-09-27, after the feature merged (#65), from the code at that merge, the pull request, docs/features/marketplace.md and docs/architecture/storefront.md.
+
+Written before the change. On 2026-09-27 each decision was given explicit **Rationale** and
+**Alternatives considered** headings around the original wording; an alternative added then says so.
+
 ## D1 - How does the storefront learn that somebody is a seller?
 
 **Decision**: Identity returns the roles on the authentication response, and the storefront keeps
 them beside the user in the auth context.
+
+**Rationale**: The server already knows what the person holds when it issues the token; saying so on
+the response costs one additive field and leaves the client neither parsing tokens nor probing for a
+refusal. The details of the addition, and what it must not become, follow the alternatives.
+
+**Alternatives considered**:
 
 **Rejected - decode the JWT in the browser.** The token is already in memory and the roles are in
 it, so this needs no backend change at all. It was rejected for what it teaches rather than for
@@ -29,11 +40,14 @@ attributes. A seller who edits their own JavaScript gets a menu, not a product.
 
 **Decision**: one form, one submission, one product with one variant.
 
-`POST /api/products` already creates the first variant and reuses the product id for it
+**Rationale**: `POST /api/products` already creates the first variant and reuses the product id for it
 (specs/020), so the smallest honest create is: name, category, description, SKU, price. A wizard
 would be truer to the data model - product, then variants, then prices per currency, then
 translations, then an image - and it would also mean a seller cannot finish listing anything
 without completing five steps. The form creates something sellable; US3 corrects it afterwards.
+
+**Alternatives considered**: the wizard above - rejected because a seller could not finish listing
+anything without completing five steps.
 
 **Consequence recorded**: the product is created with text in ONE language and a price in ONE
 currency. It therefore falls back to that language for the other (specs/021 per-field fallback) and
@@ -53,15 +67,20 @@ field name.
 
 **Decision**: inside `MainLayout`, at `/shop`, `/shop/products/new`, `/shop/products/:id`.
 
-A seller is a customer too (specs/027 grants both roles), holds one session and one cart. A
+**Rationale**: A seller is a customer too (specs/027 grants both roles), holds one session and one cart. A
 separate layout would duplicate the top bar, the language switcher and the currency switcher to
 produce a page that differs only by its navigation.
+
+**Alternatives considered**: a separate seller layout - rejected for the duplication above. (Recorded
+2026-09-27: the storefront has since gained separate seller-console and admin-console layouts - see
+[docs/architecture/storefront.md](../../docs/architecture/storefront.md); at this merge three pages did
+not justify one.)
 
 ## D4 - What does a refusal look like?
 
 **Decision**: the server's own message, verbatim, in the form.
 
-The whole reason `GlobalExceptionHandler` shows `ValidationException`, `ConflictException` and
+**Rationale**: The whole reason `GlobalExceptionHandler` shows `ValidationException`, `ConflictException` and
 `NotFoundException` details outside Development (found in specs/022 through a Bruno test) is so
 that a caller can tell the person what went wrong. "9.99 is not a price in VND" and "SKU already
 exists" are answers; "Something went wrong" is not. A `ProblemDetails.detail` is already what axios
@@ -70,14 +89,22 @@ puts in the error body.
 **This is the first place in the storefront that shows a server message to a person**, so it gets a
 shared component rather than a paragraph in each form.
 
+**Alternatives considered**: a generic "Something went wrong" - rejected above: it is not an answer.
+(Added 2026-09-27.) `ServerError` falls back to a generic message only for a 5xx or an unreachable
+server, where there is no detail worth showing, and it never invents one.
+
 ## D5 - Does the seller set stock?
 
 **Decision**: no, and the page says so.
 
-Inventory owns stock and nothing in it knows what a seller is. Giving a seller `PUT /api/stock/{id}`
+**Rationale**: Inventory owns stock and nothing in it knows what a seller is. Giving a seller `PUT /api/stock/{id}`
 means deciding whether a seller may set stock on a variant they do not own - which is the specs/027
 ownership question again, in a service that has never heard of sellers. A product listed through
 this page therefore has zero stock and reads `OutOfStock` until an administrator sets it, and the
 page states that plainly instead of letting a seller wonder why nobody is buying.
 
-Recorded as the next thing this feature will be asked for.
+**Alternatives considered**: giving a seller `PUT /api/stock/{id}` now - rejected above, because it
+reopens the ownership question in a service that has never heard of sellers.
+
+Recorded as the next thing this feature will be asked for. (It was: specs/031, where Inventory asks
+Catalog over gRPC, live, who owns a variant.)
