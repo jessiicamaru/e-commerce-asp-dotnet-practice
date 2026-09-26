@@ -2,7 +2,7 @@
 
 **Feature Branch**: `091-back-on-sale-notices` | **Created**: 2026-09-27 | **Issue**: #182
 
-**Status**: Draft
+**Status**: Merged (#190, 2026-09-27)
 
 **Input**: Issue #182 - "a saved product back on sale by any route but Inventory's tells nobody".
 

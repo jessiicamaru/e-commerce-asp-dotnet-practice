@@ -32,7 +32,7 @@ description: "Task list for A saved product back on sale by any route tells whoe
 
 - [X] T010 Mutations (quickstart Scenario 4) - each red; `Ecommerce.Catalog.Tests` 215/215; storefront suite green
 - [X] T011 Docs: `docs/features/saved-products.md`, `docs/features/email.md`, `docs/project/backlog.md`, `docs/project/timeline.md`, CLAUDE.md
-- [ ] T012 Merged as #190, closing #182
+- [X] T012 Merged as #190 (2026-09-27), closing #182
 
 ## Verification
 
