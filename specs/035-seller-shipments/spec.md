@@ -1,8 +1,11 @@
 # Feature Specification: Each seller ships their own part
 
+> Completed on 2026-09-27, after the feature merged (#79), from the code at that merge, the pull request and
+> docs/features/fulfilment-and-delivery.md.
+
 **Feature branch**: `035-seller-shipments`
 **Created**: 2026-09-23
-**Status**: Draft
+**Status**: Merged (#79, 2026-09-23)
 **Closes**: #76
 
 ## What is wrong
@@ -14,47 +17,97 @@ one order are two parcels with two tracking numbers, and an order that can be ha
 status cannot say that, and a shop whose administrator packs every seller's parcel is not a
 marketplace.
 
-## User Scenarios
+## User Scenarios & Testing
 
-### US1 - A seller prepares and ships their part (P1)
+### US1 - A seller prepares and ships their part (Priority: P1)
 
-**Acceptance**
-1. A seller moves their part of a paid order to "being prepared", then to "shipped" with a tracking
-   reference.
-2. Doing the same step again is harmless; skipping a step, or going backwards, is refused.
-3. A seller cannot move another seller's part, or the shop's - the refusal is the same "not found"
-   as for an order that does not exist.
-4. A part cannot be prepared before the order is paid, and never on a failed order.
+**Why this priority**: it is issue #76 - a seller who can see a sale and cannot send it does not have a
+shop.
 
-### US2 - The seller sees where to send it, and only while they need to (P1)
+**Independent Test**: on a paid order holding two sellers' goods, each seller prepares and ships their
+own part through the API; the other's attempt on it is "not found".
 
-**Acceptance**
-1. While their part is waiting or being prepared, the seller sees the delivery address and phone.
-2. Once their part is shipped, the address is no longer shown to them.
-3. The customer's account (id, email) is never shown.
+**Acceptance Scenarios**:
 
-### US3 - The customer can tell a half-sent order from a sent one (P1)
+1. **Given** a paid order holding a seller's goods, **When** the seller moves their part to "being
+   prepared" and then to "shipped" with a tracking reference, **Then** each step is accepted.
+2. **Given** a step already taken, **When** it is asked for again, **Then** it is harmless; **Given** a
+   part in any other state, **When** a step is skipped or taken backwards, **Then** it is refused.
+3. **Given** another seller's part, or the shop's, **When** a seller tries to move it, **Then** the
+   refusal is the same "not found" as for an order that does not exist.
+4. **Given** an order not yet paid, or failed, **When** a seller tries to prepare their part, **Then** it
+   cannot be prepared.
 
-**Acceptance**
-1. An order shows each part: what is in it, whether it is waiting, being prepared or shipped, and its
-   tracking reference.
-2. The order list says "1 of 2 parcels shipped" for an order that is partly sent.
-3. An order sent in one parcel reads exactly as it did before.
+---
 
-### US4 - The shop ships its own part the same way (P1)
+### US2 - The seller sees where to send it, and only while they need to (Priority: P1)
 
-**Acceptance**
-1. An administrator's prepare and ship act on the **shop's own part** of the order.
-2. An order with no shop goods has nothing for the administrator to ship, and says so.
-3. The administrator's queue lists orders by where the shop's part is.
+**Why this priority**: a seller cannot ship without an address, and specs/034 withheld it until
+shipping became their job - which it now is.
 
-### US5 - The storefront (P2)
+**Independent Test**: read the sale before and after shipping; the address is there, then gone.
 
-**Acceptance**
-1. A seller's sale page offers the next step, asks for a tracking reference in a dialog, shows the
-   address while it is needed.
-2. A customer's order page lists the parcels.
-3. Both languages; unit tests.
+**Acceptance Scenarios**:
+
+1. **Given** the seller's part is waiting or being prepared, **When** they read the sale, **Then** they
+   see the delivery address and phone.
+2. **Given** their part is shipped, **When** they read the sale, **Then** the address is no longer shown.
+3. **Given** any sale, **When** it is read, **Then** the customer's account (id, email) is never shown.
+
+---
+
+### US3 - The customer can tell a half-sent order from a sent one (Priority: P1)
+
+**Why this priority**: an order that is half sent and reads "shipped" is a support ticket; one that
+reads "preparing" for ever is another.
+
+**Independent Test**: ship one of two parts; the customer's order shows two parcels, one shipped, and
+the list says "1 of 2".
+
+**Acceptance Scenarios**:
+
+1. **Given** an order with several parts, **When** the customer opens it, **Then** it shows each part:
+   what is in it, whether it is waiting, being prepared or shipped, and its tracking reference.
+2. **Given** an order partly sent, **When** the customer reads their order list, **Then** it says "1 of 2
+   parcels shipped".
+3. **Given** an order sent in one parcel, **When** it is read, **Then** it reads exactly as it did before.
+
+---
+
+### US4 - The shop ships its own part the same way (Priority: P1)
+
+**Why this priority**: one model for everybody who ships means the administrator's existing path must
+become "the shop's part", or there are two models to keep in step.
+
+**Independent Test**: on an order of shop goods and a seller's goods, the administrator's prepare and
+ship move only the shop's parcel; on an order with no shop goods they are refused with a reason.
+
+**Acceptance Scenarios**:
+
+1. **Given** an order holding the shop's own goods, **When** an administrator prepares or ships it,
+   **Then** the action moves the **shop's own part** of the order.
+2. **Given** an order with no shop goods, **When** an administrator tries to ship it, **Then** there is
+   nothing for them to ship, and the answer says so.
+3. **Given** the administrator's queue, **When** it is filtered by state, **Then** it lists orders by
+   where the shop's part is.
+
+---
+
+### US5 - The storefront (Priority: P2)
+
+**Why this priority**: the API alone completes US1-US4; people need the pages.
+
+**Independent Test**: as a seller, ship a part from the sale page; as the customer, see the parcels.
+
+**Acceptance Scenarios**:
+
+1. **Given** a seller's sale page, **When** it loads, **Then** it offers the next step, asks for a
+   tracking reference in a dialog, and shows the address while it is needed.
+2. **Given** a customer's order page, **When** it loads, **Then** it lists the parcels.
+3. **Given** either page, **When** it is read in Vietnamese or English, **Then** both languages are
+   there, and the pages have unit tests.
+
+---
 
 ### Edge cases
 
@@ -63,8 +116,14 @@ marketplace.
   the order was in.
 - **An order written by an older version** of the service during a rollback has no parts. The first
   fulfilment step on it creates them, in the state the order is in.
+- **The same ship step with a different tracking reference.** Not a repeat: refused with 409, naming
+  the reference already recorded.
+- **An administrator on an order that is not paid.** 409 naming the order's state; for a seller the
+  same situation is the one 404, because a seller must not learn the order exists.
 
 ## Requirements
+
+### Functional Requirements
 
 - **FR-001** Every order MUST have one part per seller whose goods it holds, plus one for the shop's
   own goods if it holds any.
@@ -85,6 +144,13 @@ marketplace.
 - **FR-010** Two parts moved concurrently MUST leave the order's status consistent with both.
 - **FR-011** Orders that exist today MUST get their parts without losing their state.
 
+### Key Entities
+
+- **Shipment part**: one seller's share of one order - one parcel. Whose it is (a seller, or nobody for
+  the shop's own goods), where it has got to (waiting, being prepared, shipped), its tracking reference
+  once shipped, and when it last moved. Exactly one per seller per order, and at most one for the shop.
+- **Order**: unchanged in shape; its status and tracking reference become a **summary** of its parts.
+
 ## Out of scope
 
 - **Splitting the delivery charge** between parts. The customer paid one charge for one delivery
@@ -102,3 +168,12 @@ marketplace.
 - **SC-003** A seller sees the address before shipping and not after.
 - **SC-004** An order in one parcel behaves, for the customer and for the administrator, as it did
   before this feature - `verify-saga.sh` passes unchanged.
+
+## Assumptions
+
+*(Added in this backfill; the original spec had none stated.)*
+
+- The seller of an order line is the one frozen on it at checkout (`order_items.SellerId`, specs/034).
+  A part belongs to that seller whoever owns the product now.
+- Orders from before specs/034 recorded no seller, so all their lines form the shop's part.
+- The Order database runs PostgreSQL 15 or later (`NULLS NOT DISTINCT`); the containers run 16.

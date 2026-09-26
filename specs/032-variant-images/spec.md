@@ -1,8 +1,11 @@
 # Feature Specification: The picture follows the variant
 
+> Completed on 2026-09-27, after the feature merged (#73), from the code at that merge, the pull request and
+> docs/features/catalog.md.
+
 **Feature branch**: `032-variant-images`
 **Created**: 2026-09-23
-**Status**: Draft
+**Status**: Merged (#73, 2026-09-23)
 **Closes**: #72
 
 ## What is wrong
@@ -38,42 +41,100 @@ body — wrong either way, and wrong invisibly.
 two genuinely identical-looking variants needing the same file twice — is tedious rather than
 wrong, and it is bounded by the fallback below.
 
-## User Scenarios
+## User Scenarios & Testing
 
-### US1 - The picture follows the choice (P1)
+### US1 - The picture follows the choice (Priority: P1)
 
 A shopper opens a camera, clicks "Bạc", and sees the silver one.
 
-**Acceptance**
-1. A variant with its own photograph shows it when chosen.
-2. A variant without one shows the **product's** photograph, not a blank and not the previous
-   variant's.
-3. The product page opens on whatever it opens on today, with that variant's picture.
-4. A product with no photograph at all still shows the aperture tile, as now.
+**Why this priority**: it is the defect in #72. Everything else in the feature exists so this can be
+true.
 
-### US2 - A seller photographs a variant (P1)
+**Independent Test**: give one variant of a product its own photograph, open the product page, click
+each variant, and watch the picture change or fall back.
 
-**Acceptance**
-1. A seller uploads, replaces and removes a photograph on a variant of their own product.
-2. Somebody else's variant is **404**, never 403.
-3. The type comes from the bytes, at most 2 MB — the same rules as a product image, refused the
-   same way.
-4. Replacing writes the new file, switches the row, then deletes the old one, so the row never
-   names a missing file.
+**Acceptance Scenarios**:
 
-### US3 - Nothing is left behind (P1)
+1. **Given** a variant with its own photograph, **When** it is chosen, **Then** that photograph shows.
+2. **Given** a variant without one, **When** it is chosen, **Then** the **product's** photograph shows,
+   not a blank and not the previous variant's.
+3. **Given** the product page opens, **When** it opens on whatever it opens on today, **Then** it shows
+   that variant's picture.
+4. **Given** a product with no photograph at all, **When** it is shown, **Then** it still shows the
+   aperture tile, as now.
 
-**Acceptance**
-1. Deleting a product deletes **every** variant's photograph as well as its own.
-2. A store failure is logged and swallowed, exactly as specs/029 decided for the product's image.
+---
 
-### US4 - A listing card is unchanged (P2)
+### US2 - A seller photographs a variant (Priority: P1)
 
-**Acceptance**
-1. The catalogue grid still shows the product's own photograph. A card showing one arbitrary shape
-   of the thing would be worse than what it shows now.
+**Why this priority**: without a way to attach the photograph there is nothing for US1 to show; and
+the write is a new route open to sellers, so its refusal belongs to the same story.
+
+**Independent Test**: as a seller, upload, replace and remove a photograph on a variant of her own
+product; as a second seller, try the same and be refused.
+
+**Acceptance Scenarios**:
+
+1. **Given** a seller's own product, **When** she uploads, replaces or removes a photograph on one of
+   its variants, **Then** it is accepted.
+2. **Given** somebody else's variant, **When** a seller writes its photograph, **Then** it is **404**,
+   never 403.
+3. **Given** any upload, **When** it is checked, **Then** the type comes from the bytes, at most 2 MB —
+   the same rules as a product image, refused the same way.
+4. **Given** a replacement, **When** it runs, **Then** it writes the new file, switches the row, then
+   deletes the old one, so the row never names a missing file.
+
+---
+
+### US3 - Nothing is left behind (Priority: P1)
+
+**Why this priority**: specs/029 closed exactly this leak for the product's own image the day before;
+reopening it would be a regression in the same week.
+
+**Independent Test**: delete a product whose variants have photographs and list the store; nothing
+of it is left.
+
+**Acceptance Scenarios**:
+
+1. **Given** a product with variant photographs, **When** it is deleted, **Then** **every** variant's
+   photograph is deleted as well as its own.
+2. **Given** the store fails while deleting, **When** that happens, **Then** the failure is logged and
+   swallowed, exactly as specs/029 decided for the product's image.
+
+---
+
+### US4 - A listing card is unchanged (Priority: P2)
+
+**Why this priority**: it is a thing not to change, stated so nobody "improves" it.
+
+**Independent Test**: the catalogue grid shows the same picture before and after a variant is
+photographed.
+
+**Acceptance Scenarios**:
+
+1. **Given** the catalogue grid, **When** a product's variants have photographs, **Then** the card still
+   shows the product's own photograph. A card showing one arbitrary shape of the thing would be worse
+   than what it shows now.
+
+---
+
+### Edge Cases
+
+- **No image anywhere.** Neither the variant nor the product has one: `imageUrl` is null and the tile
+  shows.
+- **The reused first-variant id.** The first variant of a product has the product's id (specs/020), so
+  the two keys must not rely on timestamps to differ (research D3).
+- **A variant of a different product.** Named with the wrong product id in the path, it is the same 404
+  as a missing variant.
+- **Two replacements at once.** The switch is a guarded `UPDATE` on the version seen; the loser gets 409
+  and its new file is deleted.
+- **Removing a photograph that is not there.** Quiet success; the variant keeps falling back.
+- **Deleting the product.** Every variant key is collected beside the product's and deleted after the
+  row, a store failure logged and swallowed.
 
 ## Requirements
+
+### Functional Requirements
 
 - **FR-001** A variant MAY carry one image. Absence is normal and is not an error.
 - **FR-002** A variant with no image MUST fall back to its product's, the way a missing translation
@@ -85,6 +146,13 @@ A shopper opens a camera, clicks "Bạc", and sees the silver one.
 - **FR-005** Deleting a product MUST delete every variant image it had.
 - **FR-006** The listing card MUST keep showing the product's image.
 - **FR-007** Client changes ship with tests.
+
+### Key Entities
+
+- **Variant photograph**: at most one per variant, described by two columns on the variant — its type
+  and the moment it was set, which is also its version. Its bytes live in the image store under a key
+  derived from those two and the variant id.
+- **Product photograph**: unchanged (specs/019); the fallback for a variant with none.
 
 ## Out of scope
 

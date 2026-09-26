@@ -2,6 +2,9 @@
 
 **Created**: 2026-09-23 · **Feature**: [spec.md](../spec.md)
 
+> Completed on 2026-09-27, after the feature merged (#74), from the code at that merge, the pull request and
+> docs/features/catalog.md. Items re-read against the completed spec; see the last note.
+
 ## Content Quality
 
 - [X] No implementation details in the spec (they are in plan.md and contracts/)
@@ -38,3 +41,10 @@ it never runs on a timer (research D1), why the report stands alone as a shippab
 **The worst of them is FR-006**: if the catalogue read fails and the code carries on with an empty
 live set, every file in the store becomes a candidate. The reconciler reads the live keys first
 *because* of that test, not the other way round.
+
+**Backfill, 2026-09-27**: the spec gained the Edge Cases section this checklist already listed, "Why
+this priority" and an Independent Test per story, Given/When/Then scenarios and Key Entities. US2's
+first scenario was sharpened to match the code: the reclaim removes what **its own** reconciliation
+finds, which is the report's set unless something changed in between (FR-005 already said so). The
+contract's reclaim example named fields (`removed`, `removedBytes`) the code never had; it is
+corrected in place.

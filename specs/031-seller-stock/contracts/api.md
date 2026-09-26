@@ -1,5 +1,9 @@
 # Contracts: A seller can stock what they sell
 
+> Completed on 2026-09-27, after the feature merged (#71), from the code at that merge, the pull request and
+> docs/features/marketplace.md. This one file holds both the HTTP change and the gRPC contract; no
+> message changed (see the end).
+
 ## The REST change is one attribute and two refusals
 
 | Method | Path | Before | After |
@@ -33,6 +37,22 @@ The two 404s are deliberately indistinguishable. A third case is **not**:
 which is the stock row not having arrived yet (research D6) and is only ever returned **after**
 ownership has been confirmed — so a seller seeing it knows to retry, and a seller seeing the flat
 404 knows not to.
+
+### As built (from the code at #71)
+
+| Case | Status | `detail` |
+| :-- | :-- | :-- |
+| owner, row present | `200` | body is `StockResponse`: `productId`, `sku`, `quantityOnHand`, `quantityReserved`, `quantityAvailable` |
+| administrator | `200` | Catalog is **not** asked |
+| another seller's variant, the shop's own product, or no such variant | `404` | `Product with ID '{id}' was not found.` |
+| owner, stock row not arrived | `404` | `Product '{id}' is not registered in inventory.` |
+| owner, value below reserved | `409` | `Cannot set quantity on hand to {n}: {m} unit(s) are currently reserved for orders.` |
+| Catalog unreachable after three attempts | `503` | `The catalogue could not be reached, so it is not possible to tell whether this product is yours. Try again in a moment.` |
+| customer without `Seller` | `403` | at the door |
+| no token | `401` | |
+
+Request body, unchanged: `{ "quantityOnHand": 4 }`. The route parameter is still named `productId` in
+`StockController` and holds a variant id (specs/020).
 
 ## The new gRPC contract
 
@@ -91,6 +111,12 @@ token is **forwarded** on the call the way Order already forwards it to Cart and
 here Catalog is only being asked a fact, so the forward is for tracing rather than for identity.
 Inventory decides; it does not ask Catalog to decide for it.
 
+> **Correction (2026-09-27 backfill)**: as built, the token is **not** forwarded. `GrpcProductOwnership`
+> calls `GetVariantOwnersAsync` with a deadline and a cancellation token only, and the client is
+> registered with `AddGrpcClient` and an address, no interceptor or call credentials. That matches the
+> sentence above in substance — Catalog is asked a fact and does not need to know who is asking — but
+> the forwarding described here was not built.
+
 ## Unchanged, and must stay so
 
 - `GET /api/stock` and `GET /api/stock/{id}` stay anonymous.
@@ -98,3 +124,15 @@ Inventory decides; it does not ask Catalog to decide for it.
   and its `StockAvailabilityAnnouncer` call. Six handlers move stock and every one announces
   (specs/004); this adds no seventh.
 - `ProductCreatedEvent`, `ProductVariantCreatedEvent` and `ProductDeletedEvent` are untouched.
+
+## Messages
+
+None added or changed. The feature has no `messages.md` for that reason: the only asynchronous
+behaviour it relies on is the existing `ProductCreatedEvent` → stock row (why the "not arrived yet" 404
+exists) and the existing `StockAvailabilityChangedEvent` announced on every stock write.
+
+## Configuration
+
+Inventory reads Catalog's gRPC address from `Catalog:GrpcAddress`, then `CATALOG_GRPC_ADDRESS`, then
+`http://localhost:5157` (the `start-dev` port). Compose sets `CATALOG_GRPC_ADDRESS: http://catalog:8081`
+and makes Inventory `depends_on` a healthy Catalog.

@@ -2,6 +2,10 @@
 
 **Created**: 2026-09-23 · **Feature**: [spec.md](../spec.md)
 
+> Completed on 2026-09-27, after the feature merged (#71), from the code at that merge, the pull request and
+> docs/features/marketplace.md. Every item was re-read against the completed spec; the notes at the end
+> say what the backfill added.
+
 ## Content Quality
 
 - [X] No implementation details in the spec itself (they are in plan.md and contracts/)
@@ -35,3 +39,11 @@ to avoid a lost update. It cannot happen - `SetStockOnHandCommandHandler` alread
 `FOR UPDATE` lock as the reserve path and already refuses any value below `QuantityReserved`, and
 the command's own summary says absolute is deliberate. Recorded in research D5 rather than carried
 as open scope.
+
+**Backfill, 2026-09-27**: the edge cases the item above lists were only in research and the checklist;
+the spec now carries them in an Edge Cases section, with "Why this priority" and an Independent Test
+per story and Given/When/Then acceptance scenarios. One requirement was added from the code, FR-009
+(Catalog unreachable is 503, not 404), because the built behaviour and its test exist and the spec did
+not say it. "Implementation details in the spec" still holds: the gRPC edge and the controller
+attribute stay in plan.md and contracts/, although the spec's "Why it is harder" section names the
+Catalog column it depends on, as it did before.

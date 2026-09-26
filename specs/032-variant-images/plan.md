@@ -1,6 +1,19 @@
 # Implementation Plan: The picture follows the variant
 
+> Completed on 2026-09-27, after the feature merged (#73), from the code at that merge, the pull request and
+> docs/features/catalog.md.
+
 **Branch**: `032-variant-images` | **Spec**: [spec.md](spec.md) | **Closes**: #72
+
+## Summary
+
+Give each product variant an optional photograph of its own. Two nullable columns on
+`product_variants` mirror the two on `products`; the bytes go to the existing `IProductImageStore`
+under a key prefixed `variant-`, because a product's first variant reuses the product's id. Three
+routes nested under the product write, remove and serve it; `VariantResponse.ImageUrl` arrives
+already resolved to the variant's own address or the product's. Deleting a product now deletes every
+variant's photograph too. The storefront's chooser swaps the picture; the listing card does not
+change. Decisions in [research.md](research.md).
 
 ## Technical Context
 
@@ -11,17 +24,96 @@ picture, and an extension to the product-delete cleanup.
 **One migration, purely additive.** Two nullable columns; nothing dropped, renamed or narrowed, so
 an earlier image still starts against the new schema.
 
+**Language/Version**: C# / .NET 10; TypeScript / React 19 in `client/`
+
+**Primary Dependencies**: EF Core with Npgsql, MediatR, FluentValidation, the existing
+`IProductImageStore` (`FileSystemProductImageStore` at the time; an S3 store was added in specs/079)
+
+**Storage**: `ecommerce_catalog_db` (5433) - migration `20260923055302_AddVariantImages`; image bytes
+in the store, the `catalog_images` volume at the time
+
+**Testing**: xUnit against real PostgreSQL (`ProductImageTests`, `SellerOwnershipTests`); Vitest for
+the product page and the seller page; Bruno; a screenshot of the chooser
+
+**Target Platform**: Catalog on 5057 (8080 in a container), through the gateway on 5000
+
+**Constraints**: the row must never name a missing file; the refusal must be a 404 worded like a
+missing variant; product image keys must not change, so existing files keep resolving
+
+**Scale/Scope**: one photograph per variant; the 14 seeded cameras have none and fall back
+
 ## Constitution Check
+
+Evaluated against [constitution.md](../../.specify/memory/constitution.md) v1.1.0.
 
 | Principle | Verdict |
 | :-- | :-- |
-| I - Service autonomy | Untouched. No new cross-service call; Catalog owns its own images. |
-| II - Clean Architecture | Bytes stay behind `IProductImageStore`; handlers never see a directory. |
-| III - Atomic writes, idempotent messaging | The write is the existing guarded `UPDATE` pattern: new file, switch the row, delete the old. No new message. The delete's file removal stays **outside** the transaction, as specs/029 settled. |
-| IV - Identity from the token | `SellerOwnership` decides, in the handler. No route gains a seller id. |
-| V - Evidence over assumption | The per-option-value design was **rejected on measured data**, and the key collision was measured too: 12 of 12 products have a variant whose id equals the product id. |
+| I - Service autonomy | **Pass.** Untouched. No new cross-service call; Catalog owns its own images. |
+| II - Clean Architecture | **Pass.** Bytes stay behind `IProductImageStore`; handlers never see a directory. |
+| III - Atomic writes, idempotent messaging | **Pass.** The write is the existing guarded `UPDATE` pattern: new file, switch the row, delete the old. No new message. The delete's file removal stays **outside** the transaction, as specs/029 settled. |
+| IV - Identity from the token | **Pass.** `SellerOwnership` decides, in the handler. No route gains a seller id. |
+| V - Evidence over assumption | **Pass.** The per-option-value design was **rejected on measured data**, and the key collision was measured too: 12 of 12 products have a variant whose id equals the product id. |
 
 No Complexity Tracking entries.
+
+**Post-design re-check**: unchanged after building. Two findings from the code - the store's key
+pattern refusing the prefix, and `RequireCanWrite`'s message naming the product id - were fixed inside
+the design (tasks T024, T025), not by relaxing a principle.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/032-variant-images/
+├── spec.md
+├── plan.md                  # this file
+├── research.md              # D1-D8
+├── data-model.md            # the two columns, two checks, the key
+├── quickstart.md
+├── contracts/
+│   └── api.md               # three routes, VariantResponse.ImageUrl, the key
+├── checklists/
+│   └── requirements.md
+└── tasks.md
+```
+
+### Source code touched (from the pull request)
+
+```text
+server/src/Services/Catalog/
+├── Ecommerce.Catalog.Domain/Entities/ProductVariant.cs            # ImageContentType, ImageUpdatedAt
+├── Ecommerce.Catalog.Application/
+│   ├── Common/Interfaces/IProductRepository.cs                    # TrySetVariantImageAsync
+│   ├── Products/Commands/DeleteProduct/DeleteProductCommand.cs    # every variant key too
+│   ├── Products/Common/VariantResponse.cs                         # ImageUrl, resolved
+│   └── Products/Images/
+│       ├── ProductImageKey.cs                                     # ForVariant, UrlForVariant
+│       ├── VariantImageCommands.cs                                # upload, remove, the shared 404
+│       └── GetVariantImageQuery.cs
+├── Ecommerce.Catalog.Infrastructure/
+│   ├── Configurations/ProductVariantConfiguration.cs              # two CHECKs
+│   ├── Images/FileSystemProductImageStore.cs                      # key pattern admits variant-
+│   ├── Migrations/20260923055302_AddVariantImages.cs
+│   └── Persistence/Repositories/ProductRepository.cs
+└── Ecommerce.Catalog.WebApi/Controllers/ProductsController.cs     # three routes
+server/tests/Ecommerce.Catalog.Tests/{ProductImageTests.cs,SellerOwnershipTests.cs}
+client/src/components/product/product-image/index.tsx
+client/src/pages/product/{index.tsx,index.test.tsx}
+client/src/pages/shop-product/{index.tsx,index.test.tsx}
+client/src/services/product/{index.ts,types.ts}
+client/src/hooks/product/index.ts
+client/src/locales/{en,vi}/seller.json
+bruno/seller/a seller photographs one shape.yml
+CLAUDE.md
+```
+
+## Complexity Tracking
+
+> No Constitution Check violations to justify. Table intentionally empty.
+
+| Violation | Why it is needed | Simpler alternative rejected because |
+| :-- | :-- | :-- |
 
 ## The three traps
 
@@ -67,3 +159,20 @@ products.
 - The delete test **must be seen failing** before Phase 4's change.
 - SC-002 against the API with two real tokens, not the page.
 - A screenshot per variant, because "the picture changed" is not a thing a unit test can see.
+
+**What the pull request recorded** (#73): Catalog 115 → **122**, client 38 → **43**; Bruno 94/94
+requests and 147/147 tests; `verify-saga.sh` passed. The delete test was seen red first, failing on a
+`variant-…` file left behind after the row was gone. On the running stack: the silver shape's own
+photograph → 204 and its own address; the other shape falls back to `/api/products/{id}/image`;
+another seller uploading or removing → 404 `Variant with ID '…' was not found.`; a variant that does
+not exist reads identically; removing her own → 204 and the product's picture again. The screenshot
+used an X-S20 photograph as a stand-in on the silver X-T5 (Commons has no silver X-T5), removed
+immediately afterwards.
+
+## What this feature does not finish
+
+- No gallery; one photograph per variant.
+- An order line still freezes no image (research D8).
+- Later features built on this and are not part of it: a seller changing a variant photograph sends
+  the product back to review (specs/045), images moved to a shared S3 store (specs/079), and an image
+  address carries its own access key (specs/081).

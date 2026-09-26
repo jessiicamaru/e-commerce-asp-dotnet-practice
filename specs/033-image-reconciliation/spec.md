@@ -1,8 +1,11 @@
 # Feature Specification: Finding the images nobody can name
 
+> Completed on 2026-09-27, after the feature merged (#74), from the code at that merge, the pull request and
+> docs/features/catalog.md.
+
 **Feature branch**: `033-image-reconciliation`
 **Created**: 2026-09-23
-**Status**: Draft
+**Status**: Merged (#74, 2026-09-23)
 **Closes**: #67
 
 ## What is wrong
@@ -38,34 +41,82 @@ failure mode is *destroying data somebody is using*, and the mitigation is that 
 without deleting anything, and stopping there is a legitimate outcome rather than a half-finished
 one. The deletion is a separate, explicit act.
 
-## User Scenarios
+## User Scenarios & Testing
 
-### US1 - Somebody asks how much is being wasted (P1)
+### US1 - Somebody asks how much is being wasted (Priority: P1)
 
 An administrator asks what the store holds that the catalogue cannot name.
 
-**Acceptance**
-1. The answer lists each orphan's key, size and age, and the total.
-2. It names **nothing** that a live product or variant currently points at.
-3. It names nothing written within the grace period.
-4. It changes nothing.
-5. Anyone who is not an administrator is refused.
+**Why this priority**: it is the question issue #67 asks, and it is useful on its own - knowing there
+are three orphans is enough to decide to do nothing (research D2).
 
-### US2 - Somebody reclaims the space (P1)
+**Independent Test**: make an orphan the way the deliberate swallow makes one, ask for the report, and
+find it named with nothing live beside it.
 
-**Acceptance**
-1. Deleting removes exactly what the report named, and answers with what it removed.
-2. It is a separate request. Nothing deletes as a side effect of asking.
-3. A live image is never removed, even if a row changes between the listing and the delete.
+**Acceptance Scenarios**:
 
-### US3 - It refuses to guess (P1)
+1. **Given** the store holds files, **When** an administrator asks, **Then** the answer lists each
+   orphan's key, size and age, and the total.
+2. **Given** a live product or variant image, **When** the report runs, **Then** it names **nothing**
+   that a live product or variant currently points at.
+3. **Given** a file written within the grace period, **When** the report runs, **Then** it is not named.
+4. **Given** any report, **When** it has run, **Then** it has changed nothing.
+5. **Given** a caller who is not an administrator, **When** they ask, **Then** they are refused.
 
-**Acceptance**
-1. If the catalogue cannot be read, **nothing is reported as an orphan and nothing is deleted** — an
-   empty answer from the database must not be read as "everything is an orphan".
-2. The store's own bookkeeping files are not orphans.
+---
+
+### US2 - Somebody reclaims the space (Priority: P1)
+
+**Why this priority**: small once the report exists, and its guards are the report's guards; but it is
+the step that can destroy data, so it is its own story and its own request.
+
+**Independent Test**: after the report names an orphan, send the reclaim and see exactly that orphan
+removed and every live image still served.
+
+**Acceptance Scenarios**:
+
+1. **Given** the report named orphans, **When** the administrator reclaims, **Then** deleting removes exactly
+   what the report named — strictly, what its own reconciliation finds at that moment, which is the
+   same set unless something changed in between — and answers with what it removed.
+2. **Given** a report was asked for, **When** nothing else is sent, **Then** nothing is deleted - the
+   reclaim is a separate request.
+3. **Given** a row changes between the listing and the delete, **When** the reclaim runs, **Then** a
+   live image is never removed, because it reconciles again rather than trusting the earlier list.
+
+---
+
+### US3 - It refuses to guess (Priority: P1)
+
+**Why this priority**: this is the failure that would delete the whole catalogue's images; without it
+US1 and US2 are unsafe to ship.
+
+**Independent Test**: make the catalogue read fail and ask for both the report and the reclaim; neither
+names nor removes anything.
+
+**Acceptance Scenarios**:
+
+1. **Given** the catalogue cannot be read, **When** the report or the reclaim runs, **Then** **nothing
+   is reported as an orphan and nothing is deleted** — an empty answer from the database must not be
+   read as "everything is an orphan".
+2. **Given** the store's own bookkeeping files, **When** the report runs, **Then** they are not orphans.
+
+---
+
+### Edge Cases
+
+- **A file mid-upload.** Bytes written, row not yet switched: younger than the grace period, so not
+  named (FR-003).
+- **A failing database read.** Propagates; nothing reported, nothing deleted (FR-006).
+- **The store's own bookkeeping.** `.write-probe-{guid}` and anything else starting with a dot is not
+  listed at all.
+- **A row changing between the report and the reclaim.** The reclaim reconciles again (FR-005).
+- **One key the store will not delete.** Logged, reported in `failed`, and the rest still go.
+- **Two Catalog instances.** Each would see only its own directory; the answer says so in a `note`
+  rather than appearing to have solved it (Assumptions).
 
 ## Requirements
+
+### Functional Requirements
 
 - **FR-001** The store MUST be able to list what it holds. It cannot today.
 - **FR-002** A key currently named by a product or a variant MUST NOT be reported or deleted.
@@ -77,6 +128,14 @@ An administrator asks what the store holds that the catalogue cannot name.
 - **FR-006** A failure to read the catalogue MUST abort, reporting nothing and deleting nothing.
 - **FR-007** Both MUST be administrators only.
 - **FR-008** Nothing MUST run on a schedule.
+
+### Key Entities
+
+- **Stored image**: what the store holds under a key - its key, its size and its own last-modified
+  time. Not a row anywhere; only the store knows it.
+- **Live key**: a key some product or variant row currently names, derived from its id, its
+  `ImageUpdatedAt` and its type (specs/019, 032).
+- **Orphan**: a stored image whose key is not live and which is older than the grace period.
 
 ## Out of scope
 

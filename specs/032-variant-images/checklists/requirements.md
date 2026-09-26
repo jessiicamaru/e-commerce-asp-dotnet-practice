@@ -2,6 +2,9 @@
 
 **Created**: 2026-09-23 · **Feature**: [spec.md](../spec.md)
 
+> Completed on 2026-09-27, after the feature merged (#73), from the code at that merge, the pull request and
+> docs/features/catalog.md. Items re-read against the completed spec; see the last note.
+
 ## Content Quality
 
 - [X] No implementation details in the spec (they are in plan.md and contracts/)
@@ -35,3 +38,9 @@ a lens on it, and no rule could tell the system which option axis is the visual 
 
 **A second finding was measured, not assumed**: 12 of 12 products have a variant whose id equals the
 product id, so variant keys need a discriminator or two rows can name the same file.
+
+**Backfill, 2026-09-27**: the spec gained an Edge Cases section (it was only in this checklist),
+"Why this priority" and an Independent Test per story, Given/When/Then scenarios and Key Entities. No
+requirement changed. One inconsistency in the record was corrected rather than hidden: research D3's
+decision line said the key was reused unchanged, while the code, the contract and D3's own last
+paragraph use a `variant-` prefix.
