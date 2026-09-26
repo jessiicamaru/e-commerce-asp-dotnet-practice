@@ -40,6 +40,10 @@
     "ReturnRefused": "Your return for order {{order}} was refused: {{reason}}",
     "ReturnSentBack": "The returned parcel of order {{order}} is on its way back to you ({{tracking}}).",
     "ReturnRefunded": "Your returned parcel of order {{order}} arrived; {{amount}} was refunded.",
-    "SavedBackInStock": "“{{product}}”, which you saved, is back in stock"
+    "SavedBackInStock": "“{{product}}”, which you saved, is back in stock",
+    "NewQuestion": "A shopper asked about “{{product}}”",
+    "QuestionAnswered": "The seller answered your question about “{{product}}”",
+    "QuestionHidden": "Your question about “{{product}}” was hidden: {{reason}}",
+    "AnswerHidden": "Your answer about “{{product}}” was hidden: {{reason}}"
   }
 }

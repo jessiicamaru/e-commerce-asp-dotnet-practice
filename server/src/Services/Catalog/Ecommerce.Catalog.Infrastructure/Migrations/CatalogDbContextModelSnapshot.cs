@@ -191,6 +191,73 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductQuestion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Answer")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("AnswerHiddenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("AnswerHiddenBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AnswerHiddenReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("AnswerUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("AnsweredBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AskerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AskerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("HiddenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("HiddenBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("HiddenReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasFilter("\"AnsweredAt\" IS NULL AND \"HiddenAt\" IS NULL");
+
+                    b.HasIndex("ProductId", "CreatedAt");
+
+                    b.ToTable("product_questions", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductTranslation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -685,6 +752,15 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductQuestion", b =>
+                {
+                    b.HasOne("Ecommerce.Catalog.Domain.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductTranslation", b =>

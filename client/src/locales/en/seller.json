@@ -102,7 +102,8 @@
     "sales": "Sales",
     "payouts": "Payouts",
     "insights": "Insights",
-    "vouchers": "Vouchers"
+    "vouchers": "Vouchers",
+    "questions": "Questions"
   },
   "overview": {
     "subtitle": "How your shop is doing, and what needs you.",
@@ -286,5 +287,14 @@
     "units_other": "{{count}} sold",
     "viewCount_one": "{{count}} view",
     "viewCount_other": "{{count}} views"
+  },
+  "questions": {
+    "title": "Questions",
+    "subtitle": "What shoppers asked about your products. Your answer is public on the product page, as your shop.",
+    "tab": {
+      "open": "To answer",
+      "answered": "Answered"
+    },
+    "yourAnswer": "Your answer"
   }
 }

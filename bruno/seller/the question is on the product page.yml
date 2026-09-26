@@ -1,0 +1,30 @@
+info:
+  name: the question is on the product page
+  type: http
+  seq: 69
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}/questions"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("public, with the question", function() {
+          expect(res.body.items.map(q => q.id)).to.include(bru.getVar("questionId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Reading a product's questions needs no token.

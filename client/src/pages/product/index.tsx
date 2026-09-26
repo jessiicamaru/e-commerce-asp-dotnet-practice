@@ -13,6 +13,7 @@ import { Product } from '@/services/product'
 import { useVariantStock } from '@/hooks/stock'
 import { Price } from '@/components/shared/price'
 import { StarRating } from '@/components/product/star-rating'
+import { ProductQuestions } from '@/components/product/product-questions'
 import { ProductReviews } from '@/components/product/product-reviews'
 
 export function ProductPage() {
@@ -127,6 +128,7 @@ export function ProductPage() {
       </div>
 
       <ProductReviews product={product} />
+      <ProductQuestions product={product} />
     </section>
   )
 }

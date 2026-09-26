@@ -12,7 +12,8 @@
     "reviews": "Reviews",
     "overview": "Overview",
     "returns": "Returns",
-    "vouchers": "Vouchers"
+    "vouchers": "Vouchers",
+    "questions": "Questions"
   },
   "queue": {
     "title": "Orders to ship",
@@ -332,5 +333,30 @@
     "shopParcel": "The shop’s parcel",
     "sellerParcel": "Parcel from {{shop}}",
     "sellersToAnswer": "The seller answers this one. It comes to staff if the buyer escalates a refusal."
+  },
+  "questions": {
+    "title": "Questions",
+    "subtitle": "Answer questions about the shop's own products, and hide what should not be public.",
+    "tab": {
+      "answer": "To answer",
+      "visible": "Visible",
+      "hidden": "Hidden"
+    },
+    "none": "Nothing here.",
+    "loadFailed": "Could not load the questions.",
+    "shopsAnswer": "The shop's answer",
+    "answerLabel": "Answer",
+    "hide": "Hide question",
+    "hideTitle": "Hide this question?",
+    "hideBody": "It leaves the product page with its answer. The asker is told why.",
+    "hideAnswer": "Hide answer",
+    "hideAnswerTitle": "Hide this answer?",
+    "hideAnswerBody": "The question stays and reads as unanswered. Whoever answered is told why and cannot rewrite it until it is shown again.",
+    "reason": "Reason",
+    "confirmHide": "Hide",
+    "restore": "Show question again",
+    "restoreAnswer": "Show answer again",
+    "hidden": "Hidden.",
+    "restored": "Shown again."
   }
 }

@@ -25,6 +25,7 @@ import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminReturnsPage } from '@/pages/admin-returns'
 import { AdminVouchersPage } from '@/pages/admin-vouchers'
 import { ShopVouchersPage } from '@/pages/shop-vouchers'
+import { ShopQuestionsPage } from '@/pages/shop-questions'
 import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { AdminAuditPage } from '@/pages/admin-audit'
 import { AdminHome } from '@/pages/admin-home'
@@ -34,6 +35,7 @@ import { OpenShopPage } from '@/pages/open-shop'
 import { AdminModerationPage } from '@/pages/admin-moderation'
 import { AdminProductsPage } from '@/pages/admin-products'
 import { AdminReviewsPage } from '@/pages/admin-reviews'
+import { AdminQuestionsPage } from '@/pages/admin-questions'
 import { AdminOverviewPage } from '@/pages/admin-overview'
 import { NotificationsPage } from '@/pages/notifications'
 import { ConfirmEmailPage } from '@/pages/confirm-email'
@@ -149,6 +151,7 @@ export function AppRoutes() {
             <Route path="payouts" element={<ShopPayoutsPage />} />
             <Route path="insights" element={<ShopInsightsPage />} />
             <Route path="vouchers" element={<ShopVouchersPage />} />
+            <Route path="questions" element={<ShopQuestionsPage />} />
           </Route>
           {/* The administrator's console (specs/038). Same bargain as /shop: RequireRole draws, the
               server decides. */}
@@ -171,6 +174,7 @@ export function AppRoutes() {
             <Route path="moderation" element={<AdminModerationPage />} />
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="reviews" element={<AdminReviewsPage />} />
+            <Route path="questions" element={<AdminQuestionsPage />} />
             <Route path="overview" element={<AdminOverviewPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />

@@ -1,0 +1,33 @@
+info:
+  name: the seller sees it waiting for an answer
+  type: http
+  seq: 70
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/questions/to-answer"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("in their queue, with the product's name", function() {
+          const q = res.body.items.find(i => i.id === bru.getVar("questionId"));
+          expect(q).to.exist;
+          expect(q.productName).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A seller's own products' unanswered questions, oldest first.

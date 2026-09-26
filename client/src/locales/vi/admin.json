@@ -12,7 +12,8 @@
     "reviews": "Đánh giá",
     "overview": "Tổng quan",
     "returns": "Trả hàng",
-    "vouchers": "Mã giảm giá"
+    "vouchers": "Mã giảm giá",
+    "questions": "Hỏi đáp"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -332,5 +333,30 @@
     "shopParcel": "Kiện của cửa hàng",
     "sellerParcel": "Kiện từ {{shop}}",
     "sellersToAnswer": "Người bán trả lời kiện này. Nó đến nhân viên nếu người mua chuyển lời từ chối lên."
+  },
+  "questions": {
+    "title": "Hỏi đáp",
+    "subtitle": "Trả lời câu hỏi về sản phẩm của chính cửa hàng, và ẩn những gì không nên công khai.",
+    "tab": {
+      "answer": "Cần trả lời",
+      "visible": "Đang hiện",
+      "hidden": "Đã ẩn"
+    },
+    "none": "Không có gì ở đây.",
+    "loadFailed": "Không tải được phần hỏi đáp.",
+    "shopsAnswer": "Cửa hàng trả lời",
+    "answerLabel": "Câu trả lời",
+    "hide": "Ẩn câu hỏi",
+    "hideTitle": "Ẩn câu hỏi này?",
+    "hideBody": "Câu hỏi và câu trả lời sẽ rời trang sản phẩm. Người hỏi được báo lý do.",
+    "hideAnswer": "Ẩn câu trả lời",
+    "hideAnswerTitle": "Ẩn câu trả lời này?",
+    "hideAnswerBody": "Câu hỏi vẫn hiện, như chưa được trả lời. Người trả lời được báo lý do và không sửa được cho đến khi nó được hiện lại.",
+    "reason": "Lý do",
+    "confirmHide": "Ẩn",
+    "restore": "Hiện lại câu hỏi",
+    "restoreAnswer": "Hiện lại câu trả lời",
+    "hidden": "Đã ẩn.",
+    "restored": "Đã hiện lại."
   }
 }

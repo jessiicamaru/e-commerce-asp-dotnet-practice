@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
-import { GavelIcon, LayoutDashboardIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
+import { GavelIcon, LayoutDashboardIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth/useAuth'
 import { cn } from '@/utils/shared'
 
@@ -29,6 +29,7 @@ export function AdminLayout() {
     { to: '/admin/products', end: false, icon: PackageCheckIcon, label: t('menu.review'), adminOnly: false },
     { to: '/admin/shops', end: false, icon: StoreIcon, label: t('menu.shops'), adminOnly: false },
     { to: '/admin/reviews', end: false, icon: MessageSquareIcon, label: t('menu.reviews'), adminOnly: false },
+    { to: '/admin/questions', end: false, icon: MessageCircleQuestionIcon, label: t('menu.questions'), adminOnly: false },
     { to: '/admin/users', end: false, icon: UsersIcon, label: t('menu.users'), adminOnly: false },
     { to: '/admin/audit', end: false, icon: ScrollTextIcon, label: t('menu.audit'), adminOnly: true },
   ].filter((link) => isAdmin || !link.adminOnly)

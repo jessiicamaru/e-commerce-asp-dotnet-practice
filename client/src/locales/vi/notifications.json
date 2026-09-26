@@ -39,6 +39,10 @@
     "ReturnRefused": "Yêu cầu trả hàng của đơn {{order}} bị từ chối: {{reason}}",
     "ReturnSentBack": "Kiện hàng trả lại của đơn {{order}} đang được gửi về cho bạn ({{tracking}}).",
     "ReturnRefunded": "Kiện hàng trả lại của đơn {{order}} đã về; đã hoàn {{amount}}.",
-    "SavedBackInStock": "“{{product}}” bạn đã lưu đã có hàng trở lại"
+    "SavedBackInStock": "“{{product}}” bạn đã lưu đã có hàng trở lại",
+    "NewQuestion": "Có khách hỏi về “{{product}}”",
+    "QuestionAnswered": "Người bán đã trả lời câu hỏi của bạn về “{{product}}”",
+    "QuestionHidden": "Câu hỏi của bạn về “{{product}}” đã bị ẩn: {{reason}}",
+    "AnswerHidden": "Câu trả lời của bạn về “{{product}}” đã bị ẩn: {{reason}}"
   }
 }

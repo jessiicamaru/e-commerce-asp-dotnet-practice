@@ -1,0 +1,38 @@
+info:
+  name: staff hide the answer
+  type: http
+  seq: 74
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/questions/{{questionId}}/answer/hide"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Bruno checks moderation"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the answer is hidden, the question is not", function() {
+          expect(res.body.answerHiddenAt).to.be.a("string");
+          expect(res.body.hiddenAt).to.equal(null);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The question stays and reads as unanswered; whoever answered is told why.
