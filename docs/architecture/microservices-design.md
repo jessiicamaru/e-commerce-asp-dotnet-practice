@@ -71,8 +71,8 @@ graph TD
     Catalog --> Images[/catalog_images volume/]
 ```
 
-Every database is PostgreSQL, one per service, and no service reads another's. The Orchestrator is
-the one service the gateway does not route to: it has no controllers and no `/health` endpoint.
+Every database is PostgreSQL, one per service, and no service reads another's. The Orchestrator has
+no controllers; the gateway routes one address to it, its `/health` (specs/071).
 
 ---
 
@@ -160,7 +160,8 @@ database that publishes or consumes also holds MassTransit's `InboxState`, `Outb
   passes through it. See the [saga roadmap](./saga-orchestration-roadmap.md).
 * **Database**: `ecommerce_saga_db` (port `5436`). Table: `order_state_data`. Its `DbContext` lives
   in the WebApi project.
-* No controllers, so no `/health` and no gateway route.
+* No controllers. `/health` (since specs/071, #115) reports the saga database and the broker, and the gateway
+  routes `/api/orchestrator/health` to it - its only route.
 
 ### 2.6 Inventory (`Ecommerce.Inventory`)
 * **Responsibility**: the sole authority on sellable quantity, per **variant** (its `ProductId`

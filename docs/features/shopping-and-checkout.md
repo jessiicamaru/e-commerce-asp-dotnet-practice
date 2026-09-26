@@ -268,7 +268,6 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 - **Payment is a stub.** It approves or rejects according to `PAYMENT_OUTCOME` and moves no money. A real provider is deliberately deferred; `StubPaymentGateway` is the seam.
 - **One running Payment exercises one branch.** The outcome is resolved at startup, so both branches need two runs with a restart in between.
 - **Discounts come from vouchers only** ([vouchers](vouchers.md), specs/069). No automatic sale prices and no screens yet.
-- **The Orchestrator has no `/health` endpoint** ([#115](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/115)). It is the one service nothing can probe, so an order stuck in `Submitted` usually points at it.
 - **Checkout depends synchronously on Catalog, Cart and Identity.** Any one being down refuses orders with 503.
 - **A shopper sees `Submitted` for the seconds before settlement.** The order page polls for up to 30 s.
 - **Orders from before specs/012 and specs/022** have no stored parts and no currency; they are left null rather than invented.

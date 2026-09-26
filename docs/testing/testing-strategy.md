@@ -8,7 +8,7 @@ works is a test that fails when it does not.
 
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
-| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 726 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
+| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 728 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
 | Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 399 tests in 67 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
 | API collection | Bruno CLI | `bruno/` | 229 requests, 376 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
@@ -38,7 +38,7 @@ DB_PASSWORD=<your password> dotnet test
 | `Ecommerce.Order.Tests` | 5434 | 260 | VoucherPricing, VoucherCheckout, VoucherManagement, SellerInsights, Return, Audit, Cancellation, CheckoutQuote, CheckoutShipping, Delivery, Earnings, Fulfilment, Insights, Notification, OrderCurrency, OrderLanguage, OrderQuery, OrderTotals, Payout, SellerSales, Settlement, Shipment, ShopName, TotalsPersistence, VariantCheckout |
 | `Ecommerce.Inventory.Tests` | 5437 | 51 | RestockReturn, Announcement, Audit, ForgetProduct, ReserveStock, Restock, SellerStock, Settlement |
 | `Ecommerce.Payment.Tests` | 5438 | 25 | ReturnRefund, Audit, ChargeOrder, ConcurrentInsertRecovery, Refund |
-| `Ecommerce.Orchestrator.Tests` | 5436 | 15 | OrderStateMachine (the saga's transitions through MassTransit's harness - the first tests it has had, specs/053), PaymentTimeout (the sweeper's query, the options) |
+| `Ecommerce.Orchestrator.Tests` | 5436 | 17 | Health (the real host, `/health` 200 and 503), OrderStateMachine (the saga's transitions through MassTransit's harness - the first tests it has had, specs/053), PaymentTimeout (the sweeper's query, the options) |
 | `Ecommerce.ApiGateway.Tests` | - | 12 | AuthRateLimit (the gateway's real pipeline through WebApplicationFactory, every destination unreachable: 502 means let through, 429 means refused; no database - specs/062) |
 | `Ecommerce.Activity.Tests` | 5440 | 28 | AuditDiff, AuditLog, AuditTrail, Notification, Redaction |
 

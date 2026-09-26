@@ -36,7 +36,7 @@ eight services, the gateway and the storefront. Open **http://localhost:8088** f
 | `ecommerce-gateway` | `5000` | `8080` | `/health` | Identity, Catalog, Order, Inventory, Payment healthy |
 | `ecommerce-identity` | `5056` REST, `6056` gRPC | `8080`, `8081` | `/health` | its database |
 | `ecommerce-catalog` | `5057` REST, `6057` gRPC | `8080`, `8081` | `/health` | its database, RabbitMQ |
-| `ecommerce-orchestrator` | `5058` | `8080` | **disabled** - no controllers, no `/health` | its database, RabbitMQ |
+| `ecommerce-orchestrator` | `5058` | `8080` | `/health` - the saga database and the broker (specs/071) | its database, RabbitMQ |
 | `ecommerce-order` | `5059` | `8080` | `/health` | its database, RabbitMQ |
 | `ecommerce-inventory` | `5060` | `8080` | `/health` | its database, RabbitMQ, Catalog healthy |
 | `ecommerce-payment` | `5061` | `8080` | `/health` | its database, RabbitMQ |
