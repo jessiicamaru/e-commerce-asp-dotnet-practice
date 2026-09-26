@@ -87,7 +87,8 @@ public static class OrderMapping
         order.Language ?? string.Empty,
         ToShipments(order),
         order.CancelledBy,
-        ToVouchers(order));
+        ToVouchers(order),
+        order.PaidAt);
 
     /// <summary>The vouchers frozen on an order (specs/069), each shop's named by the name frozen on its lines.</summary>
     public static List<AppliedVoucherResponse> ToVouchers(Domain.Entities.Order order) =>

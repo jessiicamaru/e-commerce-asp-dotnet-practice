@@ -292,7 +292,8 @@ public class VoucherCheckoutTests
         await using (var scope = _fixture.NewScope())
         {
             await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Orders.Where(o => o.Id == order)
-                .ExecuteUpdateAsync(x => x.SetProperty(o => o.CreatedAt, day.AddHours(12)));
+                // Revenue is dated by when it was paid (specs/072), so the payment moves to that day with it.
+                .ExecuteUpdateAsync(x => x.SetProperty(o => o.CreatedAt, day.AddHours(12)).SetProperty(o => o.PaidAt, day.AddHours(12)));
         }
 
         _fixture.CurrentUser.Id = mai;

@@ -115,7 +115,8 @@ public record OrderDetailResponse(
     string Language = "",
     List<ShipmentResponse>? Shipments = null,
     string? CancelledBy = null,
-    List<AppliedVoucherResponse>? Vouchers = null
+    List<AppliedVoucherResponse>? Vouchers = null,
+    DateTime? PaidAt = null
 );
 
 /// <summary>

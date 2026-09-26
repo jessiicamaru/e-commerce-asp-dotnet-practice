@@ -66,7 +66,7 @@ sequenceDiagram
 9. **The view endpoint says nothing about the product.** It is anonymous and always answers 204, counted or not. Why: a different answer for an unlisted product would let anyone probe whether an id exists and is waiting for review.
 10. **Every insight is Administrator only.** The controller attribute (`[Authorize(Roles = "Admin")]` on `InsightsController`, and on `top-viewed`, `users/stats` and `users/lookup`) is the whole permission, and a moderator gets 403. The storefront hides the Overview link from moderators, but that only draws; the server decides.
 11. **The daily chart shows every day of the period.** Why: when it drew only days with revenue, a single day of seeded orders produced one bar filling the whole chart with no dates and no baseline. It was reported as nonsense and fixed in [#101](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/101).
-12. **Revenue is grouped by the day the order was placed, in UTC.** An order stores no separate payment time, so `CreatedAt` is used. The spec recorded this as out of scope, and it is open as [#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116).
+12. **Revenue is dated by the day the order was PAID, in UTC** (specs/072, #116). The settlement to `Paid` writes `orders.PaidAt` in its own guarded statement; the period filter and the daily grouping both use `PaidAt ?? CreatedAt`, so an order from before this - which recorded no payment time - keeps the day it was placed. *Why:* an order placed at 23:59 and paid at 00:01 was revenue of the day before it was paid.
 13. **Revenue is the order's `TotalAmount`; product revenue is goods only.** Revenue includes delivery and tax, as charged. A top product's revenue is `Quantity * UnitPrice` of its lines, before tax and without delivery. The two are different measures and are not expected to reconcile.
 14. **A product's name in "top selling" is the one frozen on its most recent order line**, in the language that order was placed in. Order does not ask Catalog. A deleted product still appears. "Most viewed" names the product by Catalog's current default-language `Name`, and a deleted product drops out of it (its `product_views` rows are deleted with it).
 
@@ -129,7 +129,6 @@ The plan records two mutation checks: counting cancelled orders as revenue, and 
 
 ## Known limits
 
-- **Revenue is counted on the day the order was placed, not the day it was paid** ([#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116)). An order placed before midnight and settled after it lands on the earlier day.
 - **Days are UTC days.** The shop's customers are mostly in Vietnam (UTC+7), so an order placed at 06:00 local time counts on the previous day.
 - **Views are not deduplicated.** The endpoint is anonymous and has no rate limit, so repeated requests inflate a count. The storefront sends one per product opened, per page load.
 - **Headline counts are now, not for the period.** "Customers" includes sellers, who also hold `Customer`. "Stopped" adds locked and banned, so an account that is both counts twice.

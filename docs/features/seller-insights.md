@@ -75,7 +75,7 @@ No message and no table is new. The reads use `order_items`, `order_shipments`, 
 
 - **The admin Overview still counts a returned sale.** Its revenue is order totals, and refunds do not reduce
   it (specs/066).
-- **Revenue is dated by when the order was placed, in UTC**, as on the Overview ([#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116)).
+- **Days are UTC days.** Revenue is dated by when the order was paid (specs/072), as on the Overview.
 - **No comparison with a previous period, and no export.**
 
 ## History

@@ -40,6 +40,13 @@ public class Order
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// When the saga settled it to Paid (specs/072, #116) - the day its revenue belongs to. Written by the one
+    /// guarded statement that settles it, so a redelivery never moves it. Null while it is settling, when it
+    /// failed, and on orders from before this: the reports then use <see cref="CreatedAt"/>, as they always did.
+    /// </summary>
+    public DateTime? PaidAt { get; set; }
+
+    /// <summary>
     /// The language this order was placed in, and therefore the language of the words frozen on its
     /// lines (specs/021). Null on orders placed before that, which read as the shop's default.
     /// </summary>

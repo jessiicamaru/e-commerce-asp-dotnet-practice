@@ -105,7 +105,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 setters => setters
                     .SetProperty(x => x.Status, settledStatus)
                     .SetProperty(x => x.FailureReason, failureReason)
-                    .SetProperty(x => x.UpdatedAt, settledAt),
+                    .SetProperty(x => x.UpdatedAt, settledAt)
+                    // The day its revenue belongs to (specs/072): written here, in the guard's statement, so it
+                    // is set exactly once - and never for a failure.
+                    .SetProperty(x => x.PaidAt, settledStatus == OrderStatus.Paid ? settledAt : null),
                 cancellationToken);
     }
 
