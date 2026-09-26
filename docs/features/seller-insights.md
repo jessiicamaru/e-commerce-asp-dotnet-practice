@@ -34,7 +34,7 @@ Neither service is told who the seller is: the token says (Constitution IV).
    - The admin Overview still counts it. That is a known limit, below.
 4. **An order counts once** per day and currency, however many of the seller's lines it holds.
 5. **Money is never added across currencies.**
-6. **One period rule** (specs/055): whole UTC days, both ends included, at most 366.
+6. **One period rule** (specs/055): whole days of the shop (specs/082), both ends included, at most 366.
 7. **The rating is weighted by each product's review count.** One review at 4 and three at 2 give 2.5, not
    3.0. It comes from each product's stored `RatingAverage` and `RatingCount`, which are recomputed from the
    visible reviews on every write (specs/046). With no reviews at all it is null, never zero.
@@ -75,7 +75,6 @@ No message and no table is new. The reads use `order_items`, `order_shipments`, 
 
 - **The admin Overview still counts a returned sale.** Its revenue is order totals, and refunds do not reduce
   it (specs/066).
-- **Days are UTC days.** Revenue is dated by when the order was paid (specs/072), as on the Overview.
 - **No comparison with a previous period, and no export.**
 
 ## History
@@ -83,3 +82,4 @@ No message and no table is new. The reads use `order_items`, `order_shipments`, 
 | Spec | PR | Added |
 | :-- | :-- | :-- |
 | [068-seller-insights](../../specs/068-seller-insights/) | #152 | The two Order endpoints, Catalog's `insights/mine`, and the Insights page, with the Overview's pieces moved to `components/insights` (#111). |
+| [082-insights-local-days](../../specs/082-insights-local-days/) | #170 | A seller's days are the shop's days, Hanoi's by default (#168). |

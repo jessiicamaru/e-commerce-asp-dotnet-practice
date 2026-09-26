@@ -97,7 +97,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
+`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (264 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (205 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (163 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
@@ -408,7 +408,7 @@ client from three services, each answering from its own data: Order (`/api/order
 `OrderInsights.Sold`: Paid, Completed, Preparing, Shipped - never failed, cancelled or still settling;
 and **money is never added across currencies**. A sale is dated by **when it was paid** -
 `orders.PaidAt`, written by the settlement's own guarded statement (specs/072, #116) - falling back to
-`CreatedAt` for orders from before it. ⚠️ **One period rule** for all four (`Ecommerce.Shared.Insights.InsightsPeriod`, specs/055): whole UTC days, both ends included, at most 366 - a new insight validates with `ValidPeriod`, or its totals and the chart stop covering the same days (#125). **A seller has the same page for their own shop** at `/shop/insights` (specs/068): `/api/orders/sales/insights/{revenue,top-products}` and `/api/products/insights/mine`, `Seller` only, no seller id in any request - revenue is **their lines before tax** (never an order's total), less a part whose return was `Received`, and the rating is weighted by each product's review count. The chart, revenue panel, list and period picker are shared in `client/src/components/insights`. A product view is its own request
+`CreatedAt` for orders from before it. ⚠️ **One period rule** for all four (`Ecommerce.Shared.Insights.InsightsPeriod`, specs/055): whole days **of the shop** (`InsightsCalendar`, `Insights:TimeZone`, `Asia/Ho_Chi_Minh` by default - specs/082), both ends included, at most 366 - a new insight validates with `ValidPeriod(..., calendar)`, or its totals and the chart stop covering the same days (#125). The chart draws the response's `firstDay`..`lastDay`, never days the browser worked out. ⚠️ Group by `TimeZoneInfo.ConvertTimeBySystemTimeZoneId(x, calendar.ZoneId).Date` (Npgsql's `AT TIME ZONE`); `EF.Functions.AtTimeZone` has no `DateTime` overload. **A seller has the same page for their own shop** at `/shop/insights` (specs/068): `/api/orders/sales/insights/{revenue,top-products}` and `/api/products/insights/mine`, `Seller` only, no seller id in any request - revenue is **their lines before tax** (never an order's total), less a part whose return was `Received`, and the rating is weighted by each product's review count. The chart, revenue panel, list and period picker are shared in `client/src/components/insights`. A product view is its own request
 (`POST /api/products/{id}/view`, anonymous, always 204), counted per product per day by an upsert that
 increments in SQL, and only for a shopper looking at something on sale - not a side effect of
 `GET /products/{id}`, which the seller page and focus refetches call repeatedly.

@@ -136,6 +136,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [079](../../specs/079-object-storage/) | Object storage | #163 | #114: product images in an S3-compatible bucket every Catalog instance shares - SeaweedFS in compose and CI (MinIO no longer publishes images); the old volume imported at startup; verified with two live instances |
 | [080](../../specs/080-e2e-browser/) | Browser end to end | #164 | #117: Playwright drives the storefront against the compose stack - a moderator approves, a customer buys and pays, the seller ships, the customer confirms and reviews; Edge locally, Chromium in CI; found and fixed a toast lost whenever saving remounts its form |
 | [081](../../specs/081-unlisted-product-reads/) | Unlisted product reads | #169 | #166: a product off the shelf no longer serves its image, reviews or questions to anyone - reviews and questions follow the public lookup's rule, images need their own `ImageAccessKey` |
+| [082](../../specs/082-insights-local-days/) | Insights in the shop's days | #170 | #168: every insight counts the shop's days (`Insights:TimeZone`, Asia/Ho_Chi_Minh) - an order paid at 06:30 in Hanoi is that morning's - and the chart draws the days the server counted |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.
