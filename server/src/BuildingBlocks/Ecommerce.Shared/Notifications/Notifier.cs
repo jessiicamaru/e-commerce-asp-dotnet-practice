@@ -51,6 +51,12 @@ public static class NotificationKind
 
     // A saved product came back in stock (specs/075)
     public const string SavedBackInStock = "SavedBackInStock";
+
+    // Questions about a product (specs/076)
+    public const string NewQuestion = "NewQuestion";
+    public const string QuestionAnswered = "QuestionAnswered";
+    public const string QuestionHidden = "QuestionHidden";
+    public const string AnswerHidden = "AnswerHidden";
 }
 
 /// <summary>
