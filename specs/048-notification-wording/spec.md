@@ -1,6 +1,15 @@
 # Feature Specification: Notification wording
 
+> Completed on 2026-09-27, after the feature merged (#129), from the code at that merge, the pull request and
+> docs/features/audit-and-notifications.md.
+
 **Feature Branch**: `048-notification-wording` | **Created**: 2026-09-24 | **Issue**: #119
+
+**Status**: Merged (#129, 2026-09-24T06:08Z)
+
+**Input**: issue #119, "five notification kinds show their placeholders instead of words" - found while
+writing `docs/features/`, where the docs describe the code as it is and the code disagreed with its own
+rules.
 
 ## Why
 
@@ -15,13 +24,23 @@ is a kind and a bag of strings (specs/042). Specs/044, 045 and 046 each added ki
 server and strings on the client. The only tests covered the order kinds, and they check the client
 against data the test itself made up.
 
-## User Scenarios
+The five kinds are `ShopRejected`, `ProductApproved`, `ProductRejected`, `ProductTakenDown` and
+`NewReview`. i18next leaves a placeholder with no value as literal text, which is why the holes showed
+rather than an empty string.
 
-### US1 - Every notice reads as a sentence (P1)
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Every notice reads as a sentence (Priority: P1)
 
 A seller opens the bell after a moderator refused their product. They read "“Fujifilm X-T5” was not
 approved: the photos are blurred", in Vietnamese or English, whichever they use now. The same holds for
 every kind any service can send.
+
+**Why this priority**: this is the defect people see. A refusal without its reason is the one notice a
+seller most needs to read, and it was the one that arrived broken.
+
+**Independent Test**: render each declared kind in each language with a value for each of its keys and
+check the sentence has no `{{`, is not the generic fallback and shows every value.
 
 **Acceptance**
 1. Each of the 16 kinds renders in both languages with no `{{` left, and with the value of every key the
@@ -30,10 +49,17 @@ every kind any service can send.
 3. A notice whose data lacks a value its sentence needs, such as one stored by an older service, reads
    "You have a new update." It never shows a sentence with a hole in it.
 
-### US2 - A mismatch between server and storefront fails a test (P1)
+### User Story 2 - A mismatch between server and storefront fails a test (Priority: P1)
 
 A developer renames a data key on the server, adds a key or adds a kind, and forgets the storefront. A
 test fails on the side they changed and names the kind and the key.
+
+**Why this priority**: without it US1 is fixed once and breaks again with the next kind - the same way
+specs/044-046 broke it. It shares P1 because the fix alone does not stop the recurrence.
+
+**Independent Test**: add a kind to `NotificationKind` without declaring it, or stop sending a declared
+key, and watch a server test go red naming it; add a key to the declaration with no sample in the client
+test and watch that test go red naming it.
 
 **Acceptance**
 1. Server: every notice published in the existing notification tests carries exactly the keys declared
@@ -42,7 +68,18 @@ test fails on the side they changed and names the kind and the key.
 3. Client: every declared kind has a sentence in both languages. Every declared key is either shown or
    deliberately consumed, such as `currency`. The client has no sentence for an undeclared kind.
 
-## Requirements
+### Edge Cases
+
+- **A notice stored before a key existed**, or by an older service: the generic sentence, never a hole.
+- **A kind the storefront does not know yet**: the generic sentence (unchanged from specs/042).
+- **`shop` missing.** On `ParcelShipped` a missing seller means the shop's own goods and reads "the
+  shop"; on `ShopApproved` / `ShopRejected` a missing name is a hole and falls back.
+- **`rating` that is not a number**: no plural count is passed; the sentence is still filled.
+- **`currency` and `by`** are consumed, not shown: `currency` formats `total` and `amount`; `by` becomes
+  "you" or "the shop".
+- **Vietnamese has no plural**: one `NewReview` string.
+
+## Requirements *(mandatory)*
 
 - **FR-001**: The data keys of each notification kind are declared once, in one file both the server
   tests and the client tests read.
@@ -50,6 +87,21 @@ test fails on the side they changed and names the kind and the key.
 - **FR-003**: A sentence that would have an empty placeholder falls back to the generic text.
 - **FR-004**: The declaration is not enforced at run time. A wording mismatch must not fail the business
   transaction that sends the notice. The tests enforce it.
+- **FR-005**: The English review notice agrees with its rating in number ("1 star", "5 stars").
+
+### Key Entities
+
+- **Kind declaration**: for each notification kind, the data keys it must carry (`required`) and may
+  carry (`optional`). Sixteen kinds at the merge.
+
+## Success Criteria *(mandatory)*
+
+- **SC-001**: All 16 declared kinds render in English and Vietnamese with no `{{` and with every shown
+  value present - 32 generated client tests.
+- **SC-002**: Before the fix, the new client tests fail for exactly the five kinds in both languages; after
+  it, they pass.
+- **SC-003**: Each mutation - a server call site dropping a key, an undeclared kind, the client dropping a
+  pass-through, the fallback removed, a declared key the client never learned - turns a test red.
 
 ## Out of scope
 
