@@ -106,7 +106,7 @@ the answer before it can continue. Details: [microservices design](../architectu
 | Service, saga and gateway tests | 809, in 9 projects |
 | Storefront unit tests | 466 |
 | Bruno requests | 272 |
-| Design records (`specs/`) | 75 |
+| Design records (`specs/`) | 87, each with the full set of specs/001 |
 | Merged pull requests | 93 |
 | Published images | 10 - eight services, the gateway and the storefront |
 
