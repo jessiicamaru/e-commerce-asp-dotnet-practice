@@ -20,5 +20,5 @@
   - return decisions and the refund;
   - back in stock asks for one email per saver, and nothing for a product off the shelf;
   - storefront: every template is named in both languages.
-- [ ] T005 Mutations, Bruno and Mailpit against the rebuilt stack, and the docs: email feature page,
+- [X] T005 Mutations, Bruno and Mailpit against the rebuilt stack, and the docs: email feature page,
   moderation page, CLAUDE.md, counts, timeline and backlog.
