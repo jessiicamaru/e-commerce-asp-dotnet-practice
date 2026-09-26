@@ -135,7 +135,8 @@ store's directory under `dotnet run`, named by the key derived from the row.
 | Setting | Meaning |
 | :-- | :-- |
 | `ProductImages:Store` | `FileSystem` (the default) or `S3`. |
-| `ProductImages:S3:ServiceUrl`, `Bucket`, `AccessKey`, `SecretKey`, `Region` | Where the bucket is and who Catalog is to it. A missing one refuses to start, naming it. |
+| `ProductImages:S3:ServiceUrl`, `Bucket`, `AccessKey`, `SecretKey` | Where the bucket is and who Catalog is to it. A missing one refuses to start, naming it. |
+| `ProductImages:S3:Region`, `PageSize` | The signing region (default `us-east-1`) and how many keys one listing page asks for (1 to 1000; outside that, Catalog refuses to start). |
 | `ProductImages:ImportFrom` | A directory whose images the bucket lacks are copied in at startup. |
 
 ## API
