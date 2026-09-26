@@ -58,6 +58,18 @@ describe('AdminUsersPage (specs/043)', () => {
     expect(screen.getByText('Banned')).toBeInTheDocument()
   })
 
+  /** specs/095: a ban closes a seller's shop, and the page says so; a customer's ban does not mention a shop. */
+  it("says a banned seller's shop is closed", async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(
+      person({ id: 's', email: 'seller@example.test', roles: ['Customer', 'Seller'], bannedAt: '2026-09-20T00:00:00Z', banReason: 'Fakes' }),
+      person({ id: 'c', email: 'customer@example.test', bannedAt: '2026-09-20T00:00:00Z', banReason: 'Fraud' }),
+    ))
+    renderPage(renderAsAdmin)
+
+    expect(await screen.findByText('Banned · shop closed')).toBeInTheDocument()
+    expect(screen.getByText('Banned')).toBeInTheDocument()
+  })
+
   it('lets an administrator make somebody a moderator', async () => {
     vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
     const grant = vi.spyOn(Accounts, 'grantModerator').mockResolvedValue(person({ roles: ['Customer', 'Moderator'] }))

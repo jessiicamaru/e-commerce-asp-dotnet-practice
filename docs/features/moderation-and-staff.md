@@ -172,7 +172,9 @@ on its own.
    same limits** (`EnsureMayRelease`, specs/050), and a moderator lifts only a lock with 30 days or
    fewer to run - nor shortens a longer one by locking again (`EnsureMayShorten`, specs/088).
 5. **A moderator locks for at most 30 days; only an administrator bans.** A ban has no end date and
-   lasts until an administrator lifts it.
+   lasts until an administrator lifts it. **A banned seller's shop is closed** (specs/095, #193): the ban announces
+   `SellerSuspensionChangedEvent` and Catalog takes every product of theirs off the shelf until the ban is lifted; a
+   lock does not close a shop. Approving a banned applicant's shop is 409. The users page reads "Banned · shop closed".
 6. **A lock and a ban are columns, not a status.** *Why:* they can overlap, and an earlier image must
    still parse the row - the migration only adds nullable columns (specs/043 D1).
 7. **Sign-in says why only after the right password.** Before it, a locked account and a wrong

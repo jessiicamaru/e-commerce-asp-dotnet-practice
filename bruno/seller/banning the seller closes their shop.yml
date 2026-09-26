@@ -1,0 +1,35 @@
+info:
+  name: banning the seller closes their shop
+  type: http
+  seq: 18
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users/{{sellerId}}/ban"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Bruno checks that a ban closes the shop"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/095 (#193): a banned seller's products used to stay on sale. Identity now announces the shop closed, in the
+  ban's transaction, and Catalog takes the products off the shelf.

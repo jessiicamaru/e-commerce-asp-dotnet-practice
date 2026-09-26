@@ -1,10 +1,10 @@
 # Messages
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `6149cdc`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `2180af2`. Do not edit by hand - change the code and run the script again.
 
 Every integration message in `Ecommerce.Contracts` - the only coupling between services - with who publishes it and who consumes it. Every publish goes through the publisher's transactional outbox, and every consumer is idempotent (see [reliable messaging](../architecture/reliable-messaging-and-outbox-pattern.md)). A consumer's class name is its queue name, so two services never share one.
 
-**24 messages.**
+**25 messages.**
 
 | Message | Owner | Published by | Consumed by |
 | :-- | :-- | :-- | :-- |
@@ -17,6 +17,7 @@ Every integration message in `Ecommerce.Contracts` - the only coupling between s
 | `EmailRequested` | Identity | any service, through `Ecommerce.Shared` | Identity (`QueueEmailConsumer`) |
 | `SellerRegisteredEvent` | Identity | Identity | Catalog (`SellerRegisteredConsumer`) |
 | `SellerRenamedEvent` | Identity | Identity | Catalog (`SellerRenamedConsumer`) |
+| `SellerSuspensionChangedEvent` | Identity | Identity | Catalog (`SellerSuspensionChangedConsumer`) |
 | `InventoryReservationFailedEvent` | Inventory | Inventory | Orchestrator (saga) |
 | `InventoryReservedEvent` | Inventory | Inventory | Orchestrator (saga) |
 | `ReleaseInventoryCommand` | Inventory | Orchestrator | Inventory (`ReleaseInventoryConsumer`) |

@@ -1,0 +1,32 @@
+info:
+  name: a banned sellers product is off the shelf
+  type: http
+  seq: 19
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  auth:
+    auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Catalog learns of the ban by message (specs/095 D2): give the broker a moment.
+        await new Promise(function(resolve) { setTimeout(resolve, 2000); });
+    - type: tests
+      code: |-
+        test("status 404 to a shopper", function() {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The same 404 as a product taken down (specs/081, 092). Eventually consistent by design: if this is ever flaky, the
+  message had not arrived yet.
