@@ -36,10 +36,25 @@ public static class DependencyInjection
         services.AddScoped<ILiveImageKeys>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<ISellerRepository, SellerRepository>();
 
-        // Product images (specs/019): a directory, which assumes one Catalog instance. In containers
-        // it is the catalog_images volume; unset, a folder beside the process.
-        var imageRoot = configuration["ProductImages:Root"] is { Length: > 0 } root ? root : "data/product-images";
-        services.AddSingleton<IProductImageStore>(_ => new FileSystemProductImageStore(imageRoot));
+        // Product images: an S3-compatible bucket every instance shares (specs/079) - the containers' choice - or a
+        // directory, which assumes one Catalog instance (specs/019) and needs no server: `dotnet run`'s default.
+        var store = configuration["ProductImages:Store"] is { Length: > 0 } chosen ? chosen : "FileSystem";
+        if (string.Equals(store, "S3", StringComparison.OrdinalIgnoreCase))
+        {
+            var s3 = new S3ImageStoreOptions();
+            configuration.GetSection("ProductImages:S3").Bind(s3);
+            services.AddSingleton(s3);
+            services.AddSingleton<IProductImageStore>(sp => new S3ProductImageStore(sp.GetRequiredService<S3ImageStoreOptions>()));
+        }
+        else if (string.Equals(store, "FileSystem", StringComparison.OrdinalIgnoreCase))
+        {
+            var imageRoot = configuration["ProductImages:Root"] is { Length: > 0 } root ? root : "data/product-images";
+            services.AddSingleton<IProductImageStore>(_ => new FileSystemProductImageStore(imageRoot));
+        }
+        else
+        {
+            throw new InvalidOperationException($"ProductImages:Store must be FileSystem or S3, not '{store}'.");
+        }
 
         return services;
     }

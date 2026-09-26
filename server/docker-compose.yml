@@ -215,6 +215,29 @@ services:
       - mailpit_data:/data
     restart: unless-stopped
 
+  # Product images in object storage (specs/079, #114): S3-compatible, so every Catalog instance sees the same
+  # bucket. SeaweedFS because MinIO no longer publishes community images. `weed mini` runs master, volume, filer
+  # and the S3 gateway in one process - development only; production points Catalog at real S3.
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.47
+    container_name: e-commerce-seaweedfs
+    command: ["mini", "-dir=/data", "-bucket=product-images", "-master.telemetry=false", "-admin.ui=false"]
+    environment:
+      # The one identity the gateway accepts (SigV4; a wrong secret is 403). Required, like every other secret.
+      AWS_ACCESS_KEY_ID: ${SEAWEEDFS_ACCESS_KEY:?SEAWEEDFS_ACCESS_KEY must be set in .env}
+      AWS_SECRET_ACCESS_KEY: ${SEAWEEDFS_SECRET_KEY:?SEAWEEDFS_SECRET_KEY must be set in .env}
+    ports:
+      - "8333:8333"   # S3 only; the master, filer and admin ports stay inside
+    volumes:
+      - seaweedfs_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
 volumes:
   postgres_identity_data:
   postgres_catalog_data:
@@ -227,3 +250,4 @@ volumes:
   rabbitmq_data:
   mailpit_data:
   seq_data:
+  seaweedfs_data:

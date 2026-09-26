@@ -265,8 +265,26 @@ builder.AddObservability("catalog");
 var app = builder.Build();
 
 // Resolved now, not on the first upload: an image root that cannot be written stops the service here,
-// as the constitution asks of anything required, instead of answering 500 later (specs/019 D8).
-app.Services.GetRequiredService<Ecommerce.Catalog.Application.Common.Interfaces.IProductImageStore>();
+// as the constitution asks of anything required, instead of answering 500 later (specs/019 D8). A bucket is checked
+// the same way - created if missing, then a probe written - with half a minute for the S3 server to come up.
+var imageStore = app.Services.GetRequiredService<Ecommerce.Catalog.Application.Common.Interfaces.IProductImageStore>();
+if (imageStore is Ecommerce.Catalog.Infrastructure.Images.S3ProductImageStore bucket)
+{
+    await bucket.EnsureReadyAsync(TimeSpan.FromSeconds(30));
+
+    // The one-off move off the catalog_images volume (specs/079): whatever the old directory holds and the bucket
+    // lacks. Idempotent and safe on several instances, so it simply runs at every start while the volume is mounted.
+    if (app.Configuration["ProductImages:ImportFrom"] is { Length: > 0 } importFrom && Directory.Exists(importFrom))
+    {
+        var imported = await Ecommerce.Catalog.Infrastructure.Images.ProductImageImport.RunAsync(
+            new Ecommerce.Catalog.Infrastructure.Images.FileSystemProductImageStore(importFrom, probe: false), bucket);
+        app.Logger.LogInformation(
+            "Product images imported from {From} into bucket {Bucket}: {Copied} copied, {AlreadyThere} already there, {Failed} failed.",
+            importFrom, bucket.Bucket, imported.Copied, imported.AlreadyThere, imported.Failed.Count);
+        foreach (var failure in imported.Failed)
+            app.Logger.LogWarning("Product image not imported: {Failure}", failure);
+    }
+}
 
 app.UseExceptionHandler();
 

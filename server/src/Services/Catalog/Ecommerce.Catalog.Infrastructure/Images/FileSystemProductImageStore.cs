@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 
 namespace Ecommerce.Catalog.Infrastructure.Images;
@@ -18,20 +17,29 @@ namespace Ecommerce.Catalog.Infrastructure.Images;
 /// or written stops the service, rather than surfacing as a 500 on the first upload.
 /// </para>
 /// </remarks>
-public sealed partial class FileSystemProductImageStore : IProductImageStore
+public sealed class FileSystemProductImageStore : IProductImageStore
 {
     private readonly string _root;
 
-    public FileSystemProductImageStore(string root)
+    /// <param name="probe">
+    /// False only to READ an existing directory - the old volume the S3 import copies from (specs/079), mounted
+    /// read-only, where a write probe would fail by design.
+    /// </param>
+    public FileSystemProductImageStore(string root, bool probe = true)
     {
         _root = Path.GetFullPath(root);
+
+        if (!probe)
+        {
+            return;
+        }
 
         try
         {
             Directory.CreateDirectory(_root);
-            var probe = Path.Combine(_root, $".write-probe-{Guid.NewGuid():N}");
-            File.WriteAllBytes(probe, []);
-            File.Delete(probe);
+            var probeFile = Path.Combine(_root, $".write-probe-{Guid.NewGuid():N}");
+            File.WriteAllBytes(probeFile, []);
+            File.Delete(probeFile);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -131,18 +139,7 @@ public sealed partial class FileSystemProductImageStore : IProductImageStore
     /// </summary>
     private string PathFor(string key)
     {
-        if (!SafeKey().IsMatch(key))
-        {
-            throw new ArgumentException($"'{key}' is not a product image key.", nameof(key));
-        }
-
+        ProductImageKeys.EnsureSafe(key);
         return Path.Combine(_root, key);
     }
-
-    // {id}-{version}.{ext}, optionally prefixed "variant-" (specs/032). The prefix is what keeps a
-    // variant's image from colliding with its product's, since the first variant of a product
-    // REUSES the product's id (specs/020). Still no slash, no dot segment, no traversal - which is
-    // the whole reason this pattern exists.
-    [GeneratedRegex("^(variant-)?[a-z0-9]+-[0-9]+\\.(jpg|png|webp)$")]
-    private static partial Regex SafeKey();
 }
