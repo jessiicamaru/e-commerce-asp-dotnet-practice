@@ -28,7 +28,7 @@ description: "Task list for One rule for off the shelf"
 
 - [X] T006 Mutations (quickstart Scenario 4) - each red; `Ecommerce.Catalog.Tests` 216/216; `IsListed` read only by `OnShelf`
 - [X] T007 Docs: `docs/features/catalog.md`, `docs/features/admin-insights.md`, `docs/project/backlog.md`, `docs/project/timeline.md`, CLAUDE.md
-- [ ] T008 Merged as #191, closing #185
+- [X] T008 Merged as #191 (2026-09-27), closing #185
 
 ## Verification
 
