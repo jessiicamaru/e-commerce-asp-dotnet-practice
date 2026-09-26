@@ -27,7 +27,7 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
     /// Sold orders in the period, dated by when they were PAID (specs/072, #116) - or, for an order from before
     /// that was recorded, when it was placed. ⚠️ The same <c>PaidAt ?? CreatedAt</c> is written in the grouping
     /// below and in <see cref="SellerLinesIn"/>: the period and the day an order is counted on must agree (#125),
-    /// and EF cannot share one expression into an anonymous GroupBy key, so InsightsTests holds them together.
+    /// and EF cannot share one expression into an anonymous GroupBy key, so RevenueDayTests holds them together.
     /// </summary>
     private IQueryable<Domain.Entities.Order> SoldIn(DateTime from, DateTime to) =>
         _context.Orders.AsNoTracking().Where(o => Sold.Contains(o.Status) && (o.PaidAt ?? o.CreatedAt) >= from && (o.PaidAt ?? o.CreatedAt) < to);
