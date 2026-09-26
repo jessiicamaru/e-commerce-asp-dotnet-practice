@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Application.Products.Saved;
 using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using MediatR;
@@ -88,19 +89,7 @@ public class RecordStockAvailabilityCommandHandler(
             return;
         }
 
-        var savers = await _saved.SaverIdsAsync(productId, cancellationToken);
-        foreach (var saver in savers)
-        {
-            await _notifier.NotifyAsync(
-                saver, NotificationKind.SavedBackInStock, new Dictionary<string, string> { ["product"] = product.Name },
-                $"/products/{productId}", cancellationToken);
-            // And by email (specs/083) - in the saver's own language, which only Identity knows.
-            await _email.SendAsync(
-                saver, EmailTemplate.SavedBackInStock,
-                new Dictionary<string, string> { ["productId"] = productId.ToString(), ["product"] = product.Name },
-                EmailTemplate.ReadersLanguage, cancellationToken);
-        }
-
-        _logger.LogInformation("Product {ProductId} is back in stock; told {Count} shopper(s) who saved it.", productId, savers.Count);
+        var told = await SavedProductNotices.BackOnSaleAsync(product, _saved, _notifier, _email, cancellationToken);
+        _logger.LogInformation("Product {ProductId} is back in stock; told {Count} shopper(s) who saved it.", productId, told);
     }
 }

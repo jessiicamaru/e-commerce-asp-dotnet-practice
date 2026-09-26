@@ -1,3 +1,6 @@
+using Ecommerce.Catalog.Application.Products.Saved;
+using Ecommerce.Shared.Email;
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
@@ -56,10 +59,16 @@ public class AddProductVariantCommandHandler(
     IProductRepository products,
     IPublishEndpoint publishEndpoint,
     ICurrentUser currentUser,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    ISavedProductRepository saved,
+    INotifier notifier,
+    IEmailSender email)
     : IRequestHandler<AddProductVariantCommand, VariantResponse>
 {
     private readonly IAuditTrail _audit = audit;
+    private readonly ISavedProductRepository _saved = saved;
+    private readonly INotifier _notifier = notifier;
+    private readonly IEmailSender _email = email;
 
     private readonly IProductRepository _products = products;
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
@@ -135,10 +144,10 @@ public class AddProductVariantCommandHandler(
         // New option words and a new shape on the listing: reviewed like any seller edit of what a shopper
         // reads (#126, specs/056). Staff pass, as for the other edits.
         await ProductReview.AfterSellerEditAsync(product, _currentUser, _audit, cancellationToken);
-        await _products.SaveChangesAsync(cancellationToken);
-
-        // The product's "from" price and availability follow its variants.
-        await _products.RecomputeProductRollupAsync(product.Id, cancellationToken);
+        // The product's "from" price and availability follow its variants - recomputed with the change, telling
+        // whoever saved it if that put it back in stock (#182, specs/091).
+        await _products.SaveAndRecomputeRollupAsync(
+            product.Id, SavedProductNotices.WhenBackInStock(_products, product.Id, _saved, _notifier, _email), cancellationToken);
 
         return VariantResponse.From(variant);
     }

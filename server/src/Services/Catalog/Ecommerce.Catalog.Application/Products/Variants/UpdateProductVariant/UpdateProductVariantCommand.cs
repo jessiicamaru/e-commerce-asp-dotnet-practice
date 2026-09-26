@@ -1,3 +1,6 @@
+using Ecommerce.Catalog.Application.Products.Saved;
+using Ecommerce.Shared.Email;
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
@@ -41,10 +44,16 @@ public class UpdateProductVariantCommandValidator : AbstractValidator<UpdateProd
 }
 
 public class UpdateProductVariantCommandHandler(IProductRepository products, ICurrentUser currentUser,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    ISavedProductRepository saved,
+    INotifier notifier,
+    IEmailSender email)
     : IRequestHandler<UpdateProductVariantCommand, VariantResponse>
 {
     private readonly IAuditTrail _audit = audit;
+    private readonly ISavedProductRepository _saved = saved;
+    private readonly INotifier _notifier = notifier;
+    private readonly IEmailSender _email = email;
 
     private readonly IProductRepository _products = products;
     private readonly ICurrentUser _currentUser = currentUser;
@@ -77,8 +86,10 @@ public class UpdateProductVariantCommandHandler(IProductRepository products, ICu
         await _audit.RecordAsync(
             AuditCategory.Catalog, "VariantUpdated", "Variant", variant.Id.ToString(), $"Edited {variant.Sku}",
             before, CatalogAudit.Of(variant), cancellationToken: cancellationToken);
-        await _products.SaveChangesAsync(cancellationToken);
-        await _products.RecomputeProductRollupAsync(variant.ProductId, cancellationToken);
+        // Reactivating a variant in stock is the product coming back for whoever saved it (#182, specs/091).
+        await _products.SaveAndRecomputeRollupAsync(
+            variant.ProductId, SavedProductNotices.WhenBackInStock(_products, variant.ProductId, _saved, _notifier, _email),
+            cancellationToken);
 
         return VariantResponse.From(variant);
     }

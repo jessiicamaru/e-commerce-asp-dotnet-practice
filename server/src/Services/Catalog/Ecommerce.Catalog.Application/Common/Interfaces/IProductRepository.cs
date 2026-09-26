@@ -170,6 +170,14 @@ public interface IProductRepository : ILiveImageKeys
     /// (specs/075) - what a saved product's back-in-stock notice is about.
     /// </returns>
     Task<bool> RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Saves what the caller staged, recomputes the product's rollup, and - only when that flipped it back in
+    /// stock - runs <paramref name="whenBackInStock"/> and saves what it staged, all in one transaction (#182,
+    /// specs/091). Joins a transaction already open. Returns whether it flipped.
+    /// </summary>
+    Task<bool> SaveAndRecomputeRollupAsync(
+        Guid productId, Func<CancellationToken, Task> whenBackInStock, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

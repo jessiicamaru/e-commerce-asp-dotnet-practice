@@ -197,6 +197,39 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         return flips.Count == 1 && !flips[0].Was && flips[0].Now;
     }
 
+    public async Task<bool> SaveAndRecomputeRollupAsync(
+        Guid productId, Func<CancellationToken, Task> whenBackInStock, CancellationToken cancellationToken = default)
+    {
+        async Task<bool> RunAsync(CancellationToken ct)
+        {
+            await _context.SaveChangesAsync(ct);
+            var back = await RecomputeProductRollupAsync(productId, ct);
+            if (back)
+            {
+                await whenBackInStock(ct);
+                await _context.SaveChangesAsync(ct);
+            }
+
+            return back;
+        }
+
+        // Inside a consumer's transaction already: take part in it rather than open a second one.
+        if (_context.Database.CurrentTransaction is not null)
+        {
+            return await RunAsync(cancellationToken);
+        }
+
+        // Production retries (EnableRetryOnFailure), and a transaction outside a strategy throws.
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            var back = await RunAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return back;
+        });
+    }
+
     private sealed class RollupFlip
     {
         public bool Was { get; init; }
