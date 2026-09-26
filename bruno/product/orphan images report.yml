@@ -26,8 +26,10 @@ runtime:
             expect(res.body.liveKeys).to.be.greaterThan(0);
           }
         });
-        test("it says which assumption makes it destructive if broken", function() {
-          expect(res.body.note).to.contain("One Catalog instance");
+        test("it says which store it read - one instance's directory, or the bucket they share (specs/079)", function() {
+          const oneInstance = res.body.note.includes("One Catalog instance");
+          const shared = res.body.note.includes("shared object storage");
+          expect(oneInstance || shared, res.body.note).to.equal(true);
         });
         test("reporting changes nothing - there is no removed field", function() {
           expect(res.body).to.not.have.property("removed");

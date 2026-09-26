@@ -88,14 +88,19 @@ services:
       # gRPC, on its own port. One plaintext port cannot serve HTTP/1.1 and HTTP/2:
       # telling them apart needs ALPN, which is part of TLS. Verified on .NET 10.
       CATALOG_GRPC_PORT: "8081"
-      # Product images live on a volume, not in the image or the database (specs/019). A directory
-      # assumes ONE Catalog instance; object storage behind IProductImageStore is what scales.
-      ProductImages__Root: /app/data/product-images
+      # Product images in object storage (specs/079, #114): a bucket every Catalog instance shares -
+      # SeaweedFS here, real S3 anywhere else. The directory store (specs/019) assumed ONE instance.
+      ProductImages__Store: S3
+      ProductImages__S3__ServiceUrl: http://seaweedfs:8333
+      ProductImages__S3__Bucket: product-images
+      ProductImages__S3__AccessKey: ${SEAWEEDFS_ACCESS_KEY:?SEAWEEDFS_ACCESS_KEY must be set in .env}
+      ProductImages__S3__SecretKey: ${SEAWEEDFS_SECRET_KEY:?SEAWEEDFS_SECRET_KEY must be set in .env}
+      # The one-off move: what the old volume holds and the bucket lacks is copied at startup. Idempotent
+      # and safe on several instances; drop this and the volume below once the bucket has everything.
+      ProductImages__ImportFrom: /app/legacy/product-images
     volumes:
-      # Mounted on /app/data, which the image creates and gives to the app user - NOT on the
-      # subdirectory: a mount point the image lacks is created root-owned, and the non-root service
-      # then fails its startup write check (verified). The store creates the subdirectory itself.
-      - catalog_images:/app/data
+      # The images from before specs/079, READ-ONLY: the import copies from it and nothing writes to it.
+      - catalog_images:/app/legacy:ro
     ports:
       - "5057:8080"
       # The health check below deliberately keeps probing REST on 8080 - curl cannot
@@ -105,6 +110,8 @@ services:
       postgres-catalog:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      seaweedfs:
         condition: service_healthy
 
   orchestrator:
