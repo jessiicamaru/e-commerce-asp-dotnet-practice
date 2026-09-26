@@ -24,6 +24,7 @@ import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminReturnsPage } from '@/pages/admin-returns'
+import { AdminEmailDeliveryPage } from '@/pages/admin-email-delivery'
 import { AdminVouchersPage } from '@/pages/admin-vouchers'
 import { ShopVouchersPage } from '@/pages/shop-vouchers'
 import { ShopQuestionsPage } from '@/pages/shop-questions'
@@ -173,6 +174,14 @@ export function AppRoutes() {
             <Route index element={<AdminHome />} />
             <Route path="orders/:id" element={<AdminOrderPage />} />
             <Route path="returns" element={<AdminReturnsPage />} />
+            <Route
+              path="email-delivery"
+              element={
+                <RequireRole role={['Admin']}>
+                  <AdminEmailDeliveryPage />
+                </RequireRole>
+              }
+            />
             <Route path="vouchers" element={<AdminVouchersPage />} />
             <Route path="payouts" element={<AdminPayoutsPage />} />
             <Route path="audit" element={<AdminAuditPage />} />

@@ -1,0 +1,40 @@
+info:
+  name: an administrator reads the sent emails
+  type: http
+  seq: 32
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/emails?status=Sent&pageSize=5"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const first = res.body && res.body.items && res.body.items[0];
+        if (first) bru.setVar("sentEmailId", first.id);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("this run's emails went out, each with how - and never its data (specs/087)", function() {
+          expect(res.body.totalCount).to.be.at.least(1);
+          res.body.items.forEach(function(e) {
+            expect(e.status).to.equal("Sent");
+            expect(e).to.not.have.any.keys("data", "dataJson");
+            expect(e.canRetry).to.equal(false);
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/087 (#175). The failed ones are the default list; the sent ones are the ones this run is sure to have.

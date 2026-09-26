@@ -23,6 +23,22 @@ public interface IOutgoingEmailRepository
 
     Task<OutgoingEmail?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>One email with its recipient's address, for an administrator (specs/087).</summary>
+    Task<(OutgoingEmail Email, string? RecipientEmail)?> GetWithRecipientAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// A page of the emails in one state, newest first, each with its recipient's address - only recipients whose
+    /// address contains <paramref name="search"/> when one is given (specs/087).
+    /// </summary>
+    Task<(List<(OutgoingEmail Email, string? RecipientEmail)> Items, int Total)> PageAsync(
+        OutgoingEmailStatus status, string? search, int page, int pageSize, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// A failed email back to pending, due now, from its first attempt - one guarded <c>UPDATE ... WHERE "Status" =
+    /// 'Failed'</c>, so it is false for one that is not failed any more (specs/087).
+    /// </summary>
+    Task<bool> TryRetryAsync(Guid id, DateTime now, CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
