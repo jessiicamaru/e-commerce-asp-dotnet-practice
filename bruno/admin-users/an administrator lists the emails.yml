@@ -1,0 +1,37 @@
+info:
+  name: an administrator lists the emails
+  type: http
+  seq: 18
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/email-templates"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const paid = res.body && res.body.find ? res.body.find(e => e.template === "OrderPaid" && e.language === "en") : null;
+        if (paid) bru.setVar("emailVersion", paid.version);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("three emails in two languages, each with what it may use", function() {
+          expect(res.body).to.have.length(6);
+          const reset = res.body.find(e => e.template === "PasswordReset" && e.language === "en");
+          expect(reset.required).to.include("link");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Each as it currently reads - an administrator's version or the built-in words.

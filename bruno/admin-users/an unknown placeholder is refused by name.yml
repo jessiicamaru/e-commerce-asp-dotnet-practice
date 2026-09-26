@@ -1,0 +1,39 @@
+info:
+  name: an unknown placeholder is refused by name
+  type: http
+  seq: 19
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/email-templates/OrderPaid/en"
+  body:
+    type: json
+    data: |-
+      {
+        "subject": "Paid {discount}",
+        "bodyHtml": "<p>Hi {name}</p>",
+        "expectedVersion": {{emailVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("the message names it", function() {
+          expect(res.body.errors.Subject[0]).to.contain("{discount}");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The issue's acceptance: a placeholder the email cannot fill is refused, and the refusal names it.

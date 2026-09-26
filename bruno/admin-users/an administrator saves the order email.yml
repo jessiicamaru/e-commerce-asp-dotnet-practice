@@ -1,0 +1,46 @@
+info:
+  name: an administrator saves the order email
+  type: http
+  seq: 21
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/email-templates/OrderPaid/en"
+  body:
+    type: json
+    data: |-
+      {
+        "subject": "Thank you - order {order} is paid",
+        "bodyHtml": "<p>Hi {name},</p><p>Thank you. Order {order} is paid: <strong>{total}</strong>.</p><p><a href=\"{link}\">See your order</a></p>",
+        "expectedVersion": {{emailVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("emailVersionBefore", bru.getVar("emailVersion"));
+    - type: after-response
+      code: |-
+        if (res.body && res.body.version) bru.setVar("emailVersion", res.body.version);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a new version, no longer the built-in words", function() {
+          expect(res.body.version).to.equal(Number(bru.getVar("emailVersionBefore")) + 1);
+          expect(res.body.isDefault).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  On top of the version the editor opened. The next order email in English says this.
