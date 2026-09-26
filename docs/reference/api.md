@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `451aecf`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `768bc0e`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**143 endpoints** across 7 services.
+**150 endpoints** across 7 services.
 
-## Identity (34)
+## Identity (41)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -28,6 +28,13 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/auth/register-seller` | anyone | Registers somebody who sells, with the name their shop trades under (specs/027). |
 | `POST` | `/api/auth/resend-confirmation` | signed in | Sends the signed-in caller a new confirmation link (specs/063): 202, at most one email a minute; 409 when the address is already confirmed. |
 | `POST` | `/api/auth/reset-password` | anyone | Chooses a new password with the link's token (specs/061); every session ends. 204, or 400. |
+| `GET` | `/api/email-templates` | Admin | Every template in every language, as it currently reads, with the placeholders it may use. |
+| `PUT` | `/api/email-templates/{template}/{language}` | Admin | Save new words: sanitised, placeholders checked, a new version. A stale `expectedVersion` is 409. |
+| `POST` | `/api/email-templates/{template}/{language}/preview` | Admin | A draft filled with made-up data - nothing saved, nothing sent. |
+| `POST` | `/api/email-templates/{template}/{language}/reset` | Admin | Back to the built-in words, as a new version. |
+| `POST` | `/api/email-templates/{template}/{language}/test` | Admin | A draft filled with made-up data, sent to the caller's own address - nothing saved. |
+| `GET` | `/api/email-templates/{template}/{language}/versions` | Admin | One template's saved versions in one language, newest first. |
+| `POST` | `/api/email-templates/{template}/{language}/versions/{version}/restore` | Admin | An earlier version's words, as a new version. |
 | `GET` | `/api/sellers/me` | Seller |  |
 | `PUT` | `/api/sellers/me/shop-name` | Seller | Renames the caller's shop. No product is written - the catalogue keeps the name as a read model, so two hundred listings change because one row did. |
 | `GET` | `/api/shop-applications` | Admin, Moderator |  |
