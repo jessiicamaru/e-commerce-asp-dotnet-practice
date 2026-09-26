@@ -130,6 +130,30 @@ public class EmailTemplateTests(IdentityTestFixture fixture) : IAsyncLifetime
         Assert.Equal([2, 1], history.Select(v => v.Version));
     }
 
+    /// <summary>
+    /// The index, on its own: two writers asking for the same number - the second is told no, stages nothing and throws
+    /// nothing. The editor's version check stops most of them sooner; this is what stops the ones that race past it.
+    /// </summary>
+    [Fact]
+    public async Task The_store_gives_a_version_number_once_and_stages_nothing_for_the_loser()
+    {
+        var staged = 0;
+        var first = await AddAsync(1, () => staged++);
+        var second = await AddAsync(1, () => staged++);
+
+        Assert.Equal((true, false, 1), (first, second, staged));
+    }
+
+    /// <summary>A version from the future - a made-up or corrupted number - would leave a gap in the history.</summary>
+    [Fact]
+    public async Task A_version_nobody_saved_yet_is_a_409()
+    {
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            AsAdmin(new SaveEmailTemplateCommand(EmailTemplate.OrderPaid, "vi", "Đơn {order}", "<p>{name}</p>", 5)));
+
+        Assert.Equal(0, (await CurrentAsync(EmailTemplate.OrderPaid, "vi")).Version);
+    }
+
     [Fact]
     public async Task Reset_and_restore_are_new_versions_and_each_is_audited_with_before_and_after()
     {
@@ -184,6 +208,25 @@ public class EmailTemplateTests(IdentityTestFixture fixture) : IAsyncLifetime
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private async Task<bool> AddAsync(int version, Action onStage)
+    {
+        await using var provider = _fixture.For(_admin, "Admin");
+        await using var scope = provider.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IEmailTemplateStore>().TryAddAsync(new Domain.Entities.EmailTemplateVersion
+        {
+            Template = EmailTemplate.OrderPaid,
+            Language = "en",
+            Version = version,
+            Subject = "S {order}",
+            BodyHtml = "<p>{name}</p>",
+            CreatedBy = _admin,
+        }, _ =>
+        {
+            onStage();
+            return Task.CompletedTask;
+        });
+    }
 
     private async Task QueueAndDispatchAsync(Guid recipient, string language)
     {
