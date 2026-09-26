@@ -21,6 +21,8 @@ public static class DependencyInjection
 
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationWordingStore, NotificationWordingStore>();
+        services.AddSingleton<INoticeSanitizer, NoticeSanitizer>();
 
         return services;
     }

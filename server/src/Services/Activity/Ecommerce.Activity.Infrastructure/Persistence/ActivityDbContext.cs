@@ -8,6 +8,7 @@ public class ActivityDbContext(DbContextOptions<ActivityDbContext> options) : Db
 {
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<NotificationWordingVersion> NotificationWordingVersions => Set<NotificationWordingVersion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

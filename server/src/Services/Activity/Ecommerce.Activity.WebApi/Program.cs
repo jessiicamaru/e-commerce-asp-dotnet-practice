@@ -2,6 +2,7 @@ using Ecommerce.Activity.Application;
 using Ecommerce.Activity.Infrastructure;
 using Ecommerce.Activity.Infrastructure.Persistence;
 using Ecommerce.Activity.WebApi.Consumers;
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Middlewares;
 using Ecommerce.Shared.Observability;
@@ -64,6 +65,10 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// A reworded notice is audited like any other change (specs/078) - published through this service's own outbox
+// and kept by its own consumer, the way every other service's entries arrive.
+builder.Services.AddAuditTrail("activity");
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>

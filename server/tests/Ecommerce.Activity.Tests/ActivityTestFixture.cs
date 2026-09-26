@@ -1,8 +1,11 @@
 using Ecommerce.Activity.Application;
 using Ecommerce.Activity.Application.Common.Interfaces;
+using Ecommerce.Activity.Infrastructure;
 using Ecommerce.Activity.Infrastructure.Persistence;
 using Ecommerce.Activity.Infrastructure.Persistence.Repositories;
+using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Authentication;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -48,11 +51,17 @@ public class ActivityTestFixture : IAsyncLifetime
         services.AddDbContext<ActivityDbContext>(o => o.UseNpgsql(ConnectionString));
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<INotificationWordingStore, NotificationWordingStore>();
+        services.AddSingleton<INoticeSanitizer, NoticeSanitizer>();
+        // Rewording is audited through the outbox (specs/078); in memory here, and the tests read what was published.
+        services.AddMassTransitTestHarness();
+        services.AddAuditTrail("activity");
         services.AddSingleton<ICurrentUser>(CurrentUser);
         Services = services.BuildServiceProvider(true);
 
         await using var scope = Services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<ActivityDbContext>().Database.MigrateAsync();
+        await Services.GetRequiredService<MassTransit.Testing.ITestHarness>().Start();
     }
 
     public async Task DisposeAsync()
