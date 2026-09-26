@@ -26,10 +26,14 @@ export class Order {
   }
 
   /** What checkout would charge, in the same parts, without placing anything (#38). */
-  static async quote({ addressId, shippingOption }: CheckoutChoice): Promise<Quote> {
+  static async quote({ addressId, shippingOption, voucherCodes }: CheckoutChoice): Promise<Quote> {
     const params = new URLSearchParams({ shippingOption })
     if (addressId) {
       params.set('addressId', addressId)
+    }
+    // Repeated, the way ASP.NET binds a list: ?voucherCodes=A&voucherCodes=B (specs/069).
+    for (const code of voucherCodes ?? []) {
+      params.append('voucherCodes', code)
     }
 
     const { data } = await http.get<Quote>(`/orders/quote?${params}`)

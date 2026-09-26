@@ -21,6 +21,22 @@ export interface OrderLine {
   taxAmount: number | null
   /** The shop that sold it, frozen at purchase (specs/036). Null: the shop's own, or not recorded. */
   sellerName?: string | null
+  /** What vouchers took off this line (specs/069), frozen at purchase; 0 or absent when none. */
+  discount?: number
+}
+
+/**
+ * A voucher applied to a quote or used on an order (specs/069), as the server worked it out: which, whose, and
+ * what it took off in the order's own currency.
+ */
+export interface AppliedVoucher {
+  code: string
+  name: string
+  /** A seller's own voucher; `sellerName` names the shop. Otherwise the platform's. */
+  isShop: boolean
+  sellerName: string | null
+  benefit: 'Percent' | 'FixedAmount' | 'FreeShipping' | string
+  amount: number
 }
 
 /** The named parts of a total (specs/012): subtotal + shipping + tax - discount = total. */
@@ -37,6 +53,8 @@ export interface Totals {
   discountTotal: number | null
   taxRate: number | null
   totalAmount: number
+  /** The vouchers behind `discountTotal` (specs/069); absent on orders from before them. */
+  vouchers?: AppliedVoucher[] | null
 }
 
 export interface Quote extends Totals {
@@ -148,6 +166,11 @@ export interface OrderPage {
 export interface CheckoutChoice {
   addressId: string | null
   shippingOption: string
+  /**
+   * Codes the customer typed (specs/069) - a request, never a discount: the server works out what each takes
+   * off, and may refuse any of them.
+   */
+  voucherCodes?: string[]
 }
 
 /**

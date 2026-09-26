@@ -246,3 +246,25 @@ describe('OrderPage returns (specs/067)', () => {
     await waitFor(() => expect(request).toHaveBeenCalledWith('o-1', 's-2', 'Wrong lens'))
   })
 })
+
+describe('OrderPage vouchers (specs/070)', () => {
+  it("lists each voucher by its code, a shop's with its name, and each line's discount", async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({
+      discountTotal: 150_000,
+      items: [{
+        productId: 'p', productName: 'Ricoh GR III', variantId: null, sku: null, optionSummary: null,
+        quantity: 1, unitPrice: 1_000_000, totalPrice: 1_000_000, taxAmount: 85_000, discount: 150_000,
+      }],
+      vouchers: [
+        { code: 'MAI10', name: 'Mai ten', isShop: true, sellerName: 'Mai Camera', benefit: 'FixedAmount', amount: 100_000 },
+        { code: 'SALE5', name: 'Five', isShop: false, sellerName: null, benefit: 'FixedAmount', amount: 50_000 },
+      ],
+    }))
+    renderAt()
+
+    expect(await screen.findByText('Voucher MAI10 · Mai Camera')).toBeInTheDocument()
+    expect(screen.getByText('Voucher SALE5')).toBeInTheDocument()
+    expect(screen.queryByText('Discount')).not.toBeInTheDocument()
+    expect(screen.getByText('₫150,000')).toBeInTheDocument()   // the line's discount, under its price
+  })
+})

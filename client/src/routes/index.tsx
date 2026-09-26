@@ -22,6 +22,8 @@ import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminReturnsPage } from '@/pages/admin-returns'
+import { AdminVouchersPage } from '@/pages/admin-vouchers'
+import { ShopVouchersPage } from '@/pages/shop-vouchers'
 import { AdminPayoutsPage } from '@/pages/admin-payouts'
 import { AdminAuditPage } from '@/pages/admin-audit'
 import { AdminHome } from '@/pages/admin-home'
@@ -137,6 +139,7 @@ export function AppRoutes() {
             <Route path="sales/:id" element={<ShopSalePage />} />
             <Route path="payouts" element={<ShopPayoutsPage />} />
             <Route path="insights" element={<ShopInsightsPage />} />
+            <Route path="vouchers" element={<ShopVouchersPage />} />
           </Route>
           {/* The administrator's console (specs/038). Same bargain as /shop: RequireRole draws, the
               server decides. */}
@@ -151,6 +154,7 @@ export function AppRoutes() {
             <Route index element={<AdminHome />} />
             <Route path="orders/:id" element={<AdminOrderPage />} />
             <Route path="returns" element={<AdminReturnsPage />} />
+            <Route path="vouchers" element={<AdminVouchersPage />} />
             <Route path="payouts" element={<AdminPayoutsPage />} />
             <Route path="audit" element={<AdminAuditPage />} />
             <Route path="users" element={<AdminUsersPage />} />
