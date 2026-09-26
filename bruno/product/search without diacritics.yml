@@ -30,5 +30,6 @@ docs: |-
   How people actually type. `unaccent` on both sides, over the requested language's translation AND
   the text the product was entered with - a shop half-translated still finds everything.
   
-  No index: `unaccent()` is not IMMUTABLE, so this is a sequential scan. Invisible at this size, the
-  first thing to fix at a hundred thousand products (specs/021 research D5).
+  Indexed since specs/074 (#113): `f_unaccent`, an IMMUTABLE wrapper naming `unaccent`'s dictionary, under
+  pg_trgm GIN indexes - 452 ms to 1.2 ms on 100,000 products. Before that it was a sequential scan (specs/021
+  research D5).
