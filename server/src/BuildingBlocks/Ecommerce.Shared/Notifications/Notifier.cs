@@ -48,6 +48,9 @@ public static class NotificationKind
     public const string ReturnRefused = "ReturnRefused";
     public const string ReturnSentBack = "ReturnSentBack";
     public const string ReturnRefunded = "ReturnRefunded";
+
+    // A saved product came back in stock (specs/075)
+    public const string SavedBackInStock = "SavedBackInStock";
 }
 
 /// <summary>

@@ -167,11 +167,14 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                 .SetProperty(v => v.AvailabilityObservedAt, observedAt)
                 .SetProperty(v => v.UpdatedAt, DateTime.UtcNow), cancellationToken);
 
-    public async Task RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<bool> RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         // One statement: the product's "from" price and its availability are DERIVED, so they are
-        // computed where the variants are rather than read into memory and written back.
-        await _context.Database.ExecuteSqlInterpolatedAsync($"""
+        // computed where the variants are rather than read into memory and written back. The CTE reads the
+        // availability the statement starts from - every part of one statement sees the same snapshot - so
+        // "came back in stock" is this statement's own flip, never one a concurrent write made (specs/075).
+        var flips = await _context.Database.SqlQuery<RollupFlip>($"""
+            WITH before AS (SELECT "Availability" AS was FROM products WHERE "Id" = {productId})
             UPDATE products p SET
                 "Price" = COALESCE((SELECT MIN(v."Price") FROM product_variants v
                                     WHERE v."ProductId" = p."Id" AND v."IsActive"), p."Price"),
@@ -183,7 +186,16 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                                             WHERE v."ProductId" = p."Id" AND v."IsActive"),
                 "UpdatedAt" = now()
             WHERE p."Id" = {productId}
-            """, cancellationToken);
+            RETURNING (SELECT was FROM before) AS "Was", p."Availability" AS "Now"
+            """).ToListAsync(cancellationToken);
+
+        return flips.Count == 1 && !flips[0].Was && flips[0].Now;
+    }
+
+    private sealed class RollupFlip
+    {
+        public bool Was { get; init; }
+        public bool Now { get; init; }
     }
 
     public async Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)

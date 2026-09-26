@@ -163,7 +163,11 @@ public interface IProductRepository : ILiveImageKeys
     /// active variant's, and <c>Availability</c> becomes "any active variant is available". Both columns
     /// stay because an earlier image reads them (specs/020 research D3).
     /// </summary>
-    Task RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default);
+    /// <returns>
+    /// Whether the product came back in stock: its rollup went from unavailable to available in this statement
+    /// (specs/075) - what a saved product's back-in-stock notice is about.
+    /// </returns>
+    Task<bool> RecomputeProductRollupAsync(Guid productId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
