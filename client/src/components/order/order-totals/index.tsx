@@ -46,14 +46,28 @@ export function OrderTotals({ totals, shippingName }: { totals: Totals; shipping
           </dd>
         </>
       )}
-      {!!totals.discountTotal && (
-        <>
-          <dt>{t('totals.discount')}</dt>
-          <dd className="text-right">
-            -<Price value={totals.discountTotal} currency={totals.currency} />
-          </dd>
-        </>
-      )}
+      {/* Each voucher by its code, and whose for a shop's (specs/070); the one discount row when there are none -
+          an order from before vouchers, whose discount was always nothing. */}
+      {totals.vouchers && totals.vouchers.length > 0
+        ? totals.vouchers.map((voucher) => (
+            <div key={voucher.code} className="contents text-emerald-700 dark:text-emerald-400">
+              <dt>
+                {t('totals.voucher', { code: voucher.code })}
+                {voucher.isShop && voucher.sellerName ? ` · ${voucher.sellerName}` : ''}
+              </dt>
+              <dd className="text-right">
+                -<Price value={voucher.amount} currency={totals.currency} />
+              </dd>
+            </div>
+          ))
+        : !!totals.discountTotal && (
+            <>
+              <dt>{t('totals.discount')}</dt>
+              <dd className="text-right">
+                -<Price value={totals.discountTotal} currency={totals.currency} />
+              </dd>
+            </>
+          )}
       <dt className="border-t pt-1 font-semibold">{t('totals.total')}</dt>
       <dd className="border-t pt-1 text-right font-semibold">
         <Price value={totals.totalAmount} currency={totals.currency} />

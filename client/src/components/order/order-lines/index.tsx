@@ -35,6 +35,12 @@ export function OrderLines({ items, currency }: { items: OrderLine[]; currency?:
             </TableCell>
             <TableCell className="text-right">
               <Price value={item.totalPrice} currency={currency} />
+              {/* What vouchers took off this line (specs/070), under its price. */}
+              {!!item.discount && (
+                <div className="text-xs text-emerald-700 dark:text-emerald-400">
+                  -<Price value={item.discount} currency={currency} />
+                </div>
+              )}
             </TableCell>
           </TableRow>
         ))}

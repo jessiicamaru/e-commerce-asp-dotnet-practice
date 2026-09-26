@@ -124,6 +124,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [067](../../specs/067-return-screens/) | Parcel returns (screens) | #151 | #107 part 2: the buyer returns, sends back and escalates from the order page; the seller accepts, refuses and receives from the sale; staff settle disputes on the order and in `/admin/returns` |
 | [068](../../specs/068-seller-insights/) | Seller insights | #152 | #111: a seller's own revenue per currency and day (their lines before tax, returns refunded left out), best sellers, views and a weighted rating, on `/shop/insights` |
 | [069](../../specs/069-vouchers/) | Vouchers (server) | #153 | #108 part 1: platform and shop vouchers made of conditions, targets and amounts per currency; priced by the checkout's own code, tax after discount; uses claimed with the order and given back by a failed or cancelled one; the seller pays for their own |
+| [070](../../specs/070-voucher-screens/) | Vouchers (screens) | #154 | #108 part 2: codes at checkout, tried with the server before they are kept; vouchers named on the order; `/shop/vouchers` and `/admin/vouchers` to create, list and disable |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

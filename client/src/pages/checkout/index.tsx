@@ -6,6 +6,7 @@ import { ApiError } from '@/config/axios'
 import { AddressDialog } from '@/components/address/address-dialog'
 import { AddressChoice } from '@/components/checkout/address-choice'
 import { DeliveryChoice } from '@/components/checkout/delivery-choice'
+import { VoucherBox } from '@/components/checkout/voucher-box'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderTotals } from '@/components/order/order-totals'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
@@ -38,8 +39,11 @@ export function CheckoutPage() {
   const addressId =
     chosenAddressId ?? (addresses.data?.find((address) => address.isDefault) ?? addresses.data?.[0])?.id ?? null
   const shippingOption = chosenShippingOption ?? options.data?.[0]?.code ?? null
+  // Codes the server has already taken (specs/070): the summary is quoted with them, the order placed with them.
+  const [voucherCodes, setVoucherCodes] = useState<string[]>([])
 
-  const quote = useCheckoutQuote(addressId && shippingOption ? { addressId, shippingOption } : null)
+  const where = addressId && shippingOption ? { addressId, shippingOption } : null
+  const quote = useCheckoutQuote(where ? { ...where, voucherCodes } : null)
 
   if (addresses.isError || options.isError) {
     return <ErrorMessage>{t('loadFailed')}</ErrorMessage>
@@ -55,7 +59,7 @@ export function CheckoutPage() {
     }
 
     placeOrder.mutate(
-      { addressId, shippingOption },
+      { addressId, shippingOption, voucherCodes },
       { onSuccess: (order) => navigate(`/orders/${order.orderId}`, { state: { justPlaced: true } }) },
     )
   }
@@ -128,6 +132,7 @@ export function CheckoutPage() {
             {quote.data && (
               <>
                 <OrderLines items={quote.data.items} currency={quote.data.currency} />
+                <VoucherBox choice={where} codes={voucherCodes} onChange={setVoucherCodes} />
                 <OrderTotals totals={quote.data} shippingName={quote.data.shippingOption.name} />
               </>
             )}

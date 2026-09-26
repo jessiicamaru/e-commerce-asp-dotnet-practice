@@ -32,7 +32,7 @@ describe('AdminLayout (specs/043)', () => {
   it('shows an administrator every page', async () => {
     renderConsole(renderAsAdmin)
 
-    for (const name of ['Overview', 'Orders to ship', 'Returns', 'Seller payouts', 'Moderation', 'Products to review', 'Shop applications', 'Users', 'Audit log']) {
+    for (const name of ['Overview', 'Orders to ship', 'Returns', 'Seller payouts', 'Vouchers', 'Moderation', 'Products to review', 'Shop applications', 'Users', 'Audit log']) {
       expect(await screen.findByRole('link', { name: new RegExp(name) })).toBeInTheDocument()
     }
   })
@@ -46,6 +46,7 @@ describe('AdminLayout (specs/043)', () => {
     expect(screen.getByRole('link', { name: /Users/ })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Seller payouts/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Returns/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Vouchers/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Audit log/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Overview/ })).not.toBeInTheDocument()
   })
