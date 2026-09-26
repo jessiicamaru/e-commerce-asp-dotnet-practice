@@ -49,7 +49,7 @@ export function EmailVersions({
                   variant="outline"
                   className="rounded-full px-3"
                   disabled={restore.isPending}
-                  onClick={() => restore.mutate(v.version, { onSuccess: () => toast.success(t('emails.restored', { version: v.version })) })}
+                  onClick={() => restore.mutateAsync(v.version).then(() => toast.success(t('emails.restored', { version: v.version })), () => {})}
                 >
                   {t('emails.restore')}
                 </Button>

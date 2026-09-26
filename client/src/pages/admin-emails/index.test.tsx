@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { EmailTemplates } from '@/services/email-template'
@@ -114,5 +115,22 @@ describe('AdminEmailsPage (specs/077)', () => {
     await user.click(screen.getByRole('button', { name: 'Restore' }))
 
     await waitFor(() => expect(restore).toHaveBeenCalledWith('OrderPaid', 'vi', 1, 2))
+  })
+
+  /** A save gives the editor a new version and remounts it: the toast must not go with it (specs/080). */
+  it('says it was saved even when the editor is gone by the time the save answers', async () => {
+    vi.spyOn(EmailTemplates, 'list').mockResolvedValue([email({ isDefault: false, version: 3, updatedAt: '2026-09-26T08:00:00Z' })])
+    let answer: (saved: EmailTemplate) => void = () => {}
+    vi.spyOn(EmailTemplates, 'save').mockReturnValue(new Promise<EmailTemplate>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsAdmin(<AdminEmailsPage />, '/admin/emails')
+
+    await user.type(await screen.findByLabelText('Subject'), '!')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    unmount()
+    answer(email({ version: 4 }))
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith('Saved. The next email says this.'))
   })
 })

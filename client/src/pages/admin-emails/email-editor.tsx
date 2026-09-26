@@ -95,7 +95,7 @@ export function EmailEditor({ current }: { current: EmailTemplate }) {
           <Button
             className="rounded-full"
             disabled={!dirty || changes.save.isPending}
-            onClick={() => changes.save.mutate(draft, { onSuccess: () => toast.success(t('emails.saved')) })}
+            onClick={() => changes.save.mutateAsync(draft).then(() => toast.success(t('emails.saved')), () => {})}
           >
             <SaveIcon /> {t('emails.save')}
           </Button>
@@ -114,7 +114,7 @@ export function EmailEditor({ current }: { current: EmailTemplate }) {
             variant="ghost"
             className="rounded-full"
             disabled={current.isDefault || changes.reset.isPending}
-            onClick={() => changes.reset.mutate(undefined, { onSuccess: () => toast.success(t('emails.wasReset')) })}
+            onClick={() => changes.reset.mutateAsync(undefined).then(() => toast.success(t('emails.wasReset')), () => {})}
           >
             <RotateCcwIcon /> {t('emails.reset')}
           </Button>

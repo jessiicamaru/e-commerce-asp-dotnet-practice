@@ -76,7 +76,7 @@ export function WordingEditor({ line }: { line: WordingLine }) {
           size="sm"
           className="rounded-full px-4"
           disabled={text === current || !text.trim() || changes.save.isPending}
-          onClick={() => changes.save.mutate(text, { onSuccess: () => toast.success(t('wording.saved')) })}
+          onClick={() => changes.save.mutateAsync(text).then(() => toast.success(t('wording.saved')), () => {})}
         >
           <SaveIcon /> {t('wording.save')}
         </Button>
@@ -85,7 +85,7 @@ export function WordingEditor({ line }: { line: WordingLine }) {
           variant="ghost"
           className="rounded-full px-3"
           disabled={!edited || changes.reset.isPending}
-          onClick={() => changes.reset.mutate(undefined, { onSuccess: () => toast.success(t('wording.wasReset')) })}
+          onClick={() => changes.reset.mutateAsync(undefined).then(() => toast.success(t('wording.wasReset')), () => {})}
         >
           <RotateCcwIcon /> {t('wording.reset')}
         </Button>
@@ -112,7 +112,7 @@ export function WordingEditor({ line }: { line: WordingLine }) {
                     variant="outline"
                     className="h-7 rounded-full px-2.5"
                     disabled={changes.restore.isPending}
-                    onClick={() => changes.restore.mutate(v.version, { onSuccess: () => toast.success(t('wording.restored', { version: v.version })) })}
+                    onClick={() => changes.restore.mutateAsync(v.version).then(() => toast.success(t('wording.restored', { version: v.version })), () => {})}
                   >
                     {t('wording.restore')}
                   </Button>
