@@ -243,21 +243,28 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.Trim().ToLower();
-
             // Diacritics are ignored on BOTH sides, so "may anh" finds "máy ảnh" and "máy ảnh" finds a
-            // product somebody typed without accents (specs/021 research D5). No index: unaccent() is
-            // not IMMUTABLE, so this is a sequential scan - fine at this size, the first thing to fix
-            // at a hundred thousand products.
-            // Both sides are unaccented INSIDE the query: unaccent() is PostgreSQL's, so calling it on
-            // the term out here would evaluate on the client and throw.
-            query = query.Where(p =>
-                EF.Functions.Unaccent(p.Name.ToLower()).Contains(EF.Functions.Unaccent(term))
-                || p.Sku.ToLower().Contains(term)
-                // ...and the requested language's translation, so a Vietnamese shopper finds a product
-                // by the Vietnamese name somebody gave it.
-                || p.Translations.Any(t => t.Language == language
-                    && EF.Functions.Unaccent(t.Name.ToLower()).Contains(EF.Functions.Unaccent(term))));
+            // product somebody typed without accents (specs/021 research D5) - and it is INDEXED (specs/074,
+            // #113). f_unaccent is the IMMUTABLE wrapper the GIN trigram indexes are built over, the match is
+            // a LIKE, which a trigram index serves (the strpos that string.Contains becomes does not), and the
+            // term's own % _ and backslash are escaped so it is matched literally.
+            //
+            // ⚠️ A UNION of ids rather than one OR: an OR whose third arm is a correlated EXISTS over the
+            // translations cannot be answered by the products' indexes, and the planner scanned every product
+            // (measured: 457 ms on 100,000 products with the indexes present). As two indexed queries whose
+            // ids are unioned it is a BitmapOr and a bitmap scan, then primary-key lookups: 4 ms.
+            var pattern = SearchFunctions.ContainsPattern(searchTerm.Trim().ToLower());
+            var matching = _context.Products
+                .Where(p => EF.Functions.Like(SearchFunctions.Unaccent(p.Name.ToLower()), SearchFunctions.Unaccent(pattern), SearchFunctions.Escape)
+                    || EF.Functions.Like(p.Sku.ToLower(), pattern, SearchFunctions.Escape))
+                .Select(p => p.Id)
+                // ...and the requested language's translation, so a Vietnamese shopper finds a product by
+                // the Vietnamese name somebody gave it.
+                .Union(_context.ProductTranslations
+                    .Where(t => t.Language == language
+                        && EF.Functions.Like(SearchFunctions.Unaccent(t.Name.ToLower()), SearchFunctions.Unaccent(pattern), SearchFunctions.Escape))
+                    .Select(t => t.ProductId));
+            query = query.Where(p => matching.Contains(p.Id));
         }
 
         // Sorting by price sorts by the price in the currency being ASKED FOR. Sorting by the
