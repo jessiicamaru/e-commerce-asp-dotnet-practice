@@ -30,7 +30,7 @@ description: "Task list for A deleted product's holds are released with its stoc
 
 - [X] T008 Mutations (quickstart Scenario 3) - each red; `Ecommerce.Inventory.Tests` 57/57
 - [X] T009 Docs: `docs/features/catalog.md`, `docs/features/shopping-and-checkout.md`, `docs/project/backlog.md`, `docs/project/timeline.md`, CLAUDE.md
-- [ ] T010 Merged as #189, closing #181
+- [X] T010 Merged as #189 (2026-09-27), closing #181
 
 ## Verification
 
