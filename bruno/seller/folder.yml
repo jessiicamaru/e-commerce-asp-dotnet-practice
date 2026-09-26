@@ -1,3 +1,13 @@
-meta:
+info:
   name: seller
-  seq: 9
+  type: folder
+  seq: 16
+
+request:
+  auth: inherit
+
+docs: |-
+  Runs after every other folder but `teardown` (seq 16): its requests use `sellerToken`, and several of them
+  change what earlier folders would read. It used to run last by accident - its folder file said `meta:` rather
+  than `info:`, so the CLI ignored its `seq: 9` and put it after the sequenced folders; specs/073 made the order
+  explicit, because `teardown` has to come after it.

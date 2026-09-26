@@ -53,7 +53,6 @@ Known and recorded; they hurt at scale or in operation, not today.
 | Issue | Title |
 | :-- | :-- |
 | [#117](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/117) | No test drives the storefront in a browser |
-| [#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118) | Every Bruno and verify-saga run leaves products behind |
 
 ## Fixed
 
@@ -61,6 +60,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118) | Every Bruno and verify-saga run leaves products behind | [#157](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/157) (specs/073) |
 | [#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116) | Revenue is counted on the day an order was placed, not paid | [#156](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/156) (specs/072) |
 | [#115](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/115) | The orchestrator has no health endpoint | [#155](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/155) (specs/071) |
 | [#108](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/108) | There is no way to give a discount | [#153](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/153) (specs/069, server) and [#154](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/154) (specs/070, screens) |
