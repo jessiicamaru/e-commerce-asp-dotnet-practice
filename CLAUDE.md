@@ -97,9 +97,9 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (264 tests,
+`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (265 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (205 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (163 tests, PostgreSQL on 5435) and
+(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (170 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
@@ -650,7 +650,7 @@ their review was hidden (specs/059).
 Identity, the one service that knows addresses, keeps it in `outgoing_emails` (idempotent on the email id)
 and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
 server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
-error after 12 attempts. The first email is the order confirmation, in the order's own language.
+error after 12 attempts. The first email is the order confirmation, in the order's own language. **Since specs/083 (#167) eleven**: a parcel shipped, an order cancelled, a return accepted/refused/refunded (the order's language), back in stock and an account locked/banned - asked for with `EmailTemplate.ReadersLanguage` (empty), which Identity fills from `users.Language`, learnt from `Accept-Language` at sign-up, sign-in and every renewal. ⚠️ A new email is a constant in `EmailTemplate`, words + placeholders + sample data in `EmailTemplates`, and a label in the storefront's `admin.json` - `AccountEmailTests` and the admin-emails test fail on a missing piece.
 **An administrator edits the emails** (specs/077, #150): `/admin/emails`, a TipTap editor (lazy-loaded). The code's
 words are the defaults; `email_template_versions` is append-only (reset and restore add versions), unique on
 (template, language, version) with the editor's `expectedVersion` - stale is 409. ⚠️ HTML is allow-list sanitised
