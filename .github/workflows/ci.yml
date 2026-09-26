@@ -1103,6 +1103,33 @@ jobs:
             echo "::endgroup::"
           done
 
+  # Old releases pruned, the newest 30 per image kept (decided with the user, 2026-09-26). Every merge publishes one
+  # version per image and nothing removed any, so each package only grew. The script deletes only versions tagged
+  # sha-* alone and older than the newest 30 - never :main, never an untagged version, never a hand-pushed tag. On a
+  # pull request it runs as a dry run and only lists what it would delete, so the rule is seen before it acts.
+  prune-images:
+    name: Prune old images
+    runs-on: ubuntu-latest
+    needs: [publish]
+    if: >-
+      always() &&
+      (github.event_name == 'pull_request' || needs.publish.result == 'success')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Keep the newest 30 versions of each image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            .github/scripts/prune-images.sh "${{ github.repository_owner }}" 30 --dry-run
+          else
+            .github/scripts/prune-images.sh "${{ github.repository_owner }}" 30
+          fi
+
   # The storefront in a real browser against the real stack (specs/080, #117) - the one check that clicks through
   # the pages, so a page and the API it calls drifting apart (a gateway route missing, a field renamed) fails here.
   # Everything runs as the containers a person runs: compose builds and starts every service, the gateway, the

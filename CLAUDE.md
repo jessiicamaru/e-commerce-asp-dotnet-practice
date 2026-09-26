@@ -900,7 +900,12 @@ ghcr.io/jessiicamaru/ecommerce-<service>:main              # moves; convenience 
 ```
 
 **`:main` cannot answer "the previous version"**, which is why nothing deployable may be named by it.
-A pull request publishes nothing. See
+A pull request publishes nothing. **The newest 30 `sha-` versions of each image are kept** (decided with the user,
+2026-09-26): the `prune-images` job runs after every successful publish and deletes only versions tagged `sha-*`
+alone and older than those 30 - never `:main`, never an untagged version (it may be a child of a multi-arch index),
+never a hand-pushed tag. On a pull request it is a dry run that lists what it would delete
+([.github/scripts/prune-images.sh](.github/scripts/prune-images.sh)). The packages are public, so storage costs
+nothing; the limit is about keeping the list usable. See
 [specs/006-release-and-rollback/contracts/release-artifacts.md](specs/006-release-and-rollback/contracts/release-artifacts.md).
 
 **What makes `sha-` immutable is a check, not a convention.** Before pushing a `sha-` tag the

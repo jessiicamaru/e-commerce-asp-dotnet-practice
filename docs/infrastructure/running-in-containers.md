@@ -311,6 +311,16 @@ is built and scanned before any is pushed; a partial release is not a release.
 
 `:main` also exists and **moves**, so it can never name "the version from before". Only `sha-` tags
 may name something deployable.
+
+**Only the newest 30 `sha-` versions of each image are kept.** The `prune-images` CI job runs after every
+successful publish ([prune-images.sh](../../.github/scripts/prune-images.sh)). It deletes only versions whose tags
+are all `sha-*` and that are older than the newest 30. It never deletes:
+- `:main`;
+- an untagged version, which may be a child of a multi-arch index;
+- a tag a person pushed.
+
+A rollback therefore reaches 30 merges back. On a pull request the job is a dry run that only lists what it would
+delete.
 [release-artifacts.md](../../specs/006-release-and-rollback/contracts/release-artifacts.md) has the
 guarantees; a published image takes the same configuration as one you build locally.
 
