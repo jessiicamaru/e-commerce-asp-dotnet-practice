@@ -253,7 +253,8 @@ Bruno: `bruno/product/` (variants, translations, search without diacritics, doll
 | [021-internationalisation](../../specs/021-internationalisation/) | [#58](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/58) | Product and option translations, language negotiation, diacritic-insensitive search. |
 | [022-multi-currency-prices](../../specs/022-multi-currency-prices/) | [#59](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/59) | `variant_prices`, `X-Currency`, null price instead of conversion, minor-unit validation. |
 | - | [#60](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/60) | A catalogue of real cameras, seeded through the API. |
-| specs/024 (no folder) | [#61](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/61) | Deleting a product and an empty category for good. |
+| [024-delete-product](../../specs/024-delete-product/) | [#61](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/61) | Deleting a product for good. |
+| [025-storefront-redesign](../../specs/025-storefront-redesign/) | [#62](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/62) | Deleting an empty category, with the storefront's redesign. |
 | specs/026 (no folder) | [#63](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/63) | Category translations. |
 | [027-seller-accounts](../../specs/027-seller-accounts/) | [#64](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/64) | `products.SellerId`, `SellerOwnership`, the `sellers` read model. |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65) | Seller pages to list, price, photograph and withdraw products. |

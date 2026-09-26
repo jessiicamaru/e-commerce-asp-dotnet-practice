@@ -74,14 +74,14 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [020](../../specs/020-product-variants/) | Product variants | #57 | The variant is what is bought: its own SKU, price, options and stock |
 | [021](../../specs/021-internationalisation/) | Speaking more than one language | #58 | Vietnamese and English interface and product text; orders freeze their language |
 | [022](../../specs/022-multi-currency-prices/) | Two price lists | #59 | VND and USD prices set separately, never converted |
-| - | Real camera catalogue | #60 | `server/seed/`: 14 cameras seeded through the API |
-| - | Delete a product (specs/024) | #61 | An administrator removes a product for good |
-| - | A storefront that looks like a shop | #62 | Visual redesign |
-| - | Translated categories (specs/026) | #63 | Category names in both languages |
+| [023](../../specs/023-camera-catalogue/) | Real camera catalogue | #60 | `server/seed/`: 14 cameras seeded through the API |
+| [024](../../specs/024-delete-product/) | Delete a product | #61 | An administrator removes a product for good |
+| [025](../../specs/025-storefront-redesign/) | A storefront that looks like a shop | #62 | Visual redesign |
+| [026](../../specs/026-category-translations/) | Translated categories | #63 | Category names in both languages |
 | [027](../../specs/027-seller-accounts/) | The shop is a marketplace | #64 | Sellers own products; somebody else's product is a 404 |
 | [028](../../specs/028-seller-console/) | A seller can actually sell | #65 | The seller console; the client gets unit tests |
 | [029](../../specs/029-delete-product-image/) | A deleted product takes its picture | #68 | Deleting a product deletes its image |
-| - | Seed photographs | #69 | `seed-images.py`, keeping the images out of the repository |
+| [030](../../specs/030-seed-photographs/) | Seed photographs | #69 | `seed-images.py`, keeping the images out of the repository |
 | [031](../../specs/031-seller-stock/) | A seller stocks what they sell | #71 | Inventory asks Catalog who owns a variant, live |
 | [032](../../specs/032-variant-images/) | The picture follows the variant | #73 | A photograph per variant, falling back to the product's |
 | [033](../../specs/033-image-reconciliation/) | Images nobody can name | #74 | Find and reclaim orphaned images, on request only |
@@ -143,8 +143,8 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [086](../../specs/086-product-view-limits/) | Honest view counts | #178 | #173: a product view counts once a day per viewer, and the gateway limits the view endpoint per client |
 | [087](../../specs/087-email-delivery/) | Email delivery | #179 | #175: an administrator sees what became of each email - the failed ones with why - and sends a failed one again |
 
-Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
-are listed above by what they did.
+Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
+code at each merge and its pull request, when every record was brought to the standard of specs/001.
 
 ## What is next
 

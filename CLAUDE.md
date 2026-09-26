@@ -341,7 +341,7 @@ checkout's currency is not offered.
 products that are theirs: `products.SellerId`, null meaning **the shop itself** - every product from
 before this, and anything an administrator lists. ⚠️ **A seller writing to a product that is not
 theirs gets 404, never 403**, because a 403 confirms the id is real and belongs to somebody; the one
-check is `SellerOwnership`, called by all nine write handlers, and **an administrator passes every
+check is `SellerOwnership`, called by every write handler (ten when specs/027 merged), and **an administrator passes every
 one of them** because moderation is the job. Catalog keeps a **read model of shop names**
 (`sellers`), fed by `SellerRegisteredEvent`/`SellerRenamedEvent`, so a page of products costs no call
 to Identity and an anonymous catalogue read still works with Identity down; renaming a shop changes

@@ -14,7 +14,7 @@ import type { Product } from '@/services/product/types'
  * two separate links to the same place inside one card is two tab stops for one destination.
  * </p>
  * <p>
- * The <b>sold by</b> line is here and shows the shop itself until sellers exist (specs/026). It is
+ * The <b>sold by</b> line is here and shows the shop itself until sellers exist (specs/027). It is
  * laid out now on purpose: adding a line under the name later moves every card in every grid, and
  * "who am I buying from" is not information a marketplace can bolt on at the end.
  * </p>

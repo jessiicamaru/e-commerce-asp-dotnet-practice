@@ -5,7 +5,7 @@ and they live on the local `catalog_images` Docker volume. This file is the reco
 used and under what terms, because CC BY and CC BY-SA **require attribution** and an attribution
 that exists only in somebody's shell history is not one.
 
-Fetched with `seed/seed-images.py`; see [seed/README.md](README.md).
+Fetched by hand from the pages below and uploaded with `seed/seed-images.py`, which fetches nothing itself; see [seed/README.md](README.md).
 
 ## Wikimedia Commons
 
