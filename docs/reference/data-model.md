@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `6149cdc`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bea126c`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -371,7 +371,7 @@ Entity `CheckoutOutcome`.
 | `UpdatedAt` | timestamp with time zone |  |
 | `UserId` | uuid | yes |
 
-## Order - `ecommerce_order_db` (5 tables)
+## Order - `ecommerce_order_db` (11 tables)
 
 ### `order_items`
 
@@ -382,11 +382,13 @@ Entity `OrderItem`.
 | `Id` | uuid |  |
 | `OptionSummary` | character varying(200) | yes |
 | `OrderId` | uuid |  |
+| `PlatformDiscount` | numeric(18,2) |  |
 | `ProductId` | uuid |  |
 | `ProductName` | character varying(256) |  |
 | `Quantity` | integer |  |
 | `SellerId` | uuid | yes |
 | `SellerName` | character varying(100) | yes |
+| `ShopDiscount` | numeric(18,2) |  |
 | `Sku` | character varying(50) | yes |
 | `TaxAmount` | numeric(18,2) | yes |
 | `UnitPrice` | numeric(18,2) |  |
@@ -473,6 +475,89 @@ Entity `Payout`.
 | `PartCount` | integer |  |
 | `RecordedBy` | uuid |  |
 | `SellerId` | uuid |  |
+
+### `voucher_amounts`
+
+Entity `VoucherAmount`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `VoucherId` | uuid |  |
+| `Currency` | character varying(3) | yes |
+| `FixedValue` | numeric(18,2) | yes |
+| `MaxDiscount` | numeric(18,2) | yes |
+| `MinSubtotal` | numeric(18,2) | yes |
+
+### `voucher_conditions`
+
+Entity `VoucherCondition`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `VoucherId` | uuid |  |
+| `Type` | character varying(32) | yes |
+| `Value` | integer | yes |
+
+### `voucher_customer_uses`
+
+Entity `VoucherCustomerUse`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `VoucherId` | uuid |  |
+| `CustomerId` | uuid |  |
+| `Uses` | integer |  |
+
+### `voucher_redemptions`
+
+Entity `VoucherRedemption`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `Amount` | numeric(18,2) |  |
+| `Benefit` | character varying(16) |  |
+| `Code` | character varying(32) |  |
+| `CreatedAt` | timestamp with time zone |  |
+| `Currency` | character varying(3) |  |
+| `CustomerId` | uuid |  |
+| `Name` | character varying(100) |  |
+| `OrderId` | uuid |  |
+| `ReleasedAt` | timestamp with time zone | yes |
+| `SellerId` | uuid | yes |
+| `VoucherId` | uuid |  |
+
+### `voucher_targets`
+
+Entity `VoucherTarget`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `VoucherId` | uuid |  |
+| `Type` | character varying(16) | yes |
+| `TargetId` | uuid |  |
+
+### `vouchers`
+
+Entity `Voucher`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `Benefit` | character varying(16) |  |
+| `Code` | character varying(32) |  |
+| `CreatedAt` | timestamp with time zone |  |
+| `CreatedBy` | uuid |  |
+| `EndsAt` | timestamp with time zone | yes |
+| `Name` | character varying(100) |  |
+| `PerCustomerLimit` | integer | yes |
+| `Percent` | numeric(5,2) | yes |
+| `SellerId` | uuid | yes |
+| `StartsAt` | timestamp with time zone |  |
+| `Status` | character varying(16) |  |
+| `TotalLimit` | integer | yes |
+| `UpdatedAt` | timestamp with time zone |  |
+| `UsedCount` | integer |  |
 
 ## Inventory - `ecommerce_inventory_db` (3 tables)
 

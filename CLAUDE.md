@@ -90,7 +90,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (220 tests,
+`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (260 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (167 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
@@ -512,6 +512,19 @@ attribute too**: leaving `[Authorize(Roles = "Admin")]` in place made the owners
 unreachable - a seller was refused at the door and the code deciding whether the listing was hers
 never ran, while every unit test still passed. And `/api/sellers` needed a **gateway route**, without
 which the rename endpoint was a 404 that looked like a missing feature.
+
+**Vouchers** (specs/069, #108; screens are part 2): a customer sends up to 5 `voucherCodes` with the quote and
+the order, and `VoucherPricing.Apply` - pure, called by `CheckoutPricing` - works out what each takes off. A
+voucher is composed: `vouchers` (`SellerId` null = the platform's), `voucher_conditions`, `voucher_targets`
+(product/variant), `voucher_amounts` per currency (**no row, not usable - even a percentage**; never converted).
+Shop vouchers first, on their own lines, then the platform's; one per shop, one platform, one free delivery. Tax
+is on the discounted price; lines freeze `ShopDiscount` / `PlatformDiscount`, the order `voucher_redemptions`. ⚠️
+**A seller pays for their own voucher** - `GoodsTotal` is their goods less it - and the shop for the platform's
+and free delivery. Uses are claimed by guarded statements **inside the order's own transaction**
+(`ClaimAndSaveAsync`) and given back once by a failed or cancelled order. ⚠️ Any transaction this service opens
+by hand runs inside `CreateExecutionStrategy().ExecuteAsync` - production retries (`EnableRetryOnFailure`), and a
+transaction outside a strategy throws; the Order test fixture now retries too, after both voucher transactions
+passed every test and answered 500 in the container.
 
 **The quote and the order are priced by the same code.** `GET /api/orders/quote` returns what
 checkout would charge for the same choices, in the same parts, and places nothing. It and

@@ -21,7 +21,7 @@ Neither service is told who the seller is: the token says (Constitution IV).
 
 ## Rules and guarantees
 
-1. **Revenue is the seller's own lines**, unit price × quantity, before tax. It is never the order's total,
+1. **Revenue is the seller's own lines**, unit price × quantity, before tax, less their own voucher (specs/069). It is never the order's total,
    which holds other sellers' goods, delivery and tax (specs/034). On an order two sellers share, each sees
    only their own lines.
 2. **What counts as sold is the Overview's rule**, `OrderInsights.Sold`: paid, preparing or shipped. Never

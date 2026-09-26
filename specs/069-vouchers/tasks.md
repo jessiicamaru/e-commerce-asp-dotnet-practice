@@ -17,4 +17,4 @@
 - [X] T005 Release on a failed or cancelled order, idempotent.
 - [X] T006 The refund of a returned parcel after discount, and seller insights after the shop discount. Tests.
 - [X] T007 `VouchersController`: create, mine, disable. Validators, audit, the gateway route. Tests in `VoucherManagementTests`.
-- [ ] T008 Bruno, the reference, the docs, and the mutation checks.
+- [X] T008 Bruno, the reference, the docs, and the mutation checks.

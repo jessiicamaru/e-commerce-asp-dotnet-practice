@@ -228,21 +228,24 @@ same transaction.
     leaves existing sales unchanged (specs/037 D1).
 17. **The shares add up exactly.** `Earnings.SplitDelivery` counts in minor units, so the parts' shares
     always sum to the delivery charge.
-18. **Money is due only once a delivered parcel can no longer come back.** Balances, the due list and the
+18. **A seller's own voucher comes out of their goods** (specs/069). A part's `GoodsTotal` is its lines less the
+    seller's voucher, so their commission and payout follow. A platform voucher is the shop's cost and changes
+    nothing a seller earns ([vouchers](vouchers.md)).
+19. **Money is due only once a delivered parcel can no longer come back.** Balances, the due list and the
     payout claim all require the parcel delivered **more than the return window (7 days) ago** with no
     return of it open (specs/040, 066). Until then it is "on the way"; a returned part is no money at all
     ([returns](returns.md)).
-19. **A payout is one statement, and carries no amount.** The CTE claims the parts and the `INSERT`
+20. **A payout is one statement, and carries no amount.** The CTE claims the parts and the `INSERT`
     records the sum of exactly those rows; `HAVING count(*) > 0` inserts nothing when nothing was
     claimed. Of two administrators at once, the second's `UPDATE` waits on the row locks, re-evaluates
     `"PayoutId" IS NULL`, claims nothing and gets 409. `CK_payouts_covers_something` (`PartCount > 0`)
     backs it up. *Why:* summing first and claiming second would pay for rows another payout took in
     between (specs/037 D5).
-20. **Orders from before a feature are owed nothing by it.** Lines from before specs/034 have no
+21. **Orders from before a feature are owed nothing by it.** Lines from before specs/034 have no
     seller; parts from before specs/037 (and parts created on demand for an older image's order) have
     no terms and are excluded from balances and payouts. *Why:* backfilling would invent yesterday's
     agreement or answer with today's owner.
-21. **Money is never added across currencies.** Balances, the due list and payouts are per currency.
+22. **Money is never added across currencies.** Balances, the due list and payouts are per currency.
 
 ## Data
 

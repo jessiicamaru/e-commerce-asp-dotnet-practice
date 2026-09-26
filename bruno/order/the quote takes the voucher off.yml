@@ -12,6 +12,12 @@ http:
 
 runtime:
   scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.totalAmount !== undefined) {
+          bru.setVar("voucherQuoteTotal", res.body.totalAmount);
+          bru.setVar("voucherDiscount", res.body.discountTotal);
+        }
     - type: tests
       code: |-
         test("status 200", function() {

@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92d89ba`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bea126c`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**127 endpoints** across 7 services.
+**130 endpoints** across 7 services.
 
 ## Identity (34)
 
@@ -99,7 +99,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (35)
+## Order (38)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -138,6 +138,9 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/return` | signed in | Ask to return a whole delivered parcel, within the return window. 404 not theirs; 409 too late, not delivered, or asked already. |
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/return/escalate` | signed in | Ask staff to look again at a refused return, within the window of the refusal. |
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/return/sent` | signed in | The accepted parcel is on its way back, with its tracking reference. |
+| `POST` | `/api/vouchers` | Admin, Seller |  |
+| `GET` | `/api/vouchers/mine` | Admin, Seller | The caller's vouchers: the platform's for an administrator, their own for a seller. |
+| `POST` | `/api/vouchers/{id}/disable` | Admin, Seller | Stops it being used. Not yours is a 404; already disabled is a 409. |
 
 ## Inventory (4)
 
