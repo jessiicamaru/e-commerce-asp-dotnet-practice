@@ -9,8 +9,9 @@ works is a test that fails when it does not.
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
 | Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 782 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
-| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 450 tests in 81 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
+| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 453 tests in 81 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
 | API collection | Bruno CLI | `bruno/` | 263 requests, 428 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
+| Browser end to end | Playwright (Edge locally, Chromium in CI) | `client/e2e/` | 4 flows | A page and the API it calls drifting apart: a gateway route missing, a field renamed, a toast that never shows |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
 | Mutation checks | by hand, per change | recorded in each PR | 2-4 per feature | That a new test fails when the rule it guards is removed |
@@ -80,6 +81,38 @@ hook asks for, what a form sends, what a guard lets through, how a server refusa
 
 `findBy` and `waitFor` wait up to 3 seconds (raised from 1 in PR #101): with 51 files running in parallel
 the first render in a file can take longer than a second.
+
+## Browser end to end
+
+`npm run e2e` in `client/`, against a running compose stack (`docker compose -f docker-compose.yml -f
+docker-compose.app.yml up -d` in `server/`), with `ADMIN_EMAIL` and `ADMIN_PASSWORD` set (specs/080, #117).
+Playwright clicks through the storefront container on `:8088`, and **nothing is mocked**. It is the one check that
+sees a page and the API it calls drift apart.
+
+- **The browser** locally is the **Edge Windows already has** (`channel: 'msedge'`), so nothing is downloaded. In CI
+  it is Playwright's Chromium (`E2E_BROWSER_CHANNEL` empty). Both are Chromium.
+- **The flows** are in `e2e/flows.spec.ts` and run in order, each as the person who does it:
+  1. a moderator approves a product waiting for review;
+  2. a customer adds a camera to the cart, checks out, and sees it *Paid*;
+  3. its seller prepares the parcel and ships it;
+  4. the customer confirms it arrived and reviews the camera.
+- **The data** comes from `e2e/support/api.ts`, made through the API the pages use:
+  - a seller confirmed through **Mailpit** and approved;
+  - a product listed, approved and stocked;
+  - a customer with an address, and a moderator.
+
+  Every run makes its own, and removes its products and category at the end.
+- **Verified**:
+  - three runs in a row pass;
+  - renaming the gateway's cart route makes the buying flow fail.
+- **A failure keeps a trace**: `npx playwright show-trace test-results/<test>/trace.zip`. In CI the job
+  `browser-e2e` uploads the traces with the services' logs. `test-results/` and `playwright-report/` are git-ignored.
+
+The first run found a defect no unit test had: **a toast lost when saving remounts its form**.
+- A component keyed by an id or a version, such as `ReviewForm` after the first review or the email and notice
+  editors after a save, is replaced before a callback handed to `mutate()` runs. TanStack does not run that callback
+  for a component that is gone.
+- Where saving changes the key, use `mutateAsync().then(...)`.
 
 ## Bruno collection
 

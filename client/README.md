@@ -118,6 +118,11 @@ The rules, each of which exists because of a way a front-end suite rots:
   how a server refusal reaches a person. Not that a `div` rendered. The tests worth having here are
   the ones naming a defect: *the price field must say VND while the shop is being read in USD*.
 
+**In a real browser too** (specs/080): `npm run e2e` runs `e2e/` with Playwright against the running compose
+stack, in the Edge Windows already has - see "Browser end to end" in
+[docs/testing/testing-strategy.md](../docs/testing/testing-strategy.md). `e2e/` is its own TypeScript project
+(`tsconfig.e2e.json`), and Vitest never reads it.
+
 A layout fault is not unit-testable and should not be faked — two of this feature's defects (an
 image drawn over the price editor, a price box empty when a price existed) were found in a
 screenshot, and that is the honest tool for them.

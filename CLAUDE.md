@@ -10,7 +10,11 @@ The backend lives under [server/](server/). A deliberately thin storefront lives
 [client/](client/) (**React 19 + TypeScript + Vite + Tailwind v4 + shadcn/ui + axios + TanStack
 Query**, issue #23): it talks **only to the gateway**, through Vite's dev proxy (`/api` → `:5000`, one
 origin, no CORS), keeps the access token in memory and relies on Identity's HttpOnly refresh cookie.
-CI job `client` lints, **tests**, type-checks and builds it. Its purpose is to exercise the API as a
+CI job `client` lints, **tests**, type-checks and builds it, and since specs/080 (#117) **Playwright drives it in a
+browser**: `npm run e2e` against the compose stack (Edge locally, `channel: 'msedge'`, so nothing is downloaded;
+Chromium in CI's `browser-e2e` job, which `publish` waits for). ⚠️ The first run found a toast lost whenever saving
+changes a component's `key` - a callback handed to `mutate()` does not run for a component that is gone; use
+`mutateAsync().then(...)` there. Its purpose is to exercise the API as a
 person would and to file what the backend lacks — not polish.
 
 **The storefront has unit tests since specs/028** — Vitest with jsdom and Testing Library,
