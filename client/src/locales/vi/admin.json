@@ -13,7 +13,8 @@
     "overview": "Tổng quan",
     "returns": "Trả hàng",
     "vouchers": "Mã giảm giá",
-    "questions": "Hỏi đáp"
+    "questions": "Hỏi đáp",
+    "emails": "Email"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -358,5 +359,42 @@
     "restoreAnswer": "Hiện lại câu trả lời",
     "hidden": "Đã ẩn.",
     "restored": "Đã hiện lại."
+  },
+  "emails": {
+    "title": "Email",
+    "subtitle": "Những gì cửa hàng gửi cho mọi người. Sửa nội dung, xem trước, gửi thử cho chính bạn - mỗi lần lưu là một phiên bản có thể quay lại.",
+    "loadFailed": "Không tải được danh sách email.",
+    "failed": "Không làm được việc đó.",
+    "template": {
+      "OrderPaid": "Đơn đã thanh toán",
+      "PasswordReset": "Đặt lại mật khẩu",
+      "EmailConfirmation": "Xác nhận email"
+    },
+    "language": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    },
+    "builtIn": "Nội dung mặc định",
+    "edited": "Đã sửa",
+    "version": "Phiên bản {{version}} · {{date}}",
+    "subject": "Tiêu đề",
+    "body": "Nội dung",
+    "insertInSubject": "Chèn {{placeholder}} vào tiêu đề",
+    "required": "Phải giữ: {{placeholders}}",
+    "save": "Lưu",
+    "saved": "Đã lưu. Email tiếp theo sẽ dùng nội dung này.",
+    "preview": "Xem trước",
+    "previewTitle": "Xem trước email",
+    "plainText": "Bản chữ thuần",
+    "sendTest": "Gửi thử cho tôi",
+    "testSent": "Đã gửi thử đến địa chỉ của bạn.",
+    "reset": "Về mặc định",
+    "wasReset": "Đã quay về nội dung mặc định.",
+    "versions": "Phiên bản",
+    "noVersions": "Chưa sửa lần nào - đang dùng nội dung mặc định.",
+    "versionLabel": "Phiên bản {{version}}",
+    "currentVersion": "Hiện tại",
+    "restore": "Khôi phục",
+    "restored": "Đã khôi phục phiên bản {{version}}."
   }
 }

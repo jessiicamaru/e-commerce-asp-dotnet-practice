@@ -73,5 +73,22 @@
     "none": "Chưa có gì.",
     "loadFailed": "Không tải được.",
     "period": "{{count}} ngày qua"
+  },
+  "editor": {
+    "insert": "Chèn:",
+    "bold": "Đậm",
+    "italic": "Nghiêng",
+    "underline": "Gạch chân",
+    "strike": "Gạch ngang",
+    "heading": "Tiêu đề",
+    "bulletList": "Danh sách chấm",
+    "orderedList": "Danh sách số",
+    "quote": "Trích dẫn",
+    "link": "Liên kết",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại",
+    "linkAddress": "Địa chỉ liên kết",
+    "applyLink": "Áp dụng",
+    "removeLink": "Bỏ liên kết"
   }
 }

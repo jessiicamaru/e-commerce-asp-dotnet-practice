@@ -34,6 +34,8 @@ export const queryKeys = {
   productQuestions: (productId: string, page: number) => ['questions', 'product', productId, page] as const,
   questionQueue: (answered: boolean, page: number) => ['questions', 'queue', answered, page] as const,
   staffQuestions: (hidden: boolean, page: number) => ['questions', 'staff', hidden, page] as const,
+  emailTemplates: () => ['email-templates'] as const,
+  emailTemplateVersions: (template: string, language: string) => ['email-templates', template, language, 'versions'] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   accounts: (search: string, page: number) => ['accounts', search, page] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,

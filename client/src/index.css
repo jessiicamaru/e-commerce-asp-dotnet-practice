@@ -156,3 +156,15 @@
     @apply font-sans;
     }
 }
+/* Words an administrator writes in the rich-text editor (specs/077): the few elements the server's allow-list
+   keeps, given back the look Tailwind's reset takes away - so the editor shows roughly what the email will. */
+@layer components {
+  .email-body p { margin: 0 0 0.75rem; }
+  .email-body h2 { margin: 0 0 0.75rem; font-size: 1.25rem; font-weight: 700; }
+  .email-body h3 { margin: 0 0 0.75rem; font-size: 1.1rem; font-weight: 700; }
+  .email-body ul { margin: 0 0 0.75rem; padding-left: 1.5rem; list-style: disc; }
+  .email-body ol { margin: 0 0 0.75rem; padding-left: 1.5rem; list-style: decimal; }
+  .email-body blockquote { margin: 0 0 0.75rem; padding-left: 0.75rem; border-left: 3px solid var(--border); color: var(--muted-foreground); }
+  .email-body a { text-decoration: underline; text-underline-offset: 2px; }
+  .email-body hr { margin: 1rem 0; }
+}

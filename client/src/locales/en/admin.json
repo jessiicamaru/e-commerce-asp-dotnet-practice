@@ -13,7 +13,8 @@
     "overview": "Overview",
     "returns": "Returns",
     "vouchers": "Vouchers",
-    "questions": "Questions"
+    "questions": "Questions",
+    "emails": "Emails"
   },
   "queue": {
     "title": "Orders to ship",
@@ -358,5 +359,42 @@
     "restoreAnswer": "Show answer again",
     "hidden": "Hidden.",
     "restored": "Shown again."
+  },
+  "emails": {
+    "title": "Emails",
+    "subtitle": "What the shop writes to people. Edit the words, preview them, send yourself a test - every save is a version you can go back from.",
+    "loadFailed": "Could not load the emails.",
+    "failed": "Could not do that.",
+    "template": {
+      "OrderPaid": "Order paid",
+      "PasswordReset": "Password reset",
+      "EmailConfirmation": "Confirm email"
+    },
+    "language": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    },
+    "builtIn": "Built-in words",
+    "edited": "Edited",
+    "version": "Version {{version}} · {{date}}",
+    "subject": "Subject",
+    "body": "Body",
+    "insertInSubject": "Insert {{placeholder}} in the subject",
+    "required": "Must keep: {{placeholders}}",
+    "save": "Save",
+    "saved": "Saved. The next email says this.",
+    "preview": "Preview",
+    "previewTitle": "Email preview",
+    "plainText": "Plain-text version",
+    "sendTest": "Send me a test",
+    "testSent": "Test sent to your address.",
+    "reset": "Reset to default",
+    "wasReset": "Back to the built-in words.",
+    "versions": "Versions",
+    "noVersions": "Never edited - it says the built-in words.",
+    "versionLabel": "Version {{version}}",
+    "currentVersion": "Current",
+    "restore": "Restore",
+    "restored": "Version {{version}} restored."
   }
 }

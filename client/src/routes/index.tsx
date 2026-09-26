@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/auth/require-auth'
 import { RequireRole } from '@/components/auth/require-role'
@@ -36,6 +37,7 @@ import { AdminModerationPage } from '@/pages/admin-moderation'
 import { AdminProductsPage } from '@/pages/admin-products'
 import { AdminReviewsPage } from '@/pages/admin-reviews'
 import { AdminQuestionsPage } from '@/pages/admin-questions'
+import { LoadingRows } from '@/components/shared/query-state'
 import { AdminOverviewPage } from '@/pages/admin-overview'
 import { NotificationsPage } from '@/pages/notifications'
 import { ConfirmEmailPage } from '@/pages/confirm-email'
@@ -46,6 +48,10 @@ import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
 
 /** Every address the storefront answers. Anything behind RequireAuth needs a signed-in customer. */
+// The one page that brings a rich-text editor (specs/077): loaded when an administrator opens it, so no shopper
+// downloads ProseMirror to look at a camera.
+const AdminEmailsPage = lazy(() => import('@/pages/admin-emails').then((page) => ({ default: page.AdminEmailsPage })))
+
 export function AppRoutes() {
   return (
     <BrowserRouter>
@@ -175,6 +181,16 @@ export function AppRoutes() {
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="reviews" element={<AdminReviewsPage />} />
             <Route path="questions" element={<AdminQuestionsPage />} />
+            <Route
+              path="emails"
+              element={
+                <RequireRole role={['Admin']}>
+                  <Suspense fallback={<LoadingRows />}>
+                    <AdminEmailsPage />
+                  </Suspense>
+                </RequireRole>
+              }
+            />
             <Route path="overview" element={<AdminOverviewPage />} />
           </Route>
           <Route path="*" element={<p>Not found.</p>} />
