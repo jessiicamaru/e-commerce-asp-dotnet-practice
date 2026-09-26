@@ -1,0 +1,34 @@
+info:
+  name: a moderator takes the product down
+  type: http
+  seq: 78
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}/take-down"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Bruno checks what an unlisted product still shows"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Off the shelf again, so the reads below are about a product the public cannot see (specs/081, #166).

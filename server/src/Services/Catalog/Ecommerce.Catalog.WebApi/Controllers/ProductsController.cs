@@ -220,15 +220,15 @@ public class ProductsController : ApiControllerBase
     /// </summary>
     [AllowAnonymous]
     [HttpGet("{id:guid}/image")]
-    public async Task<IActionResult> GetImage(Guid id, [FromQuery] string? v)
+    public async Task<IActionResult> GetImage(Guid id, [FromQuery] string? v, [FromQuery] Guid? k)
     {
-        var image = await Mediator.Send(new GetProductImageQuery(id));
+        var image = await Mediator.Send(new GetProductImageQuery(id, k));
         if (image is null)
         {
             return NotFound();
         }
 
-        Response.Headers.CacheControl = v == image.Version ? "public, max-age=31536000, immutable" : "no-cache";
+        Response.Headers.CacheControl = CacheFor(image, v);
         // The type was decided from the bytes; the browser must not second-guess it.
         Response.Headers.XContentTypeOptions = "nosniff";
         return File(image.Content, image.ContentType);
@@ -312,18 +312,25 @@ public class ProductsController : ApiControllerBase
     /// </summary>
     [AllowAnonymous]
     [HttpGet("{id:guid}/variants/{variantId:guid}/image")]
-    public async Task<IActionResult> GetVariantImage(Guid id, Guid variantId, [FromQuery] string? v)
+    public async Task<IActionResult> GetVariantImage(Guid id, Guid variantId, [FromQuery] string? v, [FromQuery] Guid? k)
     {
-        var image = await Mediator.Send(new GetVariantImageQuery(id, variantId));
+        var image = await Mediator.Send(new GetVariantImageQuery(id, variantId, k));
         if (image is null)
         {
             return NotFound();
         }
 
-        Response.Headers.CacheControl = v == image.Version ? "public, max-age=31536000, immutable" : "no-cache";
+        Response.Headers.CacheControl = CacheFor(image, v);
         Response.Headers.XContentTypeOptions = "nosniff";
         return File(image.Content, image.ContentType);
     }
+
+    /// <summary>
+    /// For good only when the address names the current version AND the product is on sale: the image of a product
+    /// off the shelf is served to a keyed address (specs/081) and must not be kept by a shared cache.
+    /// </summary>
+    private static string CacheFor(ProductImage image, string? v) =>
+        !image.Public ? "private, no-cache" : v == image.Version ? "public, max-age=31536000, immutable" : "no-cache";
 
     // ---- Review (specs/045). Deciding is Staff; a seller only sends their own rejected product back.
 

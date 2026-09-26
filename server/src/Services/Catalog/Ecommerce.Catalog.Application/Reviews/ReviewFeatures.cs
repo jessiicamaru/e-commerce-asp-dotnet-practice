@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Common.Models;
 using Ecommerce.Catalog.Domain.Entities;
@@ -101,6 +102,11 @@ public class ReviewHandlers(
 
     public async Task<PaginatedList<ReviewResponse>> Handle(GetProductReviewsQuery request, CancellationToken cancellationToken)
     {
+        // The public lookup's rule (specs/045, #166): off the shelf, only its seller and staff read what is said about it.
+        var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
+        if (product is null || !ProductReview.MaySee(product, _currentUser))
+            throw new NotFoundException("Product not found.");
+
         var (items, total) = await _reviews.GetVisibleAsync(request.ProductId, request.PageNumber, request.PageSize, cancellationToken);
         // What a shopper reads: no reason, no hider - those are for staff.
         return new PaginatedList<ReviewResponse>(items.Select(r => ReviewResponse.From(r)).ToList(), total, request.PageNumber, request.PageSize);

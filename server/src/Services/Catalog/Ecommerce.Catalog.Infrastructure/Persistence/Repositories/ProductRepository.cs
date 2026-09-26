@@ -42,12 +42,15 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         DateTime? expectedUpdatedAt,
         string? contentType,
         DateTime? updatedAt,
+        Guid? accessKey,
         CancellationToken cancellationToken = default) =>
         _context.Products
             .Where(p => p.Id == productId && p.ImageUpdatedAt == expectedUpdatedAt)
             .ExecuteUpdateAsync(set => set
                 .SetProperty(p => p.ImageContentType, contentType)
                 .SetProperty(p => p.ImageUpdatedAt, updatedAt)
+                // A new image, a new key (specs/081): an address handed out for the old one opens nothing new.
+                .SetProperty(p => p.ImageAccessKey, accessKey)
                 .SetProperty(p => p.UpdatedAt, DateTime.UtcNow), cancellationToken);
 
     public async Task<HashSet<string>> GetLiveImageKeysAsync(CancellationToken cancellationToken = default)
@@ -93,12 +96,14 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         DateTime? expectedUpdatedAt,
         string? contentType,
         DateTime? updatedAt,
+        Guid? accessKey,
         CancellationToken cancellationToken = default) =>
         _context.ProductVariants
             .Where(v => v.Id == variantId && v.ImageUpdatedAt == expectedUpdatedAt)
             .ExecuteUpdateAsync(set => set
                 .SetProperty(v => v.ImageContentType, contentType)
                 .SetProperty(v => v.ImageUpdatedAt, updatedAt)
+                .SetProperty(v => v.ImageAccessKey, accessKey)
                 .SetProperty(v => v.UpdatedAt, DateTime.UtcNow), cancellationToken);
 
     public Task<ProductVariant?> GetVariantAsync(Guid variantId, CancellationToken cancellationToken = default) =>

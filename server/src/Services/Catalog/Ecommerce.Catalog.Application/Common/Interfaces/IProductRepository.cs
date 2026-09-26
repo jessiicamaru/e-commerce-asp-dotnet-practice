@@ -102,6 +102,7 @@ public interface IProductRepository : ILiveImageKeys
         DateTime? expectedUpdatedAt,
         string? contentType,
         DateTime? updatedAt,
+        Guid? accessKey,
         CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(Guid productId, CancellationToken cancellationToken = default);
@@ -123,6 +124,7 @@ public interface IProductRepository : ILiveImageKeys
         DateTime? expectedUpdatedAt,
         string? contentType,
         DateTime? updatedAt,
+        Guid? accessKey,
         CancellationToken cancellationToken = default);
 
     /// <summary>

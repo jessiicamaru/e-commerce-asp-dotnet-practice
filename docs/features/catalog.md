@@ -109,6 +109,16 @@ All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#c
 | [`product_views`](../reference/data-model.md#product_views) | Views per product per UTC day. |
 | [`product_reviews`](../reference/data-model.md#product_reviews), [`review_eligibility`](../reference/data-model.md#review_eligibility) | See [ratings and reviews](ratings-and-reviews.md). |
 
+**Off the shelf, nothing hangs on it for the public either** (specs/081, #166).
+- A product that is not listed is the public lookup's 404, and so are its reviews and questions, except to its
+  seller and staff (`ProductReview.MaySee`).
+- Its images are served only to an address carrying the image's own **`ImageAccessKey`** (`&k=`). This is an
+  unguessable Guid, new with every image and written by the guarded statement that switches it. It is handed out
+  only in the responses its reader may see. The address needs a key because a browser's image request carries no
+  token.
+- On sale, an image is served with or without the key, so cached addresses keep working. Off the shelf, the
+  response is `private, no-cache`.
+
 Image bytes are not in the database. They are objects in the `product-images` bucket (specs/079), or files in the
 store's directory under `dotnet run`, named by the key derived from the row.
 
@@ -222,7 +232,9 @@ Bruno: `bruno/product/` (variants, translations, search without diacritics, doll
   (specs/079, out of scope).
 - **The directory store still assumes one instance.** It is `dotnet run`'s default. The containers use the bucket.
 - **Sorting by name uses the default-language `Name`**, not the translated one. Search matches the SKU with a plain `LIKE` and does not search descriptions.
-- **A product that is not approved still serves its image** at `GET /api/products/{id}/image` to anyone who knows the id. Its reviews are also readable at `GET /api/products/{id}/reviews`.
+- **An image address somebody already holds keeps opening that image** after its product leaves the shelf,
+  until the image is replaced (specs/081: the key is a capability, not a signed and expiring URL). Anybody who holds
+  it saw the photograph already.
 - **Pending products would show during a rollback** to an image from before specs/045, which ignores `ReviewStatus` (specs/045 D1).
 - **Prices entered before specs/022's rule keep fractional dong amounts** until somebody reprices them.
 - **Order lines freeze no image.** An order for a deleted product loses its picture (specs/029 D1, specs/032 D8).

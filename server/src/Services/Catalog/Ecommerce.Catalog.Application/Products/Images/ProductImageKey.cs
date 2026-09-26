@@ -51,7 +51,7 @@ public static class ProductImageKey
     /// </summary>
     public static string? UrlForVariant(ProductVariant variant) =>
         variant.ImageUpdatedAt is { } at
-            ? $"/api/products/{variant.ProductId}/variants/{variant.Id}/image?v={Version(at)}"
+            ? $"/api/products/{variant.ProductId}/variants/{variant.Id}/image?v={Version(at)}{Access(variant.ImageAccessKey)}"
             : null;
 
     /// <summary>The current image's key, or <c>null</c> when the product has none.</summary>
@@ -66,6 +66,19 @@ public static class ProductImageKey
     /// </summary>
     public static string? UrlFor(Product product) =>
         product.ImageUpdatedAt is { } at
-            ? $"/api/products/{product.Id}/image?v={Version(at)}"
+            ? $"/api/products/{product.Id}/image?v={Version(at)}{Access(product.ImageAccessKey)}"
             : null;
+
+    /// <summary>
+    /// The address's key (specs/081): what lets an image be fetched while its product is off the shelf. Only a
+    /// response its reader may see carries the address at all, so the key goes wherever the address goes.
+    /// </summary>
+    private static string Access(Guid? key) => key is { } k ? $"&k={k:N}" : string.Empty;
+
+    /// <summary>
+    /// Whether an image may be served to a request carrying <paramref name="key"/>: always while its product is on
+    /// sale - the addresses already cached keep working - and otherwise only with the image's own key.
+    /// </summary>
+    public static bool MayServe(Product product, Guid? imageKey, Guid? key) =>
+        product.IsListed || (imageKey is not null && imageKey == key);
 }

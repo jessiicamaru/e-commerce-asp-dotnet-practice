@@ -26,9 +26,7 @@ disagrees with its own rules. **All ten (#119-#128) are fixed** - see Fixed belo
 
 A person cannot recover or manage their own account, and sign-in can be guessed at freely.
 
-| Issue | Title |
-| :-- | :-- |
-| [#166](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/166) | A product that is not on sale still serves its image, reviews and questions |
+Nothing open.
 
 ## Priority 2 - buying and selling
 
@@ -61,6 +59,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#150](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/150) | Email templates and notification wording cannot be edited | [#161](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/161) (specs/077), [#162](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/162) (specs/078) |
 | [#114](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/114) | Product images only work with one Catalog instance | [#163](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/163) (specs/079) |
 | [#117](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/117) | No test drives the storefront in a browser | [#164](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/164) (specs/080) |
+| [#166](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/166) | A product that is not on sale still serves its image, reviews and questions | [#169](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/169) (specs/081) |
 | [#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118) | Every Bruno and verify-saga run leaves products behind | [#157](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/157) (specs/073) |
 | [#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116) | Revenue is counted on the day an order was placed, not paid | [#156](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/156) (specs/072) |
 | [#115](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/115) | The orchestrator has no health endpoint | [#155](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/155) (specs/071) |

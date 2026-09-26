@@ -1,3 +1,4 @@
+using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Common.Models;
 using Ecommerce.Catalog.Domain.Entities;
@@ -124,6 +125,11 @@ public class QuestionHandlers(
 
     public async Task<PaginatedList<QuestionResponse>> Handle(GetProductQuestionsQuery request, CancellationToken cancellationToken)
     {
+        // The public lookup's rule (specs/045, #166): off the shelf, only its seller and staff read its questions.
+        var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
+        if (product is null || !ProductReview.MaySee(product, _currentUser))
+            throw new NotFoundException("Product not found.");
+
         var (items, total) = await _questions.GetVisibleAsync(request.ProductId, request.PageNumber, request.PageSize, cancellationToken);
         return new PaginatedList<QuestionResponse>(items.Select(QuestionResponse.Public).ToList(), total, request.PageNumber, request.PageSize);
     }
