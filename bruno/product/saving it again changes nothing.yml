@@ -1,0 +1,28 @@
+info:
+  name: saving it again changes nothing
+  type: http
+  seq: 62
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/saved"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 204", function() {
+          expect(res.status).to.equal(204);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  ON CONFLICT DO NOTHING on (customer, product): once per product however often it is saved.
