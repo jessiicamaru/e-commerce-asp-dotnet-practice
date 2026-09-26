@@ -1,0 +1,35 @@
+info:
+  name: an administrator answering for a seller is 404
+  type: http
+  seq: 71
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/questions/{{questionId}}/answer"
+  body:
+    type: json
+    data: |-
+      {
+        "answer": "Yes."
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The issue's acceptance: only the product's seller answers as the seller. Staff answer the shop's own products and
+  moderate everyone's, but an answer is published as the seller's words.

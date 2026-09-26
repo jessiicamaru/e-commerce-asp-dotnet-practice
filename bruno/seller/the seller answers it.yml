@@ -1,0 +1,38 @@
+info:
+  name: the seller answers it
+  type: http
+  seq: 72
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/questions/{{questionId}}/answer"
+  body:
+    type: json
+    data: |-
+      {
+        "answer": "Yes, in the box."
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answered", function() {
+          expect(res.body.answer).to.equal("Yes, in the box.");
+          expect(res.body.answeredAt).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The first answer tells the asker; a rewrite replaces it and tells nobody.
