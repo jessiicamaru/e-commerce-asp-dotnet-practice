@@ -98,11 +98,11 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (266 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (206 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (210 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (170 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
-5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
+5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (13 tests, no database - the
 gateway's real pipeline through WebApplicationFactory, specs/062). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -411,7 +411,8 @@ and **money is never added across currencies**. A sale is dated by **when it was
 `CreatedAt` for orders from before it. ⚠️ **A parcel returned and received is not a sale on either page** (specs/084, #172):
 the Overview's revenue and top buyers are less its `RefundAmount`, its lines leave top products. ⚠️ **One period rule** for all four (`Ecommerce.Shared.Insights.InsightsPeriod`, specs/055): whole days **of the shop** (`InsightsCalendar`, `Insights:TimeZone`, `Asia/Ho_Chi_Minh` by default - specs/082), both ends included, at most 366 - a new insight validates with `ValidPeriod(..., calendar)`, or its totals and the chart stop covering the same days (#125). The chart draws the response's `firstDay`..`lastDay`, never days the browser worked out. ⚠️ Group by `TimeZoneInfo.ConvertTimeBySystemTimeZoneId(x, calendar.ZoneId).Date` (Npgsql's `AT TIME ZONE`); `EF.Functions.AtTimeZone` has no `DateTime` overload. **A seller has the same page for their own shop** at `/shop/insights` (specs/068): `/api/orders/sales/insights/{revenue,top-products}` and `/api/products/insights/mine`, `Seller` only, no seller id in any request - revenue is **their lines before tax** (never an order's total), less a part whose return was `Received`, and the rating is weighted by each product's review count. The chart, revenue panel, list and period picker are shared in `client/src/components/insights`. A product view is its own request
 (`POST /api/products/{id}/view`, anonymous, always 204), counted per product per day by an upsert that
-increments in SQL, and only for a shopper looking at something on sale - not a side effect of
+increments in SQL - ⚠️ once per viewer (specs/086, #173: `product_viewers` is the claim, keyed by a hash of the token's id or the
+storefront's `visitorId`, and the gateway limits the route) - and only for a shopper looking at something on sale - not a side effect of
 `GET /products/{id}`, which the seller page and focus refetches call repeatedly.
 
 **A seller has somewhere to click** since specs/028: `/shop` lists their own products, `/shop/products/new`
@@ -678,7 +679,8 @@ and made-up tokens are one 400 on `Token`. The storefront: `/forgot-password`, `
 `RateLimiterPolicy`):
 - `sign-in` - login, both registrations, reset-password - 30 a minute;
 - `email` - forgot-password - 5 a minute;
-- `session` - refresh - 60 a minute.
+- `session` - refresh - 60 a minute;
+- `views` - `POST /api/products/{id}/view` - 30 a minute (specs/086, #173).
 
 A refusal is 429 ProblemDetails with `Retry-After` and `retryAfter`. Identity pauses **one email** for 5
 minutes after 5 wrong passwords in 15 minutes (`sign_in_throttles`, single `ON CONFLICT DO UPDATE`

@@ -270,6 +270,7 @@ ProblemDetails, with `Retry-After` in seconds and the same number as `retryAfter
    | `sign-in` | `login`, `register`, `register-seller`, `reset-password` | 30 a minute |
    | `email` | `forgot-password` | 5 a minute |
    | `session` | `refresh` (two tabs share one cookie) | 60 a minute |
+   | `views` | `POST /api/products/{id}/view`, the anonymous write behind "most viewed" (specs/086) | 30 a minute |
 
    Each is `RateLimits:<policy>:PermitLimit` / `WindowSeconds`, and a value below 1 refuses to start.
    The counters are in memory, per gateway instance.

@@ -1,6 +1,6 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `326356f`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92682f1`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
@@ -92,7 +92,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/products/{id}/variants/{variantId}/image` | Seller, Admin | Give one SHAPE of a product its own photograph, or replace it (specs/032). |
 | `DELETE` | `/api/products/{id}/variants/{variantId}/prices/{currency}` | Seller, Admin | Stops selling this variant in this currency. It is then reported with no price rather than with a converted one. Refused for the default currency, which has no row to remove. |
 | `PUT` | `/api/products/{id}/variants/{variantId}/prices/{currency}` | Seller, Admin | What this variant costs in one currency (specs/022). An upsert, like a translation. |
-| `POST` | `/api/products/{id}/view` | anyone | The product page was opened. Anonymous, and always 204 - counted or not. |
+| `POST` | `/api/products/{id}/view` | anyone | The product page was opened. Anonymous, and always 204 - counted or not. The optional body names the visitor (specs/086), so opening the page again today adds no view; the gateway limits how often a client may call. |
 | `GET` | `/api/products/{productId}/questions` | anyone | A product's questions, newest first. A hidden answer reads as none; no reasons. |
 | `POST` | `/api/products/{productId}/questions` | Customer | Ask about a product on sale. Its seller is told; asking about your own is 403. |
 | `GET` | `/api/products/{productId}/reviews` | anyone |  |
