@@ -158,6 +158,23 @@ plain-text alternative derived from it. In the text, a link reads as "words (add
 The storefront's editor is TipTap, limited to what the server keeps. It is **lazy-loaded**, so no shopper
 downloads it.
 
+## What became of an email
+
+Since specs/087 (#175), an administrator reads the emails at `/admin/email-delivery`, one state at a time. It opens
+on **Failed**, then Waiting (`Pending`) and Sent, and a search narrows the list to one recipient's address.
+
+1. **`GET /api/emails?status=&search=&page=&pageSize=`** (Admin, not Moderator) returns each email's recipient and
+   their address, the template, language, state, attempts, last error and times. It never returns the email's
+   data: for a reset or confirmation email the data is a token. A recipient who no longer exists shows with no
+   address.
+2. **`POST /api/emails/{id}/retry`** (Admin) puts a failed email back in the queue.
+   - It is due now, from its first attempt, with its last error cleared.
+   - It is one guarded `UPDATE ... WHERE "Status" = 'Failed'`, so a retry of an email already back in the queue, or
+     two administrators at once, move it once and the other is 409.
+   - It is audited as `System` / `EmailRetried`, with the attempts and the error it had.
+3. **A reset or confirmation link is never sent again** (`canRetry: false`, and 409). The link expires after 30
+   minutes or 24 hours, so sending it later helps nobody. The person asks for a new one.
+
 ## Data
 
 | Table | Service | What |
@@ -195,6 +212,9 @@ Mailpit's inbox is at **http://localhost:8025**. It keeps its mail on the `mailp
 | `Ecommerce.Catalog.Tests/SavedProductTests` | Back in stock asks for one email per saver per flip, in the reader's language, and none for a product off the shelf. |
 | `Ecommerce.Identity.Tests/AccountEmailTests` (7) | Every template has words in both languages and renders its sample whole. The shipped and locked wording. A lock and a ban ask for one email each, and a refused lock for none. The language is learnt at sign-up, sign-in and renewal, and nonsense changes nothing. The reader's language is filled in, with the default for somebody who never said. |
 | `Ecommerce.Identity.Tests/EmailTemplateTests` (13) | An unedited email is the built-in words as HTML plus text. A saved edit is what the next email says, in that language only. An unknown placeholder is refused by name. A security email keeps `{link}`. Scripts, handlers, `javascript:`, images and frames are stripped, and a name is escaped. A stale editor is a 409, and two saves at once make one version. The store gives a number once. A future version is a 409. Reset and restore are versions, audited with before and after. The list, the preview and a test to the caller. An unknown template is a 404. |
+| `Ecommerce.Identity.Tests/EmailDeliveryTests` (4) | A failed email is listed with why and who it was for, never its data. Each state is its own list, and a search narrows it. A failed email sent again goes out once, is audited, and a second retry is 409. A reset link is never sent again. An unknown id is a 404. |
+| `client/src/pages/admin-email-delivery/index.test.tsx` | Opens on the failed emails with who and why; asks for another state and for one person; sends one again and says so; offers no retry for an expiring link; shows the server's refusal. |
+| `bruno/admin-users/` 31-33, `security-checks/the email log without a token is 401` | 403 for a moderator; the sent emails with no data; a sent email is not sent again (409); 401 without a token. |
 | `client/src/pages/admin-emails/index.test.tsx`, `components/shared/rich-text-editor/index.test.tsx` | Every email the server sends has a name in both languages. The page opens on the first email and says what a security email must keep. A save goes on top of the version it opened, with a placeholder inserted at the cursor. Every refusal is listed. The preview is sandboxed. A restore goes on top of the current version. The editor inserts placeholders and toggles bold. |
 | `bruno/admin-users/` 17-23 | 403 for a moderator; the list; a placeholder refused by name (400); a preview with the script gone; a save as a new version; 409 on a stale version; a reset. |
 
@@ -225,7 +245,7 @@ It was verified end to end against Mailpit (specs/060):
 - **No unsubscribe and no bounce handling.** A real provider would add both.
 - **Images cannot be used** (no logo): the allow-list leaves them out, because a remote image in an email is also
   a read receipt.
-- **No screen shows failed emails**, though the rows keep the reason.
+- **Nobody is alerted when an email fails.** An administrator sees it by opening `/admin/email-delivery` (specs/087).
 
 ## History
 
@@ -236,3 +256,4 @@ It was verified end to end against Mailpit (specs/060):
 | [063-email-confirmation](../../specs/063-email-confirmation/) | #146 | The address-confirmation email, staged in the account's own save and scrubbed once sent (#106). |
 | [077-email-templates](../../specs/077-email-templates/) | #161 | Administrators edit every email: versions, sanitised HTML, placeholders checked, preview and test, multipart sending (#150, the email half). |
 | [083-more-emails](../../specs/083-more-emails/) | #171 | Eight more emails: parcel shipped, order cancelled, return accepted, refused and refunded, back in stock, account locked and banned. The reader's language is learnt from use (`users.Language`) (#167). |
+| [087-email-delivery](../../specs/087-email-delivery/) | #179 | `/admin/email-delivery`: the emails in each state with their reason, and a failed one sent again (#175). |

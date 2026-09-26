@@ -38,9 +38,7 @@ Nothing open.
 
 Known and recorded; they hurt at scale or in operation, not today.
 
-| Issue | Title |
-| :-- | :-- |
-| [#175](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/175) | Nobody can see an email that failed to send |
+Nothing open.
 
 ## Priority 4 - testing
 
@@ -64,6 +62,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#172](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/172) | The admin Overview counts a returned and refunded parcel as revenue | [#176](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/176) (specs/084) |
 | [#174](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/174) | A product that is off the shelf still accepts new reviews | [#177](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/177) (specs/085) |
 | [#173](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/173) | Anybody can inflate a product's view count - the view endpoint has no limit and no dedup | [#178](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/178) (specs/086) |
+| [#175](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/175) | Nobody can see an email that failed to send | [#179](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/179) (specs/087) |
 | [#118](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/118) | Every Bruno and verify-saga run leaves products behind | [#157](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/157) (specs/073) |
 | [#116](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/116) | Revenue is counted on the day an order was placed, not paid | [#156](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/156) (specs/072) |
 | [#115](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/115) | The orchestrator has no health endpoint | [#155](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/155) (specs/071) |
@@ -91,4 +90,4 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 ## Suggested order
 
 The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done, and returns (#107) and seller insights (#111). Vouchers (#108) are done, and so are saved products (#109), product questions (#110), editable emails and notices (#150) and object storage (#114);
-and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done; next, filed 2026-09-27: #172, #174, #173, then #175.
+and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27.
