@@ -2,7 +2,7 @@
 
 **Feature Branch**: `089-explicit-anonymous` | **Created**: 2026-09-27 | **Issue**: #183
 
-**Status**: Draft
+**Status**: Merged (#188, 2026-09-27)
 
 **Input**: Issue #183 - "the auth endpoints are public only because they lack [Authorize]".
 

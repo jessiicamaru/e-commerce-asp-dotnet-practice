@@ -31,6 +31,21 @@ public class ReservationRepository(InventoryDbContext context) : IReservationRep
             .ToListAsync(cancellationToken);
     }
 
+    public Task<int> ReleaseHeldAsync(
+        IReadOnlyCollection<Guid> productIds,
+        string reason,
+        DateTime now,
+        CancellationToken cancellationToken = default)
+    {
+        // Guarded on Held, so a redelivery releases nothing twice and a settled row keeps its history.
+        return _context.StockReservations
+            .Where(x => productIds.Contains(x.ProductId) && x.Status == ReservationStatus.Held)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.Status, ReservationStatus.Released)
+                .SetProperty(x => x.SettledAt, now)
+                .SetProperty(x => x.SettlementReason, reason), cancellationToken);
+    }
+
     public async Task<List<StockReservation>> GetExpiredAsync(
         DateTime asOfUtc,
         int batchSize,

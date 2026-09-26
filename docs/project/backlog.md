@@ -26,7 +26,6 @@ Found on 2026-09-27 while the design records were rebuilt from the code:
 
 | Issue | Title |
 | :-- | :-- |
-| [#181](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/181) | Deleting a product leaves its stock reservations behind |
 | [#182](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/182) | A saved product back on sale by any route but Inventory's tells nobody |
 | [#184](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/184) | During a rollback a seller's new product goes on sale unreviewed |
 | [#185](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/185) | Off the shelf is IsListed for reads but IsListed and IsActive for writes |
@@ -62,6 +61,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 
 | Issue | Title | Fixed by |
 | :-- | :-- | :-- |
+| [#181](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/181) | Deleting a product leaves its stock reservations behind | [#189](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/189) (specs/090) |
 | [#183](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/183) | The auth endpoints are public only because they lack [Authorize] | [#188](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/188) (specs/089) |
 | [#180](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/180) | A moderator can shorten an administrator's lock by locking the account again | [#187](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/187) (specs/088) |
 | [#113](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/113) | Search scans every product | [#158](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/158) (specs/074) |
@@ -104,4 +104,4 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 ## Suggested order
 
 The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done, and returns (#107) and seller insights (#111). Vouchers (#108) are done, and so are saved products (#109), product questions (#110), editable emails and notices (#150) and object storage (#114);
-and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27. Next, filed 2026-09-27 from the design-record rebuild: #180 and #183 first (security, both done), then #181, #182, #185, #184 and #186.
+and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27. Next, filed 2026-09-27 from the design-record rebuild: #180 and #183 first (security, both done), then #181 (done), #182, #185, #184 and #186.

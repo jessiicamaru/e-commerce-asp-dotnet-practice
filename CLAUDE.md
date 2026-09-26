@@ -78,7 +78,8 @@ its exit status), Bruno in a last `teardown` folder (`seq: 17`, after `seller` a
 For what older runs left, the cleaner **keeps what `cameras.json` names and
 deletes the rest**, which is the safe way round - a keep list cannot miss a new kind of debris, a
 delete-pattern list can. It goes through `DELETE /api/products/{id}` (Admin, specs/024), which
-announces `ProductDeletedEvent` so Inventory drops the stock rows too.
+announces `ProductDeletedEvent` so Inventory drops the stock rows too - and releases their held reservations
+in the same transaction (specs/090, #181; nothing cascades, there is no foreign key).
 
 It posts through the gateway as an administrator rather than writing SQL, so every row goes down the
 path a person uses — which is how it found that `VariantOptionResponse` carried no id and the
