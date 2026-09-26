@@ -1,7 +1,7 @@
 info:
   name: the storefront reads the notice wording
   type: http
-  seq: 24
+  seq: 27
 
 http:
   method: GET

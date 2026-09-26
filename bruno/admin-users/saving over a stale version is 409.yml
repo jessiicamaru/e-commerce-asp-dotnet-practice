@@ -1,7 +1,7 @@
 info:
   name: saving over a stale version is 409
   type: http
-  seq: 22
+  seq: 25
 
 http:
   method: PUT

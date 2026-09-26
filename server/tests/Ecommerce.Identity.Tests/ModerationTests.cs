@@ -159,6 +159,54 @@ public class ModerationTests(IdentityTestFixture fixture)
     }
 
     [Fact]
+    public async Task A_moderator_does_not_shorten_a_lock_by_locking_again()
+    {
+        // #180 (specs/088): locking again replaced the end date, so a one-day lock undid a 300-day one - the
+        // unlock that specs/050 refuses, by another route.
+        var (id, _) = await NewUserAsync();
+        await SendAsync(Admin, new LockUserCommand(id, 300, "An administrator decided"), RoleNames.Admin);
+        var before = await LockedUntilAsync(id);
+
+        var (audit, notices) = await PublishedAsync(Guid.CreateVersion7(), new LockUserCommand(id, 1, "Shorter"), RoleNames.Moderator,
+            expect: typeof(ForbiddenException));
+
+        Assert.Empty(audit);
+        Assert.Empty(notices);
+        Assert.Equal(before, await LockedUntilAsync(id));
+        Assert.Equal("An administrator decided", await LockReasonAsync(id));
+    }
+
+    [Fact]
+    public async Task A_moderator_extends_a_lock_and_shortens_only_one_they_could_have_lifted()
+    {
+        var (id, _) = await NewUserAsync();
+        var moderator = Guid.CreateVersion7();
+        await SendAsync(moderator, new LockUserCommand(id, 5, "First"), RoleNames.Moderator);
+
+        var extended = await SendAsync(moderator, new LockUserCommand(id, 20, "Again"), RoleNames.Moderator);
+        Assert.InRange(extended.LockedUntil!.Value, DateTime.UtcNow.AddDays(19), DateTime.UtcNow.AddDays(21));
+
+        // Twenty days to run is within a moderator's reach (specs/050): they could have unlocked it and locked for two.
+        var shortened = await SendAsync(moderator, new LockUserCommand(id, 2, "Shorter"), RoleNames.Moderator);
+        Assert.InRange(shortened.LockedUntil!.Value, DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(3));
+    }
+
+    [Fact]
+    public async Task An_administrator_shortens_any_lock()
+    {
+        var (id, _) = await NewUserAsync();
+        await SendAsync(Admin, new LockUserCommand(id, 300, "Long"), RoleNames.Admin);
+
+        var (audit, _) = await PublishedAsync(Admin, new LockUserCommand(id, 1, "Reconsidered"), RoleNames.Admin);
+
+        Assert.InRange((await LockedUntilAsync(id))!.Value, DateTime.UtcNow, DateTime.UtcNow.AddDays(2));
+        // The audit entry holds the end date before and after.
+        var entry = Assert.Single(audit);
+        Assert.Contains("Long", entry.Before);
+        Assert.Contains("Reconsidered", entry.After);
+    }
+
+    [Fact]
     public async Task A_ban_holds_until_lifted()
     {
         var (id, email) = await NewUserAsync();
@@ -243,6 +291,14 @@ public class ModerationTests(IdentityTestFixture fixture)
         await using var scope = provider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         return await db.Users.Where(u => u.Id == id).Select(u => u.LockedUntil).SingleAsync();
+    }
+
+    private async Task<string?> LockReasonAsync(Guid id)
+    {
+        await using var provider = _fixture.For(Guid.Empty);
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        return await db.Users.Where(u => u.Id == id).Select(u => u.LockReason).SingleAsync();
     }
 
     private async Task<T> SendAsync<T>(Guid caller, IRequest<T> request, params string[] roles)

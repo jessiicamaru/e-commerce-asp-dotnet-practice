@@ -1,7 +1,7 @@
 info:
   name: an administrator saves the order email
   type: http
-  seq: 21
+  seq: 24
 
 http:
   method: PUT

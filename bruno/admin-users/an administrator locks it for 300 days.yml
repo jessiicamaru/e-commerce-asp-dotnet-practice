@@ -1,16 +1,17 @@
 info:
-  name: an administrator resets the notice
+  name: an administrator locks it for 300 days
   type: http
-  seq: 33
+  seq: 18
 
 http:
   method: POST
-  url: "{{baseUrl}}/api/notifications/wording/NewSale/en/reset"
+  url: "{{baseUrl}}/api/users/{{longLockId}}/lock"
   body:
     type: json
     data: |-
       {
-        "expectedVersion": {{wordingVersion}}
+        "days": 300,
+        "reason": "An administrator decided"
       }
   auth:
     type: bearer
@@ -23,9 +24,7 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("the storefront's own words again", function() {
-          expect(res.body.isDefault).to.equal(true);
-        });
+        if (res.status === 200) bru.setVar("longLockUntil", res.body.lockedUntil);
 
 settings:
   encodeUrl: true
@@ -34,4 +33,4 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Leaves the shop's notices as they were before this run; the edit stays in the history.
+  Longer than a moderator's 30 days (specs/043), so only an administrator may shorten or lift it.

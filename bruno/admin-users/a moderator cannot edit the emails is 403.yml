@@ -1,7 +1,7 @@
 info:
   name: a moderator cannot edit the emails is 403
   type: http
-  seq: 17
+  seq: 20
 
 http:
   method: GET
