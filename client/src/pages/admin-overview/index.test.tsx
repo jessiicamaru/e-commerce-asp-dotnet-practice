@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,7 +7,6 @@ import { Insights } from '@/services/insights'
 import { Moderation } from '@/services/moderation'
 import { ShopApplications } from '@/services/shop-applications'
 import { renderAsAdmin } from '@/test/render'
-import { periodDays } from '@/utils/insights'
 import { AdminOverviewPage } from '.'
 
 function renderPage() {
@@ -28,9 +27,11 @@ beforeEach(async () => {
       { currency: 'USD', revenue: 1_700, orders: 1, averageOrderValue: 1_700 },
     ],
     days: [
-      { day: '2026-09-20', currency: 'VND', revenue: 84_000_000, orders: 2 },
-      { day: '2026-09-21', currency: 'USD', revenue: 1_700, orders: 1 },
+      { day: '2031-01-25', currency: 'VND', revenue: 84_000_000, orders: 2 },
+      { day: '2031-01-26', currency: 'USD', revenue: 1_700, orders: 1 },
     ],
+    firstDay: '2031-01-02',
+    lastDay: '2031-01-31',
   })
   vi.spyOn(Insights, 'topProducts').mockResolvedValue([{ productId: 'p1', productName: 'Fujifilm X-T5', units: 3, revenue: [] }])
   vi.spyOn(Insights, 'topViewed').mockResolvedValue([{ productId: 'p2', name: 'Sony A7 IV', views: 41 }])
@@ -65,7 +66,7 @@ describe('AdminOverviewPage (specs/047)', () => {
    * 7 x 24 h ago touched EIGHT dates while the chart drew seven, so the earliest day's revenue was in the
    * totals and had no bar.
    */
-  it('asks for exactly the days the chart draws', async () => {
+  it('asks for today and the days before it', async () => {
     const revenue = vi.mocked(Insights.revenue)
     const user = userEvent.setup()
     renderPage()
@@ -75,9 +76,23 @@ describe('AdminOverviewPage (specs/047)', () => {
     await waitFor(() => expect(revenue).toHaveBeenCalledTimes(2))
 
     const [from, to] = revenue.mock.calls[1]
-    const day = (iso: string) => Date.parse(iso.slice(0, 10))
-    expect((day(to) - day(from)) / 86_400_000 + 1).toBe(7)
-    expect(periodDays(to, 7)[0]).toBe(from.slice(0, 10))
+    expect(Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000)).toBe(6)
+  })
+
+  /**
+   * #168 (specs/082): the server counts the SHOP's days, and says which ones they were. A browser deriving
+   * them from its own clock in UTC drew the day before in Hanoi's morning - and an order paid at 06:30 there
+   * on a bar labelled yesterday.
+   */
+  it("draws exactly the shop's days the server counted", async () => {
+    renderPage()
+
+    const chart = await screen.findByRole('list', { name: 'Revenue per day' })
+    const columns = within(chart).getAllByRole('listitem')
+    expect(columns).toHaveLength(30)
+    expect(columns[0]).toHaveAccessibleName(/^Jan 2:/)
+    expect(columns[29]).toHaveAccessibleName(/^Jan 31:/)
+    expect(columns[23]).toHaveAccessibleName(/^Jan 25: ₫84,000,000/)
   })
 
   it('asks again for a different period', async () => {

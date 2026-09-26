@@ -146,6 +146,8 @@ public class CatalogTestFixture : IAsyncLifetime
         // The real consumer, so at least one test proves the wiring and not only the handler.
         services.AddMassTransitTestHarness(x => x.AddConsumer<StockAvailabilityChangedConsumer>());
         services.AddAuditTrail("catalog");
+        // The shop's days, as production counts them (specs/082).
+        services.AddSingleton(Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone));
         services.AddNotifier();
 
         return services.BuildServiceProvider(true);

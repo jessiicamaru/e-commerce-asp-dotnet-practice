@@ -25,10 +25,12 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
     private IQueryable<Domain.Entities.Order> SoldIn(DateTime from, DateTime to) =>
         _context.Orders.AsNoTracking().Where(o => Sold.Contains(o.Status) && (o.PaidAt ?? o.CreatedAt) >= from && (o.PaidAt ?? o.CreatedAt) < to);
 
-    public async Task<List<RevenueRow>> RevenueByDayAsync(DateTime from, DateTime to, CancellationToken cancellationToken)
+    public async Task<List<RevenueRow>> RevenueByDayAsync(DateTime from, DateTime to, string timeZone, CancellationToken cancellationToken)
     {
+        // The shop's day, not the UTC one (specs/082): Npgsql writes this as AT TIME ZONE, which turns the instant into the shop's
+        // wall-clock time, and its date is the day the order counts on.
         var rows = await SoldIn(from, to)
-            .GroupBy(o => new { (o.PaidAt ?? o.CreatedAt).Date, o.Currency })
+            .GroupBy(o => new { TimeZoneInfo.ConvertTimeBySystemTimeZoneId(o.PaidAt ?? o.CreatedAt, timeZone).Date, o.Currency })
             .Select(g => new { g.Key.Date, g.Key.Currency, Revenue = g.Sum(o => o.TotalAmount), Orders = g.Count() })
             .ToListAsync(cancellationToken);
 
@@ -58,7 +60,7 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
     /// (specs/068 research D1) - the part being the seller's parcel of that order, and "came back" its return
     /// having reached Received. A return still open is revenue: it may yet be refused.
     /// </summary>
-    private IQueryable<SellerLine> SellerLinesIn(Guid sellerId, DateTime from, DateTime to) =>
+    private IQueryable<SellerLine> SellerLinesIn(Guid sellerId, DateTime from, DateTime to, string timeZone) =>
         SoldIn(from, to)
             .SelectMany(o => o.Items, (o, i) => new { Order = o, Item = i })
             .Where(x => x.Item.SellerId == sellerId)
@@ -67,7 +69,7 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
             .Select(x => new SellerLine
             {
                 OrderId = x.Order.Id,
-                Day = (x.Order.PaidAt ?? x.Order.CreatedAt).Date,
+                Day = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(x.Order.PaidAt ?? x.Order.CreatedAt, timeZone).Date,
                 CreatedAt = x.Order.CreatedAt,
                 Currency = x.Order.Currency,
                 ProductId = x.Item.ProductId,
@@ -78,9 +80,9 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
                 Revenue = x.Item.Quantity * x.Item.UnitPrice - x.Item.ShopDiscount,
             });
 
-    public async Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    public async Task<List<RevenueRow>> SellerRevenueByDayAsync(Guid sellerId, DateTime from, DateTime to, string timeZone, CancellationToken cancellationToken)
     {
-        var rows = await SellerLinesIn(sellerId, from, to)
+        var rows = await SellerLinesIn(sellerId, from, to, timeZone)
             .GroupBy(l => new { l.Day, l.Currency })
             // Several of her lines on one order are one order.
             .Select(g => new { g.Key.Day, g.Key.Currency, Revenue = g.Sum(l => l.Revenue), Orders = g.Select(l => l.OrderId).Distinct().Count() })
@@ -89,9 +91,9 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
         return rows.Select(r => new RevenueRow(r.Day, r.Currency, r.Revenue, r.Orders)).ToList();
     }
 
-    public async Task<List<ProductSalesRow>> SellerProductSalesAsync(Guid sellerId, DateTime from, DateTime to, CancellationToken cancellationToken)
+    public async Task<List<ProductSalesRow>> SellerProductSalesAsync(Guid sellerId, DateTime from, DateTime to, string timeZone, CancellationToken cancellationToken)
     {
-        var rows = await SellerLinesIn(sellerId, from, to)
+        var rows = await SellerLinesIn(sellerId, from, to, timeZone)
             .GroupBy(l => new { l.ProductId, l.Currency })
             .Select(g => new
             {

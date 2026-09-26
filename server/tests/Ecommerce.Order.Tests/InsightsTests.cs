@@ -108,6 +108,27 @@ public class InsightsTests(OrderTestFixture fixture)
         Assert.Equal(2, (await SendAsync(new GetTopBuyersQuery(first.AddHours(15), last.AddHours(8), "VND"))).Single(b => b.CustomerId == buyer).Orders);
     }
 
+    /// <summary>
+    /// The issue's acceptance (#168): an order paid at 23:30 UTC is 06:30 the next morning in Hanoi, and counts on that
+    /// morning's day - in the chart, in the totals, and in the period that names only that day.
+    /// </summary>
+    [Fact]
+    public async Task An_order_paid_late_at_night_UTC_counts_on_the_next_morning_in_Hanoi()
+    {
+        var hanoiDay = new DateOnly(2031, 1, 1).AddDays(Random.Shared.Next(0, 3000));
+        var utcEvening = hanoiDay.AddDays(-1).ToDateTime(new TimeOnly(23, 30), DateTimeKind.Utc);
+        var order = await PlaceAsync(Guid.CreateVersion7(), "VND", 1_000m, OrderStatus.Paid, utcEvening);
+        await MoveAsync(order, utcEvening);
+
+        var revenue = await SendAsync(new GetRevenueQuery(
+            hanoiDay.ToDateTime(TimeOnly.MinValue), hanoiDay.ToDateTime(TimeOnly.MinValue)));
+
+        var day = Assert.Single(revenue.Days);
+        Assert.Equal(hanoiDay, day.Day);
+        Assert.Equal((hanoiDay, hanoiDay), (revenue.FirstDay, revenue.LastDay));
+        Assert.Equal(await TotalOfAsync(order), Assert.Single(revenue.Totals).Revenue);
+    }
+
     [Fact]
     public async Task A_single_day_is_a_period()
     {
@@ -163,8 +184,10 @@ public class InsightsTests(OrderTestFixture fixture)
         return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
     }
 
+    /// <summary>The instant a shop day begins (specs/082: the shop's days are Hanoi's, UTC+7), as a UTC value.</summary>
     private static DateTime Day() =>
-        new DateTime(2031, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(Random.Shared.Next(0, 3000));
+        Ecommerce.Shared.Insights.InsightsCalendar.For(Ecommerce.Shared.Insights.InsightsCalendar.DefaultZone)
+            .StartOf(new DateOnly(2031, 1, 1).AddDays(Random.Shared.Next(0, 3000)));
 
     /// <summary>Places an order in this currency, puts it in this state, and moves it to this day.</summary>
     private async Task<Guid> PlaceAsync(Guid buyer, string currency, decimal price, OrderStatus status, DateTime day,

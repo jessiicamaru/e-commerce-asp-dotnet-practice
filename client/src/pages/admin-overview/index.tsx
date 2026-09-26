@@ -59,7 +59,7 @@ export function AdminOverviewPage() {
         ) : data.revenue.data.totals.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('overview.noRevenue')}</p>
         ) : (
-          <RevenuePanel revenue={data.revenue.data} days={periodDays(to, period)} currency={currency} onCurrency={setCurrency} />
+          <RevenuePanel revenue={data.revenue.data} days={periodDays(data.revenue.data.firstDay ?? from, data.revenue.data.lastDay ?? to)} currency={currency} onCurrency={setCurrency} />
         )}
       </Panel>
 

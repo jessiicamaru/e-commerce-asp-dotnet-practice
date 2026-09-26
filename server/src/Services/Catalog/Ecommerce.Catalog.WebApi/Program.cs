@@ -1,5 +1,6 @@
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Insights;
 using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
@@ -171,6 +172,9 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Who did what, through the outbox with every change (specs/041).
 builder.Services.AddAuditTrail("catalog");
+
+// The shop's days for views and insights (specs/082): Insights:TimeZone, Asia/Ho_Chi_Minh by default.
+builder.Services.AddInsightsCalendar(builder.Configuration);
 
 // Telling a seller what the moderators decided (specs/045).
 builder.Services.AddNotifier();

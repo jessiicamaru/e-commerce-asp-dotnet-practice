@@ -25,24 +25,24 @@ public record GetMyProductInsightsQuery(DateTime? From = null, DateTime? To = nu
 
 public class GetMyProductInsightsQueryValidator : AbstractValidator<GetMyProductInsightsQuery>
 {
-    public GetMyProductInsightsQueryValidator()
+    public GetMyProductInsightsQueryValidator(InsightsCalendar calendar)
     {
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
-        this.ValidPeriod(x => x.From, x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To, calendar);
     }
 }
 
 public class GetTopViewedQueryValidator : AbstractValidator<GetTopViewedQuery>
 {
-    public GetTopViewedQueryValidator()
+    public GetTopViewedQueryValidator(InsightsCalendar calendar)
     {
         RuleFor(x => x.Limit).InclusiveBetween(1, 50);
         // The same period rule as Order's insights (specs/055, #125).
-        this.ValidPeriod(x => x.From, x => x.To);
+        this.ValidPeriod(x => x.From, x => x.To, calendar);
     }
 }
 
-public class ProductViewHandlers(IProductViewRepository views, IProductRepository products, ICurrentUser currentUser) :
+public class ProductViewHandlers(IProductViewRepository views, IProductRepository products, ICurrentUser currentUser, InsightsCalendar calendar) :
     IRequestHandler<RecordProductViewCommand>,
     IRequestHandler<GetTopViewedQuery, List<ViewedProduct>>,
     IRequestHandler<GetMyProductInsightsQuery, SellerProductInsights>
@@ -57,19 +57,20 @@ public class ProductViewHandlers(IProductViewRepository views, IProductRepositor
             return;
         }
 
-        await views.RecordAsync(product.Id, DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+        // Counted on the shop's day (specs/082), the same days the insights read it back by.
+        await views.RecordAsync(product.Id, calendar.DayOf(DateTime.UtcNow), cancellationToken);
     }
 
     public Task<List<ViewedProduct>> Handle(GetTopViewedQuery request, CancellationToken cancellationToken)
     {
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, calendar);
         return views.TopAsync(period.FirstDay, period.LastDay, request.Limit, cancellationToken);
     }
 
     public Task<SellerProductInsights> Handle(GetMyProductInsightsQuery request, CancellationToken cancellationToken)
     {
         var seller = currentUser.Id ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
-        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow);
+        var period = InsightsPeriod.Resolve(request.From, request.To, DateTime.UtcNow, calendar);
         return views.SellerAsync(seller, period.FirstDay, period.LastDay, request.Limit, cancellationToken);
     }
 }

@@ -18,11 +18,16 @@ runtime:
           expect(res.status).to.equal(200);
         });
         test("the admin's shape: totals per currency and days, over whole days", function() {
-          expect(res.body).to.have.all.keys("from", "to", "totals", "days");
+          expect(res.body).to.have.all.keys("from", "to", "totals", "days", "firstDay", "lastDay");
           res.body.totals.forEach(function(t) {
             expect(t).to.have.all.keys("currency", "revenue", "orders", "averageOrderValue");
           });
-          expect(res.body.from.slice(11, 19)).to.equal("00:00:00");
+        });
+        test("the shop's days (specs/082): 30 of them, starting at midnight in Hanoi", function() {
+          var day = 86400000;
+          expect((Date.parse(res.body.lastDay) - Date.parse(res.body.firstDay)) / day + 1).to.equal(30);
+          // Asia/Ho_Chi_Minh is UTC+7 with no daylight saving: its midnight is 17:00 UTC the day before.
+          expect(Date.parse(res.body.from) + 7 * 3600000).to.equal(Date.parse(res.body.firstDay));
         });
 
 settings:
