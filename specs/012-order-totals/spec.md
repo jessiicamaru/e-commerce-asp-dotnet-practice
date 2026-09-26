@@ -1,10 +1,13 @@
 # Feature Specification: A Total With Something Behind It
 
+> Completed on 2026-09-27, after the feature merged (#32), from the code at that merge, the pull
+> request and docs/features/shopping-and-checkout.md.
+
 **Feature Branch**: `012-order-totals`
 
 **Created**: 2026-09-22
 
-**Status**: Draft
+**Status**: Implemented - merged in [#32](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/32) on 2026-09-22 (01:41, UTC+7)
 
 **Input**: Issue [#21](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/21) — "an order total is one number with nothing behind it"
 
@@ -99,6 +102,9 @@ database refuses a total whose parts do not add up.
 **Why this priority**: Second, because it guards the first three rather than adding to them — but
 this is exactly what nobody can reconstruct a year later.
 
+**Independent Test**: Run `OrderTotalsTests` and `TotalsPersistenceTests`; insert an order whose parts
+do not sum and watch the database refuse it; open `docs/architecture/adr-002-tax-exclusive-prices.md`.
+
 **Acceptance Scenarios**:
 
 1. **Given** a line whose tax falls exactly on half a cent, **When** tax is computed, **Then** it
@@ -115,6 +121,11 @@ this is exactly what nobody can reconstruct a year later.
 - **Many lines rounding the same way**: per-line rounding can differ from rounding the sum by a few
   cents; that difference is accepted and documented, not "corrected".
 - **A misconfigured rate** (negative, or 100% or more) stops the service at startup.
+- **A missing default rate** stops the service at startup too - a destination with no rate of its own
+  would otherwise have nothing to fall back to.
+- **An image from before this feature** keeps inserting orders during a rollback, with no parts at
+  all. The database lets those rows through rather than refusing the checkout (plan, schema
+  evolution).
 
 ## Requirements *(mandatory)*
 
