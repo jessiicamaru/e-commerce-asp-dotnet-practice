@@ -6,7 +6,7 @@ import vi from '@/locales/vi/notifications.json'
 // What the services actually send (specs/048): the server's tests check every notice they publish against
 // this same file, so a key renamed on one side and not the other goes red somewhere.
 import declared from '../../../../server/src/BuildingBlocks/Ecommerce.Shared/Notifications/notification-kinds.json'
-import { describeNotification } from '.'
+import { describeNotification, FILLED_PLACEHOLDERS } from '.'
 
 const n = (kind: string, data: Record<string, string> = {}): AppNotification => ({
   id: 'n', kind, data: { orderId: '01a0cee7-137c-7bbc', ...data }, link: null, createdAt: '', readAt: null,
@@ -93,7 +93,10 @@ describe('the moderation and review kinds (#119)', () => {
   })
 })
 
-type Declaration = { kinds: Record<string, { required: string[]; optional?: string[] }> }
+type Declaration = {
+  kinds: Record<string, { required: string[]; optional?: string[] }>
+  placeholders: Record<string, string[] | string>
+}
 const kinds = (declared as Declaration).kinds
 
 /**
@@ -143,4 +146,39 @@ describe('every kind a service can send (specs/048)', () => {
       })
     }
   }
+})
+
+/**
+ * specs/078: an administrator may use a placeholder in a notice only when its kind carries what fills it - the
+ * server reads the same declaration. These hold the storefront's filling, its bundled words and the declaration
+ * together, so a reset to the bundled words is always words the server would accept.
+ */
+describe('placeholders (specs/078)', () => {
+  const declaredPlaceholders = Object.fromEntries(
+    Object.entries((declared as Declaration).placeholders).filter((entry): entry is [string, string[]] => Array.isArray(entry[1])),
+  )
+  const carried = (kind: string) => new Set([...kinds[kind].required, ...(kinds[kind].optional ?? [])])
+  const allowed = (kind: string) =>
+    Object.entries(declaredPlaceholders).filter(([, needs]) => needs.every((key) => carried(kind).has(key))).map(([name]) => name)
+
+  it('are filled by describeNotification exactly as declared', () => {
+    expect([...FILLED_PLACEHOLDERS].sort()).toEqual(Object.keys(declaredPlaceholders).sort())
+  })
+
+  for (const [lang, sentences] of Object.entries({ en: en.kind as Record<string, string>, vi: vi.kind as Record<string, string> })) {
+    it(`in the bundled ${lang} words are only what each kind carries`, () => {
+      for (const [key, sentence] of Object.entries(sentences)) {
+        const kind = key.replace(/_(zero|one|two|few|many|other)$/, '')
+        const used = [...sentence.matchAll(/{{\s*(\w+)\s*}}/g)].map((m) => m[1])
+        for (const name of used) expect(allowed(kind), `${key} (${lang}) uses {{${name}}}`).toContain(name)
+      }
+    })
+  }
+
+  /** A product is named by whoever sells it: now that notices are HTML, it must stay text. */
+  it('escapes the values it fills in', () => {
+    const text = describeNotification(t('en'), n('ProductApproved', { product: '<img src=x onerror=alert(1)> & "Co"' }))
+    expect(text).toContain('&lt;img src=x onerror=alert(1)&gt; &amp; &quot;Co&quot;')
+    expect(text).not.toContain('<img')
+  })
 })

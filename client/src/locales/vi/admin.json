@@ -14,7 +14,8 @@
     "returns": "Trả hàng",
     "vouchers": "Mã giảm giá",
     "questions": "Hỏi đáp",
-    "emails": "Email"
+    "emails": "Email",
+    "notifications": "Thông báo"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -394,6 +395,28 @@
     "noVersions": "Chưa sửa lần nào - đang dùng nội dung mặc định.",
     "versionLabel": "Phiên bản {{version}}",
     "currentVersion": "Hiện tại",
+    "restore": "Khôi phục",
+    "restored": "Đã khôi phục phiên bản {{version}}."
+  },
+  "wording": {
+    "title": "Thông báo",
+    "subtitle": "Những gì chuông thông báo nói với mọi người. Mỗi câu, mỗi ngôn ngữ: lời có sẵn của cửa hàng hoặc lời bạn sửa - bản sửa đến mọi người ở lần tải trang tiếp theo.",
+    "search": "Tìm thông báo",
+    "loadFailed": "Không tải được danh sách thông báo.",
+    "failed": "Không làm được việc đó.",
+    "edited": "Đã sửa",
+    "edit": "Sửa",
+    "close": "Đóng",
+    "editKey": "Sửa {{key}} ({{language}})",
+    "words": "Nội dung",
+    "sample": "Ví dụ",
+    "save": "Lưu",
+    "saved": "Đã lưu. Mọi người sẽ thấy ở lần tải trang tiếp theo.",
+    "reset": "Về lời có sẵn",
+    "wasReset": "Đã quay về lời có sẵn của cửa hàng.",
+    "versions_one": "{{count}} phiên bản",
+    "versions_other": "{{count}} phiên bản",
+    "bundled": "lời có sẵn",
     "restore": "Khôi phục",
     "restored": "Đã khôi phục phiên bản {{version}}."
   }

@@ -1,5 +1,19 @@
 {
   "$comment": "What each notification kind carries in its data (specs/048). The one place both sides read: the server tests check every notice they publish against it, the storefront tests check every kind has words that use it. Change a kind's keys here and in its NotifyAsync call together.",
+  "placeholders": {
+    "$comment": "What a notice's words may use (specs/078): each {{placeholder}} and the data keys it is made from. A kind may use one when it carries every key listed. The storefront's describeNotification fills exactly these names, and its test holds the two together; the server refuses wording that uses one its kind cannot fill.",
+    "order": ["orderId"],
+    "total": ["total", "currency"],
+    "amount": ["amount", "currency"],
+    "tracking": ["tracking"],
+    "shop": ["shop"],
+    "by": ["by"],
+    "product": ["product"],
+    "reason": ["reason"],
+    "rating": ["rating"],
+    "count": ["rating"],
+    "until": ["until"]
+  },
   "kinds": {
     "OrderPaid": { "required": ["orderId", "total", "currency"] },
     "OrderFailed": { "required": ["orderId"] },

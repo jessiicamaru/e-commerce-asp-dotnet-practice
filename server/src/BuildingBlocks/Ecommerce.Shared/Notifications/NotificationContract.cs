@@ -19,6 +19,23 @@ public static class NotificationContract
 
     public static IReadOnlyDictionary<string, KindKeys> Kinds => Declared.Value;
 
+    private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlyList<string>>> DeclaredPlaceholders = new(LoadPlaceholders);
+
+    /// <summary>Every <c>{{placeholder}}</c> a notice's words may use, and the data keys it is made from (specs/078).</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> Placeholders => DeclaredPlaceholders.Value;
+
+    /// <summary>The placeholders one kind's words may use: those whose data keys the kind carries, every one of them.</summary>
+    public static IReadOnlyList<string> PlaceholdersFor(string kind)
+    {
+        if (!Kinds.TryGetValue(kind, out var keys))
+        {
+            return [];
+        }
+
+        var carried = keys.Required.Concat(keys.Optional).ToHashSet();
+        return Placeholders.Where(p => p.Value.All(carried.Contains)).Select(p => p.Key).Order().ToList();
+    }
+
     /// <summary>Every constant on <see cref="NotificationKind"/>.</summary>
     public static IReadOnlyList<string> KindsInCode =>
         typeof(NotificationKind).GetFields(BindingFlags.Public | BindingFlags.Static)
@@ -50,6 +67,18 @@ public static class NotificationContract
         return json.RootElement.GetProperty("kinds").EnumerateObject().ToDictionary(
             kind => kind.Name,
             kind => new KindKeys(Keys(kind.Value, "required"), Keys(kind.Value, "optional")));
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> LoadPlaceholders()
+    {
+        using var stream = typeof(NotificationContract).Assembly
+            .GetManifestResourceStream("Ecommerce.Shared.Notifications.notification-kinds.json")
+            ?? throw new InvalidOperationException("notification-kinds.json is not embedded in Ecommerce.Shared.");
+        using var json = JsonDocument.Parse(stream);
+
+        return json.RootElement.GetProperty("placeholders").EnumerateObject()
+            .Where(p => p.Value.ValueKind == JsonValueKind.Array)
+            .ToDictionary(p => p.Name, p => (IReadOnlyList<string>)p.Value.EnumerateArray().Select(k => k.GetString()!).ToList());
     }
 
     private static List<string> Keys(JsonElement kind, string name) =>

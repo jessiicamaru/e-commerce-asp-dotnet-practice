@@ -54,7 +54,7 @@ Below is the SQL DDL representation of the Authentication tables. We use `UUID` 
 > ([`Migrations/`](../../../server/src/Services/Identity/Ecommerce.Identity.Infrastructure/Migrations/):
 > `InitialCreate`, `CaseInsensitiveEmail`, `AddSellerProfilesAndOutbox`, `AddAccountLocks`,
 > `AddShopApplications`; `AddDeliveryAddresses` adds the address book, which is not part of
-> authentication). The generated [data model](../../reference/data-model.md#identity---ecommerce_identity_db-8-tables)
+> authentication). The generated [data model](../../reference/data-model.md#identity---ecommerce_identity_db-12-tables)
 > lists every column as the migrations produce it. The tables and columns match, with three differences
 > worth knowing before you query the database:
 > - **Column names are PascalCase** — EF Core's default. It is `"Email"`, quoted, not `email`.

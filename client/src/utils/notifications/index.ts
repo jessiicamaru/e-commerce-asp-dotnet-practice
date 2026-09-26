@@ -10,11 +10,17 @@ import { money } from '@/utils/shared'
  * service may send one before the storefront learns it. So is a notice missing a value its sentence needs
  * (specs/048): a vaguer sentence beats one with a hole in it. The keys each kind carries are declared in
  * `Ecommerce.Shared/Notifications/notification-kinds.json`, which the tests hold this against.
+ *
+ * <p>
+ * Since specs/078 the words may carry emphasis and links an administrator added, so this returns **HTML**, to be
+ * shown through `NoticeText`, which sanitises it. The values filled in are escaped first: a product name is whatever
+ * a seller typed, and must never become markup.
+ * </p>
  */
 export function describeNotification(t: TFunction<'notifications'>, n: AppNotification, language?: string): string {
   const d = n.data
   const rating = Number(d.rating)
-  const values: Record<string, string> = {
+  const values: Record<string, string> = escapeAll({
     order: d.orderId ? d.orderId.slice(0, 8) : '',
     total: d.total && d.currency ? money(Number(d.total), d.currency) : '',
     amount: d.amount && d.currency ? money(Number(d.amount), d.currency) : '',
@@ -27,7 +33,7 @@ export function describeNotification(t: TFunction<'notifications'>, n: AppNotifi
     rating: d.rating ?? '',
     // A moment, in the reader's language and time zone - never the stored UTC text (specs/059).
     until: d.until ? new Date(d.until).toLocaleString(language) : '',
-  }
+  })
   const key = `kind.${n.kind}`
   const options = { defaultValue: '', ...(d.rating && Number.isFinite(rating) ? { count: rating } : {}) }
 
@@ -36,4 +42,16 @@ export function describeNotification(t: TFunction<'notifications'>, n: AppNotifi
   if (!raw || holes.length > 0) return t('generic')
 
   return t(key, { ...options, ...values })
+}
+
+/** The placeholders `describeNotification` fills - held against notification-kinds.json by its test (specs/078). */
+export const FILLED_PLACEHOLDERS = ['order', 'total', 'amount', 'tracking', 'shop', 'by', 'product', 'reason', 'rating', 'until', 'count']
+
+/** The five characters HTML gives meaning to, escaped - and nothing else, so "é" stays "é". */
+export function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+function escapeAll(values: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(values).map(([key, value]) => [key, escapeHtml(value)]))
 }

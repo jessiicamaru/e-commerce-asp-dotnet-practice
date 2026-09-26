@@ -8,9 +8,9 @@ works is a test that fails when it does not.
 
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
-| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 763 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
-| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 435 tests in 77 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
-| API collection | Bruno CLI | `bruno/` | 256 requests, 415 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
+| Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 770 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
+| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 450 tests in 81 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
+| API collection | Bruno CLI | `bruno/` | 263 requests, 428 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
 | Mutation checks | by hand, per change | recorded in each PR | 2-4 per feature | That a new test fails when the rule it guards is removed |
@@ -40,7 +40,7 @@ DB_PASSWORD=<your password> dotnet test
 | `Ecommerce.Payment.Tests` | 5438 | 25 | ReturnRefund, Audit, ChargeOrder, ConcurrentInsertRecovery, Refund |
 | `Ecommerce.Orchestrator.Tests` | 5436 | 17 | Health (the real host, `/health` 200 and 503), OrderStateMachine (the saga's transitions through MassTransit's harness - the first tests it has had, specs/053), PaymentTimeout (the sweeper's query, the options) |
 | `Ecommerce.ApiGateway.Tests` | - | 12 | AuthRateLimit (the gateway's real pipeline through WebApplicationFactory, every destination unreachable: 502 means let through, 429 means refused; no database - specs/062) |
-| `Ecommerce.Activity.Tests` | 5440 | 28 | AuditDiff, AuditLog, AuditTrail, Notification, Redaction |
+| `Ecommerce.Activity.Tests` | 5440 | 35 | NotificationWording (versions, placeholders per kind, sanitised), AuditDiff, AuditLog, AuditTrail, Notification, Redaction |
 
 "Test cases" counts each `[Theory]` row; the number of `[Fact]`/`[Theory]` methods is lower.
 

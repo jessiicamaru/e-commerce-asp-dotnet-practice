@@ -1,0 +1,38 @@
+info:
+  name: a placeholder a notice cannot fill is refused by name
+  type: http
+  seq: 27
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/notifications/wording/NewSale/en"
+  body:
+    type: json
+    data: |-
+      {
+        "text": "Sold for {{total}}",
+        "expectedVersion": {{wordingVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("the message names it", function() {
+          expect(res.body.errors.Text[0]).to.contain("{{total}}");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A new sale carries an order id, not a total: {{total}} would be a hole in somebody's bell.

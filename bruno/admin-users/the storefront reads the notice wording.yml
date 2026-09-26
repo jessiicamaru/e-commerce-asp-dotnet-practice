@@ -1,0 +1,30 @@
+info:
+  name: the storefront reads the notice wording
+  type: http
+  seq: 24
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/notifications/wording"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("per language, only what was reworded", function() {
+          expect(res.body).to.have.all.keys("vi", "en");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Public (specs/078): the storefront lays these over its own words before anybody signs in. Cached for a minute.

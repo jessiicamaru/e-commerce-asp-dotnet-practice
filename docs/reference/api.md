@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `768bc0e`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `326356f`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**150 endpoints** across 7 services.
+**156 endpoints** across 7 services.
 
 ## Identity (41)
 
@@ -178,7 +178,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/payments` | Admin |  |
 | `GET` | `/api/payments/{orderId}` | Admin |  |
 
-## Activity (8)
+## Activity (14)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -189,4 +189,10 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/notifications` | signed in |  |
 | `POST` | `/api/notifications/read-all` | signed in |  |
 | `GET` | `/api/notifications/unread-count` | signed in | The bell's number - polled, so it is kept to one count. |
+| `GET` | `/api/notifications/wording` | anyone | Per language, the keys an administrator reworded and what they say now. Cached for a minute. |
+| `GET` | `/api/notifications/wording/all` | Admin | Every kind with the placeholders it may use, and every reworded key's current version. |
+| `PUT` | `/api/notifications/wording/{key}/{language}` | Admin | Reword a notice: sanitised, placeholders and links checked, a new version. A stale `expectedVersion` is 409. |
+| `POST` | `/api/notifications/wording/{key}/{language}/reset` | Admin | Back to the storefront's own words, as a new version. |
+| `GET` | `/api/notifications/wording/{key}/{language}/versions` | Admin | One key's saved versions in one language, newest first. |
+| `POST` | `/api/notifications/wording/{key}/{language}/versions/{version}/restore` | Admin | An earlier version's words, as a new version. |
 | `POST` | `/api/notifications/{id}/read` | signed in |  |

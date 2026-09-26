@@ -1,0 +1,36 @@
+info:
+  name: an administrator lists the notice wording
+  type: http
+  seq: 26
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/notifications/wording/all"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const entry = res.body && res.body.entries ? res.body.entries.find(e => e.key === "NewSale" && e.language === "en") : null;
+        bru.setVar("wordingVersion", entry ? entry.version : 0);
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("each kind with what its words may use", function() {
+          const paid = res.body.kinds.find(k => k.kind === "OrderPaid");
+          expect(paid.placeholders).to.eql(["order", "total"]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The placeholders come from notification-kinds.json: those whose data keys the kind carries.
