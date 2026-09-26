@@ -43,6 +43,9 @@ public class SearchIndexTests(CatalogTestFixture fixture)
         Assert.Contains("IX_products_name_search", plan);
         Assert.Contains("IX_products_sku_search", plan);
         Assert.DoesNotContain("Seq Scan", plan);
+        // ...and no SubPlan: the OR-with-EXISTS shape runs the translations' match as a (hashed) subplan per product,
+        // which is what kept every product scanned. The UNION of ids is a join instead.
+        Assert.DoesNotContain("SubPlan", plan);
         // The translations' arm is a LIKE over f_unaccent too - on a table this small the planner reaches it through
         // the (ProductId, Language) index and filters by name; on 100,000 rows it uses its own trigram index.
         Assert.Contains("f_unaccent(lower((\"Name\")::text)) ~~", plan);
