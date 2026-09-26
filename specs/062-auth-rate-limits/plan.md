@@ -1,6 +1,45 @@
 # Implementation Plan: Limits on the sign-in and email endpoints
 
-**Branch**: `062-auth-rate-limits` | **Spec**: [spec.md](spec.md) | **Issue**: #105
+> Completed on 2026-09-27, after the feature merged (#145), from the code at that merge, the pull request and
+> [docs/features/auth/security-best-practices.md](../../docs/features/auth/security-best-practices.md).
+
+**Branch**: `062-auth-rate-limits` | **Date**: 2026-09-25 | **Spec**: [spec.md](spec.md) | **Issue**: #105
+
+## Summary
+
+Three layers, each answering 429 with how long to wait. The gateway limits the anonymous auth endpoints per
+client IP with ASP.NET Core's rate limiter, attached per YARP route, and believes `X-Forwarded-For` only from a
+configured proxy (the storefront's nginx). Identity pauses one email for 5 minutes after 5 wrong passwords in 15,
+counted in a new `sign_in_throttles` table by single atomic statements, and sends at most one reset email a
+minute per address. The storefront words the wait in minutes, in both languages. Decisions are below and in
+[research.md](research.md) (decision 46 in [docs/project/decisions.md](../../docs/project/decisions.md)).
+
+## Technical Context
+
+**Language/Version**: C# 13 / .NET 10.0; TypeScript, React 19 in the storefront
+
+**Primary Dependencies**: `Microsoft.AspNetCore.RateLimiting` / `System.Threading.RateLimiting` (fixed window), YARP
+`RateLimiterPolicy`, `Microsoft.AspNetCore.HttpOverrides` (forwarded headers), EF Core raw SQL on Npgsql,
+`Microsoft.AspNetCore.Mvc.Testing` for the new gateway test project
+
+**Storage**: New table `sign_in_throttles` in `ecommerce_identity_db` (5435), migration
+`20260925044212_AddSignInThrottles`. The gateway's counters are in memory
+
+**Testing**: `Ecommerce.ApiGateway.Tests` (new, 12 tests, no database: the real pipeline through
+WebApplicationFactory with unreachable destinations - 502 means let through, 429 means refused);
+`SignInThrottleTests` (14) against real PostgreSQL; Vitest (13 new); Bruno; an end-to-end run on the compose stack
+
+**Target Platform**: Gateway (5000), Identity (5056), the storefront container (nginx on 8088, `172.30.10.10` on the
+new `edge` network)
+
+**Project Type**: Security fix across the gateway, Identity, Shared and the storefront
+
+**Performance Goals**: None; one extra statement per sign-in (the pause check) and one per wrong password
+
+**Constraints**: #28 - an unknown email behaves exactly like a real one; simultaneous wrong passwords all counted;
+no limit keyed on a header the caller writes; a bad setting refuses to start rather than switching a limit off
+
+**Scale/Scope**: Six gateway routes, three policies, one table, four storefront pages
 
 ## Design
 
@@ -69,6 +108,11 @@ Inside the existing transaction, the handler:
 
 Two requests at once therefore queue one email.
 
+*Correction (2026-09-27):* the interval is not a `PasswordReset:MinimumIntervalSeconds` setting. The code has a
+constant, `ResetTokens.MinimumInterval` = one minute, checked through `IPasswordResetRepository.AskedSinceAsync`,
+which locks the user's row and asks whether a token was created since. Likewise, in section 1 the list the code
+clears and fills is `KnownIPNetworks` (the .NET 10 name), not `KnownNetworks`.
+
 ### 5. Storefront (US4)
 
 - `ApiError.retryAfterSeconds` reads `problem.retryAfter`, then the `Retry-After` header.
@@ -112,3 +156,92 @@ Two requests at once therefore queue one email.
   email, which is the thing under attack. Pass.
 - **V. Evidence.** Tests go through the real gateway pipeline and real PostgreSQL, plus mutation checks
   and an end-to-end run. Pass.
+
+## Constitution Check
+
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+Evaluated against [constitution.md](../../.specify/memory/constitution.md). The list above is the check as first
+written; this table states the same verdicts in the standard form.
+
+| Principle | Assessment |
+| :--- | :--- |
+| **I. Service Autonomy** | **Pass.** Identity keeps its own throttle table; the gateway holds no business data, only in-memory counters of request rate. No service reads another's database |
+| **II. Clean Architecture Layering** | **Pass.** `ISignInThrottle`, `SignInOptions` and the handler changes are in Application; the SQL is in `SignInThrottleRepository` (Infrastructure); `TooManyRequestsException` and its mapping are in `Ecommerce.Shared`; the gateway's policies are one static class wired in `Program.cs` |
+| **III. Atomic Writes and Idempotent Messaging** | **Pass.** Every counter change is one atomic statement (`INSERT ... ON CONFLICT DO UPDATE ... RETURNING`), so simultaneous failures are all counted and one starts the pause. The `SignInThrottled` entry goes through the outbox with the refusal's existing save. The reset interval is decided under a row lock inside the reset's transaction |
+| **IV. Identity Comes From the Token** | **Pass.** There is no token on these anonymous endpoints: the key is the typed email, which is the thing under attack, and the client IP comes from the connection or a configured proxy - never from a header the caller controls |
+| **V. Evidence Over Assumption** | **Pass.** Tests go through the real gateway pipeline and real PostgreSQL; ten mutations were each caught; an end-to-end run on the compose stack is recorded in PR #145. The empty-trust-list default was found by a test, not assumed |
+
+**Post-design re-check**: no violations. Migration: a new table only; an earlier image ignores it.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/062-auth-rate-limits/
+├── spec.md
+├── plan.md                  # This file
+├── research.md              # Seven decisions
+├── data-model.md            # sign_in_throttles
+├── quickstart.md
+├── contracts/
+│   └── http-api.md          # the 429, the routes and their policies, the sign-in pause, the reset interval
+├── checklists/
+│   └── requirements.md
+└── tasks.md
+```
+
+### Source Code (touched by #145)
+
+```text
+server/src/ApiGateway/Ecommerce.ApiGateway/
+├── AuthRateLimits.cs                      # policies, trusted proxies, the 429 body
+├── Program.cs                             # UseForwardedHeaders, UseRateLimiter; partial Program for tests
+└── appsettings.json                       # six routes with RateLimiterPolicy
+server/src/BuildingBlocks/Ecommerce.Shared/
+├── Exceptions/TooManyRequestsException.cs
+└── Middlewares/GlobalExceptionHandler.cs  # 429 + Retry-After + retryAfter
+server/src/Services/Identity/
+├── Ecommerce.Identity.Domain/Entities/SignInThrottle.cs
+├── Ecommerce.Identity.Application/Auth/SignInThrottling/SignInThrottling.cs   # ISignInThrottle, SignInOptions
+├── Ecommerce.Identity.Application/Auth/Commands/Login/LoginCommandHandler.cs
+├── Ecommerce.Identity.Application/Auth/Commands/PasswordReset/PasswordReset.cs # interval; clear on reset
+├── Ecommerce.Identity.Infrastructure/Configurations/SignInThrottleConfiguration.cs
+├── Ecommerce.Identity.Infrastructure/Migrations/20260925044212_AddSignInThrottles.cs
+├── Ecommerce.Identity.Infrastructure/Persistence/{ApplicationDbContext.cs,SignInThrottleSweeper.cs}
+├── Ecommerce.Identity.Infrastructure/Persistence/Repositories/{SignInThrottleRepository,PasswordResetRepository}.cs
+├── Ecommerce.Identity.Infrastructure/DependencyInjection.cs
+└── Ecommerce.Identity.WebApi/Program.cs    # the sweeper
+server/tests/Ecommerce.ApiGateway.Tests/{AuthRateLimitTests.cs,Ecommerce.ApiGateway.Tests.csproj}   # new project
+server/tests/Ecommerce.Identity.Tests/{SignInThrottleTests,ForbiddenProblemTests,PasswordResetTests,IdentityTestFixture}.cs
+server/Ecommerce.slnx, server/docker-compose.app.yml       # edge network, 172.30.10.10, GATEWAY_TRUSTED_PROXIES
+client/src/config/axios/api-error.ts                        # retryAfterSeconds
+client/src/utils/shared/{too-many.ts,too-many.test.ts,index.ts}
+client/src/pages/{sign-in/refusal.ts,sign-up,forgot-password,reset-password}/  # 429 and tests
+client/src/locales/{en,vi}/common.json
+bruno/security-checks/asking for reset links too fast is 429.yml
+```
+
+Documentation touched in the same change: `CLAUDE.md`, `docs/architecture/{error-handling-and-shared-building-block,microservices-design}.md`,
+`docs/features/auth/{db-design,security-best-practices}.md`, `docs/features/email.md` (rule 8),
+`docs/infrastructure/running-in-containers.md`, `docs/overview/project-overview.md`,
+`docs/project/{backlog,decisions,timeline}.md`, `docs/reference/{data-model,gateway}.md` (regenerated),
+`docs/testing/testing-strategy.md`, and `docs/tools/generate_reference.py` (now shows each route's rate limit).
+
+## Complexity Tracking
+
+> No Constitution Check violations to justify. Table intentionally empty. The new test project is a decision
+> (decision 4 above), not a violation.
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+| :--- | :--- | :--- |
+| - | - | - |
+
+## What this feature does not finish
+
+- **Several gateway instances** each count separately; the limits assume one.
+- **A known email can be kept paused** by somebody willing to send 5 wrong passwords every 5 minutes (decision 1).
+- Nobody is told by email that their password is being guessed; there is no CAPTCHA.
+- Signed-in endpoints are not limited; a wrong *current* password on a password change joined the same pause in
+  [specs/064](../064-account-settings/).

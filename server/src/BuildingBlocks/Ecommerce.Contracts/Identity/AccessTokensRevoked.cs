@@ -2,7 +2,7 @@ namespace Ecommerce.Contracts.Identity;
 
 /// <summary>
 /// Every access token of <paramref name="UserId"/> issued before <paramref name="RevokedAt"/> stops working
-/// (specs/063 #112) - published by Identity when it locks or bans an account, revokes a role, resets or
+/// (specs/065, #112) - published by Identity when it locks or bans an account, revokes a role, resets or
 /// changes a password, or catches a refresh token reused; consumed by every service that validates tokens.
 /// </summary>
 /// <remarks>
