@@ -60,7 +60,7 @@ public class SavedProductHandlers(
         // Saving is asking about a PUBLIC product: one that is not on sale is the public lookup's 404, so a hidden
         // product's id is not confirmed to anybody (specs/045).
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
-        if (product is null || !product.IsListed || !product.IsActive)
+        if (product is null || !product.OnShelf)
         {
             throw new NotFoundException("Product not found.");
         }
@@ -82,7 +82,7 @@ public class SavedProductHandlers(
                     i.Product, language.Current, localization.Value.DefaultLanguage, currency.Current.Code, money.Value.DefaultCurrency,
                     i.Product.SellerId is not null && shopNames.TryGetValue(i.Product.SellerId.Value, out var shop) ? shop : null),
                 i.SavedAt,
-                i.Product.IsListed && i.Product.IsActive && i.Product.Availability))
+                i.Product.OnShelf && i.Product.Availability))
             .ToList();
 
         return new PaginatedList<SavedProductResponse>(responses, total, request.Page, request.PageSize);

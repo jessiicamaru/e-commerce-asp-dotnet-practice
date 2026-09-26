@@ -108,6 +108,14 @@ public class Product
     public bool IsListed => ReviewStatus == ProductReviewStatus.Approved;
 
     /// <summary>
+    /// On the shelf: approved and not withdrawn. The one rule for every public read - the lookup, the listing, its
+    /// photographs, reviews and questions - and every shopper's write and every sale (#185, specs/092). Before, reads
+    /// asked <see cref="IsListed"/> alone and writes asked both, so a withdrawn product could be opened but not
+    /// reviewed. A query that cannot call this spells it out: <c>ReviewStatus == Approved &amp;&amp; IsActive</c>.
+    /// </summary>
+    public bool OnShelf => IsListed && IsActive;
+
+    /// <summary>
     /// The average of the visible reviews and how many there are (specs/046) - kept on the row, recomputed
     /// in the transaction of every review change, so a listing shows stars without counting anything.
     /// </summary>

@@ -45,6 +45,6 @@ public class GetProductImageQueryHandler(
             return null;
         }
 
-        return new ProductImage(content, product.ImageContentType!, ProductImageKey.Version(product.ImageUpdatedAt!.Value), product.IsListed);
+        return new ProductImage(content, product.ImageContentType!, ProductImageKey.Version(product.ImageUpdatedAt!.Value), product.OnShelf);
     }
 }

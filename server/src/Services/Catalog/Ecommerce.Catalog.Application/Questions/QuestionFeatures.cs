@@ -140,7 +140,7 @@ public class QuestionHandlers(
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
 
         // The public lookup's rule (specs/045): not on sale is the same 404 as not there.
-        if (product is null || !product.IsListed || !product.IsActive)
+        if (product is null || !product.OnShelf)
             throw new NotFoundException("Product not found.");
 
         // A seller asking their own shop something is a note to themselves on a public page.

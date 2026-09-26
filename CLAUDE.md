@@ -368,7 +368,8 @@ session at its next refresh - `/open-shop` renews it (`refreshSession`) before s
 
 **Nothing a seller lists is on sale until a moderator looks** (specs/045). `products.ReviewStatus` is
 `Approved` / `Pending` / `Rejected` as text, with a database default of `Approved` - every product from
-before, and anything an administrator lists. `Product.IsListed` is what the public listing, the public
+before, and anything an administrator lists. `Product.OnShelf` (approved **and** `IsActive` - one rule since specs/092,
+#185, when reads had asked approval alone and writes both) is what the public listing, the public
 lookup (a 404 for anybody but its seller and staff) and **both pricing paths** ask, through
 `ProductVariant.Sellable` - so checkout refuses an unapproved product the way it refuses an inactive one,
 with no new check anywhere else. Staff approve, reject or take down (with a reason the seller reads)

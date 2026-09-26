@@ -84,7 +84,7 @@ public class RecordStockAvailabilityCommandHandler(
     private async Task TellWhoSavedItAsync(Guid productId, CancellationToken cancellationToken)
     {
         var product = await _productRepository.GetByIdAsync(productId, cancellationToken);
-        if (product is null || !product.IsListed || !product.IsActive)
+        if (product is null || !product.OnShelf)
         {
             return;
         }

@@ -29,6 +29,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.ReviewStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
         builder.Property(p => p.ReviewReason).HasMaxLength(500);
         builder.Ignore(p => p.IsListed);
+        builder.Ignore(p => p.OnShelf);
 
         // specs/046: one decimal place is what a star shows; two are kept.
         builder.Property(p => p.RatingAverage).HasPrecision(3, 2);

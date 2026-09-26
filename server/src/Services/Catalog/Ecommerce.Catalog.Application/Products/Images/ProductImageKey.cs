@@ -80,5 +80,5 @@ public static class ProductImageKey
     /// sale - the addresses already cached keep working - and otherwise only with the image's own key.
     /// </summary>
     public static bool MayServe(Product product, Guid? imageKey, Guid? key) =>
-        product.IsListed || (imageKey is not null && imageKey == key);
+        product.OnShelf || (imageKey is not null && imageKey == key);
 }
