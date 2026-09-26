@@ -98,7 +98,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (266 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (205 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (206 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (170 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -374,7 +374,7 @@ what is waiting in each queue and their own decisions (`GET /api/audit/mine`, St
 ⚠️ **Off the shelf, what hangs on a product is a 404 too** (specs/081, #166): reviews and questions answer
 `ProductReview.MaySee` like the product, and an image is served only to an address with its own `ImageAccessKey`
 (`&k=`, new with every image) - because an `<img>` request carries no token. A new read of something that hangs on a
-product must ask the same.
+product must ask the same - and so must a write: a review of it is the same 404 since specs/085 (#174), as a question was.
 
 **Only somebody who received a product reviews it** (specs/046). Catalog does not know who bought what,
 so Order publishes `ParcelDeliveredEvent` (the parcel's product ids) inside the transaction that marks a

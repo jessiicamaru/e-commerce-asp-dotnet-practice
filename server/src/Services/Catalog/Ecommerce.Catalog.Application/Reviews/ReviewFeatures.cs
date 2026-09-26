@@ -97,6 +97,9 @@ public class ReviewHandlers(
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
 
+    /// <summary>What a shopper can buy - the public lookup's rule (specs/045), and asking a question's.</summary>
+    private static bool OnSale(Product product) => product.IsListed && product.IsActive;
+
     public Task Handle(RecordReviewEligibilityCommand request, CancellationToken cancellationToken) =>
         _reviews.RecordEligibilityAsync(request.CustomerId, request.ProductIds, request.DeliveredAt, cancellationToken);
 
@@ -116,8 +119,10 @@ public class ReviewHandlers(
     {
         var me = Caller();
         var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
-        // The page says what the command would: a seller is never eligible for their own product (#127).
-        var eligible = product?.SellerId != me && await _reviews.IsEligibleAsync(request.ProductId, me, cancellationToken);
+        // The page says what the command would: a seller is never eligible for their own product (#127), and nobody
+        // for one off the shelf (#174).
+        var eligible = product is not null && OnSale(product) && product.SellerId != me
+            && await _reviews.IsEligibleAsync(request.ProductId, me, cancellationToken);
         var mine = await _reviews.GetMineAsync(request.ProductId, me, cancellationToken);
         return new MyReviewResponse(eligible, mine is null ? null : ReviewResponse.From(mine));
     }
@@ -125,8 +130,12 @@ public class ReviewHandlers(
     public async Task<ReviewResponse> Handle(WriteReviewCommand request, CancellationToken cancellationToken)
     {
         var me = Caller();
-        var product = await _products.GetByIdAsync(request.ProductId, cancellationToken)
-            ?? throw new NotFoundException($"Product with ID '{request.ProductId}' was not found.");
+        var product = await _products.GetByIdAsync(request.ProductId, cancellationToken);
+
+        // Off the shelf, a review would move a rating nobody can see (#174, specs/085): the same 404 as asking a
+        // question there, and as a product that does not exist - it confirms nothing.
+        if (product is null || !OnSale(product))
+            throw new NotFoundException("Product not found.");
 
         // A seller who bought their own camera does not rate it: the one signal a shopper reads as
         // independent (#127, specs/057).

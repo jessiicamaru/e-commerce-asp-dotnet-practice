@@ -1,0 +1,37 @@
+info:
+  name: a review of it is a 404
+  type: http
+  seq: 82
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}/reviews/mine"
+  body:
+    type: json
+    data: |-
+      {
+        "rating": 1,
+        "body": "Written about a product nobody can buy."
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404 - off the shelf, no review is written (specs/085)", function() {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  #174. Before specs/085 this customer - who never received the product - got 403 "only a customer who has
+  received this product can review it", and one who had received it could still write a review and move a rating
+  nobody could see. Off the shelf now comes first: the same 404 as the product itself.

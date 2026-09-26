@@ -12,6 +12,7 @@ using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Catalog.Infrastructure.Persistence;
 using Ecommerce.Shared.Exceptions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ecommerce.Catalog.Tests;
@@ -140,6 +141,40 @@ public class UnlistedProductReadsTests(CatalogTestFixture fixture) : IDisposable
         Assert.Equal(0, (await SendAsync(new GetProductQuestionsQuery(pending.Id))).TotalCount);
     }
 
+    /// <summary>
+    /// #174 (specs/085): reading was closed in specs/081, writing was not - a customer who once received a product
+    /// could still write or change a review of it off the shelf, and move a rating nobody could see. Now writing is
+    /// the same 404 as asking a question there, the page says "not eligible", and back on sale it works again.
+    /// </summary>
+    [Fact]
+    public async Task Off_the_shelf_nobody_writes_a_review_and_its_rating_does_not_move()
+    {
+        As(Guid.CreateVersion7(), "Admin");
+        var product = await CreateAsync();
+        var buyer = Guid.CreateVersion7();
+        await SendAsync(new RecordReviewEligibilityCommand(buyer, [product.Id], DateTime.UtcNow));
+        As(buyer, "Customer");
+        await SendAsync(new WriteReviewCommand(product.Id, 5, "Sharp and light."));
+
+        As(Guid.CreateVersion7(), "Moderator");
+        await SendAsync(new TakeDownProductCommand(product.Id, "Counterfeit"));
+
+        As(buyer, "Customer");
+        var refused = await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(new WriteReviewCommand(product.Id, 1, "Changed my mind.")));
+        Assert.Equal("Product not found.", refused.Message);   // the same words as a product that does not exist
+        Assert.False((await SendAsync(new GetMyReviewQuery(product.Id))).Eligible);
+        Assert.Equal((5m, 1), await RatingAsync(product.Id));
+
+        await using (var scope = _fixture.NewScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Products.Where(p => p.Id == product.Id)
+                .ExecuteUpdateAsync(x => x.SetProperty(p => p.ReviewStatus, ProductReviewStatus.Approved));
+        }
+
+        Assert.Equal(4, (await SendAsync(new WriteReviewCommand(product.Id, 4, "Fine again."))).Rating);
+        Assert.Equal((4m, 1), await RatingAsync(product.Id));
+    }
+
     [Fact]
     public async Task On_sale_its_reviews_and_questions_are_everybodys()
     {
@@ -182,6 +217,13 @@ public class UnlistedProductReadsTests(CatalogTestFixture fixture) : IDisposable
 
         var sku = $"UNL{Guid.NewGuid():N}"[..20];
         return await SendAsync(new CreateProductCommand($"Unlisted {sku}", null, 1_000_000m, sku, categoryId));
+    }
+
+    private async Task<(decimal?, int)> RatingAsync(Guid productId)
+    {
+        await using var scope = _fixture.NewScope();
+        var product = await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Products.AsNoTracking().SingleAsync(p => p.Id == productId);
+        return (product.RatingAverage, product.RatingCount);
     }
 
     private async Task<T> SendAsync<T>(IRequest<T> request)
