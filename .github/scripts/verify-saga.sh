@@ -40,6 +40,7 @@ ORDER_URL="${ORDER_URL:-http://localhost:5059}"
 INVENTORY_URL="${INVENTORY_URL:-http://localhost:5060}"
 PAYMENT_URL="${PAYMENT_URL:-http://localhost:5061}"
 CART_URL="${CART_URL:-http://localhost:5062}"
+ORCHESTRATOR_URL="${ORCHESTRATOR_URL:-http://localhost:5058}"
 
 SAGA_TIMEOUT_SECONDS="${SAGA_TIMEOUT_SECONDS:-60}"
 SAGA_E2E_REQUIRE_ALL="${SAGA_E2E_REQUIRE_ALL:-}"
@@ -167,8 +168,10 @@ fi
 # ---------------------------------------------------------------- reachability
 
 unreachable=""
+# The orchestrator too, since specs/071 (#115): it answers /health with the saga
+# database and the broker, and it is the service a stalled order usually means.
 for pair in "Identity:$IDENTITY_URL" "Catalog:$CATALOG_URL" "Order:$ORDER_URL" \
-            "Inventory:$INVENTORY_URL" "Payment:$PAYMENT_URL" "Cart:$CART_URL"; do
+            "Orchestrator:$ORCHESTRATOR_URL" "Inventory:$INVENTORY_URL" "Payment:$PAYMENT_URL" "Cart:$CART_URL"; do
   name="${pair%%:*}"
   url="${pair#*:}"
   code="$(status "$url/health")"
@@ -453,7 +456,7 @@ if [ -z "$FINAL_STATUS" ]; then
   # A stall and a wrong outcome have different causes and different fixes.
   # Saying which one happened is the difference between a useful failure and a
   # red tick.
-  fail "Order $ORDER_ID was still '${LAST_STATUS:-unknown}' after ${SAGA_TIMEOUT_SECONDS}s. It never settled, which is NOT the same as settling wrongly - look for a service that is down or a queue with the wrong number of consumers, rather than at the order's data. Start with the ORCHESTRATOR: it has no /health endpoint, so it is the one service the checks above could not confirm was running, and nothing moves without it. Then: docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers"
+  fail "Order $ORDER_ID was still '${LAST_STATUS:-unknown}' after ${SAGA_TIMEOUT_SECONDS}s. It never settled, which is NOT the same as settling wrongly - look for a service that is down or a queue with the wrong number of consumers, rather than at the order's data. Start with the ORCHESTRATOR, which nothing moves without - its /health answers HTTP $(status "$ORCHESTRATOR_URL/health") now (it passed the check at the start). Then: docker exec e-commerce-rabbitmq rabbitmqctl list_queues name messages consumers"
 fi
 
 # Printing the elapsed time is what keeps the budget honest: if settlement

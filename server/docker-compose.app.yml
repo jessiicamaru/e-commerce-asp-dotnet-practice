@@ -131,10 +131,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    # The orchestrator has no controllers and therefore no /health endpoint.
-    # Saying so beats a health check that reports unhealthy forever.
-    healthcheck:
-      disable: true
 
   order:
     <<: [*service-common, *service-healthcheck]
@@ -299,6 +295,7 @@ services:
       - "--ReverseProxy:Clusters:catalog-cluster:Destinations:destination1:Address=http://catalog:8080/"
       - "--ReverseProxy:Clusters:order-cluster:Destinations:destination1:Address=http://order:8080/"
       - "--ReverseProxy:Clusters:inventory-cluster:Destinations:destination1:Address=http://inventory:8080/"
+      - "--ReverseProxy:Clusters:orchestrator-cluster:Destinations:destination1:Address=http://orchestrator:8080/"
       - "--ReverseProxy:Clusters:payment-cluster:Destinations:destination1:Address=http://payment:8080/"
       - "--ReverseProxy:Clusters:cart-cluster:Destinations:destination1:Address=http://cart:8080/"
       - "--ReverseProxy:Clusters:activity-cluster:Destinations:destination1:Address=http://activity:8080/"
@@ -312,6 +309,8 @@ services:
       order:
         condition: service_healthy
       inventory:
+        condition: service_healthy
+      orchestrator:
         condition: service_healthy
       payment:
         condition: service_healthy

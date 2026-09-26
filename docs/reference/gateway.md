@@ -1,6 +1,6 @@
 # Gateway routes
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bea126c`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `732eb87`. Do not edit by hand - change the code and run the script again.
 
 What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno talk only to the gateway. A new endpoint under a new path prefix needs a route here, or it is a 404 that looks like a missing feature. Container destinations are overridden by command-line arguments in `docker-compose.app.yml`; the addresses below are the local-development ones.
 
@@ -41,6 +41,7 @@ What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno t
 | `inventory-health-route` | `/api/inventory/health` | `inventory-cluster` | http://localhost:5060/ | `/health` |  |
 | `inventory-reservations-route` | `/api/reservations/{**catch-all}` | `inventory-cluster` | http://localhost:5060/ |  |  |
 | `inventory-stock-route` | `/api/stock/{**catch-all}` | `inventory-cluster` | http://localhost:5060/ |  |  |
+| `orchestrator-health-route` | `/api/orchestrator/health` | `orchestrator-cluster` | http://localhost:5058/ | `/health` |  |
 | `order-health-route` | `/api/order/health` | `order-cluster` | http://localhost:5059/ | `/health` |  |
 | `order-route` | `/api/orders/{**catch-all}` | `order-cluster` | http://localhost:5059/ |  |  |
 | `voucher-route` | `/api/vouchers/{**catch-all}` | `order-cluster` | http://localhost:5059/ |  |  |

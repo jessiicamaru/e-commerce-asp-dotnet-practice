@@ -93,7 +93,7 @@ Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, Postgre
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (260 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (167 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (150 tests, PostgreSQL on 5435) and
-`Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (15 tests -
+`Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
 gateway's real pipeline through WebApplicationFactory, specs/062). They run against a **real PostgreSQL** — the guarantees under test are the
@@ -710,12 +710,12 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   09-17 and nobody noticed, because the second order of any session works. Fixed in
   [#15](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/15); the symptom is
   what `verify-saga.sh` reports as a **stall**.
-- **The Orchestrator has no `/health` endpoint** — it has no controllers, so `GET :5058/health` is a
-  404, and `docker-compose.app.yml` disables its health check for that reason. It is therefore the
-  one service nothing can wait for or probe, which is why an order that never leaves `Submitted`
-  usually means the Orchestrator rather than anything the check could test. The constitution says
-  every service exposes `/health`; this one does not, and that disagreement is recorded but not yet
-  resolved.
+- **The Orchestrator answers `/health` since specs/071 (#115)** - the saga database and the broker
+  (`masstransit-bus`), through the gateway at `/api/orchestrator/health` (its one route, on a new
+  `orchestrator-cluster`). Until then it had no controllers, so `/health` was a 404, compose disabled its
+  check, and it was the one service nothing could wait for - while an order that never leaves `Submitted`
+  usually means it. Compose now checks it and the gateway waits for it; CI's saga job and `verify-saga.sh`
+  probe it with the rest. The disagreement with the constitution is resolved.
 - **Validation silently skipped every command that returns nothing — until feature 010.** The
   shared `ValidationBehavior` was constrained to `where TRequest : IRequest<TResponse>`, and in
   MediatR 12 a void command implements `IRequest`, a *separate* interface. The pipeline asked for
