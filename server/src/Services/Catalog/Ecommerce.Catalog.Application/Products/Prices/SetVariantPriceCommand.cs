@@ -1,3 +1,6 @@
+using Ecommerce.Catalog.Application.Products.Saved;
+using Ecommerce.Shared.Email;
+using Ecommerce.Shared.Notifications;
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Catalog.Application.Common.Interfaces;
@@ -93,10 +96,16 @@ public class SetVariantPriceCommandHandler(
     IProductRepository products,
     IOptions<CurrencyOptions> money,
     ICurrentUser currentUser,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    ISavedProductRepository saved,
+    INotifier notifier,
+    IEmailSender email)
     : IRequestHandler<SetVariantPriceCommand, VariantResponse>
 {
     private readonly IAuditTrail _audit = audit;
+    private readonly ISavedProductRepository _saved = saved;
+    private readonly INotifier _notifier = notifier;
+    private readonly IEmailSender _email = email;
 
     private readonly IProductRepository _products = products;
     private readonly CurrencyOptions _money = money.Value;
@@ -150,10 +159,10 @@ public class SetVariantPriceCommandHandler(
             AuditCategory.Catalog, "PriceSet", "Variant", variant.Id.ToString(),
             $"{variant.Sku} priced at {request.Amount} {currency}", before, CatalogAudit.Of(variant),
             cancellationToken: cancellationToken);
-        await _products.SaveChangesAsync(cancellationToken);
-
-        // The product's "from" price is derived from its variants, so it is recomputed where they are.
-        await _products.RecomputeProductRollupAsync(product.Id, cancellationToken);
+        // The product's "from" price is derived from its variants, so it is recomputed where they are - with the
+        // change, in one transaction, telling whoever saved it if that put it back in stock (#182, specs/091).
+        await _products.SaveAndRecomputeRollupAsync(
+            product.Id, SavedProductNotices.WhenBackInStock(_products, product.Id, _saved, _notifier, _email), cancellationToken);
 
         return VariantResponse.From(variant, currency: currency, defaultCurrency: _money.DefaultCurrency);
     }

@@ -2,9 +2,11 @@ using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Application.Common.Models;
 using Ecommerce.Catalog.Application.Products.Common;
+using Ecommerce.Catalog.Application.Products.Saved;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Authentication;
+using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
@@ -62,7 +64,9 @@ public class ProductReviewHandlers(
     IRequestLanguage language,
     IOptions<LanguageOptions> localization,
     IRequestCurrency currency,
-    IOptions<CurrencyOptions> money) :
+    IOptions<CurrencyOptions> money,
+    ISavedProductRepository saved,
+    IEmailSender email) :
     IRequestHandler<GetReviewQueueQuery, PaginatedList<ProductResponse>>,
     IRequestHandler<ApproveProductCommand, ProductResponse>,
     IRequestHandler<RejectProductCommand, ProductResponse>,
@@ -74,6 +78,8 @@ public class ProductReviewHandlers(
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
+    private readonly ISavedProductRepository _saved = saved;
+    private readonly IEmailSender _email = email;
 
     public async Task<PaginatedList<ProductResponse>> Handle(GetReviewQueueQuery request, CancellationToken cancellationToken)
     {
@@ -146,6 +152,13 @@ public class ProductReviewHandlers(
                 var data = new Dictionary<string, string> { ["product"] = product.Name };
                 if (reason is not null) data["reason"] = reason;
                 await _notifier.NotifyAsync(seller, kind, data, $"/shop/products/{product.Id}", ct);
+            }
+
+            // Back on the shelf and in stock: for whoever saved it while it was listed, the product is back (#182,
+            // specs/091). Only approval lists a product; the guarded move above makes this call the one that did.
+            if (to == ProductReviewStatus.Approved && product.IsActive && product.Availability)
+            {
+                await SavedProductNotices.BackOnSaleAsync(product, _saved, _notifier, _email, ct);
             }
         }, cancellationToken);
 

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `090-deleted-product-reservations` | **Created**: 2026-09-27 | **Issue**: #181
 
-**Status**: Draft
+**Status**: Merged (#189, 2026-09-27)
 
 **Input**: Issue #181 - "deleting a product leaves its stock reservations behind".
 

@@ -1,6 +1,10 @@
 using Ecommerce.Catalog.Application.Products.Availability;
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 using Ecommerce.Catalog.Application.Products.Common;
+using Ecommerce.Catalog.Application.Products.Prices;
+using Ecommerce.Catalog.Application.Products.Review;
+using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
+using Ecommerce.Catalog.Application.Products.Variants.UpdateProductVariant;
 using Ecommerce.Catalog.Application.Products.Saved;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Catalog.Infrastructure.Persistence;
@@ -166,7 +170,88 @@ public class SavedProductTests(CatalogTestFixture fixture) : IDisposable
         Assert.Empty(Emails(product.Id));
     }
 
+    // ---------- #182 (specs/091): back on sale by any route, not only Inventory's ----------
+
+    [Fact]
+    public async Task Reactivating_a_variant_in_stock_tells_whoever_saved_it()
+    {
+        var product = await ListedAsync();
+        var mai = Guid.CreateVersion7();
+        As(mai, "Customer");
+        await SendAsync(new SaveProductCommand(product.Id));
+        await SendAsync(new RecordStockAvailabilityCommand(product.Id, true, DateTime.UtcNow, product.Id));   // told once
+
+        As(Guid.CreateVersion7(), "Admin");
+        await SendAsync(new UpdateProductVariantCommand(product.Id, product.Id, 1_000_000m, IsActive: false)); // off sale
+        await SendAsync(new UpdateProductVariantCommand(product.Id, product.Id, 1_000_000m, IsActive: true));  // back
+
+        Assert.Equal(2, Notices(product.Name).Count(n => n.RecipientId == mai));
+        Assert.Equal(2, Emails(product.Id).Count(e => e.RecipientId == mai));
+    }
+
+    [Fact]
+    public async Task Approving_a_product_in_stock_that_was_off_the_shelf_tells_whoever_saved_it()
+    {
+        // Sent back to review by a seller's edit, or taken down and resubmitted (specs/045): either way it returns to
+        // the shelf by approval, and for somebody who saved it that is the product coming back.
+        var product = await ListedAsync();
+        var mai = Guid.CreateVersion7();
+        As(mai, "Customer");
+        await SendAsync(new SaveProductCommand(product.Id));
+        await SendAsync(new RecordStockAvailabilityCommand(product.Id, true, DateTime.UtcNow, product.Id));   // told once
+        await SetReviewAsync(product.Id, ProductReviewStatus.Pending);
+
+        As(Guid.CreateVersion7(), "Moderator");
+        await SendAsync(new ApproveProductCommand(product.Id));
+
+        var told = Notices(product.Name).Where(n => n.RecipientId == mai).ToList();
+        Assert.Equal(2, told.Count);
+        Assert.All(told, n => Assert.Equal($"/products/{product.Id}", n.Link));
+        Assert.Equal(2, Emails(product.Id).Count(e => e.RecipientId == mai));
+    }
+
+    [Fact]
+    public async Task Approving_a_product_with_nothing_in_stock_tells_nobody()
+    {
+        var product = await ListedAsync();
+        As(Guid.CreateVersion7(), "Customer");
+        await SendAsync(new SaveProductCommand(product.Id));
+        await SetReviewAsync(product.Id, ProductReviewStatus.Pending);
+
+        As(Guid.CreateVersion7(), "Moderator");
+        await SendAsync(new ApproveProductCommand(product.Id));
+
+        Assert.Empty(Notices(product.Name));
+        Assert.Empty(Emails(product.Id));
+    }
+
+    [Fact]
+    public async Task An_edit_that_leaves_it_on_sale_tells_nobody_again()
+    {
+        var product = await ListedAsync();
+        var mai = Guid.CreateVersion7();
+        As(mai, "Customer");
+        await SendAsync(new SaveProductCommand(product.Id));
+        await SendAsync(new RecordStockAvailabilityCommand(product.Id, true, DateTime.UtcNow, product.Id));   // told once
+
+        As(Guid.CreateVersion7(), "Admin");
+        await SendAsync(new UpdateProductVariantCommand(product.Id, product.Id, 1_200_000m, IsActive: true));
+        await SendAsync(new SetVariantPriceCommand(product.Id, product.Id, "VND", 1_100_000m));
+        await SendAsync(new AddProductVariantCommand(product.Id, $"ADD{Guid.NewGuid():N}"[..20], 900_000m,
+            [new VariantOptionInput("Kit", "Lens")]));
+
+        Assert.Single(Notices(product.Name));
+        Assert.Single(Emails(product.Id));
+    }
+
     // ------------------------------------------------------------------ helpers
+
+    private async Task SetReviewAsync(Guid productId, ProductReviewStatus status)
+    {
+        await using var scope = _fixture.NewScope();
+        await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Products.Where(p => p.Id == productId)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.ReviewStatus, status));
+    }
 
     private List<Ecommerce.Contracts.Identity.EmailRequested> Emails(Guid productId) =>
         _fixture.Harness.Published.Select<Ecommerce.Contracts.Identity.EmailRequested>().Select(x => x.Context.Message)

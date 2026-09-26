@@ -144,15 +144,15 @@ public static class EmailTemplates
             + "See your order: {link}\n\n"
             + "- e-commerce"),
         [(EmailTemplate.SavedBackInStock, "vi")] = (
-            "{product} đã có hàng trở lại",
+            "{product} đã có thể mua lại",
             "Xin chào {name},\n\n"
-            + "{product}, sản phẩm bạn đã lưu, đã có hàng trở lại.\n\n"
+            + "{product}, sản phẩm bạn đã lưu, đã có thể mua lại.\n\n"
             + "Xem sản phẩm: {link}\n\n"
             + "- e-commerce"),
         [(EmailTemplate.SavedBackInStock, "en")] = (
-            "{product} is back in stock",
+            "{product} is available again",
             "Hi {name},\n\n"
-            + "{product}, which you saved, is back in stock.\n\n"
+            + "{product}, which you saved, is available again.\n\n"
             + "See it: {link}\n\n"
             + "- e-commerce"),
         [(EmailTemplate.AccountLocked, "vi")] = (

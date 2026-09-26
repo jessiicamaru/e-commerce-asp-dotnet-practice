@@ -16,7 +16,7 @@ it. In development every email lands in **Mailpit**, and nothing leaves the mach
 | Order cancelled (`OrderCancelled`) | the buyer | a paid order is cancelled, by them or by staff | the order's |
 | Return accepted / refused (`ReturnAccepted`, `ReturnRefused`) | the buyer | the seller or staff decide their return | the order's |
 | Return refunded (`ReturnRefunded`) | the buyer | the returned parcel is received | the order's |
-| Back in stock (`SavedBackInStock`) | each shopper who saved the product | it comes back in stock (specs/075) | the reader's |
+| Available again (`SavedBackInStock`) | each shopper who saved the product | it can be bought again - back in stock, a variant reactivated, or approved while in stock (specs/075, 091) | the reader's |
 | Account locked / banned (`AccountLocked`, `AccountBanned`) | the person | staff lock or ban them (specs/043) | the reader's |
 
 "The reader's" language is the one the person last used the shop in (rule 5).

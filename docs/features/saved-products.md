@@ -43,6 +43,12 @@ list reads each product the way the listing does, in the shopper's language and 
    - Each saver gets `SavedBackInStock` with `{product}` and a link to the product page. Like every notice, it is
      published through the outbox before the handler's one save (specs/042).
    - A product that is **not on sale** when it comes back in stock tells nobody. The shopper could not buy it.
+   - **Every route that puts it back on sale tells, not only Inventory's** (specs/091, #182): a variant reactivated,
+     any edit whose rollup recompute flips it (`SaveAndRecomputeRollupAsync` - the change, the recompute and the
+     notices in one transaction), and a moderator approving it while it is in stock (a seller's edit or a take-down
+     had taken it off the shelf). One helper, `SavedProductNotices.BackOnSaleAsync`, sends every notice and email.
+     A price alone does not count: the rollup ignores price, and Catalog does not know which currency a saver pays in.
+   - The words say **"available again"** (not "back in stock"), true for both a restock and an approval.
 
 ## Data
 
@@ -88,7 +94,7 @@ The words are in `catalog` (`saved.*`), `common` (`nav.saved`) and `notification
 
 | Where | What it proves |
 | :-- | :-- |
-| `Ecommerce.Catalog.Tests/SavedProductTests` (7) | Saving twice, or twenty times at once, keeps one entry. Unsaving is idempotent. A product not on sale cannot be saved, and a made-up id cannot either. The list is the caller's own, newest first, in the listing's words. A product taken down stays in the list as unavailable, and a deleted one goes. Back in stock tells each saver once per flip: two shoppers and two flips give four notices. A product off the shelf tells nobody. |
+| `Ecommerce.Catalog.Tests/SavedProductTests` (11) | Saving twice, or twenty times at once, keeps one entry. Unsaving is idempotent. A product not on sale cannot be saved, and a made-up id cannot either. The list is the caller's own, newest first, in the listing's words. A product taken down stays in the list as unavailable, and a deleted one goes. Back in stock tells each saver once per flip: two shoppers and two flips give four notices. A product off the shelf tells nobody. A variant reactivated tells; an approval while in stock tells, one with nothing in stock does not; an edit, a price or a new variant that leaves it on sale tells nobody again (specs/091). |
 | `client/src/components/product/save-button/index.test.tsx` | The heart reads the saved ids. Tapping it saves or unsaves. Signed out, it goes to sign in. |
 | `client/src/pages/saved/index.test.tsx` | The list, and a product that is no longer available. |
 | `client/src/services/saved-product/index.test.ts` | The URLs, with no shopper id. |
