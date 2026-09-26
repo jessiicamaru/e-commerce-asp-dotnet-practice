@@ -10,6 +10,7 @@ import { CatalogPage } from '@/pages/catalog'
 import { CheckoutPage } from '@/pages/checkout'
 import { OrderPage } from '@/pages/order'
 import { OrdersPage } from '@/pages/orders'
+import { SavedPage } from '@/pages/saved'
 import { ShopInsightsPage } from '@/pages/shop-insights'
 import { ProductPage } from '@/pages/product'
 import { ShopPage } from '@/pages/shop'
@@ -109,6 +110,14 @@ export function AppRoutes() {
             element={
               <RequireAuth>
                 <OrdersPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/saved"
+            element={
+              <RequireAuth>
+                <SavedPage />
               </RequireAuth>
             }
           />

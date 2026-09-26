@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
+import { SaveButton } from '@/components/product/save-button'
 import { StockBadge } from '@/components/product/stock-badge'
 import { ProductImage } from '@/components/product/product-image'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
@@ -65,7 +66,10 @@ export function ProductPage() {
 
         <div className="flex flex-col gap-4 lg:pt-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-balance">{product.name}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-balance">{product.name}</h1>
+              <SaveButton productId={product.id} className="shrink-0" />
+            </div>
             <p className="text-muted-foreground mt-1 text-sm">
               {t('product.soldBy', { seller: product.sellerName ?? t('product.theShop') })}
             </p>

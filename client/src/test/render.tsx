@@ -56,3 +56,24 @@ export function renderAsUnconfirmedCustomer(children: ReactNode, path = '/') {
 export function renderAsModerator(children: ReactNode, path = '/') {
   return renderWithRoles(['Moderator', 'Customer'], children, path)
 }
+
+/** Nobody signed in (specs/075): what a visitor who has not signed in sees and can do. */
+export function renderSignedOut(children: ReactNode, path = '/') {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const value = {
+    user: null,
+    restoring: false,
+    isSeller: false,
+    isAdmin: false,
+    isStaff: false,
+    signIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => false,
+  } as unknown as AuthState
+
+  return render(
+    <AuthContext.Provider value={value}>
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[path]}>{children}</MemoryRouter>
+      </QueryClientProvider>
+    </AuthContext.Provider>,
+  )
+}
