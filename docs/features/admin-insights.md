@@ -105,8 +105,8 @@ None. The insights are reads, and the view counter is a single SQL statement. No
 | Path | What it does |
 | :-- | :-- |
 | `client/src/pages/admin-overview/index.tsx` | `AdminOverviewPage`: period buttons, six headline cards (the two waiting counts link to their queues), revenue cards per currency, the chart, and three top-5 lists. |
-| `client/src/pages/admin-overview/daily-chart.tsx` | `DailyRevenueChart`: one keyboard-focusable column per day, bars scaled to the peak, a tooltip that stays inside the card. |
-| `client/src/utils/insights/index.ts` | `periodDays`: every UTC day of the period, ending on the day of `to`. |
+| `client/src/components/insights/` | Shared with the seller's Insights page since specs/068: `DailyRevenueChart` (one keyboard-focusable column per day, bars scaled to the peak, a tooltip that stays inside the card), `RevenuePanel`, `RankedList`, `InsightPanel`, `PeriodPicker`. |
+| `client/src/utils/insights/index.ts` | `periodDays`: every UTC day of the period, ending on the day of `to`. `periodRange`: the request's `from` and `to` for a period. |
 | `client/src/services/insights/`, `client/src/hooks/insights/` | The `Insights` class (Order, Catalog and Identity calls) and `useInsights`, with `TOP = 5`. |
 | `client/src/pages/product/index.tsx` | Sends `Product.recordView(id)` once per product opened. |
 | `client/src/layouts/admin-layout/` | The Overview link, first in the sidebar, shown to administrators only. |
@@ -119,7 +119,7 @@ None. The insights are reads, and the view counter is a single SQL statement. No
 | `Ecommerce.Catalog.Tests/ProductViewTests` | `A_shopper_opening_a_product_page_counts_and_twenty_at_once_count_twenty`; `Staff_and_the_seller_do_not_count_and_neither_does_what_is_not_on_the_shelf`; `The_most_viewed_come_first`. |
 | `Ecommerce.Identity.Tests/UserReportTests` | `Ids_are_turned_into_emails_and_unknown_ones_are_left_out`; `The_counts_follow_the_roles`. |
 | `client/src/pages/admin-overview/index.test.tsx` | Revenue per currency, never added together; top buyers named by email; waiting counts shown; a different period asks again; the request covers exactly the days the chart draws. |
-| `client/src/pages/admin-overview/daily-chart.test.tsx` | One column per day with empty days included; bars scaled to the busiest day, which is named; one currency at a time; the hover text gives day, amount and orders. |
+| `client/src/components/insights/daily-revenue-chart/index.test.tsx` | One column per day with empty days included; bars scaled to the busiest day, which is named; one currency at a time; the hover text gives day, amount and orders. |
 | `client/src/utils/insights/index.test.ts` | `periodDays` lists every day oldest first, crosses a month end, and gives as many days as asked. |
 | `client/src/pages/product/index.test.tsx` (`ProductPage views`) | The page reports a view once, however often it renders. |
 | `bruno/admin-insights/` | A shopper opens the product page; revenue per currency, top selling, most viewed, top buyers, who the buyers are, and people in numbers answer 200 to an administrator; a customer and a moderator get 403. |
@@ -134,7 +134,7 @@ The plan records two mutation checks: counting cancelled orders as revenue, and 
 - **Views are not deduplicated.** The endpoint is anonymous and has no rate limit, so repeated requests inflate a count. The storefront sends one per product opened, per page load.
 - **Headline counts are now, not for the period.** "Customers" includes sellers, who also hold `Customer`. "Stopped" adds locked and banned, so an account that is both counts twice.
 - **Revenue and product revenue measure different things** (with and without tax and delivery). The Overview shows units for top products and does not display product revenue.
-- **A seller has no view of their own shop's performance** ([#111](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/111)).
+- **A seller's own view is a separate page**, [Seller insights](seller-insights.md) (specs/068). It leaves a returned and refunded parcel out of revenue; this Overview does not yet.
 - **Out of scope in the spec:** charts beyond a daily bar per currency, exports, and custom date ranges in the storefront.
 
 ## History

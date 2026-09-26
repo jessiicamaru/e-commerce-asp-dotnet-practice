@@ -122,6 +122,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [065](../../specs/065-revoke-access-tokens/) | Access tokens revoked | #148 | Fixes #112: `AccessTokensRevoked` on a lock, ban, role revoked, password reset or change and token reuse; every service refuses earlier tokens within seconds |
 | [066](../../specs/066-parcel-returns/) | Parcel returns (server) | #149 | #107 part 1: request within 7 days, the seller or staff decide, disputes, sent back, received; refund and restock once; money due only after the return window |
 | [067](../../specs/067-return-screens/) | Parcel returns (screens) | #151 | #107 part 2: the buyer returns, sends back and escalates from the order page; the seller accepts, refuses and receives from the sale; staff settle disputes on the order and in `/admin/returns` |
+| [068](../../specs/068-seller-insights/) | Seller insights | #152 | #111: a seller's own revenue per currency and day (their lines before tax, returns refunded left out), best sellers, views and a weighted rating, on `/shop/insights` |
 
 Specs 023, 024, 025, 026 and 030 were smaller changes made without a separate design record; their PRs
 are listed above by what they did.

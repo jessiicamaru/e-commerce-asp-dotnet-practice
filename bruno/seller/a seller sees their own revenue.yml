@@ -1,0 +1,37 @@
+info:
+  name: a seller sees their own revenue
+  type: http
+  seq: 56
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/sales/insights/revenue"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the admin's shape: totals per currency and days, over whole days", function() {
+          expect(res.body).to.have.all.keys("from", "to", "totals", "days");
+          res.body.totals.forEach(function(t) {
+            expect(t).to.have.all.keys("currency", "revenue", "orders", "averageOrderValue");
+          });
+          expect(res.body.from.slice(11, 19)).to.equal("00:00:00");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A seller's own revenue (specs/068): their lines on sold orders, before tax, per currency - never an order's
+  total, and not a parcel returned and refunded. No seller id anywhere: the token says whose. Empty for the
+  seller registered in this folder, who has sold nothing; `SellerInsightsTests` proves the numbers.

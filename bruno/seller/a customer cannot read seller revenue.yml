@@ -1,0 +1,28 @@
+info:
+  name: a customer cannot read seller revenue
+  type: http
+  seq: 58
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/sales/insights/revenue"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Seller only (specs/068). A customer has no sales, and the role on the route says so before any query runs.

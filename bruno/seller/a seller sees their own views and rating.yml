@@ -1,0 +1,41 @@
+info:
+  name: a seller sees their own views and rating
+  type: http
+  seq: 57
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/insights/mine?limit=5"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("their views, their rating and their products - no one else's", function() {
+          expect(res.body).to.have.all.keys("views", "ratingAverage", "ratingCount", "products");
+          expect(res.body.products.length).to.be.at.most(5);
+          res.body.products.forEach(function(p) {
+            expect(p).to.have.all.keys("productId", "name", "views", "ratingAverage", "ratingCount");
+          });
+        });
+        test("the product this folder listed is among them", function() {
+          var ids = res.body.products.map(function(p) { return p.productId; });
+          expect(ids).to.include(bru.getVar("sellerProductId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A seller's own products from Catalog (specs/068): views in the period, the rating over every visible review
+  weighted by each product's count (null when none), and the most viewed. `SellerProductInsightsTests` proves
+  the numbers.
