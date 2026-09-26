@@ -18,6 +18,12 @@ export interface Revenue {
   to: string
   totals: RevenueTotal[]
   days: RevenueDay[]
+  /**
+   * The first and last of the shop's days the period covers, `YYYY-MM-DD`, both included (specs/082) - what the
+   * chart draws. Absent from an Order older than that.
+   */
+  firstDay?: string
+  lastDay?: string
 }
 
 export interface CurrencyAmount {

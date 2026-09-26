@@ -72,7 +72,7 @@ export function ShopInsightsPage() {
         ) : revenue.data.totals.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t('insights.noRevenue')}</p>
         ) : (
-          <RevenuePanel revenue={revenue.data} days={periodDays(to, period)} currency={currency} onCurrency={setCurrency} />
+          <RevenuePanel revenue={revenue.data} days={periodDays(revenue.data.firstDay ?? from, revenue.data.lastDay ?? to)} currency={currency} onCurrency={setCurrency} />
         )}
       </InsightPanel>
 
