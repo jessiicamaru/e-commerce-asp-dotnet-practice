@@ -17,7 +17,7 @@ namespace Ecommerce.Catalog.Application.Products.Saved;
 public static class SavedProductNotices
 {
     /// <summary>A product somebody can buy: on the shelf, not withdrawn, and in stock.</summary>
-    public static bool OnSale(Product product) => product.IsListed && product.IsActive && product.Availability;
+    public static bool OnSale(Product product) => product.OnShelf && product.Availability;
 
     /// <summary>
     /// What an edit hands <see cref="IProductRepository.SaveAndRecomputeRollupAsync"/>: once its rollup has flipped
@@ -28,7 +28,7 @@ public static class SavedProductNotices
         async ct =>
         {
             var product = await products.GetByIdAsync(productId, ct);
-            if (product is { IsListed: true, IsActive: true })
+            if (product is { OnShelf: true })
             {
                 await BackOnSaleAsync(product, saved, notifier, email, ct);
             }

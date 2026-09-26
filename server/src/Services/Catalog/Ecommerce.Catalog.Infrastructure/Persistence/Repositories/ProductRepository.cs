@@ -277,7 +277,8 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         // everything of theirs, whatever its review says.
         if (listedOnly)
         {
-            query = query.Where(p => p.ReviewStatus == ProductReviewStatus.Approved);
+            // Product.OnShelf, spelled out for SQL (specs/092).
+            query = query.Where(p => p.ReviewStatus == ProductReviewStatus.Approved && p.IsActive);
         }
 
         if (sellerId.HasValue)

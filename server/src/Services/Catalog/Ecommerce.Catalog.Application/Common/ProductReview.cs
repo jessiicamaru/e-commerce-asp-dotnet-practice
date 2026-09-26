@@ -13,9 +13,9 @@ public static class ProductReview
     public static bool StartsPending(ICurrentUser currentUser) =>
         currentUser.IsInRole(RoleNames.Seller) && !currentUser.IsInRole(RoleNames.Admin);
 
-    /// <summary>On the shelf, everybody; otherwise its seller and staff only.</summary>
+    /// <summary>On the shelf (<see cref="Product.OnShelf"/>), everybody; otherwise its seller and staff only.</summary>
     public static bool MaySee(Product product, ICurrentUser currentUser) =>
-        product.IsListed
+        product.OnShelf
         || currentUser.IsInRole(StaffRoles.Admin)
         || currentUser.IsInRole(StaffRoles.Moderator)
         || (product.SellerId is not null && product.SellerId == currentUser.Id);

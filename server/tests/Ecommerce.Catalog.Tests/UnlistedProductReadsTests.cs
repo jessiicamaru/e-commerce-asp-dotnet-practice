@@ -5,6 +5,7 @@ using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Catalog.Application.Products.Images.GetProductImage;
 using Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
 using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
+using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 using Ecommerce.Catalog.Application.Products.Review;
 using Ecommerce.Catalog.Application.Questions;
 using Ecommerce.Catalog.Application.Reviews;
@@ -173,6 +174,35 @@ public class UnlistedProductReadsTests(CatalogTestFixture fixture) : IDisposable
 
         Assert.Equal(4, (await SendAsync(new WriteReviewCommand(product.Id, 4, "Fine again."))).Rating);
         Assert.Equal((4m, 1), await RatingAsync(product.Id));
+    }
+
+    /// <summary>
+    /// #185 (specs/092): two rules decided "off the shelf" - reads asked approved only, writes asked approved and
+    /// active - so a product withdrawn but still approved could be opened, with its photograph, reviews and questions,
+    /// while nobody could review or ask about it. Now one rule, <see cref="Product.OnShelf"/>, answers both.
+    /// </summary>
+    [Fact]
+    public async Task A_withdrawn_product_is_off_the_shelf_for_reads_as_it_is_for_writes()
+    {
+        var product = await ListedWithImageAsync();
+        var key = KeyIn(product.ImageUrl);
+        // No command withdraws a product today; an earlier image, or a hand in the database, can.
+        await using (var scope = _fixture.NewScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<CatalogDbContext>().Products.Where(p => p.Id == product.Id)
+                .ExecuteUpdateAsync(x => x.SetProperty(p => p.IsActive, false));
+        }
+
+        As(Guid.CreateVersion7(), "Customer");
+        Assert.Null(await SendAsync(new GetProductByIdQuery(product.Id)));
+        Assert.DoesNotContain((await SendAsync(new GetProductsQuery(SearchTerm: product.Sku, PageSize: 50))).Items, p => p.Id == product.Id);
+        Assert.Null(await SendAsync(new GetProductImageQuery(product.Id)));
+        Assert.True(await SendAsync(new GetProductImageQuery(product.Id, key)) is { Public: false });
+        await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(new GetProductReviewsQuery(product.Id)));
+        await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(new GetProductQuestionsQuery(product.Id)));
+
+        As(Guid.CreateVersion7(), "Moderator");
+        Assert.NotNull(await SendAsync(new GetProductByIdQuery(product.Id)));
     }
 
     [Fact]

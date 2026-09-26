@@ -97,8 +97,8 @@ public class ReviewHandlers(
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
 
-    /// <summary>What a shopper can buy - the public lookup's rule (specs/045), and asking a question's.</summary>
-    private static bool OnSale(Product product) => product.IsListed && product.IsActive;
+    /// <summary>What a shopper can buy - the public lookup's rule, and asking a question's: one rule (specs/092).</summary>
+    private static bool OnSale(Product product) => product.OnShelf;
 
     public Task Handle(RecordReviewEligibilityCommand request, CancellationToken cancellationToken) =>
         _reviews.RecordEligibilityAsync(request.CustomerId, request.ProductIds, request.DeliveredAt, cancellationToken);

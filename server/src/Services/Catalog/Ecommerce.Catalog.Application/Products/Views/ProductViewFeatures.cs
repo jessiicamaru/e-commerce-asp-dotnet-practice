@@ -60,7 +60,7 @@ public class ProductViewHandlers(IProductViewRepository views, IProductRepositor
     public async Task Handle(RecordProductViewCommand request, CancellationToken cancellationToken)
     {
         var product = await products.GetByIdAsync(request.ProductId, cancellationToken);
-        if (product is null || !product.IsListed
+        if (product is null || !product.OnShelf
             || currentUser.IsInRole(StaffRoles.Admin) || currentUser.IsInRole(StaffRoles.Moderator)
             || (product.SellerId is not null && product.SellerId == currentUser.Id))
         {

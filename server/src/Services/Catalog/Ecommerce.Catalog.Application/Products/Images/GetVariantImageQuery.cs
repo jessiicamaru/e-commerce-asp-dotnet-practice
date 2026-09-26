@@ -48,6 +48,6 @@ public class GetVariantImageQueryHandler(
         }
 
         return new ProductImage(
-            content, variant.ImageContentType!, ProductImageKey.Version(variant.ImageUpdatedAt!.Value), product.IsListed);
+            content, variant.ImageContentType!, ProductImageKey.Version(variant.ImageUpdatedAt!.Value), product.OnShelf);
     }
 }
