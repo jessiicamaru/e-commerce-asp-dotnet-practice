@@ -96,7 +96,7 @@ Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, Postgre
 `Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (263 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (186 tests, PostgreSQL on 5433), `Ecommerce.Cart.Tests`
 (14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (163 tests, PostgreSQL on 5435) and
-`Ecommerce.Activity.Tests` (28 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
+`Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (12 tests, no database - the
 gateway's real pipeline through WebApplicationFactory, specs/062). They run against a **real PostgreSQL** — the guarantees under test are the
@@ -648,6 +648,13 @@ words are the defaults; `email_template_versions` is append-only (reset and rest
 (`AllowListHtmlSanitizer`, Ganss.Xss) **on save AND on every send**, and values are escaped as they are filled in;
 a placeholder the email cannot fill is a 400 naming it, and the reset/confirmation emails cannot lose `{link}`.
 `IEmailTransport.SendAsync(to, subject, text, html)` sends `multipart/alternative`. Admin only, not Moderator.
+**An administrator rewords the notices** (specs/078, closes #150): `/admin/notifications`; `notification_wording_versions`
+in **Activity**, versioned the same way. The bundle stays the default - the storefront fetches the edits (public
+`GET /api/notifications/wording`) and lays them over it. ⚠️ `notification-kinds.json` now also declares
+`placeholders` (which data keys fill `{{order}}`, `{{total}}` ...); the server refuses a placeholder the kind cannot
+fill, and a client test holds `describeNotification` to the same list - a new placeholder is a line there too.
+⚠️ `describeNotification` returns **HTML with escaped values**; show it through `NoticeText` (DOMPurify), never as
+raw text or unsanitised.
 **A forgotten password** (specs/061): `POST /api/auth/forgot-password` is **202 for any address** (#28) and,
 for a real account, stores a single-use token **as its SHA-256 hash only** (30 minutes, replacing any
 earlier unused one) and queues a `PasswordReset` email in the request's `Accept-Language`. ⚠️ That email is

@@ -239,13 +239,44 @@ would roll back the payout or the decision it announces.
 The shop's own goods have nobody to tell: no `NewSale`, `SaleCancelled`, `ParcelReceived` or product
 notice goes out for them.
 
+## Rewording the notices
+
+An **administrator** changes what any notice says at `/admin/notifications` (specs/078, closing #150; the emails
+were specs/077). A notice still stores a kind and data, never a sentence (specs/042). Only the **source of its
+words** can now be an administrator's edit as well as the bundle.
+
+1. **The bundle is the default.** `locales/*/notifications.json` stay the words of an unedited kind and the
+   fallback under any edit.
+   - The storefront fetches `GET /api/notifications/wording` (public, cached for a minute) at start and every five
+     minutes.
+   - It lays the edits over the bundle, bundle first, so a reset key goes back to it.
+   - With Activity down, readers see the bundled words, never a blank notice.
+2. **Versions, like the emails.** `notification_wording_versions` is append-only and unique on `(Key, Language,
+   Version)`. The editor's `expectedVersion` makes a stale save a 409, and reset and restore each add a version.
+3. **A key is a kind, or a kind with an i18next plural form.** Each form is edited on its own, for example
+   `NewReview_one` and `NewReview_other` in English.
+4. **Placeholders are checked per kind.** `notification-kinds.json` has a `placeholders` section naming the data
+   keys each placeholder is made from: `order` needs `orderId`, and `total` needs `total` and `currency`.
+   - A kind may use a placeholder when it carries all of those keys, whether required or optional.
+   - Anything else is a **400 that names it**.
+   - A storefront test holds `describeNotification`'s fillings, the bundled words and this section together.
+5. **Emphasis and links only.** The allow-list is `strong`, `b`, `em`, `i`, `u` and `a[href]`, sanitised on save
+   (Ganss.Xss) and again in the page (DOMPurify).
+   - A link goes to `http(s)` or a page of the shop (`/orders`), never `//elsewhere`.
+   - Inside the bell and the list, where the whole notice is already a link, a link shows as its words.
+6. **Values are escaped as they are filled in.** `describeNotification` now returns HTML, and a product called
+   `<img onerror>` shows as those characters.
+7. **Audited** through Activity's own outbox (`AddAuditTrail("activity")`), as `NotificationWordingSaved`,
+   `NotificationWordingReset` or `NotificationWordingRestored`, with the before and the after.
+
 ## Data
 
-Activity database - see [data-model.md](../reference/data-model.md#activity---ecommerce_activity_db-2-tables).
+Activity database - see [data-model.md](../reference/data-model.md#activity---ecommerce_activity_db-3-tables).
 
 | Table | Columns | Indexes |
 | :-- | :-- | :-- |
 | [`audit_entries`](../reference/data-model.md#audit_entries) | `Id` (the publisher's entry id), `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `Before` / `After` (`jsonb`), `Changes` (`jsonb`), `ChangeCount`, `Service`, `OccurredAt`, `RecordedAt` | `OccurredAt`; `(Category, OccurredAt)`; `(ActorId, OccurredAt)`; `(SubjectType, SubjectId)` |
+| [`notification_wording_versions`](../reference/data-model.md#notification_wording_versions) | `Id`, `Key`, `Language`, `Version`, `IsDefault`, `Text`, `CreatedAt`, `CreatedBy` | unique `(Key, Language, Version)`; CHECK `"IsDefault" OR "Text" IS NOT NULL` |
 | [`notifications`](../reference/data-model.md#notifications) | `Id` (the publisher's id), `RecipientId`, `Kind`, `Data` (`jsonb`), `Link`, `CreatedAt`, `ReadAt` | `(RecipientId, CreatedAt)`; `IX_notifications_unread` on `RecipientId WHERE "ReadAt" IS NULL` |
 
 Activity also holds MassTransit's inbox and outbox tables for its consumers.
@@ -265,6 +296,11 @@ Full list in [api.md](../reference/api.md); gateway routes `/api/audit/**`, `/ap
 | `GET` | `/api/notifications/unread-count` | signed in |
 | `POST` | `/api/notifications/{id}/read` | signed in - 204, or 404 for none or not theirs |
 | `POST` | `/api/notifications/read-all` | signed in - answers `{ marked }` |
+| `GET` | `/api/notifications/wording` | anyone - `{ lang: { key: text } }`, the current edits (specs/078) |
+| `GET` | `/api/notifications/wording/all` | Admin - every kind with its placeholders, and every edited key's version |
+| `GET` | `/api/notifications/wording/{key}/{lang}/versions` | Admin |
+| `PUT` | `/api/notifications/wording/{key}/{lang}` | Admin - `{ text, expectedVersion }` |
+| `POST` | `/api/notifications/wording/{key}/{lang}/reset`, `.../versions/{v}/restore` | Admin - `{ expectedVersion }` |
 
 `actor` matches part of the actor's email (`ILIKE`); `category` must be one of the seven; `pageSize` is
 at most 100 for the log and 50 for the inbox.
@@ -284,7 +320,10 @@ From [messages.md](../reference/messages.md).
 | :-- | :-- |
 | `components/layout/notification-bell` | The unread count, polled every 30 seconds; the latest 8 when opened; mark one or all read. |
 | `pages/notifications` (`/notifications`) | Every notice, all or unread only, a page at a time. |
-| `utils/notifications` | `describeNotification`: kind and data to words in the reader's language. |
+| `utils/notifications` | `describeNotification`: kind and data to words in the reader's language, as HTML with the values escaped (specs/078); `wording.ts` lays the edits over the bundle. |
+| `components/shared/notice-text` | A notice's words through DOMPurify with the server's allow-list. |
+| `hooks/notification-wording` | `useNotificationWording`, called in `MainLayout`: fetches the edits at start and every 5 minutes. |
+| `pages/admin-wording` (`/admin/notifications`) | Administrators: every kind's sentence in both languages, the inline editor with that kind's placeholders and a live sample, save, reset and the versions. Lazy-loaded. |
 | `constants/notifications` | `NOTIFICATION_POLL_MS = 30_000`. |
 | `hooks/notifications`, `services/notifications` | The TanStack Query hooks and the axios calls. |
 | `pages/admin-audit` (`/admin/audit`) | Administrators: a tab per category with its count for the period, filters by period and actor, and each entry opening in `entry-dialog.tsx` to its field-level diff. The filters live in the address, so a view can be shared as a link. |
@@ -299,6 +338,8 @@ From [messages.md](../reference/messages.md).
 | `Ecommerce.Activity.Tests/RedactionTests` | Secret-looking fields are redacted at any depth, by name. |
 | `Ecommerce.Activity.Tests/AuditTrailTests` | The actor is the caller's most powerful role; nobody signed in is the system unless an actor is given. |
 | `Ecommerce.Activity.Tests/AuditLogTests` | Kept with its diff; a redelivery kept once; filters; the summary; unknown entry 404; unknown category 400. |
+| `Ecommerce.Activity.Tests/NotificationWordingTests` (7) | A save is what the storefront is given, in that language only, and a reset takes it away. An unknown placeholder is refused by name. Plural keys work, and an unknown key or language is a 404. What could run in a bell is stripped, and a link stays on the web or the shop. A stale or future version is a 409, and the store gives a number once. Reset and restore are audited versions. The overview's placeholders include an optional key's. |
+| client `utils/notifications` (placeholders), `components/shared/notice-text`, `utils/notifications/wording.test.ts`, `pages/admin-wording` | `describeNotification` fills exactly the declared placeholders, and the bundled words use only what their kind carries. Values are escaped. Sanitising and links. An edit laid over the bundle, and the bundle back after a reset. The console saves on top of its version and shows a refusal. |
 | `Ecommerce.Activity.Tests/NotificationTests` | Lands in its recipient's inbox once; nobody reads or marks another's; marking lowers the count; newest first, paged. |
 | `Ecommerce.Identity.Tests/AuditTests`, `ModerationTests` | Registering, signing in, refused sign-ins, renaming, and every moderation action are recorded with their diff. |
 | `Ecommerce.Catalog.Tests/AuditTests` | Listing, pricing and withdrawing are each recorded once; a refused change is not. |
@@ -308,7 +349,18 @@ From [messages.md](../reference/messages.md).
 | `Ecommerce.Catalog.Tests/ProductReviewTests`, `ReviewTests`; `Ecommerce.Identity.Tests/ShopApplicationTests`, `ModerationTests` | Every product, review, shop and moderator notice - approved, rejected, taken down, new review, granted, revoked - goes to the right person with exactly its declared keys. |
 | `Ecommerce.Payment.Tests/AuditTests` | A charge and its refund are each recorded once. |
 | client `components/layout/notification-bell`, `pages/notifications`, `utils/notifications`, `services/notifications`, `pages/admin-audit` (and `format.test.ts`), `services/audit` | Polling, wording per kind and language (every declared kind, both languages, showing each value it was sent), the generic fallback for an unknown kind or a missing value, marking read, the audit filters and diff display. |
-| Bruno `notifications/`, `admin-audit/`, `admin-users/` | The customer is told the order was paid and shipped; marking read; another person's notice is 404; the audit log records the order it followed and the lock; the summary. |
+| Bruno `notifications/`, `admin-audit/`, `admin-users/` | The customer is told the order was paid and shipped; marking read; another person's notice is 404; the audit log records the order it followed and the lock; the summary. `admin-users/` 24-30 (specs/078): the public wording, a moderator's 403, the overview, a refusal by name, a reword (the script stripped), the new words read back, a reset. |
+
+Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or the storefront's escaping test, red.
+- Accepting any key.
+- Not checking placeholders.
+- Not checking links.
+- Not sanitising.
+- Removing `ON CONFLICT`.
+- Removing the stale check.
+- Showing defaults as edits.
+- Ignoring optional keys. This one survived until the `ParcelShipped` assertion.
+- Not escaping values (client).
 
 ## Known limits
 
@@ -327,6 +379,7 @@ From [messages.md](../reference/messages.md).
 | Spec | PR | Added |
 | :-- | :-- | :-- |
 | [041-audit-log](../../specs/041-audit-log/) | [#93](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/93) | The Activity service; `AuditEntryRecorded`; `IAuditTrail`, categories, redaction; `AuditDiff`; `/api/audit`; instrumentation of Identity, Catalog, Inventory, Order and Payment; the audit log page. |
+| [078-notification-wording](../../specs/078-notification-wording/) | #162 | Administrators reword every notice: `notification_wording_versions`, placeholders declared per kind in `notification-kinds.json`, emphasis and links only, notices rendered as sanitised HTML with escaped values (#150). |
 | [042-in-app-notifications](../../specs/042-in-app-notifications/) | [#94](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/94) | `UserNotificationRequested`, `INotifier`, `NotificationKind`; `/api/notifications`; `OrderNotices`; `TrySettleAsync` with a `stage`; the bell and `/notifications`. |
 | [043-moderators-and-locks](../../specs/043-moderators-and-locks/) | [#95](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/95) | Moderation and Security entries for roles, locks and bans; `ModeratorGranted`, `ModeratorRevoked`. |
 | [044-shop-applications](../../specs/044-shop-applications/) | [#96](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/96) | `ShopApplied`, `ShopApproved`, `ShopRejected`; the matching notices. |

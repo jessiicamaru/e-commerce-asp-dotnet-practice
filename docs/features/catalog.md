@@ -87,7 +87,7 @@ sequenceDiagram
 
 ## Data
 
-All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#catalog---ecommerce_catalog_db-12-tables).
+All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#catalog---ecommerce_catalog_db-14-tables).
 
 | Table | What it holds |
 | :-- | :-- |
