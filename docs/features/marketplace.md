@@ -94,6 +94,15 @@ product.
 A seller's new product waits for a moderator before it goes on sale; that flow is in
 [catalog](catalog.md).
 
+**A shop has a page** (specs/099, #197). `/shops/{sellerId}` shows the shop's name, the seller's own
+description and its products on the shelf; the shop name on a product page links there. The seller
+writes the description beside the rename (`PUT /api/sellers/me/description`, at most 500 characters,
+not moderated - like the name). Identity announces `SellerDescribedEvent` in the same save, and Catalog
+keeps it on `sellers` (`Description`, guarded by its own `DescriptionObservedAt`). Catalog serves the
+page (`GET /api/shops/{sellerId}`, anyone): 404 for an unknown id, a seller whose name has not arrived
+yet, or a suspended one. The products are the public listing with `?sellerId=` - the same shelf rule as
+the catalogue. The shop's own goods have no page: the catalogue is theirs.
+
 ### Stock
 
 `PUT /api/stock/{variantId}` is open to `Seller,Admin`. Inventory decides ownership itself
@@ -246,6 +255,9 @@ same transaction.
     no terms and are excluded from balances and payouts. *Why:* backfilling would invent yesterday's
     agreement or answer with today's owner.
 22. **Money is never added across currencies.** Balances, the due list and payouts are per currency.
+23. **A shop's page is the catalogue's shelf, filtered.** Its products come from `GET /api/products?sellerId=`,
+    never a second query, so a product taken down or a shop suspended leaves the shop page and the
+    catalogue together; its count is `Product.OnShelf` counted (specs/099 D5).
 
 ## Data
 
@@ -276,6 +288,9 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `POST` | `/api/shop-applications/{id}/reject` | Admin, Moderator |
 | `GET` | `/api/sellers/me` | Seller |
 | `PUT` | `/api/sellers/me/shop-name` | Seller |
+| `PUT` | `/api/sellers/me/description` | Seller |
+| `GET` | `/api/shops/{sellerId}` | anyone |
+| `GET` | `/api/products?sellerId=` | anyone |
 | `GET` | `/api/products/mine` | Seller |
 | `POST`, `PUT`, `DELETE` | `/api/products/...` (create, variants, prices, translations, images, delete) | Seller, Admin - ownership checked in the handler |
 | `PUT` | `/api/stock/{variantId}` | Seller, Admin - ownership asked of Catalog |
@@ -294,6 +309,7 @@ From [messages.md](../reference/messages.md) and [grpc.md](../reference/grpc.md)
 | :-- | :-- | :-- | :-- |
 | `SellerRegisteredEvent` | Identity, on approval | Catalog `SellerRegisteredConsumer` | `SellerId`, `ShopName`, `RegisteredAt` |
 | `SellerRenamedEvent` | Identity, on rename | Catalog `SellerRenamedConsumer` | `SellerId`, `ShopName`, `RenamedAt` |
+| `SellerDescribedEvent` | Identity, on a description | Catalog `SellerDescribedConsumer` | `SellerId`, `Description` (null = cleared), `DescribedAt` |
 | `AuditEntryRecorded`, `UserNotificationRequested` | Identity, Catalog, Order | Activity | decisions, payouts, sales (see [audit and notifications](audit-and-notifications.md)) |
 | gRPC `CatalogOwnership.GetVariantOwners` | Inventory | Catalog | who owns each variant, asked per stock write |
 | gRPC `CatalogPricing.PriceVariants` | Order | Catalog | `PricedVariant.seller_id` (field 9) and `seller_name` (field 10), both `optional` |
@@ -317,6 +333,8 @@ broker returns.
 | `pages/shop-sales`, `pages/shop-sale` | The seller's sales and one sale, with `components/seller/sale-earnings` and the parcel steps. |
 | `pages/shop-payouts` (`/shop/payouts`) | One card per currency: on the way, due, paid out; and the payouts list. |
 | `components/seller/rename-shop-dialog` | Renames the shop. |
+| `components/seller/describe-shop-dialog` | The shop's description, beside the rename; the seller layout also links to the shop's own page. |
+| `pages/shop-front` (`/shops/:sellerId`) | Anyone: a shop's name, description and products on the shelf, paged; the product page's shop name links here. |
 | `pages/admin-shops` (`/admin/shops`) | Staff: the application queue, a tab per status. |
 | `pages/admin-payouts` (`/admin/payouts`) | Administrators: what is due per seller and currency, and a confirmed "record payout". |
 
@@ -333,6 +351,8 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | `Ecommerce.Catalog.Tests/VariantOwnershipTests`, `VariantSellerPricingTests` | The gRPC answers: owner per variant, `seller_id` empty-but-present for the shop, the shop name or no name. |
 | `Ecommerce.Inventory.Tests/SellerStockTests` | A seller stocks their own; another's is 404 and never 403; the shop's own is refused; an administrator costs no call to Catalog; a missing stock row says something different; Catalog unreachable is not a refusal. |
 | `Ecommerce.Order.Tests/SellerSalesTests`, `ShopNameTests` | The seller and shop name are frozen per line; a sale holds only the seller's lines and nothing about the customer; unpaid orders are never sales; not-yours and not-there read alike. |
+| `Ecommerce.Catalog.Tests/ShopPageTests` | The seller filter lists only that seller's products on the shelf; the shop read carries name, description and count; unknown, unnamed and suspended are 404; an older description loses. |
+| `Ecommerce.Identity.Tests/ShopDescriptionTests` | A description is stored trimmed and announced with its audit entry; empty clears it; too long is 400; a non-seller is 404. |
 | `Ecommerce.Order.Tests/EarningsTests` | Equal split that sums exactly, commission rounding, no commission on the shop's part, the rate's range. |
 | `Ecommerce.Order.Tests/PayoutTests` | Terms recorded at checkout; balance moves on the way → due → paid out; failed orders count nowhere; nothing due is 409 and leaves nothing; simultaneous payouts pay each part once; one currency at a time; older parts are never paid. |
 | client `pages/open-shop`, `shop*`, `admin-shops`, `admin-payouts`, `components/seller/*`, `components/auth/require-role`, `components/layout/user-menu` | What each page sends and shows, and how a server refusal is shown. |
@@ -374,6 +394,7 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 | :-- | :-- | :-- |
 | [027-seller-accounts](../../specs/027-seller-accounts/) | [#64](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/64) | The `Seller` role, `register-seller`, `seller_profiles`, `products.SellerId`, `SellerOwnership`, Catalog's `sellers` read model, the rename, Identity's first outbox. |
 | [095-suspended-seller](../../specs/095-suspended-seller/) | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) | A ban closes a seller's shop: `SellerSuspensionChangedEvent`, `sellers.Suspended`, `products.SellerSuspended` (#193). |
+| [099-shop-page](../../specs/099-shop-page/) | [#206](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/206) | A shop has a page: `/shops/:sellerId`, `GET /api/shops/{id}`, `?sellerId=` on the listing, the seller's description and `SellerDescribedEvent` (#197). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |

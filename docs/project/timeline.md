@@ -153,6 +153,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [096](../../specs/096-staff-order-search/) | Find any order | #203 | #194: an administrator finds any order - by the start of its id, the customer's email or its status, failed and cancelled included - at `/admin/orders/find` |
 | [097](../../specs/097-category-admin/) | Categories page | #204 | #195: administrators create, rename, translate and delete categories at `/admin/categories`; the slug stays fixed; a duplicate slug is a 409, no longer a 500 |
 | [098](../../specs/098-delivery-settings/) | Delivery settings | #205 | #196: delivery prices and options are edited at `/admin/delivery` instead of by redeploying (configuration only seeds what is missing), and the shop's one carrier has a name and a tracking page every reference links to |
+| [099](../../specs/099-shop-page/) | A shop has a page | #206 | #197: a shop's name on a product leads to its page - the seller's own description and everything the shop has on the shelf; the seller writes the description beside the rename |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
