@@ -17,7 +17,8 @@
     "emails": "Email",
     "emailDelivery": "Tình trạng gửi email",
     "notifications": "Thông báo",
-    "findOrder": "Tìm đơn hàng"
+    "findOrder": "Tìm đơn hàng",
+    "categories": "Danh mục"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -470,5 +471,25 @@
       "Failed": "Thất bại",
       "Cancelled": "Đã huỷ"
     }
+  },
+  "categories": {
+    "title": "Danh mục",
+    "subtitle": "Tiếng Việt là tên gốc của danh mục; tiếng Anh là bản dịch. Địa chỉ không đổi sau khi tạo.",
+    "name": "Tên",
+    "description": "Mô tả",
+    "slug": "Địa chỉ",
+    "create": "Tạo",
+    "created": "Đã tạo danh mục “{{name}}”.",
+    "saved": "Đã lưu “{{name}}”.",
+    "deleted": "Đã xoá “{{name}}”.",
+    "edit": "Sửa",
+    "save": "Lưu",
+    "delete": "Xoá",
+    "confirmDelete": "Xoá hẳn",
+    "vietnamese": "Tiếng Việt",
+    "english": "Tiếng Anh",
+    "noEnglish": "Chưa có tiếng Anh",
+    "none": "Chưa có danh mục nào.",
+    "loadFailed": "Không tải được danh mục."
   }
 }

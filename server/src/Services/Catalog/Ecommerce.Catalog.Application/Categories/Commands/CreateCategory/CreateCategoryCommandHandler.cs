@@ -3,6 +3,7 @@ using Ecommerce.Catalog.Application.Common.Interfaces;
 using Ecommerce.Catalog.Domain.Entities;
 using MediatR;
 using Ecommerce.Shared.Audit;
+using Ecommerce.Shared.Exceptions;
 
 namespace Ecommerce.Catalog.Application.Categories.Commands.CreateCategory;
 
@@ -20,7 +21,8 @@ public class CreateCategoryCommandHandler(ICategoryRepository categoryRepository
 
         if (existingCategory != null)
         {
-            throw new Exception("Category already exists");
+            // A 409 the shared handler can word, not the 500 a bare Exception made it (specs/097, the #28 class).
+            throw new ConflictException($"A category with the address '{request.Slug}' already exists.");
         }
 
         var category = new Category

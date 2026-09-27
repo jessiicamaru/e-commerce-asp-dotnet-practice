@@ -1,4 +1,5 @@
 using Ecommerce.Catalog.Application.Categories.Commands.CreateCategory;
+using Ecommerce.Catalog.Application.Categories.Commands.UpdateCategory;
 using Ecommerce.Catalog.Application.Categories.Commands.DeleteCategory;
 using Ecommerce.Catalog.Application.Categories.Queries.GetCategories;
 using Ecommerce.Catalog.Application.Categories.Translations;
@@ -23,6 +24,16 @@ public class CategoriesController : ApiControllerBase
     {
         var result = await Mediator.Send(command);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// A category's own name and description, in the default language (#195, specs/097). The slug never changes.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] CategoryTextRequest request)
+    {
+        return Ok(await Mediator.Send(new UpdateCategoryCommand(id, request.Name, request.Description)));
     }
 
     /// <summary>
@@ -60,4 +71,6 @@ public class CategoriesController : ApiControllerBase
     }
 
     public record CategoryTranslationRequest(string Name, string? Description);
+
+    public record CategoryTextRequest(string Name, string? Description);
 }

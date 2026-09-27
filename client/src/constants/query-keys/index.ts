@@ -12,6 +12,7 @@ export const queryKeys = {
   product: (id: string) => ['product', id] as const,
   myProducts: (query: ProductQuery) => ['my-products', query] as const,
   categories: () => ['categories'] as const,
+  categoriesIn: (language: string) => ['categories', 'in', language] as const,
   myShop: () => ['my-shop'] as const,
   cart: () => ['cart'] as const,
   addresses: () => ['addresses'] as const,
