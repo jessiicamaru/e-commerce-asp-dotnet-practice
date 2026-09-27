@@ -57,9 +57,9 @@ cancelled part.
 | **II. Clean Architecture Layering** | **Pass.** Rules in Application (`CancelPart`), the locked transaction in the repository, routes only send. |
 | **III. Atomic Writes and Idempotent Messaging** | **Pass (by design).** The part's columns, the event (or the whole-order event), the voucher release, the audit entry and the notice commit in one transaction under the order's lock. The consumers are idempotent: reservation status guards in Inventory, and a unique `refunds.PartId` in Payment. |
 | **IV. Identity Comes From the Token** | **Pass.** The seller is the token's subject; no seller id in the request; another's part is a 404. |
-| **V. Evidence Over Assumption** | **Planned.** Tests in three services against real databases, mutations (quickstart Scenario 4), Bruno and `verify-saga.sh` through rebuilt containers; recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** `PartCancellationTests` (6), `RestockCancelledPartTests` (3), `PartRefundTests` (2) against real databases, 7 client tests; eleven mutations each caught (quickstart Scenario 4, plus the seller voucher, the whole-refund lookup, and three client ones); full suites Order 299, Inventory 78, Payment 28, Activity 40, client 526; Bruno 318/318 and `verify-saga.sh` through rebuilt containers; a **live check** through the broker - part refund 20,350,000 plus remainder 6,072,000 equals the 26,422,000 charged, every unit back. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): no violations. Two defects the design had to rule out were found in Payment while building it and are covered by tests: the whole-refund lookup and the payments page both counted a part refund as the whole one.
 
 ## Project Structure
 

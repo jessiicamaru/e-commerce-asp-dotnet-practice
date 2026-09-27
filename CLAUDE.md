@@ -547,6 +547,14 @@ what they do**, because two classes called `OrderCancelledConsumer` would share 
 ⚠️ `Sales.Statuses` (what a seller SEES) now includes `Cancelled`, so a seller stops preparing; balances
 and payouts count `Sales.Earning`, which does not - confusing the two would pay sellers for cancelled
 orders. `verify-saga.sh` cancels a second order and asserts the stock back and one full refund.
+**One part can be cancelled too** (specs/104, #211): its seller (`POST /api/orders/sales/{id}/cancel`) or staff for the
+shop's (`/fulfilment/{id}/shop-part/cancel`), with a reason, before it ships - under the same row lock. ⚠️ Columns, not a
+status: `order_shipments.CancelledAt` (+ reason, by, `CancelRefund`), and **every reader of parts must skip a cancelled
+one** (the summary, moves, cancel-all, `Earning`, insights). While parts remain it publishes `OrderPartCancelledEvent`:
+Inventory restocks those variants from reservations (`RestockCancelledOrderCommand` with a variant filter), Payment
+refunds goods less discounts plus tax (`refunds.PartId`, unique). The last part cancels the order whole. ⚠️ Payment's
+whole-order refund is **what is left** after part refunds, and the whole-refund lookups filter `PartId IS NULL` - without
+either a part is refunded twice, or the payments page throws on a duplicate key.
 
 **A parcel is delivered when its customer says so** (specs/040: `POST
 /api/orders/{id}/shipments/{shipmentId}/received`, owner only, one guarded `UPDATE`) **or 7 days after it

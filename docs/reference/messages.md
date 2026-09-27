@@ -1,10 +1,10 @@
 # Messages
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `80d41cf`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d1bfc89`. Do not edit by hand - change the code and run the script again.
 
 Every integration message in `Ecommerce.Contracts` - the only coupling between services - with who publishes it and who consumes it. Every publish goes through the publisher's transactional outbox, and every consumer is idempotent (see [reliable messaging](../architecture/reliable-messaging-and-outbox-pattern.md)). A consumer's class name is its queue name, so two services never share one.
 
-**27 messages.**
+**28 messages.**
 
 | Message | Owner | Published by | Consumed by |
 | :-- | :-- | :-- | :-- |
@@ -28,6 +28,7 @@ Every integration message in `Ecommerce.Contracts` - the only coupling between s
 | `OrderCancelledEvent` | Order | Order | Inventory (`RestockCancelledOrderConsumer`), Payment (`RefundCancelledOrderConsumer`) |
 | `OrderCompletedEvent` | Order | Orchestrator | Cart (`OrderCompletedConsumer`), Inventory (`OrderCompletedConsumer`), Order (`OrderCompletedConsumer`) |
 | `OrderFailedEvent` | Order | Orchestrator | Cart (`OrderFailedConsumer`), Order (`OrderFailedConsumer`) |
+| `OrderPartCancelledEvent` | Order | Order | Inventory (`RestockCancelledPartConsumer`), Payment (`RefundCancelledPartConsumer`) |
 | `OrderSubmittedEvent` | Order | Order | Cart (`OrderSubmittedConsumer`), Orchestrator (saga) |
 | `ParcelDeliveredEvent` | Order | Order | Catalog (`ReviewEligibilityConsumer`) |
 | `ParcelReturnedEvent` | Order | Order | Inventory (`RestockReturnedParcelConsumer`), Payment (`RefundReturnedParcelConsumer`) |

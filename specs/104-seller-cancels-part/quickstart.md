@@ -48,3 +48,13 @@ Apply each change below on its own, run the suite named beside it, and expect it
 | `Earning` counts cancelled parts | `PartCancellationTests` |
 | Whole-order refund ignores part refunds | `PartRefundTests` |
 | Restock ignores the variant filter | `RestockCancelledPartTests` |
+| The seller's voucher not given back | `PartCancellationTests` |
+| The whole-refund lookup without `PartId IS NULL` | `PartRefundTests` |
+| The dialog sends the reason untrimmed; a cancelled part blocks the customer's cancel; the heading counts it | client `shop-sale`, `utils/order`, `order-shipments` |
+
+## Scenario 5: Live, through the broker
+
+With the stack rebuilt (Inventory and Payment first), place an order with one shop product and one seller product as a
+test customer, have staff cancel the shop's part, then have the customer cancel the rest. **Expected**: one part refund
+(the shop line's goods and tax), then one remainder refund; together exactly the amount charged; both variants back on
+the shelf; the buyer holds a `PartCancelled` notice. Run on 2026-09-27: 20,350,000 + 6,072,000 = 26,422,000.

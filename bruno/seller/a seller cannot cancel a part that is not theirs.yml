@@ -1,0 +1,38 @@
+info:
+  name: a seller cannot cancel a part that is not theirs
+  type: http
+  seq: 90
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/sales/{{orderId}}/cancel"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Out of stock"
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+        test("the one answer for a sale that is not yours", function() {
+          expect(res.body.detail).to.equal("Sale not found.");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/104: the order holds none of this seller's goods, so there is no part of theirs to cancel - the same 404 as any
+  sale that is not theirs (specs/034).
