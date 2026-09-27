@@ -48,6 +48,7 @@
     "ReportActioned": "Thank you - what you reported about “{{product}}” was taken off the shop.",
     "ReportDismissed": "We looked at what you reported about “{{product}}” and left it as it is.",
     "StockRunningLow": "“{{product}}” is running low: {{left}} left.",
-    "PartCancelled": "Part of order {{order}} from {{shop}} was cancelled: {{reason}}. You will be refunded for it."
+    "PartCancelled": "Part of order {{order}} from {{shop}} was cancelled: {{reason}}. You will be refunded for it.",
+    "TrackingCorrected": "The tracking reference of your parcel from {{shop}} in order {{order}} was corrected: {{tracking}}"
   }
 }

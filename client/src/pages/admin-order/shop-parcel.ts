@@ -9,7 +9,13 @@ import type { Order } from '@/services/order/types'
  */
 export function shopParcelOf(
   order: Order,
-): { status: string; trackingReference: string | null; items: string[]; cancelReason?: string | null } | null {
+): {
+  status: string
+  trackingReference: string | null
+  items: string[]
+  cancelReason?: string | null
+  deliveredAt?: string | null
+} | null {
   const shipments = order.shipments ?? []
 
   if (shipments.length === 0) {
@@ -22,6 +28,12 @@ export function shopParcelOf(
 
   const shop = shipments.find((s) => s.isShop)
   return shop
-    ? { status: shop.status, trackingReference: shop.trackingReference, items: shop.items, cancelReason: shop.cancelReason }
+    ? {
+        status: shop.status,
+        trackingReference: shop.trackingReference,
+        items: shop.items,
+        cancelReason: shop.cancelReason,
+        deliveredAt: shop.deliveredAt,
+      }
     : null
 }

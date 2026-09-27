@@ -1,3 +1,4 @@
+using Ecommerce.Order.Application.Orders.Commands.CorrectTracking;
 using Ecommerce.Order.Application.Delivery;
 using Ecommerce.Order.Application.Orders.Commands.CancelOrder;
 using Ecommerce.Order.Application.Orders.Commands.ConfirmDelivery;
@@ -187,6 +188,16 @@ public class OrdersController : ApiControllerBase
         return Ok(await Mediator.Send(new CancelSalePartCommand(id, request.Reason ?? string.Empty)));
     }
 
+    public record CorrectTrackingRequest(string? TrackingReference);
+
+    /// <summary>A seller corrects THEIR shipped part's tracking reference until it is delivered (specs/105).</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpPut("sales/{id:guid}/tracking")]
+    public async Task<IActionResult> CorrectMySaleTracking(Guid id, [FromBody] CorrectTrackingRequest request)
+    {
+        return Ok(await Mediator.Send(new CorrectSaleTrackingCommand(id, request.TrackingReference ?? string.Empty)));
+    }
+
     // ------------------------------------------------------------------ money (specs/037)
 
     /// <summary>A seller's money per currency: on the way, due, paid out.</summary>
@@ -264,6 +275,14 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> CancelForStaff(Guid id)
     {
         return Ok(await Mediator.Send(new CancelOrderCommand(id)));
+    }
+
+    /// <summary>Staff: correct the shop's own shipped part's tracking reference (specs/105).</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("fulfilment/{id:guid}/tracking")]
+    public async Task<IActionResult> CorrectShopTracking(Guid id, [FromBody] CorrectTrackingRequest request)
+    {
+        return Ok(await Mediator.Send(new CorrectShopTrackingCommand(id, request.TrackingReference ?? string.Empty)));
     }
 
     /// <summary>Staff: cancel only the shop's own part, with a reason the buyer reads (specs/104).</summary>

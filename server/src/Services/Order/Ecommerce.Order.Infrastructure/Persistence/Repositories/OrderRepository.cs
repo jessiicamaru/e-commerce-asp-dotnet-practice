@@ -1,3 +1,4 @@
+using Ecommerce.Order.Application.Orders.Commands.CorrectTracking;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Domain.Enums;
@@ -960,6 +961,64 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return PartCancelOutcome.Cancelled;
+        });
+    }
+
+    public Task<TrackingCorrectionOutcome> TryCorrectTrackingAsync(
+        Guid orderId, Guid? sellerId, string trackingReference, DateTime at,
+        Func<string?, CancellationToken, Task> stage, CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // The order's row lock, the one every parcel move takes: a correction racing "received" sees one or the other.
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"""SELECT 1 FROM orders WHERE "Id" = {orderId} FOR UPDATE""", cancellationToken);
+
+            var status = await _context.Orders.AsNoTracking().Where(o => o.Id == orderId)
+                .Select(o => (OrderStatus?)o.Status).FirstOrDefaultAsync(cancellationToken);
+            var part = await _context.OrderShipments.AsNoTracking()
+                .Where(s => s.OrderId == orderId && s.SellerId == sellerId)
+                .Select(s => new { s.Status, s.TrackingReference, s.DeliveredAt, s.CancelledAt })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (status is null || part is null)
+                return TrackingCorrectionOutcome.NotFound;
+            if (status == OrderStatus.Cancelled)
+                return TrackingCorrectionOutcome.OrderCancelled;
+            if (!Payable.Contains(status.Value) && status != OrderStatus.Shipped)
+                return TrackingCorrectionOutcome.NotFound;
+            if (part.CancelledAt is not null)
+                return TrackingCorrectionOutcome.PartCancelled;
+            if (part.Status != ShipmentStatus.Shipped)
+                return TrackingCorrectionOutcome.NotShipped;
+            if (part.DeliveredAt is not null)
+                return TrackingCorrectionOutcome.Delivered;
+            if (part.TrackingReference == trackingReference)
+                return TrackingCorrectionOutcome.Unchanged;
+
+            // The guarded statement. ShippedAt is NOT set: the parcel left when it left, and automatic delivery - and
+            // with it the seller's money and the buyer's return window - still counts from then (research D3).
+            var corrected = await _context.OrderShipments
+                .Where(s => s.OrderId == orderId && s.SellerId == sellerId
+                    && s.Status == ShipmentStatus.Shipped && s.DeliveredAt == null && s.CancelledAt == null)
+                .ExecuteUpdateAsync(
+                    x => x.SetProperty(s => s.TrackingReference, trackingReference).SetProperty(s => s.UpdatedAt, at),
+                    cancellationToken);
+            if (corrected == 0)
+                return TrackingCorrectionOutcome.Unchanged; // unreachable under the lock; guarded all the same
+
+            // The order's own reference is the part's when it has one part (specs/035) - the summary routine says so.
+            await RewriteSummaryAsync(orderId, status.Value, at, cancellationToken);
+
+            await stage(part.TrackingReference, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return TrackingCorrectionOutcome.Corrected;
         });
     }
 

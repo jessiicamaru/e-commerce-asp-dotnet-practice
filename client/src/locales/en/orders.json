@@ -109,5 +109,14 @@
     "keep": "Keep it",
     "confirm": "Cancel this part",
     "done": "Part cancelled."
+  },
+  "correctTracking": {
+    "button": "Correct",
+    "title": "Correct the tracking reference",
+    "body": "For a reference typed wrong. The buyer is told the new one, and the old one stays on the record. It can be changed until the parcel is delivered.",
+    "reference": "Tracking reference",
+    "keep": "Keep it",
+    "confirm": "Save the correction",
+    "done": "Tracking reference corrected."
   }
 }

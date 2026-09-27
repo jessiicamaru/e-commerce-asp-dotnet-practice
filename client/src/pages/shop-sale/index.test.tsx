@@ -291,3 +291,30 @@ describe('ShopSalePage cancelling the seller part (specs/104)', () => {
     expect(screen.queryByRole('button', { name: /Cancel this part/ })).toBeNull()
   })
 })
+
+describe('ShopSalePage correcting the tracking reference (specs/105)', () => {
+  it('sends the corrected reference for a parcel on its way', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', { trackingReference: 'VN-1234' }))
+    const correct = vi.spyOn(Order, 'correctSaleTracking').mockResolvedValue(sale('Shipped', { trackingReference: 'VN-1243' }))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    await user.click(await screen.findByRole('button', { name: /Correct/ }))
+    const dialog = await screen.findByRole('dialog')
+    const box = within(dialog).getByRole('textbox')
+    expect(within(dialog).getByRole('button', { name: 'Save the correction' })).toBeDisabled()   // unchanged
+    await user.clear(box)
+    await user.type(box, ' VN-1243 ')
+    await user.click(within(dialog).getByRole('button', { name: 'Save the correction' }))
+
+    await waitFor(() => expect(correct).toHaveBeenCalledWith('o-1', 'VN-1243'))
+  })
+
+  it('offers no correction once the parcel has been delivered', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', { trackingReference: 'VN-1234', deliveredAt: '2026-09-26T10:00:00Z' }))
+    renderAt('o-1')
+
+    await screen.findByText(/received it on/)
+    expect(screen.queryByRole('button', { name: /Correct/ })).toBeNull()
+  })
+})

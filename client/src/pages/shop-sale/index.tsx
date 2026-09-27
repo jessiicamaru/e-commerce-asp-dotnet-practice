@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { OrderLines } from '@/components/order/order-lines'
 import { CancelPart } from '@/components/order/cancel-part'
+import { CorrectTracking } from '@/components/order/correct-tracking'
 import { ParcelActions } from '@/components/order/parcel-actions'
 import { ReturnDecision } from '@/components/order/return-decision'
 import { SaleEarnings } from '@/components/seller/sale-earnings'
@@ -31,7 +32,7 @@ export function ShopSalePage() {
   const { t, i18n } = useTranslation('seller')
   const { id = '' } = useParams()
   const sale = useSale(id)
-  const { prepare, ship, cancelPart } = useMoveSale(id)
+  const { prepare, ship, cancelPart, correctTracking } = useMoveSale(id)
   const { accept, refuse, receive } = useSaleReturn(id)
 
   const back = (
@@ -106,6 +107,12 @@ export function ShopSalePage() {
                   <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
                   {/* Not sent yet: a seller who cannot fulfil it says so (specs/104) - the rest of the order goes on. */}
                   {data.status !== 'Shipped' && <CancelPart cancel={cancelPart} />}
+                  {/* On its way: a mistyped reference can still be put right (specs/105); not once it has arrived. */}
+                  {data.status === 'Shipped' && data.trackingReference && !data.deliveredAt && (
+                    <div className="justify-self-start">
+                      <CorrectTracking current={data.trackingReference} correct={correctTracking} />
+                    </div>
+                  )}
                 </div>
               )}
               {data.deliveredAt && (

@@ -49,6 +49,7 @@
     "ReportActioned": { "required": ["product"] },
     "ReportDismissed": { "required": ["product"] },
     "StockRunningLow": { "required": ["product", "left"] },
-    "PartCancelled": { "required": ["orderId", "reason"], "optional": ["shop"] }
+    "PartCancelled": { "required": ["orderId", "reason"], "optional": ["shop"] },
+    "TrackingCorrected": { "required": ["orderId", "tracking"], "optional": ["shop"] }
   }
 }

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { CancelOrder } from '@/components/order/cancel-order'
 import { CancelPart } from '@/components/order/cancel-part'
+import { CorrectTracking } from '@/components/order/correct-tracking'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderShipments } from '@/components/order/order-shipments'
 import { OrderTotals } from '@/components/order/order-totals'
@@ -10,7 +11,7 @@ import { ParcelActions } from '@/components/order/parcel-actions'
 import { LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useMoveShopParcel, useStaffCancelOrder, useStaffCancelShopPart, useStaffOrder } from '@/hooks/admin'
+import { useMoveShopParcel, useStaffCancelOrder, useStaffCancelShopPart, useStaffCorrectShopTracking, useStaffOrder } from '@/hooks/admin'
 import { staffCanCancel } from '@/utils/order/cancel'
 import { describeAddress } from '@/utils/address'
 import type { ParcelReturn, Shipment } from '@/services/order/types'
@@ -28,6 +29,7 @@ export function AdminOrderPage() {
   const { prepare, ship } = useMoveShopParcel(id)
   const cancel = useStaffCancelOrder(id)
   const cancelShopPart = useStaffCancelShopPart(id)
+  const correctShopTracking = useStaffCorrectShopTracking(id)
 
   const back = (
     <nav className="text-muted-foreground flex items-center gap-1 text-sm">
@@ -92,6 +94,11 @@ export function AdminOrderPage() {
                       <ParcelActions status={parcel.status} trackingReference={parcel.trackingReference} prepare={prepare} ship={ship} />
                       {/* Only the shop's part, the rest going on (specs/104) - narrower than cancelling the order. */}
                       {parcel.status !== 'Shipped' && (data.shipments ?? []).length > 1 && <CancelPart cancel={cancelShopPart} />}
+                      {parcel.status === 'Shipped' && parcel.trackingReference && !parcel.deliveredAt && (
+                        <div className="justify-self-start">
+                          <CorrectTracking current={parcel.trackingReference} correct={correctShopTracking} />
+                        </div>
+                      )}
                     </>
                   )}
                 </>
