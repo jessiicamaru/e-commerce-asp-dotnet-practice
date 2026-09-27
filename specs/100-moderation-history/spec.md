@@ -2,7 +2,7 @@
 
 **Feature Branch**: `100-moderation-history` | **Created**: 2026-09-27 | **Issue**: #198
 
-**Status**: Draft
+**Status**: Merged (#207, 2026-09-27)
 
 **Input**: Issue #198 - "a moderator decides a lock without seeing the person's history".
 

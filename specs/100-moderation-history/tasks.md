@@ -35,4 +35,4 @@ description: "Task list for Staff see a person's moderation history"
 - [X] T012 [P] Bruno `admin-users/` seq 15, `security-checks/` seq 63
 - [X] T013 Rebuilt Activity, Identity, Catalog and the storefront; backfill counted (1,500 of 1,520); Bruno 298/298
 - [X] T014 Docs: `docs/features/moderation-and-staff.md`, `docs/features/audit-and-notifications.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T015 Merged as #207, closing #198
+- [x] T015 Merged as #207, closing #198
