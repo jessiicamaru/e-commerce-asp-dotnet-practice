@@ -132,9 +132,9 @@ public class ShopClosureHandlers(
 
             // The seller learns what staff did to their shop; what they did themselves needs no notice.
             if (move == ShopMove.Close)
-                await _notifier.NotifyAsync(sellerId, "ShopClosed", new Dictionary<string, string> { ["reason"] = reason! }, "/shop", ct);
+                await _notifier.NotifyAsync(sellerId, NotificationKind.ShopClosed, new Dictionary<string, string> { ["reason"] = reason! }, "/shop", ct);
             if (move == ShopMove.Reopen)
-                await _notifier.NotifyAsync(sellerId, "ShopReopened", new Dictionary<string, string>(), "/shop", ct);
+                await _notifier.NotifyAsync(sellerId, NotificationKind.ShopReopened, new Dictionary<string, string>(), "/shop", ct);
 
             // Back on the shelf: each product now on sale is, for whoever saved it, available again (specs/091) - the
             // same notice as a lifted ban. Read inside the transaction, after the shelf flag was recomputed, so a shop
