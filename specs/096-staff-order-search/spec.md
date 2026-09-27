@@ -2,7 +2,7 @@
 
 **Feature Branch**: `096-staff-order-search` | **Created**: 2026-09-27 | **Issue**: #194
 
-**Status**: Draft
+**Status**: Merged (#203, 2026-09-27)
 
 **Input**: Issue #194 - "staff cannot find an order outside the fulfilment queue".
 

@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d3a4ad5`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `e5b0a8f`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**159 endpoints** across 7 services.
+**160 endpoints** across 7 services.
 
 ## Identity (43)
 
@@ -54,13 +54,14 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (52)
+## Catalog (53)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
 | `GET` | `/api/categories` | anyone |  |
 | `POST` | `/api/categories` | Admin |  |
 | `DELETE` | `/api/categories/{id}` | Admin | Removes a category nothing is filed under (specs/024). A category with products in it is refused with 409 rather than emptied: neither orphaning them nor deleting them is what somebody tidying a taxonomy asked for. |
+| `PUT` | `/api/categories/{id}` | Admin | A category's own name and description, in the default language (#195, specs/097). The slug never changes. |
 | `DELETE` | `/api/categories/{id}/translations/{language}` | Admin | Takes a language away; the category falls back to its default text. |
 | `PUT` | `/api/categories/{id}/translations/{language}` | Admin | This category's name and description in one language (specs/026). An upsert, like a product's. |
 | `GET` | `/api/products` | anyone |  |

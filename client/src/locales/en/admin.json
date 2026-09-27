@@ -17,7 +17,8 @@
     "emails": "Emails",
     "emailDelivery": "Email delivery",
     "notifications": "Notifications",
-    "findOrder": "Find an order"
+    "findOrder": "Find an order",
+    "categories": "Categories"
   },
   "queue": {
     "title": "Orders to ship",
@@ -470,5 +471,25 @@
       "Failed": "Failed",
       "Cancelled": "Cancelled"
     }
+  },
+  "categories": {
+    "title": "Categories",
+    "subtitle": "Vietnamese is each category's own text; English is its translation. The address never changes once created.",
+    "name": "Name",
+    "description": "Description",
+    "slug": "Address",
+    "create": "Create",
+    "created": "Category “{{name}}” created.",
+    "saved": "“{{name}}” saved.",
+    "deleted": "“{{name}}” deleted.",
+    "edit": "Edit",
+    "save": "Save",
+    "delete": "Delete",
+    "confirmDelete": "Delete for good",
+    "vietnamese": "Vietnamese",
+    "english": "English",
+    "noEnglish": "No English yet",
+    "none": "No categories yet.",
+    "loadFailed": "The categories could not be loaded."
   }
 }

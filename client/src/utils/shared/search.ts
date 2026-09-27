@@ -23,6 +23,17 @@ export function fold(text: string): string {
 }
 
 /**
+ * An address for a name - "Ống kính rời" → "ong-kinh-roi" - what a new category's slug is suggested as (specs/097).
+ * Accents come off the way {@link fold} takes them off, so the address reads like the name.
+ */
+export function slugOf(name: string): string {
+  return fold(name)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 150)
+}
+
+/**
  * Whether `query` appears in `text`, ignoring accents and case - the same promise the catalogue's own
  * search makes through `unaccent` (specs/021), so a dropdown does not find less than the search box.
  */
