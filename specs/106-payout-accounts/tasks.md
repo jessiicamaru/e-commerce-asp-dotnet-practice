@@ -31,7 +31,7 @@ description: "Task list for Sellers say where their payouts go"
 - [x] T008 Mutations (quickstart Scenario 3), each red; full Identity, Order and client suites
 - [x] T009 [P] Bruno; rebuilt Identity, Order and the storefront; Mailpit shows the email; post-design Constitution re-check
 - [x] T010 Docs: marketplace, email, service-to-service, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T011 Merged as #226, closing #213
+- [x] T011 Merged as #226, closing #213
 
 ## Evidence
 
