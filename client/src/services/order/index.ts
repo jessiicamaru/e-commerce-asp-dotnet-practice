@@ -9,6 +9,7 @@ import type {
   ParcelReturn,
   PayoutPage,
   Quote,
+  ReturnPage,
   Sale,
   SalePage,
   ShippingOption,
@@ -98,6 +99,12 @@ export class Order {
    * The signed-in seller's sales (specs/034). Like `listMine`, the request names nobody: Order reads
    * the seller from the token, so there is no id here to change into somebody else's.
    */
+  /** The returns of the signed-in seller's own parcels, one state at a time (specs/108). */
+  static async saleReturns(status: string, page: number, pageSize: number): Promise<ReturnPage> {
+    const { data } = await http.get<ReturnPage>('/orders/sales/returns', { params: { status, page, pageSize } })
+    return data
+  }
+
   static async sales(page: number, pageSize: number): Promise<SalePage> {
     const { data } = await http.get<SalePage>(`/orders/sales?page=${page}&pageSize=${pageSize}`)
     return data

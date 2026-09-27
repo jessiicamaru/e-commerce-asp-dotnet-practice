@@ -325,6 +325,11 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                     .Where(s => s.SellerId == sellerId)
                     .Select(s => new { s.GoodsTotal, s.Commission, s.ShippingShare, PaidOut = s.PayoutId != null })
                     .FirstOrDefault(),
+                // The return of THEIR parcel (specs/108) - another seller's on the same order is none of theirs.
+                Return = _context.ParcelReturns
+                    .Where(r => r.OrderId == x.Id && r.SellerId == sellerId)
+                    .Select(r => (ReturnStatus?)r.Status)
+                    .FirstOrDefault(),
                 x.CreatedAt,
                 x.UpdatedAt,
                 x.Currency,
@@ -352,7 +357,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             x.PartCancelled ? null : x.Terms?.Commission,
             x.PartCancelled ? null : x.Terms?.ShippingShare,
             x.PartCancelled ? null : Owed(x.Terms?.GoodsTotal, x.Terms?.Commission, x.Terms?.ShippingShare),
-            x.Terms?.PaidOut ?? false)).ToList();
+            x.Terms?.PaidOut ?? false,
+            x.Return?.ToString())).ToList();
 
         return (sales, totalCount);
     }

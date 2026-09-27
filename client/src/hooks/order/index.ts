@@ -78,6 +78,11 @@ export function useMyOrders(page: number, pageSize: number) {
  * The seller's sales. `enabled` keeps a customer who is not a seller from asking and collecting a
  * 403 - which is the server's decision either way; this only avoids the pointless request.
  */
+/** The returns of the seller's own parcels (specs/108). Under the sales key, so a decision on a sale refreshes it. */
+export function useSaleReturns(status: string, page: number, pageSize: number) {
+  return useQuery({ queryKey: queryKeys.saleReturns(status, page), queryFn: () => Order.saleReturns(status, page, pageSize) })
+}
+
 export function useMySales(page: number, pageSize: number, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.mySales(page),

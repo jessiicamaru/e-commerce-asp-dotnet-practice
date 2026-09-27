@@ -107,7 +107,12 @@ public interface IReturnRepository
     /// </summary>
     Task<bool> TryMoveAsync(ReturnMove move, Func<CancellationToken, Task> stage, CancellationToken cancellationToken = default);
 
-    Task<(List<ReturnResponse> Items, int TotalCount)> GetPageAsync(ReturnStatus? status, int page, int pageSize, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// A page of returns, oldest waiting first - all of them for staff, or only <paramref name="ofSeller"/>'s parcels'
+    /// (specs/108). Null is "no filter", never "the shop's": the shop's parcels are staff's.
+    /// </summary>
+    Task<(List<ReturnResponse> Items, int TotalCount)> GetPageAsync(
+        ReturnStatus? status, int page, int pageSize, CancellationToken cancellationToken = default, Guid? ofSeller = null);
 }
 
 // ------------------------------------------------------------------------------------------ commands
@@ -138,6 +143,9 @@ public record ReceiveReturnCommand(Guid OrderId, Guid ShipmentId) : IRequest<Ret
 
 /// <summary>Returns for staff, by state - the escalated ones are the queue (specs/066).</summary>
 public record GetReturnsQuery(string? Status, int Page = 1, int PageSize = 12) : IRequest<ReturnPage>;
+
+/// <summary>The returns of the caller's own parcels, by state (#215, specs/108) - the seller is the token's.</summary>
+public record GetSaleReturnsQuery(string? Status, int Page = 1, int PageSize = 12) : IRequest<ReturnPage>;
 
 public class RequestReturnCommandValidator : AbstractValidator<RequestReturnCommand>
 {
@@ -173,6 +181,16 @@ public class GetReturnsQueryValidator : AbstractValidator<GetReturnsQuery>
     }
 }
 
+public class GetSaleReturnsQueryValidator : AbstractValidator<GetSaleReturnsQuery>
+{
+    public GetSaleReturnsQueryValidator()
+    {
+        RuleFor(x => x.Status).Must(s => s is null || Enum.TryParse<ReturnStatus>(s, true, out _)).WithMessage("Unknown return status.");
+        RuleFor(x => x.Page).GreaterThanOrEqualTo(1);
+        RuleFor(x => x.PageSize).InclusiveBetween(1, 50);
+    }
+}
+
 public static class Returns
 {
     public const string NotFound = "Parcel not found.";
@@ -194,7 +212,8 @@ public class ReturnHandlers(
     IRequestHandler<ReceiveSaleReturnCommand, ReturnResponse>,
     IRequestHandler<DecideReturnCommand, ReturnResponse>,
     IRequestHandler<ReceiveReturnCommand, ReturnResponse>,
-    IRequestHandler<GetReturnsQuery, ReturnPage>
+    IRequestHandler<GetReturnsQuery, ReturnPage>,
+    IRequestHandler<GetSaleReturnsQuery, ReturnPage>
 {
     private readonly IReturnRepository _returns = returns;
     private readonly IEmailSender _email = email;
@@ -339,6 +358,14 @@ public class ReturnHandlers(
     {
         ReturnStatus? status = request.Status is null ? null : Enum.Parse<ReturnStatus>(request.Status, ignoreCase: true);
         var (items, total) = await _returns.GetPageAsync(status, request.Page, request.PageSize, cancellationToken);
+        return new ReturnPage(items, request.Page, request.PageSize, total);
+    }
+
+    public async Task<ReturnPage> Handle(GetSaleReturnsQuery request, CancellationToken cancellationToken)
+    {
+        var seller = _currentUser.Id ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
+        ReturnStatus? status = request.Status is null ? null : Enum.Parse<ReturnStatus>(request.Status, ignoreCase: true);
+        var (items, total) = await _returns.GetPageAsync(status, request.Page, request.PageSize, cancellationToken, ofSeller: seller);
         return new ReturnPage(items, request.Page, request.PageSize, total);
     }
 

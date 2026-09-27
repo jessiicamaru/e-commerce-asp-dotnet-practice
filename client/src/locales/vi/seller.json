@@ -111,7 +111,8 @@
     "payouts": "Thanh toán",
     "insights": "Thống kê",
     "vouchers": "Mã giảm giá",
-    "questions": "Hỏi đáp"
+    "questions": "Hỏi đáp",
+    "returns": "Trả hàng"
   },
   "overview": {
     "subtitle": "Tình hình gian hàng và những việc cần bạn xử lý.",
@@ -338,5 +339,23 @@
     "closedBecause": "Quản trị viên đã đóng cửa hàng của bạn lúc {{at}}: {{reason}}. Sản phẩm của bạn không được bán cho đến khi quản trị mở lại; các đơn đã thanh toán vẫn cần được giao.",
     "suspended": "Tài khoản của bạn bị cấm nên cửa hàng đã đóng.",
     "failed": "Không thể thay đổi cửa hàng."
+  },
+  "returns": {
+    "title": "Trả hàng",
+    "subtitle": "Các kiện hàng của bạn mà người mua muốn gửi trả, chờ lâu nhất trước.",
+    "none": "Không có gì ở đây.",
+    "loadFailed": "Không tải được danh sách trả hàng.",
+    "requestedAt": "Đơn {{order}} · yêu cầu lúc {{at}}",
+    "sentWith": "Đã gửi trả, mã {{reference}}",
+    "badge": "Trả hàng: {{state}}",
+    "tab": {
+      "Requested": "Cần trả lời",
+      "SentBack": "Đang gửi về",
+      "Accepted": "Đã chấp nhận",
+      "Refused": "Đã từ chối",
+      "Escalated": "Quản trị xem xét",
+      "Rejected": "Bị bác",
+      "Received": "Đã nhận lại"
+    }
   }
 }

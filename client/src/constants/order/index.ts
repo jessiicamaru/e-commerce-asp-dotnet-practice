@@ -26,3 +26,10 @@ export const isSettling = (status: string) => status === ORDER_STATUS.submitted
  * that disagrees with it is refused with a 409 naming the window (specs/067 research D1).
  */
 export const RETURN_WINDOW_DAYS = 7
+
+/**
+ * The tabs of a seller's returns (specs/108): what asks for their decision first, then what is coming back to them,
+ * then what waits on the buyer or staff, then what is over.
+ */
+export const SELLER_RETURN_STATES = ['Requested', 'SentBack', 'Accepted', 'Refused', 'Escalated', 'Rejected', 'Received'] as const
+export type SellerReturnState = (typeof SELLER_RETURN_STATES)[number]

@@ -208,6 +208,8 @@ export interface SaleSummary {
   payout: number | null
   /** Whether a payout has covered it. */
   paidOut: boolean
+  /** The state of the return of the seller's own parcel of this order, if any (specs/108). */
+  returnStatus?: ReturnStatus | null
 }
 
 export interface SalePage {

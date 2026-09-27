@@ -4,6 +4,7 @@ import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/context/auth/useAuth'
 import { useMySales } from '@/hooks/order'
 import { PAGE_SIZE } from '@/constants/shared'
@@ -61,7 +62,12 @@ export function ShopSalesPage() {
                     {t('sales.lines', { count: sale.lineCount })} · {t('sales.units', { count: sale.units })} ·{' '}
                     <Price value={sale.subtotal} currency={sale.currency} className="font-semibold" />
                   </span>
-                  <span className="text-muted-foreground text-xs">{describeSaleStatus(t, sale.status)}</span>
+                  <span className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+                    {describeSaleStatus(t, sale.status)}
+                    {sale.returnStatus && (
+                      <Badge variant="outline">{t('returns.badge', { state: t(`returns.tab.${sale.returnStatus}`) })}</Badge>
+                    )}
+                  </span>
                 </Link>
               </li>
             ))}

@@ -7,6 +7,7 @@ using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
 using Ecommerce.Order.Application.Orders.Common;
 using Ecommerce.Order.Application.Orders.Queries.GetMyBalance;
 using Ecommerce.Order.Application.Orders.Queries.GetMySale;
+using Ecommerce.Order.Application.Orders.Queries.GetMySales;
 using Ecommerce.Order.Application.Returns;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
@@ -14,6 +15,7 @@ using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Shared.Exceptions;
 using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Notifications;
+using FluentValidation;
 using MassTransit.Testing;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -280,6 +282,60 @@ public class ReturnTests
         Assert.All(page.Items, r => Assert.Equal("Escalated", r.Status));
     }
 
+    // ------------------------------------------------------------------ specs/108: a seller's own list
+
+    [Fact]
+    public async Task A_seller_lists_the_returns_of_their_own_parcels_only()
+    {
+        var alice = Guid.CreateVersion7();
+        var bob = Guid.CreateVersion7();
+        var (_, _, hers) = await RequestedAsync(alice);
+        var (_, _, his) = await RequestedAsync(bob);
+        var (_, _, shops) = await RequestedAsync(null);
+
+        var page = await As(alice, () => SendAsync(new GetSaleReturnsQuery(null, 1, 50)));
+
+        Assert.Equal([hers], page.Items.Select(r => r.ShipmentId));
+        Assert.Equal(1, page.TotalCount);
+        Assert.DoesNotContain(page.Items, r => r.ShipmentId == his || r.ShipmentId == shops);
+    }
+
+    [Fact]
+    public async Task A_seller_s_list_is_one_state_at_a_time()
+    {
+        var alice = Guid.CreateVersion7();
+        var (_, _, waiting) = await RequestedAsync(alice);
+        var (done, _, received) = await SentBackAsync(alice);
+        await As(alice, () => SendAsync(new ReceiveSaleReturnCommand(done)));
+
+        var requested = await As(alice, () => SendAsync(new GetSaleReturnsQuery("requested", 1, 50)));
+        var back = await As(alice, () => SendAsync(new GetSaleReturnsQuery("Received", 1, 50)));
+
+        Assert.Equal([waiting], requested.Items.Select(r => r.ShipmentId));
+        Assert.Equal([received], back.Items.Select(r => r.ShipmentId));
+        await Assert.ThrowsAsync<ValidationException>(() => As(alice, () => SendAsync(new GetSaleReturnsQuery("Lost", 1, 50))));
+    }
+
+    [Fact]
+    public async Task The_sales_list_badges_a_sale_with_the_return_of_the_caller_s_own_parcel()
+    {
+        var alice = Guid.CreateVersion7();
+        var bob = Guid.CreateVersion7();
+        var (order, buyer) = await MixedCheckoutAsync(alice, bob);
+        foreach (var seller in new[] { alice, bob })
+        {
+            await ShipAsync(order, seller);
+            await As(buyer, async () => await SendAsync(new ConfirmDeliveryCommand(order, (await PartAsync(order, seller)).Id)));
+        }
+
+        await As(buyer, async () => await SendAsync(new RequestReturnCommand(order, (await PartAsync(order, alice)).Id, "Scratched")));
+
+        var hers = await As(alice, () => SendAsync(new GetMySalesQuery(1, 50)));
+        var his = await As(bob, () => SendAsync(new GetMySalesQuery(1, 50)));
+        Assert.Equal("Requested", hers.Items.Single(s => s.OrderId == order).ReturnStatus);
+        Assert.Null(his.Items.Single(s => s.OrderId == order).ReturnStatus);
+    }
+
     [Fact]
     public async Task Every_step_is_on_the_record()
     {
@@ -454,6 +510,31 @@ public class ReturnTests
         _fixture.Checkout.Prices[variant] = new CatalogPrice(
             product, "Camera", 1000m, Sellable: true, variant, $"SKU-{variant:N}"[..12], "", "VND", seller, null);
         _fixture.Checkout.Cart = [new CartItem(product, quantity, variant)];
+        _fixture.Checkout.Address = Home;
+        var order = (await SendAsync(new SubmitOrderCommand(null, "standard"))).OrderId;
+
+        await using var scope = _fixture.NewScope();
+        Assert.Equal(1, await scope.ServiceProvider.GetRequiredService<IOrderRepository>()
+            .TrySettleAsync(order, OrderStatus.Paid, null, DateTime.UtcNow));
+        return (order, customer);
+    }
+
+    /// <summary>One paid order with a line from each of two sellers - two parcels (specs/108).</summary>
+    private async Task<(Guid Order, Guid Customer)> MixedCheckoutAsync(Guid first, Guid second)
+    {
+        var customer = Guid.CreateVersion7();
+        _fixture.CurrentUser.Id = customer;
+        var cart = new List<CartItem>();
+        foreach (var seller in new[] { first, second })
+        {
+            var product = Guid.CreateVersion7();
+            var variant = Guid.CreateVersion7();
+            _fixture.Checkout.Prices[variant] = new CatalogPrice(
+                product, "Camera", 1000m, Sellable: true, variant, $"SKU-{variant:N}"[..12], "", "VND", seller, null);
+            cart.Add(new CartItem(product, 1, variant));
+        }
+
+        _fixture.Checkout.Cart = cart;
         _fixture.Checkout.Address = Home;
         var order = (await SendAsync(new SubmitOrderCommand(null, "standard"))).OrderId;
 

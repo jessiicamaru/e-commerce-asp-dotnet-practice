@@ -22,6 +22,7 @@ import { NewProductPage } from '@/pages/shop-product-new'
 import { ShopSalePage } from '@/pages/shop-sale'
 import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
+import { ShopReturnsPage } from '@/pages/shop-returns'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrderPage } from '@/pages/admin-order'
 import { AdminDeliveryPage } from '@/pages/admin-delivery'
@@ -162,6 +163,7 @@ export function AppRoutes() {
             <Route path="products/:id" element={<SellerProductPage />} />
             <Route path="sales" element={<ShopSalesPage />} />
             <Route path="sales/:id" element={<ShopSalePage />} />
+            <Route path="returns" element={<ShopReturnsPage />} />
             <Route path="payouts" element={<ShopPayoutsPage />} />
             <Route path="insights" element={<ShopInsightsPage />} />
             <Route path="vouchers" element={<ShopVouchersPage />} />

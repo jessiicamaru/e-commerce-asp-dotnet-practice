@@ -13,6 +13,7 @@ The server came in #149 (specs/066) and the storefront screens in #151 (specs/06
 | :-- | :-- | :-- |
 | **Buyer** | `/orders/:id`, under each parcel | **Return this parcel** while the window is open, with the last day. Then the return's state in words: waiting, accepted with the send-back form and its deadline, refused with the reason and **Ask the shop to look again**, with staff, rejected for good, on its way back, and the amount refunded. |
 | **Seller** | `/shop/sales/:id`, a card above the parcel | The buyer's reason. **Accept** or **Refuse** (a reason is required) while requested, then **Mark as received** once sent back. Nothing to press on an escalated return. |
+| **Seller** | `/shop/returns` (menu: Returns), and a badge on `/shop/sales` | The returns of their own parcels by state - to answer first, then coming back, then the rest - oldest first, each row leading to the sale (specs/108). No amounts. Each sale whose parcel has a return is badged with its state. |
 | **Administrator** | `/admin/orders/:id`, a returns card | Every parcel of the order with a return. For the shop's own parcel, the seller's steps. For an escalated return of anyone's, the final word: **Reject for good**. A seller's parcel that is not escalated is drawn without buttons. |
 | **Administrator** | `/admin/returns` (menu: Returns) | The queue by state - escalated first, then requested, sent back, received - oldest first, each row leading to its order. No amounts, because a return carries no currency. |
 
@@ -107,6 +108,7 @@ stateDiagram-v2
 | `POST` | `/api/orders/sales/{id}/return/accept` · `/refuse` `{reason}` · `/received` | Seller |
 | `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/accept` · `/refuse` · `/received` | Admin |
 | `GET` | `/api/orders/returns?status=` | Admin |
+| `GET` | `/api/orders/sales/returns?status=` - the caller's own parcels only, filtered on `parcel_returns.SellerId` (specs/108) | Seller |
 
 A parcel's return also appears on the buyer's order (`shipments[].return`) and on the seller's sale
 (`return`).
@@ -124,7 +126,7 @@ A parcel's return also appears on the buyer's order (`shipments[].return`) and o
 
 | Where | Proves |
 | :-- | :-- |
-| `Ecommerce.Order.Tests/ReturnTests` (24) | The request rules: owner, delivered, window, once even at once, reason. Who decides what. Escalation and the final word. Lapses. Sent back. Received with goods plus tax, once. The read models, the queue and the audit trail. The money hold, a final refusal releasing it, and a returned part being no money. The claim agreeing with the balance. |
+| `Ecommerce.Order.Tests/ReturnTests` (24) | The request rules: owner, delivered, window, once even at once, reason. Who decides what. Escalation and the final word. Lapses. Sent back. Received with goods plus tax, once. The read models, the queue and the audit trail. The money hold, a final refusal releasing it, and a returned part being no money. The claim agreeing with the balance. A seller's list holds their parcels only - never another seller's or the shop's - one state at a time, and the sales badge reads their own parcel's return (specs/108). |
 | `Ecommerce.Payment.Tests/ReturnRefundTests` (5) | Refunded once however delivered. Two parcels refunded separately. Never more than paid, never in another currency. Nothing for an order never charged. Not taken for the order's own refund. |
 | `Ecommerce.Inventory.Tests/RestockReturnTests` (4), `AnnouncementTests` | Restocked once however delivered. Two returns of one order. A vanished variant skipped. The availability announced. |
 | Bruno `admin-audit/` | The round trip on the shop's parcel through the gateway, with the stock checked coming back over the broker. Also: asking twice is 409, a customer deciding is 403, receiving twice is 409. |
@@ -133,7 +135,6 @@ A parcel's return also appears on the buyer's order (`shipments[].return`) and o
 
 ## Known limits
 
-- **The sales list has no return badge.** A seller learns of a return from the `ReturnRequested` notice, which links to the sale.
 - **Whole parcels only, and no photos.**
 - **Insights take a refund off the day the order was paid**, not the day the parcel came back (specs/084), so a past
   period's revenue falls when a return is received.
@@ -144,3 +145,4 @@ A parcel's return also appears on the buyer's order (`shipments[].return`) and o
 | :-- | :-- | :-- |
 | [066-parcel-returns](../../specs/066-parcel-returns/) | #149 | The return flow, the refund and restock, and the money hold (#107, part 1). |
 | [067-return-screens](../../specs/067-return-screens/) | #151 | The storefront screens for the buyer, the seller and staff, and the `/admin/returns` queue (#107, part 2). |
+| [108-seller-returns](../../specs/108-seller-returns/) | #228 | A seller's list of their parcels' returns, `/shop/returns`, and the badge on `/shop/sales` (#215). |
