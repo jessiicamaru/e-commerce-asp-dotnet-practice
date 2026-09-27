@@ -48,9 +48,9 @@ A read-only feature:
 | **II. Clean Architecture Layering** | **Pass.** The query is in Application, and the SQL is in Infrastructure. |
 | **III. Atomic Writes and Idempotent Messaging** | **Not applicable.** The feature only reads: no write, no message. |
 | **IV. Identity Comes From the Token** | **Pass.** No seller id in the request. The filter is `ICurrentUser.Id`. |
-| **V. Evidence Over Assumption** | **Planned.** Order tests for each exclusion, mutations, and Bruno through the gateway. Recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** Order tests for each exclusion against PostgreSQL, each killed by a mutation; Bruno 344/344 through rebuilt containers. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): still a pass. It reads Order's own tables (I), in the repository (II), writes nothing (III), and filters by the token's id only (IV); evidence in `tasks.md` (V).
 
 ## Project Structure
 

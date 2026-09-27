@@ -67,7 +67,7 @@ Each row of `/shop/sales` whose parcel has a return shows that return's state as
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: A seller's list never contains another seller's or the shop's return. A test covers each.
-- **SC-002**: Bruno reads the seller's return through the gateway.
+- **SC-002**: Bruno reads the seller's list through the gateway, with its 400/401/403 cases. The isolation between sellers is proved against the database (SC-001), since no Bruno run delivers a seller's parcel.
 
 ## Assumptions
 

@@ -162,6 +162,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [105](../../specs/105-correct-tracking/) | Correct a tracking reference | #225 | #212: a mistyped tracking reference is corrected while the parcel is on its way, with the buyer told and both references on the record |
 | [106](../../specs/106-payout-accounts/) | Payout accounts | #226 | #213: a seller gives one payout account in Identity (masked to them, emailed on every change); Order asks for it over Admin-only gRPC and freezes bank, holder and last four digits on each payout; none is a 409 |
 | [107](../../specs/107-shop-closure/) | Shop pause and closure | #227 | #214: a seller pauses their shop and staff close one with a reason, without touching the account; one shelf statement recomputes from ban, pause and closure |
+| [108](../../specs/108-seller-returns/) | A seller's returns | #228 | #215: a seller lists the returns of their own parcels by state at `/shop/returns`, and each sale with one is badged |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
