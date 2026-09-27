@@ -9,6 +9,7 @@ import {
   ReceiptTextIcon,
   StoreIcon,
   TicketPercentIcon,
+  Undo2Icon,
   WalletIcon,
 } from 'lucide-react'
 import { DescribeShopDialog } from '@/components/seller/describe-shop-dialog'
@@ -42,6 +43,7 @@ export function SellerLayout() {
     { to: '/shop/insights', end: false, icon: ChartColumnIcon, label: t('menu.insights') },
     { to: '/shop/products', end: false, icon: PackageIcon, label: t('menu.products') },
     { to: '/shop/sales', end: false, icon: ReceiptTextIcon, label: t('menu.sales') },
+    { to: '/shop/returns', end: false, icon: Undo2Icon, label: t('menu.returns') },
     { to: '/shop/questions', end: false, icon: MessageCircleQuestionIcon, label: t('menu.questions') },
     { to: '/shop/payouts', end: false, icon: WalletIcon, label: t('menu.payouts') },
     { to: '/shop/vouchers', end: false, icon: TicketPercentIcon, label: t('menu.vouchers') },

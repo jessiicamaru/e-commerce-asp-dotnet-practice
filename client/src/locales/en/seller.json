@@ -111,7 +111,8 @@
     "payouts": "Payouts",
     "insights": "Insights",
     "vouchers": "Vouchers",
-    "questions": "Questions"
+    "questions": "Questions",
+    "returns": "Returns"
   },
   "overview": {
     "subtitle": "How your shop is doing, and what needs you.",
@@ -339,5 +340,23 @@
     "closedBecause": "Staff closed your shop on {{at}}: {{reason}}. Your products are off the shop until staff reopen it; orders already paid still need shipping.",
     "suspended": "Your account is banned, so your shop is closed.",
     "failed": "The shop could not be changed."
+  },
+  "returns": {
+    "title": "Returns",
+    "subtitle": "Parcels of yours that buyers want to send back, oldest waiting first.",
+    "none": "Nothing here.",
+    "loadFailed": "Your returns could not be loaded.",
+    "requestedAt": "Order {{order}} · asked on {{at}}",
+    "sentWith": "Sent back with {{reference}}",
+    "badge": "Return: {{state}}",
+    "tab": {
+      "Requested": "To answer",
+      "SentBack": "Coming back",
+      "Accepted": "Accepted",
+      "Refused": "Refused",
+      "Escalated": "With staff",
+      "Rejected": "Turned down",
+      "Received": "Received"
+    }
   }
 }

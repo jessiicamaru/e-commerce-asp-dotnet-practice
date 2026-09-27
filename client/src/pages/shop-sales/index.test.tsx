@@ -56,6 +56,20 @@ beforeEach(async () => {
 })
 
 describe('ShopSalesPage', () => {
+  /** The state of the return of the seller's own parcel, where there is one (specs/108) - and nothing otherwise. */
+  it('badges a sale whose parcel has a return', async () => {
+    vi.spyOn(Order, 'sales').mockResolvedValue({
+      ...onePaidSale,
+      totalCount: 2,
+      items: [{ ...onePaidSale.items[0], returnStatus: 'Requested' }, { ...onePaidSale.items[0], orderId: 'o-2', returnStatus: null }],
+    })
+    render_()
+
+    const [returned, plain] = await screen.findAllByRole('link', { name: /Placed/ })
+    expect(returned).toHaveTextContent('Return: To answer')
+    expect(plain).not.toHaveTextContent('Return:')
+  })
+
   it('links each sale to its own page, by order id alone', async () => {
     vi.spyOn(Order, 'sales').mockResolvedValue(onePaidSale)
     render_()

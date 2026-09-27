@@ -27,6 +27,7 @@ export const queryKeys = {
   order: (id: string) => ['order', id] as const,
   myOrders: (page: number) => ['orders', page] as const,
   mySales: (page: number) => ['sales', page] as const,
+  saleReturns: (status: string, page: number) => ['sales', 'returns', status, page] as const,
   sale: (id: string) => ['sale', id] as const,
   balance: () => ['balance'] as const,
   payouts: (page: number) => ['payouts', page] as const,
