@@ -69,7 +69,10 @@
     "save": "Lưu tồn kho",
     "saved": "Đã cập nhật tồn kho.",
     "notRegisteredYet": "Sản phẩm này còn đang được ghi nhận vào kho. Thử lại sau giây lát.",
-    "hint": "Số lượng bạn đang có. Đơn hàng sẽ giữ chỗ từ đây, nên không đặt thấp hơn số đang được giữ."
+    "hint": "Số lượng bạn đang có. Đơn hàng sẽ giữ chỗ từ đây, nên không đặt thấp hơn số đang được giữ.",
+    "lowStockAt": "Báo khi dưới",
+    "lowStockDefault": "{{count}} (mặc định)",
+    "lowStockHint": "Bạn được báo khi một đơn hàng làm số lượng xuống dưới mức này. Để trống để dùng mức mặc định; 0 là không báo."
   },
   "variantImage": {
     "title": "Ảnh của phiên bản này",

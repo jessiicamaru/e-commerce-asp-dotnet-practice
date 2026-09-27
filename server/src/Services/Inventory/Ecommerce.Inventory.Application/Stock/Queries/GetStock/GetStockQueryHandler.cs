@@ -1,3 +1,4 @@
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Application.Common.Models;
 using Ecommerce.Inventory.Application.Stock.Common;
@@ -5,10 +6,11 @@ using MediatR;
 
 namespace Ecommerce.Inventory.Application.Stock.Queries.GetStock;
 
-public class GetStockQueryHandler(IStockRepository stockRepository)
+public class GetStockQueryHandler(IStockRepository stockRepository, LowStockSettings lowStock)
     : IRequestHandler<GetStockQuery, PaginatedList<StockResponse>>
 {
     private readonly IStockRepository _stockRepository = stockRepository;
+    private readonly LowStockSettings _lowStock = lowStock;
 
     public async Task<PaginatedList<StockResponse>> Handle(GetStockQuery request, CancellationToken cancellationToken)
     {
@@ -19,8 +21,7 @@ public class GetStockQueryHandler(IStockRepository stockRepository)
             .GetPaginatedAsync(pageNumber, pageSize, request.Sku, cancellationToken);
 
         var responses = items
-            .Select(x => new StockResponse(
-                x.ProductId, x.Sku, x.QuantityOnHand, x.QuantityReserved, x.QuantityAvailable))
+            .Select(x => StockResponse.From(x, _lowStock))
             .ToList();
 
         return new PaginatedList<StockResponse>(responses, totalCount, pageNumber, pageSize);

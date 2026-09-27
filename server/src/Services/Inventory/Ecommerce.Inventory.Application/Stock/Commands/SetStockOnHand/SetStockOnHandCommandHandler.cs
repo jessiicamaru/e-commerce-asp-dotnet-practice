@@ -21,9 +21,11 @@ public class SetStockOnHandCommandHandler(
     ICurrentUser currentUser,
     IProductOwnership ownership
 ,
-    IAuditTrail audit) : IRequestHandler<SetStockOnHandCommand, StockResponse>
+    IAuditTrail audit,
+    LowStockSettings lowStock) : IRequestHandler<SetStockOnHandCommand, StockResponse>
 {
     private readonly IAuditTrail _audit = audit;
+    private readonly LowStockSettings _lowStock = lowStock;
 
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
@@ -78,12 +80,8 @@ public class SetStockOnHandCommandHandler(
                 new { stock.QuantityOnHand, stock.QuantityReserved }, cancellationToken: ct);
             await _stockRepository.SaveChangesAsync(ct);
 
-            response = new StockResponse(
-                stock.ProductId,
-                stock.Sku,
-                stock.QuantityOnHand,
-                stock.QuantityReserved,
-                stock.QuantityAvailable);
+            // A seller lowering their own stock is not told about it (specs/102): they did it.
+            response = StockResponse.From(stock, _lowStock);
         }, cancellationToken);
 
         return response!;

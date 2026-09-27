@@ -52,6 +52,7 @@ describe('stock', () => {
   it('sums the variants that answered and says how many did', () => {
     const row = (onHand: number, reserved: number) => ({
       productId: 'v', sku: 'v', quantityOnHand: onHand, quantityReserved: reserved, quantityAvailable: onHand - reserved,
+      lowStockThreshold: 5, lowStockThresholdIsDefault: true,
     })
     expect(sumStock([row(6, 1), null, row(4, 0)])).toEqual({ known: 2, total: 3, onHand: 10, reserved: 1, available: 9 })
   })
@@ -75,9 +76,25 @@ describe('pendingChanges', () => {
   })
 
   it('ignores what does not parse, and a negative or fractional stock', () => {
-    expect(pendingChanges({ prices: { USD: 'abc' }, onHand: '-2' }, current)).toEqual({ prices: [], onHand: null })
+    expect(pendingChanges({ prices: { USD: 'abc' }, onHand: '-2' }, current)).toEqual({ prices: [], onHand: null, lowStock: undefined })
     expect(pendingChanges({ prices: {}, onHand: '2.5' }, current).onHand).toBeNull()
     expect(pendingChanges({ prices: {}, onHand: '9' }, current).onHand).toBe(9)
+  })
+
+  /** The low-stock line (specs/102): a number, 0 for never, and an emptied box for the shop's default. */
+  it('sends a low-stock line only when it changes, and an emptied box as the default', () => {
+    const own: typeof current & { lowStock: number | null } = { ...current, lowStock: 10 }
+    const byDefault = { ...current, lowStock: null }
+    const lowStock = (typed: string | undefined, now: typeof own) =>
+      pendingChanges({ prices: {}, onHand: undefined, lowStock: typed }, now).lowStock
+
+    expect(lowStock(undefined, own)).toBeUndefined()
+    expect(lowStock('12', byDefault)).toEqual({ threshold: 12 })
+    expect(lowStock('0', own)).toEqual({ threshold: 0 })
+    expect(lowStock('10', own)).toBeUndefined()
+    expect(lowStock('', own)).toEqual({ threshold: null })
+    expect(lowStock('  ', byDefault)).toBeUndefined()
+    for (const nonsense of ['-1', '2.5', 'ten', '100001']) expect(lowStock(nonsense, own)).toBeUndefined()
   })
 })
 

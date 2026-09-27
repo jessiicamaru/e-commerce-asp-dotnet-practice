@@ -69,7 +69,10 @@
     "save": "Save stock",
     "saved": "Stock updated.",
     "notRegisteredYet": "This listing is still being registered with the warehouse. Try again in a moment.",
-    "hint": "How many you have. Orders reserve from this, so it cannot be set below what is already held."
+    "hint": "How many you have. Orders reserve from this, so it cannot be set below what is already held.",
+    "lowStockAt": "Warn me below",
+    "lowStockDefault": "{{count}} (shop default)",
+    "lowStockHint": "You are told when a sale takes this below the number. Leave it empty for the shop default; 0 never warns."
   },
   "variantImage": {
     "title": "Photograph of this shape",

@@ -12,7 +12,8 @@
     "reason": ["reason"],
     "rating": ["rating"],
     "count": ["rating"],
-    "until": ["until"]
+    "until": ["until"],
+    "left": ["left"]
   },
   "kinds": {
     "OrderPaid": { "required": ["orderId", "total", "currency"] },
@@ -46,6 +47,7 @@
     "QuestionHidden": { "required": ["product", "reason"] },
     "AnswerHidden": { "required": ["product", "reason"] },
     "ReportActioned": { "required": ["product"] },
-    "ReportDismissed": { "required": ["product"] }
+    "ReportDismissed": { "required": ["product"] },
+    "StockRunningLow": { "required": ["product", "left"] }
   }
 }

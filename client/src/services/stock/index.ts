@@ -21,4 +21,10 @@ export class Stock {
     const { data } = await http.put<StockModel>(`/stock/${variantId}`, { quantityOnHand })
     return data
   }
+
+  /** The low-stock line (specs/102): a number, 0 for never, or null for the shop's default. */
+  static async setLowStockThreshold(variantId: string, threshold: number | null): Promise<StockModel> {
+    const { data } = await http.put<StockModel>(`/stock/${variantId}/low-stock-threshold`, { threshold })
+    return data
+  }
 }

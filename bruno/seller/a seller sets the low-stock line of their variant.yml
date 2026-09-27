@@ -1,0 +1,39 @@
+info:
+  name: a seller sets the low-stock line of their variant
+  type: http
+  seq: 86
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/stock/{{sellerProductId}}/low-stock-threshold"
+  body:
+    type: json
+    data: |-
+      {
+        "threshold": 10
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the line is their own now", function() {
+          expect(res.body.lowStockThreshold).to.equal(10);
+          expect(res.body.lowStockThresholdIsDefault).to.equal(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/102 (#200): the seller is told when a sale takes this variant's available stock below 10. Same owners as
+  setting stock (specs/031).

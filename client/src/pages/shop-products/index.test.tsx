@@ -36,7 +36,7 @@ describe('ShopProductsPage', () => {
     vi.spyOn(Product, 'get').mockResolvedValue(sigma)
     vi.spyOn(Stock, 'get').mockImplementation(async (variantId) => ({
       productId: variantId, sku: variantId, quantityOnHand: variantId === 'v1' ? 6 : 4, quantityReserved: 0,
-      quantityAvailable: variantId === 'v1' ? 6 : 4,
+      quantityAvailable: variantId === 'v1' ? 6 : 4, lowStockThreshold: 5, lowStockThresholdIsDefault: true,
     }))
     renderAsSeller(<ShopProductsPage />)
 

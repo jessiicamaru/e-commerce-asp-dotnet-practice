@@ -1,3 +1,4 @@
+using Ecommerce.Inventory.Application.Stock.Commands.SetLowStockThreshold;
 using Ecommerce.Inventory.Application.Stock.Commands.SetStockOnHand;
 using Ecommerce.Inventory.Application.Stock.Queries.GetStock;
 using Ecommerce.Inventory.Application.Stock.Queries.GetStockByProductId;
@@ -39,5 +40,15 @@ public class StockController : ApiControllerBase
     public async Task<IActionResult> SetOnHand(Guid productId, [FromBody] SetStockOnHandRequest request)
     {
         return Ok(await Mediator.Send(new SetStockOnHandCommand(productId, request.QuantityOnHand)));
+    }
+
+    public record SetLowStockThresholdRequest(int? Threshold);
+
+    /// <summary>A variant's own low-stock line (specs/102): null is the shop default, 0 never tells. Same owners as stock.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPut("{productId:guid}/low-stock-threshold")]
+    public async Task<IActionResult> SetLowStockThreshold(Guid productId, [FromBody] SetLowStockThresholdRequest request)
+    {
+        return Ok(await Mediator.Send(new SetLowStockThresholdCommand(productId, request.Threshold)));
     }
 }

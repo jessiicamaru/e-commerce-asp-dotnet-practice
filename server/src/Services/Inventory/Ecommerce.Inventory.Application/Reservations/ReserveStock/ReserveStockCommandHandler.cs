@@ -16,7 +16,8 @@ public class ReserveStockCommandHandler(
     IReservationRepository reservationRepository,
     IPublishEndpoint publishEndpoint,
     IConfiguration configuration,
-    ILogger<ReserveStockCommandHandler> logger
+    ILogger<ReserveStockCommandHandler> logger,
+    LowStockSettings lowStock
 ) : IRequestHandler<ReserveStockCommand, ReserveStockResult>
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
@@ -25,6 +26,7 @@ public class ReserveStockCommandHandler(
     private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
     private readonly IConfiguration _configuration = configuration;
     private readonly ILogger<ReserveStockCommandHandler> _logger = logger;
+    private readonly LowStockSettings _lowStock = lowStock;
 
     private const int DefaultHoldingPeriodMinutes = 15;
 
@@ -38,6 +40,9 @@ public class ReserveStockCommandHandler(
             // locked items live inside the else-branch below, and only a successful reservation
             // changes anything worth announcing - a failed one leaves every row as it found it.
             List<StockItem> movedStock = [];
+
+            // Variants this sale took below their low-stock line (specs/102), judged under the same locks.
+            List<StockRanLowEvent> ranLow = [];
 
             // The broker redelivers as normal operation. Reservations already on file for this
             // order mean the original delivery succeeded and its reply is already in the outbox;
@@ -101,8 +106,17 @@ public class ReserveStockCommandHandler(
                     foreach (var line in requested)
                     {
                         var stock = byProduct[line.ProductId];
+                        var before = stock.QuantityAvailable;
                         stock.QuantityReserved += line.Quantity;
                         stock.UpdatedAt = DateTime.UtcNow;
+
+                        // Before and after from one locked row: two checkouts at once serialise, and only one of
+                        // them crosses. No flag to keep right on the seven paths that raise stock (research D2).
+                        var threshold = _lowStock.For(stock);
+                        if (LowStock.Crossed(before, stock.QuantityAvailable, threshold))
+                        {
+                            ranLow.Add(new StockRanLowEvent(stock.ProductId, stock.QuantityAvailable, threshold, DateTime.UtcNow));
+                        }
 
                         reservations.Add(new StockReservation
                         {
@@ -133,6 +147,12 @@ public class ReserveStockCommandHandler(
                 // Reserving the last units is the commonest way a product becomes unbuyable, so
                 // this is the announcement the catalogue most depends on.
                 await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, movedStock, ct);
+
+                // The seller is told by Catalog, which knows who they are (specs/102 D1).
+                foreach (var low in ranLow)
+                {
+                    await _publishEndpoint.Publish(low, ct);
+                }
             }
             else
             {

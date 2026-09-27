@@ -76,3 +76,14 @@ export function useSetStock(productId: string) {
     },
   })
 }
+
+/** A variant's low-stock line (specs/102). */
+export function useSetLowStockThreshold() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ variantId, threshold }: { variantId: string; threshold: number | null }) =>
+      Stock.setLowStockThreshold(variantId, threshold),
+    onSuccess: (_data, { variantId }) => queryClient.invalidateQueries({ queryKey: ['stock', variantId] }),
+  })
+}

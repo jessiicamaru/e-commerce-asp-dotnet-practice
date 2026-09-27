@@ -1,3 +1,4 @@
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Inventory.Application.Common.Interfaces;
 using Ecommerce.Inventory.Application.Stock.Common;
 using Ecommerce.Shared.Exceptions;
@@ -5,10 +6,11 @@ using MediatR;
 
 namespace Ecommerce.Inventory.Application.Stock.Queries.GetStockByProductId;
 
-public class GetStockByProductIdQueryHandler(IStockRepository stockRepository)
+public class GetStockByProductIdQueryHandler(IStockRepository stockRepository, LowStockSettings lowStock)
     : IRequestHandler<GetStockByProductIdQuery, StockResponse>
 {
     private readonly IStockRepository _stockRepository = stockRepository;
+    private readonly LowStockSettings _lowStock = lowStock;
 
     public async Task<StockResponse> Handle(GetStockByProductIdQuery request, CancellationToken cancellationToken)
     {
@@ -18,11 +20,6 @@ public class GetStockByProductIdQueryHandler(IStockRepository stockRepository)
             ?? throw new NotFoundException(
                 $"Product '{request.ProductId}' is not registered in inventory.");
 
-        return new StockResponse(
-            stock.ProductId,
-            stock.Sku,
-            stock.QuantityOnHand,
-            stock.QuantityReserved,
-            stock.QuantityAvailable);
+        return StockResponse.From(stock, _lowStock);
     }
 }
