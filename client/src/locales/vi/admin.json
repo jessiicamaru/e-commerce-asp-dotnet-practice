@@ -18,7 +18,8 @@
     "emailDelivery": "Tình trạng gửi email",
     "notifications": "Thông báo",
     "findOrder": "Tìm đơn hàng",
-    "categories": "Danh mục"
+    "categories": "Danh mục",
+    "delivery": "Giao hàng"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -491,5 +492,24 @@
     "noEnglish": "Chưa có tiếng Anh",
     "none": "Chưa có danh mục nào.",
     "loadFailed": "Không tải được danh mục."
+  },
+  "deliverySettings": {
+    "title": "Giao hàng",
+    "subtitle": "Giá của từng hình thức và hình thức nào đang áp dụng. Đơn tiếp theo tính theo đây; đơn đã đặt giữ nguyên giá đã trả.",
+    "loadFailed": "Không tải được cài đặt giao hàng.",
+    "carrierName": "Đơn vị vận chuyển",
+    "trackingTemplate": "Địa chỉ tra cứu",
+    "trackingHint": "Đặt {reference} vào chỗ mã vận đơn. Để trống thì mã vận đơn hiện dạng chữ.",
+    "carrierSaved": "Đã lưu đơn vị vận chuyển.",
+    "options": "Hình thức giao",
+    "code": "Mã",
+    "name": "Tên",
+    "order": "Thứ tự",
+    "priceIn": "Giá ({{currency}})",
+    "offered": "Đang áp dụng",
+    "save": "Lưu",
+    "add": "Thêm",
+    "newOption": "Hình thức mới",
+    "optionSaved": "Đã lưu “{{name}}”."
   }
 }

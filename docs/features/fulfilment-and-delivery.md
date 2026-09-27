@@ -8,7 +8,7 @@ How an order reaches `Paid` is in [shopping-and-checkout.md](shopping-and-checko
 
 | Role | Capabilities |
 | :-- | :-- |
-| Customer | See each parcel of their order: its shop, contents, status, tracking reference and when it arrived. Cancel their own paid order while every parcel is still waiting. Say that a shipped parcel arrived. Receive notices when the order is paid, a parcel ships, or the order is cancelled. |
+| Customer | See each parcel of their order: its shop, contents, status, tracking reference - a link to the carrier's page when the shop has set one (specs/098) - and when it arrived. Cancel their own paid order while every parcel is still waiting. Say that a shipped parcel arrived. Receive notices when the order is paid, a parcel ships, or the order is cancelled. |
 | Seller | List their sales and open one (their lines only). Start preparing their part, then ship it with a tracking reference. See the delivery address only while their part is waiting or being prepared. Receive notices of a new sale, a cancelled sale, a parcel the customer received, and a payout. |
 | Moderator | Nothing in fulfilment. The fulfilment endpoints are `Admin` only, and the console sends a moderator to `/admin/moderation`. |
 | Administrator | Work the fulfilment queue by the shop's part's state (`Paid`, `Preparing`, `Shipped`). Read any order (`GET /api/orders/fulfilment/{id}`), and **find** any order - by the start of its id, by the customer's email or by status - at `/admin/orders/find` (`GET /api/orders/staff`, specs/096). Prepare and ship the shop's part. Cancel any paid order until its first parcel ships. |

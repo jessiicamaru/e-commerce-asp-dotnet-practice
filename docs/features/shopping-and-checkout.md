@@ -8,7 +8,8 @@ What happens after `Paid` (parcels, cancellation, delivery) is in [fulfilment-an
 
 | Role | Capabilities |
 | :-- | :-- |
-| Anyone | Read the delivery options and their prices (`GET /api/orders/shipping-options`). |
+| Anyone | Read the delivery options and their prices (`GET /api/orders/shipping-options`), and the carrier's tracking page (`GET /api/orders/delivery/carrier`). |
+| Administrator | Change delivery prices, add or turn off options, name the carrier and its tracking address (`/admin/delivery`, specs/098). The last option on offer cannot be turned off. |
 | Customer (any signed-in user) | Keep one cart: add a variant, change a quantity, remove a line, empty it. See it priced at today's catalogue prices. Ask for a checkout quote. Place an order to one of their addresses (or their default) with a delivery option. List their own orders and open one, polling until it settles. |
 | Seller | Everything a customer can do: a seller also holds the `Customer` role (specs/027). |
 | Moderator | Nothing specific to checkout beyond what any signed-in user can do. |
@@ -29,7 +30,7 @@ A line is addressed by its sellable id (`CartLine.SellableId` = `VariantId ?? Pr
 
 1. reads the caller's cart from Cart over gRPC (`CartReading.GetMyCart`), forwarding the caller's own `Authorization` header - the request message is empty;
 2. reads the address from Identity over gRPC (`AddressReading.GetMyAddress`), again with the forwarded token; a null `addressId` means the default address;
-3. resolves the delivery option from Order's configuration (`Shipping:Options`) and its price in the request's currency;
+3. resolves the delivery option from Order's `delivery_options` table - edited by administrators at `/admin/delivery` and seeded from `Shipping:Options` since specs/098 (#196) - and its price in the request's currency;
 4. asks Catalog to price the variants (`CatalogPricing.PriceVariants`) in the request's language and currency;
 5. computes the total in named parts with `OrderTotals.Compute`, using the tax rate for the destination country (`Tax:Rates`, falling back to `Tax:DefaultRate`).
 
@@ -279,6 +280,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 
 | Spec | PR | What it added |
 | :-- | :-- | :-- |
+| [098-delivery-settings](../../specs/098-delivery-settings/) | [#205](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/205) | Delivery options and the one carrier in Order's database, edited at `/admin/delivery`; configuration seeds missing codes only; tracking references link to the carrier (#196). |
 | [001-inventory-reservations](../../specs/001-inventory-reservations/) | - (commit `551e856`) | Inventory service: reservations under `FOR UPDATE`, confirm on `OrderCompletedEvent`, release, expiry sweeper. |
 | [002-payment-service](../../specs/002-payment-service/) | #1 | The stub Payment service; the saga runs to completion; one payment per order. |
 | [003-order-lifecycle](../../specs/003-order-lifecycle/) | #3 | Order settles on the saga's outcome with a guarded update; owner-scoped order reads. |

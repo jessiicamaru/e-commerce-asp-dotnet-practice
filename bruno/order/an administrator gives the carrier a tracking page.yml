@@ -1,0 +1,38 @@
+info:
+  name: an administrator gives the carrier a tracking page
+  type: http
+  seq: 16
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/orders/delivery/carrier"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno Carrier",
+        "trackingUrlTemplate": "https://carrier.example/track/{reference}"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("saved as given", function() {
+          expect(res.body.trackingUrlTemplate).to.equal("https://carrier.example/track/{reference}");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Every tracking reference in the storefront now links to it.

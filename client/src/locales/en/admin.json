@@ -18,7 +18,8 @@
     "emailDelivery": "Email delivery",
     "notifications": "Notifications",
     "findOrder": "Find an order",
-    "categories": "Categories"
+    "categories": "Categories",
+    "delivery": "Delivery"
   },
   "queue": {
     "title": "Orders to ship",
@@ -491,5 +492,24 @@
     "noEnglish": "No English yet",
     "none": "No categories yet.",
     "loadFailed": "The categories could not be loaded."
+  },
+  "deliverySettings": {
+    "title": "Delivery",
+    "subtitle": "What each option costs and which are offered. The next checkout charges it; orders already placed keep what they paid.",
+    "loadFailed": "The delivery settings could not be loaded.",
+    "carrierName": "Carrier",
+    "trackingTemplate": "Tracking address",
+    "trackingHint": "Put {reference} where the parcel's tracking reference goes. Leave it empty to show references as text.",
+    "carrierSaved": "Carrier saved.",
+    "options": "Options",
+    "code": "Code",
+    "name": "Name",
+    "order": "Order",
+    "priceIn": "Price in {{currency}}",
+    "offered": "Offered",
+    "save": "Save",
+    "add": "Add",
+    "newOption": "New option",
+    "optionSaved": "“{{name}}” saved."
   }
 }
