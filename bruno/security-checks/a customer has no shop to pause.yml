@@ -1,0 +1,29 @@
+info:
+  name: a customer has no shop to pause
+  type: http
+  seq: 72
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/shops/mine/pause"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/107: pausing is a seller's; a customer is refused at the door.
+

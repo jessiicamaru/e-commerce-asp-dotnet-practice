@@ -1,0 +1,39 @@
+info:
+  name: staff close the shop with a reason
+  type: http
+  seq: 100
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/shops/{{sellerId}}/close"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "  Checked by Bruno  "
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the shop is closed, with the reason", function() {
+          expect(res.body.state).to.equal("Closed");
+          expect(res.body.closedReason).to.equal("Checked by Bruno");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/107: the account is untouched - the seller still signs in and ships what is paid; the shop is off the shelf.
+

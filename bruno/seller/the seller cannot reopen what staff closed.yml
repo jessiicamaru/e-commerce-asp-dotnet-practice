@@ -1,0 +1,32 @@
+info:
+  name: the seller cannot reopen what staff closed
+  type: http
+  seq: 102
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/shops/mine/reopen"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("it names the closure", function() {
+          expect(res.body.detail).to.equal("Staff closed this shop: Checked by Bruno");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/107: the seller's moves are guarded by ClosedAt IS NULL - only staff reopen a shop they closed.
+

@@ -1,0 +1,29 @@
+info:
+  name: reopening an open shop is 409
+  type: http
+  seq: 106
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/shops/{{sellerId}}/reopen"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/107: one guarded UPDATE; nothing to reopen.
+
