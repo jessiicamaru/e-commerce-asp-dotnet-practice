@@ -1,0 +1,34 @@
+info:
+  name: products under a price in dong
+  type: http
+  seq: 67
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products?maxPrice=20000000&currency=VND&pageSize=50"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("no listed product's from price is over the maximum", function() {
+          res.body.items.forEach(function(p) {
+            expect(p.price).to.not.equal(null);
+            expect(p.price).to.be.at.most(20000000);
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/109: a range of the "from" price the card shows, in the currency asked for.
+

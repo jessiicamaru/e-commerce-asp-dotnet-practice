@@ -15,7 +15,7 @@ the shopper just set.
 
 ## D2 - Default currency: `products.Price`, with a btree index
 
-**Decision**: add `IX_products_Price` and filter `products."Price"` directly in the default currency.
+**Decision**: add `IX_products_on_shelf_Price` - partial, over the shelf predicate every listing carries - and filter `products."Price"` directly in the default currency. A plain index on `Price` lost to `IX_products_ReviewStatus_SubmittedAt` in the plan test.
 
 **Rationale**:
 

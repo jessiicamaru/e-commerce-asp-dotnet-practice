@@ -50,9 +50,9 @@ The catalogue page gains a price range and an "In stock only" switch, kept in th
 | **II. Clean Architecture Layering** | **Pass.** The query and validator are in Application, the SQL shape in Infrastructure. |
 | **III. Atomic Writes and Idempotent Messaging** | **Not applicable.** The feature only reads. |
 | **IV. Identity Comes From the Token** | **Not applicable.** The listing is anonymous, and no identity is involved. |
-| **V. Evidence Over Assumption** | **Planned.** Filter tests against PostgreSQL, plan tests for both currencies, mutations, and Bruno. Recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** Filter tests against PostgreSQL and plan tests for both currencies - which changed the design (a partial index) - each killed by a mutation; Bruno 348/348. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): still a pass. Catalog alone (I), SQL in the repository (II), reads only (III), anonymous (IV), evidence in `tasks.md` (V).
 
 ## Project Structure
 

@@ -66,7 +66,7 @@ The shopper ticks "In stock only", and only products they can buy now are listed
 - **FR-005**: The catalogue page:
   - a minimum and a maximum in the browsing currency, applied together;
   - an "In stock only" switch;
-  - both kept in the URL like the category and the sort, and cleared with the rest.
+  - both kept in the URL like the category and the sort.
 
 ## Success Criteria *(mandatory)*
 
