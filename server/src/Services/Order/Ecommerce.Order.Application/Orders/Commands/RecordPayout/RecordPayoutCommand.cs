@@ -34,9 +34,12 @@ public class RecordPayoutCommandHandler(
     ICurrentUser currentUser,
     ILogger<RecordPayoutCommandHandler> logger,
     IAuditTrail audit,
-    INotifier notifier)
+    INotifier notifier,
+    IPayoutAccounts accounts)
     : IRequestHandler<RecordPayoutCommand, PayoutResponse>
 {
+    private readonly IPayoutAccounts _accounts = accounts;
+
     private readonly INotifier _notifier = notifier;
 
     private readonly IAuditTrail _audit = audit;
@@ -53,14 +56,19 @@ public class RecordPayoutCommandHandler(
 
         var currency = request.Currency.Trim().ToUpperInvariant();
 
+        // Where it goes, asked of Identity BEFORE the claim's transaction - a round trip never holds a row lock
+        // (specs/106 research D2). None given: nothing is claimed, and nothing is recorded without a destination.
+        var destination = await _accounts.GetAsync(request.SellerId, cancellationToken)
+            ?? throw new ConflictException(Payouts.NoAccount);
+
         var payout = await _payouts.TryRecordAsync(
-            Guid.CreateVersion7(), request.SellerId, currency, admin, DateTime.UtcNow, cancellationToken,
+            Guid.CreateVersion7(), request.SellerId, currency, admin, DateTime.UtcNow, destination, cancellationToken,
             async (p, ct) =>
             {
                 await _audit.RecordAsync(
                     AuditCategory.Payment, "PayoutRecorded", "Seller", p.SellerId.ToString(),
                     $"Recorded paying {p.Amount} {p.Currency} to a seller for {p.PartCount} parcel(s)",
-                    after: new { PayoutId = p.Id, p.Amount, p.Currency, p.PartCount },
+                    after: new { PayoutId = p.Id, p.Amount, p.Currency, p.PartCount, PaidTo = $"{p.PaidToBank} · {p.PaidToHolder} · •••• {p.PaidToAccountLast4}" },
                     cancellationToken: ct);
                 await OrderNotices.PayoutAsync(_notifier, p.SellerId, p.Amount, p.Currency, ct);
             })

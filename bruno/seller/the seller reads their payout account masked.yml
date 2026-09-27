@@ -1,0 +1,29 @@
+info:
+  name: the seller reads their payout account masked
+  type: http
+  seq: 40
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/sellers/me/payout-account"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("masked", function() {
+          expect(res.body.bankName).to.equal("Vietcombank");
+          expect(res.body.accountNumberMasked).to.equal("•••• 4321");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

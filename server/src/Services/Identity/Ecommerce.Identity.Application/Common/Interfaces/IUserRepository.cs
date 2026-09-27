@@ -55,6 +55,14 @@ public interface IUserRepository
     /// </summary>
     Task AddSellerProfileAsync(SellerProfile profile, CancellationToken cancellationToken = default);
 
+    /// <summary>A seller's payout account, tracked (specs/106); null when they have given none.</summary>
+    Task<SellerPayoutAccount?> GetPayoutAccountAsync(Guid sellerId, CancellationToken cancellationToken = default);
+
+    Task AddPayoutAccountAsync(SellerPayoutAccount account, CancellationToken cancellationToken = default);
+
+    /// <summary>These sellers' accounts, untracked - for an administrator paying them.</summary>
+    Task<List<SellerPayoutAccount>> GetPayoutAccountsAsync(IReadOnlyCollection<Guid> sellerIds, CancellationToken cancellationToken = default);
+
     /// <summary>The caller's own shop, or <c>null</c> when they do not sell.</summary>
     Task<SellerProfile?> GetSellerProfileAsync(Guid userId, CancellationToken cancellationToken = default);
 

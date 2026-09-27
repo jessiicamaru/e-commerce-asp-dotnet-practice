@@ -1,7 +1,7 @@
 info:
   name: staff see what they decided
   type: http
-  seq: 50
+  seq: 53
 
 http:
   method: GET

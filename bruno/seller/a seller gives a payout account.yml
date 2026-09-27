@@ -1,0 +1,41 @@
+info:
+  name: a seller gives a payout account
+  type: http
+  seq: 39
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/sellers/me/payout-account"
+  body:
+    type: json
+    data: |-
+      {
+        "bankName": "Vietcombank",
+        "accountHolder": "BRUNO SELLER",
+        "accountNumber": "0071 0012 34321"
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the number comes back masked, never whole", function() {
+          expect(res.body.accountNumberMasked).to.equal("•••• 4321");
+          expect(JSON.stringify(res.body)).to.not.contain("0071001234321");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/106 (#213): where the shop sends what it owes this seller. The seller is emailed (PayoutAccountChanged), and the
+  audit entry holds the last four only. Given here so the payout requests after it are about money, not a missing account.

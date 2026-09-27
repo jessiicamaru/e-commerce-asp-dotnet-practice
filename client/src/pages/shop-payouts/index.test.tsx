@@ -1,9 +1,11 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { PAGE_SIZE } from '@/constants/shared'
 import { Order } from '@/services/order'
+import { Seller } from '@/services/seller'
 import { renderAsSeller } from '@/test/render'
 import { ShopPayoutsPage } from '.'
 
@@ -21,6 +23,8 @@ const empty = { items: [], page: 1, pageSize: PAGE_SIZE, totalCount: 0 }
 beforeEach(async () => {
   // Pinned: the page would otherwise assert English on one machine and Vietnamese on another.
   await i18n.changeLanguage('en')
+  // No payout account unless a test gives one (specs/106).
+  vi.spyOn(Seller, 'payoutAccount').mockResolvedValue(null)
 })
 
 describe('ShopPayoutsPage', () => {
@@ -71,5 +75,42 @@ describe('ShopPayoutsPage', () => {
     renderPage()
 
     expect(await screen.findByText('Could not load your payouts.')).toBeInTheDocument()
+  })
+})
+
+describe('ShopPayoutsPage payout account (specs/106)', () => {
+  const quiet = () => {
+    vi.spyOn(Order, 'balance').mockResolvedValue([])
+    vi.spyOn(Order, 'payouts').mockResolvedValue({ items: [], page: 1, pageSize: PAGE_SIZE, totalCount: 0 })
+  }
+
+  it('shows the account masked, as the server sends it', async () => {
+    quiet()
+    vi.spyOn(Seller, 'payoutAccount').mockResolvedValue({
+      bankName: 'Vietcombank', accountHolder: 'NGUYEN THI MAI', accountNumberMasked: '•••• 4321', updatedAt: '2026-09-27T10:00:00Z',
+    })
+    renderPage()
+
+    expect(await screen.findByText('•••• 4321')).toBeInTheDocument()
+    expect(screen.getByText(/Vietcombank · NGUYEN THI MAI/)).toBeInTheDocument()
+  })
+
+  it('saves what was typed, and says a change is emailed', async () => {
+    quiet()
+    const save = vi.spyOn(Seller, 'setPayoutAccount').mockResolvedValue({
+      bankName: 'Vietcombank', accountHolder: 'NGUYEN THI MAI', accountNumberMasked: '•••• 4321', updatedAt: '2026-09-27T10:00:00Z',
+    })
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText(/We email you whenever this changes/)).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Bank'), ' Vietcombank ')
+    await user.type(screen.getByLabelText('Account holder'), 'NGUYEN THI MAI')
+    await user.type(screen.getByLabelText('Account number'), '0071 0012 34321')
+    await user.click(screen.getByRole('button', { name: 'Save account' }))
+
+    await waitFor(() => expect(save).toHaveBeenCalledWith({
+      bankName: 'Vietcombank', accountHolder: 'NGUYEN THI MAI', accountNumber: '0071 0012 34321',
+    }))
   })
 })

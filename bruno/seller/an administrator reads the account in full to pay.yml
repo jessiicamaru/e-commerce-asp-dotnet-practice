@@ -1,0 +1,32 @@
+info:
+  name: an administrator reads the account in full to pay
+  type: http
+  seq: 41
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/sellers/payout-accounts?sellerIds={{sellerId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the whole number, for the transfer", function() {
+          expect(res.body.length).to.equal(1);
+          expect(res.body[0].accountNumber).to.equal("0071001234321");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/106: the one route that returns a whole account number - administrators only.

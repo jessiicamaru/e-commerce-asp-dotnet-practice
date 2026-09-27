@@ -21,8 +21,8 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("eleven emails in two languages, each with what it may use", function() {
-          expect(res.body).to.have.length(22);
+        test("twelve emails in two languages, each with what it may use", function() {
+          expect(res.body).to.have.length(24);
           const reset = res.body.find(e => e.template === "PasswordReset" && e.language === "en");
           expect(reset.required).to.include("link");
         });

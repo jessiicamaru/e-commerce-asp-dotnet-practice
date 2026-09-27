@@ -1,5 +1,6 @@
 import { http } from '@/config/axios'
-import type { Shop } from './types'
+import { ApiError } from '@/config/axios'
+import type { PayoutAccount, PayoutAccountInput, Shop } from './types'
 
 /**
  * The signed-in seller's shop (specs/027).
@@ -10,6 +11,22 @@ import type { Shop } from './types'
 export class Seller {
   static async me(): Promise<Shop> {
     const { data } = await http.get<Shop>('/sellers/me')
+    return data
+  }
+
+  /** Where the caller's payouts go, masked (specs/106); null until they give one. */
+  static async payoutAccount(): Promise<PayoutAccount | null> {
+    try {
+      const { data } = await http.get<PayoutAccount>('/sellers/me/payout-account')
+      return data
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null
+      throw error
+    }
+  }
+
+  static async setPayoutAccount(input: PayoutAccountInput): Promise<PayoutAccount> {
+    const { data } = await http.put<PayoutAccount>('/sellers/me/payout-account', input)
     return data
   }
 

@@ -1,7 +1,7 @@
 info:
   name: the seller sees it waiting for an answer
   type: http
-  seq: 70
+  seq: 73
 
 http:
   method: GET

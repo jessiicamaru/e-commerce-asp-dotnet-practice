@@ -1,7 +1,7 @@
 info:
   name: the seller answers it
   type: http
-  seq: 72
+  seq: 75
 
 http:
   method: PUT

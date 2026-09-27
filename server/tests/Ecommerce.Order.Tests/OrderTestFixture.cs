@@ -43,6 +43,9 @@ public class OrderTestFixture : IAsyncLifetime
 
     public FakeCheckoutDependencies Checkout { get; } = new();
 
+    /// <summary>Sellers' payout accounts (specs/106) - every seller has one unless a test removes it.</summary>
+    public TestPayoutAccounts PayoutAccounts { get; } = new();
+
     /// <summary>The marketplace's commission, 10% like the shop. Settable: SC-002 changes it mid-test.</summary>
     public TestCommissionRate Commission { get; } = new();
 
@@ -186,6 +189,7 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddSingleton<ICartReader>(Checkout);
         services.AddSingleton<ICatalogPrices>(Checkout);
         services.AddSingleton<IAddressReader>(Checkout);
+        services.AddSingleton<IPayoutAccounts>(PayoutAccounts);
         // Configuration seeds the table; checkout reads the table (specs/098) - the real classes, as in production.
         services.AddSingleton<ConfiguredShippingOptions>();
         services.AddScoped<IShippingOptions, StoredShippingOptions>();
@@ -322,4 +326,13 @@ public class TestCommissionRate : ICommissionRate
 public class TestCurrency : IRequestCurrency
 {
     public Currency Current { get; set; } = new("VND", 0);
+}
+
+/// <summary>Sellers' payout accounts (specs/106): every seller has one unless the test says it has none.</summary>
+public class TestPayoutAccounts : IPayoutAccounts
+{
+    public HashSet<Guid> Without { get; } = [];
+
+    public Task<PayoutDestination?> GetAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(Without.Contains(sellerId) ? null : new PayoutDestination("Vietcombank", "SELLER " + sellerId.ToString("N")[..4], "4321", DateTime.UtcNow.AddDays(-30)));
 }

@@ -1,7 +1,7 @@
 info:
   name: the question is on the product page
   type: http
-  seq: 69
+  seq: 72
 
 http:
   method: GET

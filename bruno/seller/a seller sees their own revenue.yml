@@ -1,7 +1,7 @@
 info:
   name: a seller sees their own revenue
   type: http
-  seq: 56
+  seq: 59
 
 http:
   method: GET

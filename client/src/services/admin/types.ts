@@ -53,3 +53,12 @@ export type QueueState = (typeof QUEUE_STATES)[number]
  */
 export const RETURN_QUEUE_STATES = ['Escalated', 'Requested', 'SentBack', 'Received'] as const
 export type ReturnQueueState = (typeof RETURN_QUEUE_STATES)[number]
+
+/** A seller's payout account in full - what an administrator transfers to (specs/106). Administrators only. */
+export interface PayoutAccountFull {
+  sellerId: string
+  bankName: string
+  accountHolder: string
+  accountNumber: string
+  updatedAt: string
+}

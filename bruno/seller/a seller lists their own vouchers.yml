@@ -1,7 +1,7 @@
 info:
   name: a seller lists their own vouchers
   type: http
-  seq: 61
+  seq: 64
 
 http:
   method: GET

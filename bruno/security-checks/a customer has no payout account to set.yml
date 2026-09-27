@@ -1,0 +1,33 @@
+info:
+  name: a customer has no payout account to set
+  type: http
+  seq: 71
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/sellers/me/payout-account"
+  body:
+    type: json
+    data: |-
+      {
+        "bankName": "Vietcombank",
+        "accountHolder": "BRUNO SELLER",
+        "accountNumber": "0071 0012 34321"
+      }
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

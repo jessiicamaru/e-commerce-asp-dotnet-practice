@@ -204,7 +204,8 @@
     "columns": {
       "date": "Date",
       "sales": "Covers",
-      "amount": "Amount"
+      "amount": "Amount",
+      "to": "To"
     }
   },
   "apply": {
@@ -305,5 +306,18 @@
       "answered": "Answered"
     },
     "yourAnswer": "Your answer"
+  },
+  "payoutAccount": {
+    "title": "Payout account",
+    "hint": "Where the shop sends what it owes you.",
+    "none": "No payout account yet - the shop cannot pay you until you add one.",
+    "updated": "Last changed {{at}}",
+    "change": "Change",
+    "bank": "Bank",
+    "holder": "Account holder",
+    "number": "Account number",
+    "save": "Save account",
+    "saved": "Payout account saved.",
+    "emailed": "We email you whenever this changes. If you get that email and did not change it, change your password."
   }
 }

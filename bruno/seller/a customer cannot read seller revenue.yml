@@ -1,7 +1,7 @@
 info:
   name: a customer cannot read seller revenue
   type: http
-  seq: 58
+  seq: 61
 
 http:
   method: GET

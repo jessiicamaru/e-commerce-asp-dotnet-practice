@@ -26,4 +26,4 @@ description: "Task list for A mistyped tracking reference can be corrected"
 - [X] T006 Mutations (quickstart Scenario 3, plus two client ones), each red; Order 302, client 531
 - [X] T007 [P] Bruno 321/321 (3 new); rebuilt Order and the storefront; post-design Constitution re-check: no violations. The ship hint no longer says a reference cannot be changed
 - [X] T008 Docs: fulfilment, audit-and-notifications, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T009 Merged as #225, closing #212
+- [x] T009 Merged as #225, closing #212

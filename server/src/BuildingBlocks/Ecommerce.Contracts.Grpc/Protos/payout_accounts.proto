@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecommerce.Contracts.Grpc";
+
+package payoutaccounts;
+
+// Where a seller's payouts go (specs/106), asked by Order when an administrator records a payout. Served by Identity
+// to a forwarded ADMIN token only: the role is the permission, which is why - unlike AddressReading - the request names
+// a seller.
+service PayoutAccounts {
+  rpc GetPayoutAccount (GetPayoutAccountRequest) returns (PayoutAccountReply);
+}
+
+message GetPayoutAccountRequest {
+  string seller_id = 1;
+}
+
+message PayoutAccountReply {
+  bool found = 1;
+  string bank_name = 2;
+  string account_holder = 3;
+  // Never the full number: Order freezes only this onto the payout (research D2).
+  string account_last4 = 4;
+  // ISO 8601, UTC.
+  string updated_at = 5;
+}

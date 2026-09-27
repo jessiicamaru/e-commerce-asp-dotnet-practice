@@ -1,7 +1,7 @@
 info:
   name: a customer asks the seller a question
   type: http
-  seq: 68
+  seq: 71
 
 http:
   method: POST

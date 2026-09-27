@@ -1,7 +1,7 @@
 info:
   name: renaming it sends it back to review
   type: http
-  seq: 51
+  seq: 54
 
 http:
   method: PUT

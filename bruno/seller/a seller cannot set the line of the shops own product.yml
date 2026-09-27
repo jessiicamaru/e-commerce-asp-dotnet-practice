@@ -1,7 +1,7 @@
 info:
   name: a seller cannot set the line of the shops own product
   type: http
-  seq: 89
+  seq: 92
 
 http:
   method: PUT

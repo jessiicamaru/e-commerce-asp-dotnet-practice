@@ -1,7 +1,7 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
 import type { Order, OrderPage, ParcelReturn, Payout, ReturnPage } from '@/services/order/types'
-import type { PayoutDue, QueueState, StaffOrderPage, StaffOrderQuery } from './types'
+import type { PayoutAccountFull, PayoutDue, QueueState, StaffOrderPage, StaffOrderQuery } from './types'
 
 /**
  * What staff do after a sale (specs/038): work the shop's own parcels and settle what sellers are owed.
@@ -99,6 +99,13 @@ export class Admin {
    * Settle everything due to one seller in one currency. There is no amount to send: the server pays
    * what is due at that moment and says how much that was.
    */
+  /** These sellers' payout accounts in full (specs/106) - a seller with none is absent. */
+  static async payoutAccounts(sellerIds: string[]): Promise<PayoutAccountFull[]> {
+    if (sellerIds.length === 0) return []
+    const { data } = await http.get<PayoutAccountFull[]>(`/sellers/payout-accounts?sellerIds=${sellerIds.join(',')}`)
+    return data
+  }
+
   static async pay(sellerId: string, currency: string): Promise<Payout> {
     const { data } = await http.post<Payout>('/orders/payouts', { sellerId, currency })
     return data

@@ -23,4 +23,9 @@ public class Payout
     public Guid RecordedBy { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Where it went, frozen when recorded (specs/106) - null for payouts from before. Never the whole account number.
+    public string? PaidToBank { get; set; }
+    public string? PaidToHolder { get; set; }
+    public string? PaidToAccountLast4 { get; set; }
 }

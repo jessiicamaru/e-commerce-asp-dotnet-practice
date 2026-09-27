@@ -5,3 +5,17 @@ export interface Shop {
   /** The seller's own words for their shop's page (specs/099); null when none. */
   description?: string | null
 }
+
+/** Where the seller's payouts go (specs/106) - the number only ever masked. */
+export interface PayoutAccount {
+  bankName: string
+  accountHolder: string
+  accountNumberMasked: string
+  updatedAt: string
+}
+
+export interface PayoutAccountInput {
+  bankName: string
+  accountHolder: string
+  accountNumber: string
+}

@@ -5,6 +5,9 @@ public static class Payouts
 {
     /// <summary>The refusal when a payout would cover nothing - the same words for "never sold" and "all paid".</summary>
     public static string NothingDue(string currency) => $"Nothing is due to this seller in {currency}.";
+
+    /// <summary>The refusal when a seller has given no payout account (specs/106).</summary>
+    public const string NoAccount = "This seller has given no payout account; there is nowhere to pay.";
 }
 
 /// <summary>
@@ -17,7 +20,10 @@ public static class Payouts
 public record BalanceResponse(string Currency, decimal OnTheWay, decimal Due, decimal PaidOut);
 
 /// <summary>One settlement of what was due to one seller in one currency.</summary>
-public record PayoutResponse(Guid Id, Guid SellerId, string Currency, decimal Amount, int PartCount, DateTime CreatedAt);
+/// <param name="PaidToAccountLast4">Where it went (specs/106): null on payouts from before.</param>
+public record PayoutResponse(
+    Guid Id, Guid SellerId, string Currency, decimal Amount, int PartCount, DateTime CreatedAt,
+    string? PaidToBank = null, string? PaidToHolder = null, string? PaidToAccountLast4 = null);
 
 /// <summary>What is due now to one seller in one currency - an administrator's worklist.</summary>
 /// <param name="SellerName">The most recent name frozen on the seller's lines (specs/036), or null.</param>

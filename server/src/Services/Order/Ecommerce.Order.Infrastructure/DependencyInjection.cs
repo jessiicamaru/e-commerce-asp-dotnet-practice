@@ -75,6 +75,9 @@ public static class DependencyInjection
 
         services.AddGrpcClient<AddressReading.AddressReadingClient>(o => o.Address = new Uri(identityGrpc));
         services.AddScoped<IAddressReader, GrpcAddressReader>();
+        // The same Identity gRPC port: where a seller's payouts go, asked with an administrator's token (specs/106).
+        services.AddGrpcClient<PayoutAccounts.PayoutAccountsClient>(o => o.Address = new Uri(identityGrpc));
+        services.AddScoped<IPayoutAccounts, GrpcPayoutAccounts>();
 
         // Configuration seeds the delivery options; the table answers checkout, per request (specs/098).
         services.AddSingleton<ConfiguredShippingOptions>();

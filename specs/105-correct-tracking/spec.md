@@ -2,7 +2,7 @@
 
 **Feature Branch**: `105-correct-tracking` | **Created**: 2026-09-27 | **Issue**: #212
 
-**Status**: Draft
+**Status**: Merged (#225, 2026-09-27)
 
 **Input**: Issue #212 - "a mistyped tracking reference can never be corrected".
 

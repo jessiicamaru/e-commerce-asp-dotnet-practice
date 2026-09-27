@@ -60,14 +60,17 @@
     "columns": {
       "seller": "Seller",
       "parts": "Parcels",
-      "due": "Due"
+      "due": "Due",
+      "account": "Payout account"
     },
     "unnamed": "Seller {{id}}",
     "pay": "Record payout",
     "confirmTitle": "Record paying {{seller}}?",
     "confirmBody": "The shop records paying {{amount}} for {{count}} parcel(s). No money is moved by this system - it is a ledger entry, and it cannot be undone.",
     "confirm": "Record",
-    "paid": "Recorded {{amount}} to {{seller}}."
+    "paid": "Recorded {{amount}} to {{seller}}.",
+    "noAccount": "No payout account - cannot pay",
+    "changedRecently": "Changed {{at}} - check before paying"
   },
   "audit": {
     "title": "Audit log",
@@ -432,7 +435,8 @@
       "AccountLocked": "Account locked",
       "AccountBanned": "Account banned",
       "PasswordReset": "Password reset",
-      "EmailConfirmation": "Confirm email"
+      "EmailConfirmation": "Confirm email",
+      "PayoutAccountChanged": "Payout account changed"
     },
     "language": {
       "vi": "Tiếng Việt",

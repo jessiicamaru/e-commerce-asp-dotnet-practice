@@ -4,6 +4,7 @@ import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { PayoutAccountCard } from '@/components/seller/payout-account'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useAuth } from '@/context/auth/useAuth'
@@ -43,6 +44,7 @@ export function ShopPayoutsPage() {
   return (
     <section className="grid gap-6">
       <PageTitle title={t('payouts.title')} subtitle={t('payouts.subtitle')} />
+      <PayoutAccountCard />
 
       {balance.data.length === 0 ? (
         <p className="bg-card ring-border/60 rounded-3xl p-8 text-sm ring-1">{t('payouts.nothingYet')}</p>
@@ -79,6 +81,7 @@ export function ShopPayoutsPage() {
                   <TableRow>
                     <TableHead>{t('payouts.columns.date')}</TableHead>
                     <TableHead>{t('payouts.columns.sales')}</TableHead>
+                    <TableHead>{t('payouts.columns.to')}</TableHead>
                     <TableHead className="text-right">{t('payouts.columns.amount')}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -87,6 +90,9 @@ export function ShopPayoutsPage() {
                     <TableRow key={p.id}>
                       <TableCell>{new Date(p.createdAt).toLocaleString(i18n.language)}</TableCell>
                       <TableCell>{t('payouts.parts', { count: p.partCount })}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs whitespace-normal">
+                        {p.paidToAccountLast4 ? `${p.paidToBank} · •••• ${p.paidToAccountLast4}` : '—'}
+                      </TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">
                         <Price value={p.amount} currency={p.currency} />
                       </TableCell>

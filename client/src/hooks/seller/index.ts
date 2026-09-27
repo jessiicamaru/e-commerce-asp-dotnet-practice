@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
 import { Seller } from '@/services/seller'
+import type { PayoutAccountInput } from '@/services/seller/types'
 
 /** `enabled` keeps a customer from asking for a shop they do not have and collecting a 403. */
 export function useMyShop(enabled: boolean) {
@@ -34,5 +35,19 @@ export function useDescribeShop() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.myShop() })
       await queryClient.invalidateQueries({ queryKey: queryKeys.shopFront(shop.sellerId) })
     },
+  })
+}
+
+/** Where the caller's payouts go (specs/106) - null until they give one. */
+export function useMyPayoutAccount() {
+  return useQuery({ queryKey: queryKeys.myPayoutAccount(), queryFn: () => Seller.payoutAccount() })
+}
+
+export function useSetPayoutAccount() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (input: PayoutAccountInput) => Seller.setPayoutAccount(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.myPayoutAccount() }),
   })
 }
