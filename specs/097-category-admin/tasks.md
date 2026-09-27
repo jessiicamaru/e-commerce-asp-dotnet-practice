@@ -29,4 +29,4 @@ command existed.
 - [X] T008 [P] Bruno `category/` seq 3, 6, 7
 - [X] T009 Rebuilt Catalog and the storefront; Bruno through the gateway
 - [X] T010 Docs: `docs/features/catalog.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T011 Merged as #204, closing #195
+- [X] T011 Merged as #204 (2026-09-27), closing #195

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `097-category-admin` | **Created**: 2026-09-27 | **Issue**: #195
 
-**Status**: Draft
+**Status**: Merged (#204, 2026-09-27)
 
 **Input**: Issue #195 - "administrators have no screen to manage categories".
 
