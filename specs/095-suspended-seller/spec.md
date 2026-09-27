@@ -2,7 +2,7 @@
 
 **Feature Branch**: `095-suspended-seller` | **Created**: 2026-09-27 | **Issue**: #193
 
-**Status**: Draft
+**Status**: Merged (#202, 2026-09-27)
 
 **Input**: Issue #193 - "a banned seller's products stay on sale".
 
