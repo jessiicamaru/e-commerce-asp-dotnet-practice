@@ -42,7 +42,23 @@ Gaps a shopper, a seller or the shop's staff would notice. Found on 2026-09-27 i
 (administrator, moderator, seller) and delivery. Delivery assumes **one carrier** - decided with the user; a courier
 role and several carriers are left out.
 
-None open: #193-#200 are done (see below).
+The first audit's #193-#200 are done (see below). A second audit on 2026-09-27, checked against the code, found these - in the order they will be worked:
+
+| Issue | Title |
+| :-- | :-- |
+| [#210](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/210) | A missing commission rate fails the first checkout, not startup |
+| [#211](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/211) | A seller cannot cancel the part of an order they cannot fulfil |
+| [#212](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/212) | A mistyped tracking reference can never be corrected |
+| [#213](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/213) | Sellers have nowhere to receive their payouts |
+| [#214](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/214) | A shop can be closed only by banning its seller, and a seller cannot pause it |
+| [#215](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/215) | A seller has no list of the returns of their parcels |
+| [#216](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/216) | The catalogue cannot be filtered by price or by what is in stock |
+| [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217) | A person cannot delete their account or download their data |
+| [#218](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/218) | Staff accounts sign in with a password alone |
+| [#219](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/219) | A voucher cannot be edited |
+| [#220](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/220) | A shopper cannot see which vouchers they could use |
+| [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound |
+| [#222](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/222) | Nobody is told when an email fails for good |
 
 
 ## Priority 3 - technical debt
