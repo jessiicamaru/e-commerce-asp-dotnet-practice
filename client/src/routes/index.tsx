@@ -42,6 +42,7 @@ import { AdminModerationPage } from '@/pages/admin-moderation'
 import { AdminProductsPage } from '@/pages/admin-products'
 import { AdminReviewsPage } from '@/pages/admin-reviews'
 import { AdminQuestionsPage } from '@/pages/admin-questions'
+import { AdminReportsPage } from '@/pages/admin-reports'
 import { LoadingRows } from '@/components/shared/query-state'
 import { AdminOverviewPage } from '@/pages/admin-overview'
 import { NotificationsPage } from '@/pages/notifications'
@@ -220,6 +221,7 @@ export function AppRoutes() {
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="reviews" element={<AdminReviewsPage />} />
             <Route path="questions" element={<AdminQuestionsPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
             <Route
               path="emails"
               element={

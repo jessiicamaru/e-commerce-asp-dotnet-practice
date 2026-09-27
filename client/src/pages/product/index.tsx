@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
 import { SaveButton } from '@/components/product/save-button'
+import { ReportButton } from '@/components/report/report-button'
 import { StockBadge } from '@/components/product/stock-badge'
 import { ProductImage } from '@/components/product/product-image'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
@@ -69,7 +70,10 @@ export function ProductPage() {
           <div>
             <div className="flex items-start justify-between gap-3">
               <h1 className="text-3xl font-bold tracking-tight text-balance">{product.name}</h1>
-              <SaveButton productId={product.id} className="shrink-0" />
+              <div className="flex shrink-0 items-center gap-1">
+                <SaveButton productId={product.id} className="shrink-0" />
+                <ReportButton targetType="Product" targetId={product.id} />
+              </div>
             </div>
             <p className="text-muted-foreground mt-1 text-sm">
               <Trans

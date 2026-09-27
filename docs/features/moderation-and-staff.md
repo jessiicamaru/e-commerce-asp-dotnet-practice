@@ -156,6 +156,15 @@ has run out is shown as no lock. The row menu offers each person only the action
 and never an action on one's own account or on an administrator's; the server refuses the same things
 on its own.
 
+**Shoppers report what should not be on the shop** (specs/101, #199). Anybody signed in reports a
+visible review, question or product that is not their own, with a reason from a short list (`POST
+/api/reports`); one open report per person per thing is a partial unique index. `/admin/reports` (Staff,
+`GET /api/reports`) shows one card per thing, most reported first. **Acting is the existing action** -
+hiding the review, question or answer, or taking the product down, from any page - and it closes the thing's
+open reports in its own transaction, telling each reporter (`ReportActioned`); "No action" dismisses them
+(`ReportDismissed`, audited as `ReportsDismissed`). Nothing is hidden by the count alone: a person decides.
+The notices never say who decided.
+
 **A decision is made with the person's history in view** (specs/100, #198). The lock and ban dialog
 lists the latest five decisions staff made about the person - what, when, by whom and the reason - and
 "History…" on the row menu opens all of them, paged. They come from `GET /api/audit/people/{userId}`
@@ -246,6 +255,9 @@ Full list in [api.md](../reference/api.md).
 | `GET` | `/api/reviews`, `POST /api/reviews/{id}/hide`, `/restore` | Admin, Moderator |
 | `GET` | `/api/audit/mine` | Admin, Moderator |
 | `GET` | `/api/audit/people/{userId}` | Admin, Moderator - that person's Moderation entries, with reasons, no snapshots |
+| `POST` | `/api/reports` | signed in - report a review, question or product |
+| `GET` | `/api/reports` | Admin, Moderator - the open reports, one row per thing |
+| `POST` | `/api/reports/{targetType}/{targetId}/dismiss` | Admin, Moderator - no action; closes and tells the reporters |
 | `GET` | `/api/audit`, `/api/audit/summary`, `/api/audit/{id}` | Admin |
 | `GET` | `/api/orders/fulfilment`, `/api/orders/fulfilment/{id}` | Admin |
 | `POST` | `/api/orders/payouts` | Admin |
@@ -269,6 +281,8 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | `pages/admin-shops` | Shop applications, a tab per status. |
 | `pages/admin-products` | Sellers' products waiting, approved or rejected; approve, reject with a reason, take down. |
 | `pages/admin-reviews` | Reviews, visible or hidden; hide with a reason, restore. |
+| `pages/admin-reports` (`/admin/reports`) | What shoppers reported, most reported first: hide the review or question, take the product down, or no action (specs/101). |
+| `components/report/report-button` | "Report" on reviews, questions and the product page, for anybody signed in. |
 | `pages/admin-orders`, `pages/admin-order`, `pages/admin-payouts` | Administrator: fulfilment and payouts ([fulfilment](fulfilment-and-delivery.md), [marketplace](marketplace.md)). |
 | `pages/admin-audit` | Administrator: the audit log ([audit and notifications](audit-and-notifications.md)). |
 | `pages/admin-overview` | Administrator: people, queues, revenue per currency, top products and buyers - see [admin insights](admin-insights.md). |
@@ -284,6 +298,7 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | `Ecommerce.Identity.Tests/ForbiddenProblemTests` | A 403's facts reach the response body in Production, a date as ISO 8601 UTC, and never hide `traceId`. |
 | `Ecommerce.Catalog.Tests/ProductReviewTests`, `ReviewTests` | Product review moves and review hiding ([catalog](catalog.md), [ratings and reviews](ratings-and-reviews.md)). |
 | `Ecommerce.Activity.Tests/AuditLogTests` | Filtering by actor and category, which `/api/audit/mine` relies on. |
+| `Ecommerce.Catalog.Tests/ContentReportTests` | A report reaches the queue; hiding closes it and tells each reporter; one open report per person (five at once are one); dismissing closes, tells and audits; only visible content, never one's own; a take-down or a hidden answer closes their reports; the queue orders by count (specs/101). |
 | `Ecommerce.Activity.Tests/PersonHistoryTests` | A person's decisions newest first with their reasons, nobody else's, and nothing outside Moderation (specs/100). |
 | client `pages/admin-users` (specs/050) | "Unlock" is disabled for yourself, for a moderator seen by a moderator, and for a lock beyond a moderator's reach. |
 | client `pages/sign-in` | A locked person is told why and until when in their language and time; a banned one why; a wrong password only "wrong"; another 403 its sentence; no sentence the generic one. |
@@ -317,3 +332,4 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | [088-relock-limits](../../specs/088-relock-limits/) | [#187](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/187) | `ModerationRules.EnsureMayShorten`: locking again cannot shorten a lock beyond the caller's reach (#180). |
 | [065-revoke-access-tokens](../../specs/065-revoke-access-tokens/) | [#148](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/148) | A lock, a ban or a role revoked stops the access tokens already issued within seconds, in every service (#112). |
 | [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | A person's moderation history in the lock dialog and from the users page; `AboutUserId` on audit entries; `GET /api/audit/people/{userId}` (#198). |
+| [101-content-reports](../../specs/101-content-reports/) | [#208](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/208) | Shoppers report reviews, questions and products; `content_reports`; `/admin/reports`; hide and take-down close the reports (#199). |

@@ -82,6 +82,14 @@ specs/100-moderation-history/
 As in Technical Context. Docs: `docs/features/moderation-and-staff.md`, `docs/features/audit-and-notifications.md`,
 CLAUDE.md, the backlog and the timeline, and a run of `generate_reference.py`.
 
+## Process note
+
+⚠️ **This record was written after the implementation, not before it.** That breaks CLAUDE.md's rule that the full
+set is written before the code. The branch was built while earlier PRs were waiting on CI, and the record was put
+together once the code and tests existed. It describes what was built, and the Constitution Check was done on that
+code rather than on the design ahead of it. It is recorded here so that the record does not pass as spec-first.
+From specs/102 onward, the record is its own first commit on the branch.
+
 ## Complexity Tracking
 
 > No Constitution Check violations to justify. Table intentionally empty.

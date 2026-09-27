@@ -68,6 +68,31 @@
     "reserved_one": "{{count}} held in checkouts",
     "reserved_other": "{{count}} held in checkouts"
   },
+  "report": {
+    "action": "Report",
+    "open": {
+      "Review": "Report this review",
+      "Question": "Report this question",
+      "Product": "Report this product"
+    },
+    "title": {
+      "Review": "Report this review",
+      "Question": "Report this question",
+      "Product": "Report this product"
+    },
+    "body": "Tell us what is wrong. Staff look at every report; you will be told how it ended.",
+    "reason": {
+      "Spam": "Spam or advertising",
+      "Offensive": "Offensive or abusive",
+      "Misleading": "Misleading or false",
+      "Counterfeit": "Counterfeit or not as described",
+      "Other": "Something else"
+    },
+    "details": "Anything staff should know (optional)",
+    "send": "Send report",
+    "sent": "Thank you - staff will look at it.",
+    "failed": "Could not send the report."
+  },
   "reviews": {
     "title": "Reviews",
     "average": "Rated {{average}} out of 5",

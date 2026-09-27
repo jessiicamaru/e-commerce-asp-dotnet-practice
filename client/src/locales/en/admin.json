@@ -14,6 +14,7 @@
     "returns": "Returns",
     "vouchers": "Vouchers",
     "questions": "Questions",
+    "reports": "Reports",
     "emails": "Emails",
     "emailDelivery": "Email delivery",
     "notifications": "Notifications",
@@ -163,6 +164,39 @@
       "QuestionRestored": "Question shown again",
       "AnswerHidden": "Answer hidden",
       "AnswerRestored": "Answer shown again"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "What shoppers reported, most reported first. Act on it, or leave it as it is - either way every reporter is told how it ended.",
+    "loadFailed": "Could not load the reports.",
+    "none": "Nothing is waiting - no open reports.",
+    "target": {
+      "Review": "Review",
+      "Question": "Question",
+      "Product": "Product"
+    },
+    "count_one": "{{count}} report",
+    "count_other": "{{count}} reports",
+    "latest": "latest {{when}}",
+    "on": "on “{{product}}”",
+    "act": {
+      "Review": "Hide review",
+      "Question": "Hide question",
+      "Product": "Take product down"
+    },
+    "actBody": "It leaves the shop, its author is told why, and everyone who reported it is told it was dealt with.",
+    "reason": "Reason",
+    "acted": "Done - the reporters are told.",
+    "dismiss": "No action",
+    "dismissed": "Reports dismissed - the reporters are told.",
+    "reasons": "Reasons given",
+    "reasonName": {
+      "Spam": "Spam",
+      "Offensive": "Offensive",
+      "Misleading": "Misleading",
+      "Counterfeit": "Counterfeit",
+      "Other": "Other"
     }
   },
   "users": {

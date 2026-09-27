@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AnswerForm } from '@/components/question/answer-form'
 import { QuestionItem } from '@/components/question/question-item'
+import { ReportButton } from '@/components/report/report-button'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
@@ -60,6 +61,9 @@ export function ProductQuestions({ product }: { product: Product }) {
               {questions.data.items.map((question) => (
                 <QuestionItem key={question.id} question={question} answerLabel={answerLabel}>
                   {mayAnswer && <AnswerForm question={question} />}
+                  <div className="flex justify-end">
+                    <ReportButton targetType="Question" targetId={question.id} />
+                  </div>
                 </QuestionItem>
               ))}
             </ul>

@@ -1,0 +1,28 @@
+info:
+  name: the queue no longer holds it
+  type: http
+  seq: 19
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/reports?pageSize=100"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("closed with the hide", function() {
+          expect(res.body.items.map(function(i) { return i.targetId; })).to.not.include(bru.getVar("reviewId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

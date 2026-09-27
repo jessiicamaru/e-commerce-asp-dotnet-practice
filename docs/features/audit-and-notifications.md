@@ -182,6 +182,7 @@ Found by searching every `RecordAsync(` call in `server/src`. **Actor** is who t
 | `ProductApproved` / `ProductRejected` / `ProductTakenDown` | Moderation | Product | Catalog | Staff decide a product (inside the guarded move). | caller |
 | `ReviewPosted` / `ReviewEdited` | Catalog | Review | Catalog | A customer writes or rewrites their review. | caller |
 | `ReviewHidden` / `ReviewRestored` | Moderation | Review | Catalog | Staff hide or restore a review. | caller |
+| `ReportsDismissed` | Moderation | Review, Question or Product | Catalog | Staff dismiss what shoppers reported (specs/101). | caller |
 | `StockSet` | Catalog | Variant | Inventory | `PUT /api/stock/{variantId}`. | caller |
 | `ReservationsExpired` | System | Reservation | Inventory | The expiry sweeper returns holds to the shelf. | system |
 | `StockReturned` | Order | Order | Inventory | A cancelled order's units are put back. | system |
@@ -237,6 +238,8 @@ would roll back the payout or the decision it announces.
 | `AccountLocked` | the person | `until` (ISO 8601 UTC, worded in the reader's time), `reason` | none | Staff lock the account (Identity, specs/059). Unreadable while locked - the reason is shown at sign-in - and afterwards their record of why. |
 | `AccountBanned` | the person | `reason` | none | An administrator bans the account (Identity, specs/059). |
 | `ReviewHidden` | the review's author | `product`, `reason` | `/products/{id}` | A moderator hides the review (Catalog, specs/059). |
+| `ReportActioned` | each person who reported it | `product` | `/products/{id}` | Staff hide the reported review, question or answer, or take the product down (Catalog, specs/101). Never who decided. |
+| `ReportDismissed` | each person who reported it | `product` | `/products/{id}` | Staff look and leave it as it is (Catalog, specs/101). |
 
 The shop's own goods have nobody to tell: no `NewSale`, `SaleCancelled`, `ParcelReceived` or product
 notice goes out for them.
@@ -392,3 +395,4 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | Review actions; `NewReview`. |
 | [048-notification-wording](../../specs/048-notification-wording/) | [#129](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/129) | `notification-kinds.json` and `NotificationContract`: each kind's data keys declared once and tested on both sides; the five kinds that showed placeholders read as sentences (#119). |
 | [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | `AuditEntryRecorded.AboutUserId`, filled from a User subject and named by content decisions; `audit_entries.AboutUserId`, backfilled; `GET /api/audit/people/{userId}` (#198). |
+| [101-content-reports](../../specs/101-content-reports/) | [#208](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/208) | `ReportActioned`, `ReportDismissed`; `ReportsDismissed` (#199). |
