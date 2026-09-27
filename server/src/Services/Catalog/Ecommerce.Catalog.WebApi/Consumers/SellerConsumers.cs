@@ -36,6 +36,17 @@ public class SellerSuspensionChangedConsumer(ISender mediator) : IConsumer<Selle
             context.CancellationToken);
 }
 
+/// <summary>A shop described itself (#197, specs/099): kept for its page. Idempotent by the timestamp guard.</summary>
+public class SellerDescribedConsumer(ISender mediator) : IConsumer<SellerDescribedEvent>
+{
+    private readonly ISender _mediator = mediator;
+
+    public async Task Consume(ConsumeContext<SellerDescribedEvent> context) =>
+        await _mediator.Send(
+            new RecordShopDescriptionCommand(context.Message.SellerId, context.Message.Description, context.Message.DescribedAt),
+            context.CancellationToken);
+}
+
 /// <summary>
 /// A shop changed its name. <b>No product is touched</b> - that is the point of the read model.
 /// </summary>

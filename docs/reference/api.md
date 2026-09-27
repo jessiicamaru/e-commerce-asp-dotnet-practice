@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `c7ba543`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `0f6bc9b`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**164 endpoints** across 7 services.
+**166 endpoints** across 7 services.
 
-## Identity (43)
+## Identity (44)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -38,6 +38,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/emails` | Admin | A page of the emails in one state (Failed by default), newest first. Never their data. |
 | `POST` | `/api/emails/{id}/retry` | Admin | Puts a failed email back in the queue. 409 for one that is not failed, or that carries an expiring link. |
 | `GET` | `/api/sellers/me` | Seller |  |
+| `PUT` | `/api/sellers/me/description` | Seller | The caller's shop described for its page, or cleared (specs/099). At most 500 characters. |
 | `PUT` | `/api/sellers/me/shop-name` | Seller | Renames the caller's shop. No product is written - the catalogue keeps the name as a read model, so two hundred listings change because one row did. |
 | `GET` | `/api/shop-applications` | Admin, Moderator |  |
 | `POST` | `/api/shop-applications` | Customer |  |
@@ -54,7 +55,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (53)
+## Catalog (54)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -111,6 +112,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/reviews` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/hide` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/restore` | Admin, Moderator |  |
+| `GET` | `/api/shops/{sellerId}` | anyone |  |
 
 ## Cart (5)
 

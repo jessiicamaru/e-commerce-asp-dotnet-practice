@@ -132,3 +132,22 @@ describe('ProductPage views', () => {
     expect(view).toHaveBeenCalledWith('p1')
   })
 })
+
+describe('ProductPage seller', () => {
+  /** A shop has a page (specs/099): the credit under the name goes to it. */
+  it('links a seller’s name to their shop’s page', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue({ ...aProduct([aVariant({})]), sellerId: 's1', sellerName: 'Mai Lens' })
+    renderPage()
+
+    expect(await screen.findByRole('link', { name: 'Mai Lens' })).toHaveAttribute('href', '/shops/s1')
+  })
+
+  /** The shop's own goods have no seller, so no page to go to - the credit is text. */
+  it('credits the shop itself without a link', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue(aProduct([aVariant({})]))
+    renderPage()
+
+    expect(await screen.findByText(/Sold by/)).toBeInTheDocument()
+    expect(screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/shops/'))).toEqual([])
+  })
+})

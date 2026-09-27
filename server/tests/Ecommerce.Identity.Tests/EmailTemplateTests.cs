@@ -233,7 +233,9 @@ public class EmailTemplateTests(IdentityTestFixture fixture) : IAsyncLifetime
         await As(Guid.Empty, new QueueEmailCommand(new EmailRequested(Guid.CreateVersion7(), recipient, EmailTemplate.OrderPaid,
             new() { ["orderId"] = "0199aa11-2233-7bbc-8ddd-eeeeffff0000", ["total"] = "22462000", ["currency"] = "VND" },
             language, DateTime.UtcNow)));
-        await As(Guid.Empty, new DispatchEmailsCommand(DateTime.UtcNow));
+        // Until nothing is left - one pass sends only the oldest 50, and other tests leave emails pending.
+        var now = DateTime.UtcNow;
+        while (await As(Guid.Empty, new DispatchEmailsCommand(now)) > 0) { }
     }
 
     private async Task<EmailTemplateResponse> CurrentAsync(string template, string language) =>

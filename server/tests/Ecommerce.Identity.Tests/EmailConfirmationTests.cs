@@ -203,7 +203,9 @@ public class EmailConfirmationTests(IdentityTestFixture fixture)
         Assert.DoesNotContain(harness.Published.Select<AuditEntryRecorded>(),
             e => (e.Context.Message.Summary + e.Context.Message.After).Contains(token));
 
-        await SendAsync(Guid.Empty, new DispatchEmailsCommand(DateTime.UtcNow));
+        // Until nothing is left - one pass sends only the oldest 50, and other tests leave emails pending.
+        var now = DateTime.UtcNow;
+        while (await SendAsync(Guid.Empty, new DispatchEmailsCommand(now)) > 0) { }
         var sent = Assert.Single(_fixture.Mail.SentTo(email), m => m.Subject == "Xác nhận địa chỉ email của bạn");
         Assert.Contains($"http://shop.test/confirm-email?token={Uri.EscapeDataString(token)}", sent.Body);
         var row = await WithDbAsync(db => db.OutgoingEmails.AsNoTracking().SingleAsync(e => e.RecipientId == id && e.Template == "EmailConfirmation"));

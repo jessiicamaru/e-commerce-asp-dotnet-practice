@@ -17,4 +17,10 @@ export class Seller {
     const { data } = await http.put<Shop>('/sellers/me/shop-name', { shopName })
     return data
   }
+
+  /** The shop's description (specs/099); null clears it. */
+  static async describe(description: string | null): Promise<Shop> {
+    const { data } = await http.put<Shop>('/sellers/me/description', { description })
+    return data
+  }
 }

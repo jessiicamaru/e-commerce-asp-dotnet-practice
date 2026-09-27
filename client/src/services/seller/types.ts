@@ -2,4 +2,6 @@
 export interface Shop {
   sellerId: string
   shopName: string
+  /** The seller's own words for their shop's page (specs/099); null when none. */
+  description?: string | null
 }

@@ -11,6 +11,7 @@ import {
   TicketPercentIcon,
   WalletIcon,
 } from 'lucide-react'
+import { DescribeShopDialog } from '@/components/seller/describe-shop-dialog'
 import { RenameShopDialog } from '@/components/seller/rename-shop-dialog'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/context/auth/useAuth'
@@ -59,7 +60,17 @@ export function SellerLayout() {
               <p className="truncate font-semibold">{shop.data?.shopName ?? '…'}</p>
             </div>
           </div>
-          {shop.data && <RenameShopDialog current={shop.data.shopName} />}
+          {shop.data && (
+            <div className="flex flex-wrap gap-2">
+              <RenameShopDialog current={shop.data.shopName} />
+              <DescribeShopDialog current={shop.data.description ?? ''} />
+            </div>
+          )}
+          {shop.data && (
+            <Link to={`/shops/${shop.data.sellerId}`} className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline">
+              {t('viewShop')}
+            </Link>
+          )}
         </div>
 
         {/* Four equal columns on a phone, icon over label, so every destination is on screen - a row

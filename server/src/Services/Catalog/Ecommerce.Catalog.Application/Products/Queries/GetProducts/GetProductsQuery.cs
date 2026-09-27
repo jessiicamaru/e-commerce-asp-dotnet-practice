@@ -9,5 +9,7 @@ public record GetProductsQuery(
     int PageSize = 12,
     Guid? CategoryId = null,
     string? SearchTerm = null,
-    string? SortBy = null
+    string? SortBy = null,
+    /// <summary>One shop's products (#197, specs/099) - on the shelf only, like the rest of the listing.</summary>
+    Guid? SellerId = null
 ) : IRequest<PaginatedList<ProductResponse>>;

@@ -28,6 +28,16 @@ public record SellerRegisteredEvent(
 /// seller renaming their shop should not have to re-save every listing. An order is different and
 /// freezes what it bought, because an order is a record of a past event rather than a view of now.
 /// </remarks>
+/// <summary>
+/// A shop described itself, or cleared its description (#197, specs/099). Catalog keeps it beside the name for the shop's
+/// page, so an anonymous shop page costs no call to Identity.
+/// </summary>
+public record SellerDescribedEvent(
+    Guid SellerId,
+    string? Description,
+    DateTime DescribedAt
+);
+
 public record SellerRenamedEvent(
     Guid SellerId,
     string ShopName,

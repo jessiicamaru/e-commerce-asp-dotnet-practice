@@ -415,6 +415,12 @@ availability false → true, and only then is each saver sent `SavedBackInStock`
 `SaveAndRecomputeRollupAsync` (save, recompute, notices - one transaction), and approval tells when the product is in
 stock. ⚠️ A new caller of the recompute uses that method, or its flip is lost again. The words say "available again".
 
+**A shop has a page** (specs/099, #197): `/shops/:sellerId` - the name, the seller's description (`PUT
+/api/sellers/me/description`, not moderated, like the name) and the products on the shelf, which are the listing's
+`?sellerId=` rather than a second query. Catalog serves `GET /api/shops/{id}` from its `sellers` read model
+(`SellerDescribedEvent`, its own `DescriptionObservedAt` guard) - 404 for unknown, unnamed or suspended. The shop's own
+goods have no page.
+
 **A shopper asks about a product and its seller answers** (specs/076, #110): `product_questions` in Catalog, one
 answer per question. ⚠️ **Only the product's seller answers** - staff for the shop's own - and anybody else, **an
 administrator on a seller's product included**, gets the one `Question not found.` 404: an answer is published as

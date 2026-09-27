@@ -489,6 +489,13 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("DescriptionObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("ObservedAt")
                         .HasColumnType("timestamp with time zone");
 

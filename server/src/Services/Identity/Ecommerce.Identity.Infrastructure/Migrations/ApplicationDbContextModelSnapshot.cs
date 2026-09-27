@@ -318,6 +318,10 @@ namespace Ecommerce.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("ShopName")
                         .IsRequired()
                         .HasMaxLength(100)

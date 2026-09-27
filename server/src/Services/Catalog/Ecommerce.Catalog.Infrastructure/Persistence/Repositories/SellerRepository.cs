@@ -87,6 +87,23 @@ public class SellerRepository(CatalogDbContext context) : ISellerRepository
         });
     }
 
+    public async Task<bool> TryRecordDescriptionAsync(
+        Guid sellerId, string? description, DateTime observedAt, CancellationToken cancellationToken = default)
+    {
+        // The same guarded upsert as the suspension (specs/095): newer wins, a redelivery changes nothing.
+        var noName = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+        var written = await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO sellers ("SellerId", "ShopName", "ObservedAt", "Description", "DescriptionObservedAt")
+            VALUES ({sellerId}, '', {noName}, {description}, {observedAt})
+            ON CONFLICT ("SellerId") DO UPDATE SET "Description" = EXCLUDED."Description", "DescriptionObservedAt" = EXCLUDED."DescriptionObservedAt"
+             WHERE sellers."DescriptionObservedAt" IS NULL OR sellers."DescriptionObservedAt" < EXCLUDED."DescriptionObservedAt"
+            """, cancellationToken);
+        return written > 0;
+    }
+
+    public Task<Seller?> GetAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
+        _context.Sellers.AsNoTracking().FirstOrDefaultAsync(s => s.SellerId == sellerId, cancellationToken);
+
     public async Task<Dictionary<Guid, string>> GetNamesAsync(
         IEnumerable<Guid> sellerIds,
         CancellationToken cancellationToken = default)

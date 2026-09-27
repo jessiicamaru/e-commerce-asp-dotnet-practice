@@ -105,7 +105,7 @@ All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#c
 | [`variant_option_translations`](../reference/data-model.md#variant_option_translations) | Option name and value per language. |
 | [`categories`](../reference/data-model.md#categories) | Name, slug (fixed once created), description, optional parent. `IsActive` is dead data - every row `false`, nothing reads it (specs/097 D3). |
 | [`category_translations`](../reference/data-model.md#category_translations) | Category name and description per language. |
-| [`sellers`](../reference/data-model.md#sellers) | Read model of shop names, fed by Identity's events. |
+| [`sellers`](../reference/data-model.md#sellers) | Read model of shop names, descriptions (specs/099) and suspension, fed by Identity's events. |
 | [`product_views`](../reference/data-model.md#product_views) | Views per product per shop day (UTC before specs/082). |
 | [`product_reviews`](../reference/data-model.md#product_reviews), [`review_eligibility`](../reference/data-model.md#review_eligibility) | See [ratings and reviews](ratings-and-reviews.md). |
 
@@ -146,7 +146,8 @@ Through the gateway (`/api/products/**`, `/api/categories/**`). Full list: [API 
 
 | Method | Path | Who |
 | :-- | :-- | :-- |
-| `GET` | `/api/products` | anyone (approved only; `pageNumber`, `pageSize`, `categoryId`, `searchTerm`, `sortBy` = `name_desc` / `price_asc` / `price_desc`) |
+| `GET` | `/api/products` | anyone (on the shelf only; `pageNumber`, `pageSize`, `categoryId`, `searchTerm`, `sortBy` = `name_desc` / `price_asc` / `price_desc`, `sellerId` - one shop's, specs/099) |
+| `GET` | `/api/shops/{sellerId}` | anyone - a shop's name, description and count on the shelf; 404 unknown, unnamed or suspended (specs/099, see [marketplace](marketplace.md)) |
 | `GET` | `/api/products/{id}` | anyone (404 unless approved, or the caller is its seller or staff) |
 | `GET` | `/api/products/mine` | Seller |
 | `POST` | `/api/products` | Seller, Admin |
@@ -187,6 +188,7 @@ See [messages reference](../reference/messages.md).
 | `ProductDeletedEvent` | published | Carries every variant id, so Inventory drops their stock rows and releases their held reservations (specs/090). |
 | `StockAvailabilityChangedEvent` | consumed (`StockAvailabilityChangedConsumer`) | Records per-variant availability. From an Inventory that sends no `VariantId`, the product id is used. |
 | `SellerRegisteredEvent`, `SellerRenamedEvent` | consumed (`SellerRegisteredConsumer`, `SellerRenamedConsumer`) | Keeps `sellers.ShopName`. A rename writes no product. |
+| `SellerDescribedEvent` | consumed (`SellerDescribedConsumer`) | Keeps `sellers.Description` behind `DescriptionObservedAt`, for the shop's page (specs/099). |
 | `AuditEntryRecorded`, `UserNotificationRequested` | published | Through `IAuditTrail` and `INotifier`: listing, editing, deleting and every review decision. |
 
 ## Storefront

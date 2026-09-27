@@ -6,6 +6,11 @@
   "rename": "Đổi tên",
   "renamed": "Gian hàng của bạn giờ tên là “{{name}}”.",
   "renameHint": "Đổi ở đây là đổi tên dưới tất cả sản phẩm bạn đang bán, cùng một lúc.",
+  "describe": "Mô tả",
+  "description": "Giới thiệu gian hàng",
+  "described": "Đã lưu mô tả gian hàng.",
+  "describeHint": "Vài dòng người mua đọc trên trang gian hàng của bạn. Để trống nếu không muốn hiển thị.",
+  "viewShop": "Trang gian hàng",
   "empty": {
     "title": "Bạn chưa đăng sản phẩm nào.",
     "body": "Sản phẩm bạn đăng ở đây xuất hiện ngay trong danh mục, kèm tên gian hàng của bạn bên dưới.",

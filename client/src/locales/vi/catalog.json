@@ -16,6 +16,12 @@
   "resultCountFor_one": "{{count}} sản phẩm cho “{{term}}”",
   "resultCountFor_other": "{{count}} sản phẩm cho “{{term}}”",
   "loadFailed": "Không tải được danh mục sản phẩm. Backend đã chạy chưa?",
+  "shop": {
+    "notFound": "Gian hàng này hiện không mở cửa.",
+    "onSale_one": "{{count}} sản phẩm đang bán",
+    "onSale_other": "{{count}} sản phẩm đang bán",
+    "productsFailed": "Không tải được sản phẩm của gian hàng này."
+  },
   "product": {
     "back": "← Về cửa hàng",
     "notFound": "Sản phẩm này không tồn tại.",
@@ -36,6 +42,7 @@
     "signInToAdd": "<0>Đăng nhập</0> để thêm sản phẩm này vào giỏ.",
     "viewCart": "Xem giỏ hàng",
     "soldBy": "Bán bởi {{seller}}",
+    "soldByShop": "Bán bởi <shop>{{seller}}</shop>",
     "theShop": "Cửa hàng"
   },
   "pager": {
