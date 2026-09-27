@@ -16,5 +16,8 @@ public class SellerConfiguration : IEntityTypeConfiguration<Seller>
         builder.Property(s => s.ObservedAt).IsRequired();
         builder.Property(s => s.Suspended).IsRequired().HasDefaultValue(false);
         builder.Property(s => s.Description).HasMaxLength(500);
+        builder.Property(s => s.ClosedReason).HasMaxLength(500);
+        // The staff's list of closed shops, newest first.
+        builder.HasIndex(s => s.ClosedAt).HasFilter("\"ClosedAt\" IS NOT NULL");
     }
 }

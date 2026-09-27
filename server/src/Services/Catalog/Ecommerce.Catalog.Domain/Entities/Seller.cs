@@ -47,4 +47,24 @@ public class Seller
 
     /// <summary>When Identity said so; the description's own ordering guard.</summary>
     public DateTime? DescriptionObservedAt { get; set; }
+
+    /// <summary>
+    /// The seller paused their shop - away, not selling (#214, specs/107). Catalog's own state, not a copy: the shelf is
+    /// Catalog's, so it is decided here. Null when not paused.
+    /// </summary>
+    public DateTime? PausedAt { get; set; }
+
+    /// <summary>Staff closed the shop, without touching the account (#214, specs/107). Only staff reopen it.</summary>
+    public DateTime? ClosedAt { get; set; }
+
+    /// <summary>Why staff closed it - the seller reads this. Set with <see cref="ClosedAt"/>.</summary>
+    public string? ClosedReason { get; set; }
+
+    public Guid? ClosedBy { get; set; }
+
+    /// <summary>
+    /// The shop is on the shelf: not banned, not paused, not closed. ⚠️ Three independent reasons - lifting one never
+    /// reopens a shop another keeps closed. <c>SellerRepository.ApplyShopStateAsync</c> is this rule in SQL.
+    /// </summary>
+    public bool Open => !Suspended && PausedAt is null && ClosedAt is null;
 }

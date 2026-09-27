@@ -31,8 +31,23 @@ public interface ISellerRepository
     /// </summary>
     Task<bool> TryRecordDescriptionAsync(Guid sellerId, string? description, DateTime observedAt, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Pauses, resumes, closes or reopens a shop with one guarded <c>UPDATE</c> (#214, specs/107), recomputes its
+    /// products' shelf flag from every reason, runs <paramref name="stage"/> (audit, notices) and saves - one
+    /// transaction. False when the guard matched nothing; the caller reads the row to say why.
+    /// </summary>
+    Task<bool> TryMoveShopAsync(
+        Guid sellerId, ShopMove move, DateTime at, string? reason, Guid? by,
+        Func<CancellationToken, Task> stage, CancellationToken cancellationToken = default);
+
+    /// <summary>Shops staff closed, newest closure first (specs/107).</summary>
+    Task<(List<Seller> Items, int Total)> GetClosedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+
     Task<Seller?> GetAsync(Guid sellerId, CancellationToken cancellationToken = default);
 
     /// <summary>The names for these sellers, for building a page of products in one query.</summary>
     Task<Dictionary<Guid, string>> GetNamesAsync(IEnumerable<Guid> sellerIds, CancellationToken cancellationToken = default);
 }
+
+/// <summary>A change of a shop's state (specs/107): the seller's pause and resume, staff's close and reopen.</summary>
+public enum ShopMove { Pause, Resume, Close, Reopen }
