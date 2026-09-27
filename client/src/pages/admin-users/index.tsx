@@ -59,9 +59,12 @@ export function AdminUsersPage() {
     setParams(merged)
   }
 
+  // A banned seller's shop is closed too (specs/095) - said here, decided by the server.
   const statusOf = (a: Account) =>
     a.bannedAt ? (
-      <Badge variant="destructive">{t('users.status.banned')}</Badge>
+      <Badge variant="destructive">
+        {t(a.roles.includes('Seller') ? 'users.status.bannedShopClosed' : 'users.status.banned')}
+      </Badge>
     ) : a.lockedUntil ? (
       <Badge variant="secondary">{t('users.status.locked', { until: new Date(a.lockedUntil).toLocaleString(i18n.language) })}</Badge>
     ) : (

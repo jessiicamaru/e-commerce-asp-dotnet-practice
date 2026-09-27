@@ -182,6 +182,11 @@ public class ShopApplicationHandlers(
         if (!row.EmailConfirmed && application.Status == ShopApplicationStatus.Pending)
             throw new ConflictException("The applicant has not confirmed their email address yet.");
 
+        // A banned person is never given a shop Catalog would open (#193, specs/095).
+        if (application.Status == ShopApplicationStatus.Pending
+            && (await _users.GetByIdAsync(application.UserId, cancellationToken))?.BannedAt is not null)
+            throw new ConflictException("The applicant is banned.");
+
         var decided = await _applications.TryDecideAsync(application.Id, ShopApplicationStatus.Approved, null, CallerId(), now,
             async ct =>
             {

@@ -172,7 +172,8 @@
     "status": {
       "active": "Active",
       "locked": "Locked until {{until}}",
-      "banned": "Banned"
+      "banned": "Banned",
+      "bannedShopClosed": "Banned · shop closed"
     },
     "actions": "Actions for {{email}}",
     "grant": "Make moderator",

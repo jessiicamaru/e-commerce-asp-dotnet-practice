@@ -172,7 +172,8 @@
     "status": {
       "active": "Đang hoạt động",
       "locked": "Bị khoá đến {{until}}",
-      "banned": "Bị cấm"
+      "banned": "Bị cấm",
+      "bannedShopClosed": "Bị cấm · cửa hàng đã đóng"
     },
     "actions": "Thao tác với {{email}}",
     "grant": "Cấp quyền kiểm duyệt",

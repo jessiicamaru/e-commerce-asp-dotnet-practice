@@ -2,7 +2,7 @@
 
 **Feature Branch**: `094-untested-promises` | **Created**: 2026-09-27 | **Issue**: #186
 
-**Status**: Draft
+**Status**: Merged (#201, 2026-09-27)
 
 **Input**: Issue #186 - "behaviour that is fixed or promised but not held by a test".
 

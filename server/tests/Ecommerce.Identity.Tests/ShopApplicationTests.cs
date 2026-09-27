@@ -2,6 +2,7 @@ using Ecommerce.Application.Auth.Commands.Login;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Commands.RegisterSeller;
 using Ecommerce.Application.ShopApplications;
+using Ecommerce.Application.Users;
 using Ecommerce.Contracts.Activity;
 using Ecommerce.Contracts.Identity;
 using Ecommerce.Domain.Constants;
@@ -96,6 +97,21 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
 
         Assert.Equal(1, attempts.Count(ok => ok));
         Assert.Single(await SendAsync(customer.Id, new GetMyShopApplicationsQuery()), a => a.Status == "Pending");
+    }
+
+    /// <summary>#193 (specs/095): a banned person is never given a shop Catalog would open.</summary>
+    [Fact]
+    public async Task A_banned_applicant_is_not_given_a_shop()
+    {
+        var registered = await SendAsync(Guid.Empty, new RegisterSellerCommand(AnEmail(), Password, "Mai", "Tran", "Mai Lens"));
+        await _fixture.ConfirmEmailAsync(registered.Id);
+        var id = (await SendAsync(registered.Id, new GetMyShopApplicationsQuery())).Single().Id;
+        await SendAsync(Guid.CreateVersion7(), new BanUserCommand(registered.Id, "Fraud"), RoleNames.Admin);
+
+        var (published, _) = await PublishedAsync(Moderator, new ApproveShopApplicationCommand(id), RoleNames.Moderator, expectFailure: true);
+
+        Assert.Empty(published.OfType<SellerRegisteredEvent>());
+        Assert.False(await HasShopAsync(registered.Id));
     }
 
     [Fact]

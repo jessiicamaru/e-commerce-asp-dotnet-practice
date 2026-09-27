@@ -18,6 +18,13 @@ public interface ISellerRepository
     /// </remarks>
     Task<bool> TryRecordAsync(Guid sellerId, string shopName, DateTime observedAt, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Records a seller's shop as closed or open if nothing newer is stored, and - only then - copies it onto every one of
+    /// the seller's products, in one transaction (#193, specs/095). A seller not yet known is created with an empty name
+    /// that the registration fills in. Returns whether anything changed.
+    /// </summary>
+    Task<bool> TryRecordSuspensionAsync(Guid sellerId, bool suspended, DateTime changedAt, CancellationToken cancellationToken = default);
+
     /// <summary>The names for these sellers, for building a page of products in one query.</summary>
     Task<Dictionary<Guid, string>> GetNamesAsync(IEnumerable<Guid> sellerIds, CancellationToken cancellationToken = default);
 }

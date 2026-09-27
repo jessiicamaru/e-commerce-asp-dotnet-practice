@@ -607,7 +607,10 @@ as any admin exists. Self-registration always grants `Customer`.
 `Ecommerce.Shared/Authentication` for `[Authorize(Roles = StaffRoles.Staff)]`. An administrator finds a
 person at `GET /api/users?search=` and grants or revokes **Moderator - the only role that can be
 granted**; Admin stays seeded and Seller comes from opening a shop. A moderator may **lock** an account
-for at most 30 days (an administrator for up to a year); only an administrator **bans** or lifts a ban.
+for at most 30 days (an administrator for up to a year); only an administrator **bans** or lifts a ban. ⚠️ **A ban
+closes a seller's shop** (specs/095, #193): Identity publishes `SellerSuspensionChangedEvent`, Catalog copies it onto
+the seller's products (`products.SellerSuspended`) and `OnShelf` answers no; a lock does not close a shop, and a
+banned applicant's shop is not approved (409). This read model decides, knowingly - seconds of lag, not a live call.
 Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
 depend on the target's row, so they live in `ModerationRules`, not in an attribute. **Unlocking obeys the
 same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody unlocks themselves, only an

@@ -338,6 +338,14 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | client `pages/open-shop`, `shop*`, `admin-shops`, `admin-payouts`, `components/seller/*`, `components/auth/require-role`, `components/layout/user-menu` | What each page sends and shows, and how a server refusal is shown. |
 | Bruno `seller/`, `security-checks/` | The round trip: register a seller, wait for review, approve, approving again is 409, sign in again as a seller, the shop name reaches the catalogue, stock, sales, balance, payouts; 401/403/404 cases. |
 
+**A banned seller's shop is closed** (specs/095, #193). Identity announces `SellerSuspensionChangedEvent(SellerId,
+Suspended, ChangedAt)` in the ban's transaction, and again when it is lifted. Catalog records it on `sellers`
+(`Suspended`, `SuspensionChangedAt` - the ordering guard) and copies it onto every product of the seller
+(`products.SellerSuspended`), so `Product.OnShelf` answers no everywhere: listing, lookup, images, reviews, questions,
+checkout. Reopening tells the savers of products back on sale. ⚠️ This read model **decides** - a few seconds' lag
+sells a banned seller's product a little longer, which staff can cancel (specs/039); asking Identity live would make
+every page depend on it. A lock does not close a shop. Paid orders of a suspended seller wait for staff to cancel them.
+
 ## Known limits
 
 - **One commission rate for everybody** (`Marketplace:CommissionRate`). There is no per-seller or
@@ -365,6 +373,7 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | Spec | PR | Added |
 | :-- | :-- | :-- |
 | [027-seller-accounts](../../specs/027-seller-accounts/) | [#64](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/64) | The `Seller` role, `register-seller`, `seller_profiles`, `products.SellerId`, `SellerOwnership`, Catalog's `sellers` read model, the rename, Identity's first outbox. |
+| [095-suspended-seller](../../specs/095-suspended-seller/) | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) | A ban closes a seller's shop: `SellerSuspensionChangedEvent`, `sellers.Suspended`, `products.SellerSuspended` (#193). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |
