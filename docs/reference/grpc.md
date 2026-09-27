@@ -1,6 +1,6 @@
 # gRPC
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `7fd7d05`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92c41c6`. Do not edit by hand - change the code and run the script again.
 
 The synchronous calls between services. Each runs over h2c on the serving service's second port - one plaintext port cannot carry HTTP/1.1 and HTTP/2 (see [service-to-service communication](../architecture/service-to-service-communication.md)). Every call is asked live: none of them is cached.
 
@@ -38,3 +38,11 @@ Served by **Catalog**, called by **Cart, Order**.
 | `DescribeProducts` | `DescribeProductsRequest` | `DescribeProductsResponse` |
 | `PriceVariants` | `PriceVariantsRequest` | `PriceVariantsResponse` |
 | `DescribeVariants` | `DescribeVariantsRequest` | `DescribeVariantsResponse` |
+
+## `PayoutAccounts` (payout_accounts.proto)
+
+Served by **Identity**, called by **Order**.
+
+| RPC | Request | Response |
+| :-- | :-- | :-- |
+| `GetPayoutAccount` | `GetPayoutAccountRequest` | `PayoutAccountReply` |

@@ -21,6 +21,7 @@ generated list of methods is [reference/grpc.md](../reference/grpc.md).
 | `CartReading` | Cart | Order | `GetMyCart` - empty request, the customer's token forwarded | feature 010 |
 | `AddressReading` | Identity | Order | `GetMyAddress` - an address id, the customer's token forwarded | feature 011 |
 | `CatalogOwnership` | Catalog | Inventory | `GetVariantOwners` - who a variant belongs to | specs/031 |
+| `PayoutAccounts` | Identity | Order | `GetPayoutAccount` - a seller id, the **administrator's** token forwarded | specs/106 |
 
 `CatalogPricing` also still serves `GetPrices` and `DescribeProducts`, the product-level methods from
 before variants existed. Nothing in the current code calls them; they stay so that an older Order or
@@ -344,6 +345,26 @@ about now. Both are right, and neither should be "made consistent" with the othe
   means nobody can see the product, so little is lost.
 
 Design and research in [specs/031-seller-stock](../../specs/031-seller-stock/).
+
+---
+
+## Specs/106: where a payout goes
+
+Recording a payout asks Identity for the seller's payout account, `PayoutAccounts.GetPayoutAccount` on the same
+gRPC port as `AddressReading`, with the recording administrator's token forwarded - the service is `Admin` only,
+so a customer's token forwarded by mistake is refused rather than answered.
+
+- **Asked live, frozen on the record.** The payout keeps the bank, the holder and the last four digits as they were
+  when it was recorded. A read model fed by events would have put bank details on the broker for every service to
+  hold; this edge carries them to one caller, once, and only the last four digits are stored outside Identity.
+- **Before the transaction.** The claim is one statement under its own transaction; the round trip happens first,
+  so no row lock waits on Identity.
+- **No answer is a 503, no account is a 409.** "Could not find out where to pay" must never be read as "pay
+  nowhere", and neither records anything.
+- **The cost, accepted**: Identity unreachable means no payout can be recorded - an administrator's action that can
+  wait, unlike a checkout.
+
+Design and research in [specs/106-payout-accounts](../../specs/106-payout-accounts/).
 
 ---
 

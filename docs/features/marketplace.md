@@ -182,14 +182,39 @@ WITH claimed AS (
        AND o."Currency" = @currency AND o."Status" = ANY (@earning)
  RETURNING s."GoodsTotal" - s."Commission" + s."ShippingShare" AS owed
 )
-INSERT INTO payouts ("Id", "SellerId", "Currency", "Amount", "PartCount", "RecordedBy", "CreatedAt")
-SELECT @payout, @seller, @currency, sum(owed), count(*), @admin, @now FROM claimed
+INSERT INTO payouts ("Id", "SellerId", "Currency", "Amount", "PartCount", "RecordedBy", "CreatedAt",
+                     "PaidToBank", "PaidToHolder", "PaidToAccountLast4")
+SELECT @payout, @seller, @currency, sum(owed), count(*), @admin, @now, @bank, @holder, @last4 FROM claimed
 HAVING count(*) > 0
 ```
 
 When the statement inserts nothing the handler answers 409 (nothing due). When it inserts a payout,
 the audit entry `PayoutRecorded` and the seller's `PayoutRecorded` notice are staged and saved in the
 same transaction.
+
+### Where a payout goes (specs/106)
+
+A seller gives **one payout account** - bank, holder, account number - on `/shop/payouts`
+(`PUT /api/sellers/me/payout-account`). It lives in **Identity** (`seller_payout_accounts`, one row per seller),
+beside the rest of what is known about the person, and every change:
+
+- emails the seller (`PayoutAccountChanged`, in the language they last used) with the bank and the **last four
+  digits** only - so a change they did not make is noticed;
+- is audited (`PayoutAccountSet`), with the number **masked by hand** - `AuditSnapshot` redacts by property name,
+  and "AccountNumber" is not one it knows.
+
+The seller reads it back masked (`•••• 4321`); the whole number is read only by an administrator, at
+`GET /api/sellers/payout-accounts?sellerIds=` - the `/admin/payouts` page shows it beside what is due, marks an
+account changed within the last 7 days, and disables **Pay** for a seller with none.
+
+When an administrator records a payout, Order asks Identity over gRPC (`PayoutAccounts.GetPayoutAccount`, the
+administrator's token forwarded, Admin only) **before** the claim's transaction, and:
+
+- no account is a **409** that claims nothing - nothing is paid to nowhere;
+- Identity not answering is a **503** that claims nothing;
+- otherwise the bank, the holder and the **last four digits** are frozen on the payout (`PaidToBank`,
+  `PaidToHolder`, `PaidToAccountLast4`), so the record says where the money went even after the seller changes
+  their account. Payouts from before have none.
 
 ## Rules and guarantees
 
@@ -282,7 +307,8 @@ same transaction.
 | Order | [`order_items`](../reference/data-model.md#order_items) | `SellerId`, `SellerName`, frozen at checkout. Indexed on `SellerId`. |
 | Order | [`orders`](../reference/data-model.md#orders) | `CommissionRate` (`numeric(5,4)`, null before specs/037). |
 | Order | [`order_shipments`](../reference/data-model.md#order_shipments) | `SellerId`, `GoodsTotal`, `Commission`, `ShippingShare`, `DeliveredAt`, `PayoutId` (FK to `payouts`, `Restrict`). Unique `(OrderId, SellerId)` NULLS NOT DISTINCT. |
-| Order | [`payouts`](../reference/data-model.md#payouts) | `SellerId`, `Currency`, `Amount`, `PartCount`, `RecordedBy`, `CreatedAt`. |
+| Order | [`payouts`](../reference/data-model.md#payouts) | `SellerId`, `Currency`, `Amount`, `PartCount`, `RecordedBy`, `CreatedAt`; where it went - `PaidToBank`, `PaidToHolder`, `PaidToAccountLast4` (specs/106). |
+| Identity | [`seller_payout_accounts`](../reference/data-model.md#seller_payout_accounts) | One per seller: `BankName`, `AccountHolder`, `AccountNumber` (normalised, 6-34 letters and digits), `UpdatedAt` (specs/106). |
 
 ## API
 
@@ -312,6 +338,8 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `GET` | `/api/orders/sales/payouts` | Seller |
 | `GET` | `/api/orders/payouts/due` | Admin |
 | `POST` | `/api/orders/payouts` | Admin |
+| `GET` / `PUT` | `/api/sellers/me/payout-account` | Seller |
+| `GET` | `/api/sellers/payout-accounts?sellerIds=` | Admin |
 
 ## Messages
 
@@ -369,7 +397,8 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | `Ecommerce.Catalog.Tests/ShopPageTests` | The seller filter lists only that seller's products on the shelf; the shop read carries name, description and count; unknown, unnamed and suspended are 404; an older description loses. |
 | `Ecommerce.Identity.Tests/ShopDescriptionTests` | A description is stored trimmed and announced with its audit entry; empty clears it; too long is 400; a non-seller is 404. |
 | `Ecommerce.Order.Tests/EarningsTests` | Equal split that sums exactly, commission rounding, no commission on the shop's part, the rate's range. |
-| `Ecommerce.Order.Tests/PayoutTests` | Terms recorded at checkout; balance moves on the way → due → paid out; failed orders count nowhere; nothing due is 409 and leaves nothing; simultaneous payouts pay each part once; one currency at a time; older parts are never paid. |
+| `Ecommerce.Order.Tests/PayoutTests` | Terms recorded at checkout; balance moves on the way → due → paid out; failed orders count nowhere; nothing due is 409 and leaves nothing; simultaneous payouts pay each part once; one currency at a time; older parts are never paid; no payout account is 409 and claims nothing; a payout freezes where it went. |
+| `Ecommerce.Identity.Tests/PayoutAccountTests` | A seller sets and reads their account masked, the email and audit carry the last four only; a customer has none to set; a bad number is 400; the administrator's read is whole. |
 | client `pages/open-shop`, `shop*`, `admin-shops`, `admin-payouts`, `components/seller/*`, `components/auth/require-role`, `components/layout/user-menu` | What each page sends and shows, and how a server refusal is shown. |
 | Bruno `seller/`, `security-checks/` | The round trip: register a seller, wait for review, approve, approving again is 409, sign in again as a seller, the shop name reaches the catalogue, stock, sales, balance, payouts; 401/403/404 cases. |
 
@@ -386,7 +415,9 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 - **One commission rate for everybody** (`Marketplace:CommissionRate`). There is no per-seller or
   per-category rate.
 - **A payout moves no money.** Payment is a stub; a payout is a ledger entry. It always settles
-  everything due in one currency - there is no partial payout.
+  everything due in one currency - there is no partial payout. It records where it would have gone (specs/106);
+  one account per seller, for every currency, with no waiting period after a change - the email and the
+  "changed recently" mark are the guard.
 - **Only a ban closes a shop.** Banning a seller takes every product of theirs off the shelf until the ban is
   lifted (specs/095); a lock stops the person, not their listings. There is no closing a shop while
   leaving the person a customer, no seller pausing their own shop, and no removing `Seller` - the only

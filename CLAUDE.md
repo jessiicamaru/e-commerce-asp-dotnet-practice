@@ -521,6 +521,11 @@ nothing and gets 409, and there is no amount in the request to disagree with the
 from before this have no terms and are owed nothing by this system** (nulls, never zeros; applying
 today's rate would be inventing yesterday's agreement), and neither are parts created on demand for an
 older image's order. Payment is still a stub: a payout is a ledger entry, not a transfer.
+**It says where it went** (specs/106, #213): a seller gives one payout account (`seller_payout_accounts` in
+**Identity**, `PUT /api/sellers/me/payout-account`), read back masked, emailed (`PayoutAccountChanged`) and audited
+with the last four only. Recording a payout asks Identity over gRPC (`PayoutAccounts`, **Admin only**, the
+administrator's token forwarded) **before** the claim, and freezes bank, holder and last four on `payouts`; no account
+is a 409 that claims nothing. ⚠️ `AuditSnapshot` redacts by property NAME - an account number is masked by hand.
 
 **Administrators have a console** (specs/038): `/admin` in the storefront - the fulfilment queue per
 state, one order with the shop's parcel and its next step, and the payouts due with a confirmed "record
@@ -707,7 +712,7 @@ their review was hidden (specs/059).
 Identity, the one service that knows addresses, keeps it in `outgoing_emails` (idempotent on the email id)
 and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
 server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
-error after 12 attempts. The first email is the order confirmation, in the order's own language. **Since specs/083 (#167) eleven**: a parcel shipped, an order cancelled, a return accepted/refused/refunded (the order's language), back in stock and an account locked/banned - asked for with `EmailTemplate.ReadersLanguage` (empty), which Identity fills from `users.Language`, learnt from `Accept-Language` at sign-up, sign-in and every renewal. ⚠️ A new email is a constant in `EmailTemplate`, words + placeholders + sample data in `EmailTemplates`, and a label in the storefront's `admin.json` - `AccountEmailTests` and the admin-emails test fail on a missing piece.
+error after 12 attempts. The first email is the order confirmation, in the order's own language. **Since specs/083 (#167) eleven, twelve with specs/106's `PayoutAccountChanged`**: a parcel shipped, an order cancelled, a return accepted/refused/refunded (the order's language), back in stock and an account locked/banned - asked for with `EmailTemplate.ReadersLanguage` (empty), which Identity fills from `users.Language`, learnt from `Accept-Language` at sign-up, sign-in and every renewal. ⚠️ A new email is a constant in `EmailTemplate`, words + placeholders + sample data in `EmailTemplates`, and a label in the storefront's `admin.json` - `AccountEmailTests` and the admin-emails test fail on a missing piece.
 **An administrator edits the emails** (specs/077, #150): `/admin/emails`, a TipTap editor (lazy-loaded). The code's
 words are the defaults; `email_template_versions` is append-only (reset and restore add versions), unique on
 (template, language, version) with the editor's `expectedVersion` - stale is 409. ⚠️ HTML is allow-list sanitised

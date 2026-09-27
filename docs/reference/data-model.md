@@ -1,10 +1,10 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `7fd7d05`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92c41c6`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
-## Identity - `ecommerce_identity_db` (12 tables)
+## Identity - `ecommerce_identity_db` (13 tables)
 
 ### `delivery_addresses`
 
@@ -108,6 +108,18 @@ Entity `Role`.
 | `Id` | uuid |  |
 | `Description` | character varying(255) |  |
 | `Name` | character varying(50) |  |
+
+### `seller_payout_accounts`
+
+Entity `SellerPayoutAccount`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `SellerId` | uuid |  |
+| `AccountHolder` | character varying(100) |  |
+| `AccountNumber` | character varying(34) |  |
+| `BankName` | character varying(100) |  |
+| `UpdatedAt` | timestamp with time zone |  |
 
 ### `seller_profiles`
 
@@ -597,6 +609,9 @@ Entity `Payout`.
 | `Amount` | numeric(18,2) |  |
 | `CreatedAt` | timestamp with time zone |  |
 | `Currency` | character varying(3) |  |
+| `PaidToAccountLast4` | character varying(4) | yes |
+| `PaidToBank` | character varying(100) | yes |
+| `PaidToHolder` | character varying(100) | yes |
 | `PartCount` | integer |  |
 | `RecordedBy` | uuid |  |
 | `SellerId` | uuid |  |

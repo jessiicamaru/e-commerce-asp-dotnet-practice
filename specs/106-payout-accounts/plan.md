@@ -58,9 +58,9 @@ broker
 | **II. Clean Architecture Layering** | **Pass.** `IPayoutAccounts` is in Application and the gRPC client in Infrastructure, as for addresses. |
 | **III. Atomic Writes and Idempotent Messaging** | **Pass.** The account write, its audit entry and its email commit in one save. The payout's destination is written by the same statement that claims the parts. |
 | **IV. Identity Comes From the Token** | **Pass.** The seller's routes take no seller id. The gRPC read is authorized by the forwarded administrator token. |
-| **V. Evidence Over Assumption** | **Planned.** Identity and Order tests against real databases, mutations, Bruno and Mailpit through rebuilt containers; recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** Identity and Order tests against real databases, every new test killed by a mutation, Bruno 326/326 and Mailpit through rebuilt containers - recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): still a pass on all five. The one new synchronous edge (Order → Identity, `PayoutAccounts`) is outside any transaction and Admin-only (I, III); the account is read from the token's seller, never a body id (IV); the email and audit are staged before the one save (III); the evidence is in `tasks.md` (V).
 
 ## Project Structure
 
