@@ -11,7 +11,7 @@ How an order reaches `Paid` is in [shopping-and-checkout.md](shopping-and-checko
 | Customer | See each parcel of their order: its shop, contents, status, tracking reference and when it arrived. Cancel their own paid order while every parcel is still waiting. Say that a shipped parcel arrived. Receive notices when the order is paid, a parcel ships, or the order is cancelled. |
 | Seller | List their sales and open one (their lines only). Start preparing their part, then ship it with a tracking reference. See the delivery address only while their part is waiting or being prepared. Receive notices of a new sale, a cancelled sale, a parcel the customer received, and a payout. |
 | Moderator | Nothing in fulfilment. The fulfilment endpoints are `Admin` only, and the console sends a moderator to `/admin/moderation`. |
-| Administrator | Work the fulfilment queue by the shop's part's state (`Paid`, `Preparing`, `Shipped`). Read any order (`GET /api/orders/fulfilment/{id}`). Prepare and ship the shop's part. Cancel any paid order until its first parcel ships. |
+| Administrator | Work the fulfilment queue by the shop's part's state (`Paid`, `Preparing`, `Shipped`). Read any order (`GET /api/orders/fulfilment/{id}`), and **find** any order - by the start of its id, by the customer's email or by status - at `/admin/orders/find` (`GET /api/orders/staff`, specs/096). Prepare and ship the shop's part. Cancel any paid order until its first parcel ships. |
 | System | Create any missing parts before a move. Rewrite `orders.Status` as a summary. Take unconfirmed parcels as delivered after `Delivery:AutoConfirmDays` (`DeliveryConfirmationSweeper`). On cancellation, Inventory puts the stock back and Payment records a refund. On delivery, Catalog records who may review which product. Activity stores notices and audit entries. |
 
 ## How it works
@@ -129,7 +129,7 @@ In both paths, the same transaction publishes one `ParcelDeliveredEvent` per par
 23. **A nonsensical delivery period stops Order at startup.** `DeliveryOptions` validates `AutoConfirmDays >= 1` and `SweepIntervalMinutes >= 1` with `ValidateOnStart`. *Why:* zero days would pay a seller the moment they click "shipped" (`DeliveryTests.Order_does_not_start_without_a_sensible_delivery_period`).
 24. **Money is due only once a delivered parcel can no longer come back.** Since specs/066 a part is due when it was delivered **more than the return window (7 days) ago** with no return of it open, and a returned part is no money at all. The payout claim applies the same rule. *Why:* a seller is paid for what arrived and stayed. Holding the money through the window means a return never has to claw back a payout ([returns](returns.md), specs/040, 066).
 25. **Notices and audit entries commit with the change.** They are staged through the repository's `stage` callback inside the same transaction. *Why:* an entry or a notice for a change that rolled back would be false (specs/041, 042). A notice stores a kind and data, never a sentence, so the storefront words it in the reader's current language.
-26. **`GET /api/orders/fulfilment/{id}` is the one order read not scoped to its owner.** *Why:* staff need to see what to pack and where; the `Admin` role on the route is the whole permission, so its handler `GetOrderForStaffQuery` must never sit behind any other route (specs/038).
+26. **`GET /api/orders/fulfilment/{id}` is the one order read not scoped to its owner.** *Why:* staff need to see what to pack and where; the `Admin` role on the route is the whole permission, so its handler `GetOrderForStaffQuery` must never sit behind any other route (specs/038). `GET /api/orders/staff` (specs/096, #194) is the second such read - every order, newest first, filtered by id prefix, customer and status - and is `Admin` for the same reason. An email is turned into a customer id by the storefront through Identity's staff search: Order never learns emails.
 
 ## Data
 
@@ -159,6 +159,7 @@ Full list: [../reference/api.md](../reference/api.md).
 | `POST` | `/api/orders/sales/{id}/shipment` | Seller (body `trackingReference`, 1-100 characters) |
 | `GET` | `/api/orders/fulfilment` | Admin (`?status=` `Paid`, `Preparing` or `Shipped`) |
 | `GET` | `/api/orders/fulfilment/{id}` | Admin |
+| `GET` | `/api/orders/staff` | Admin - any order by id prefix, customer, status (specs/096) |
 | `POST` | `/api/orders/{id}/preparing` | Admin (the shop's part) |
 | `POST` | `/api/orders/{id}/shipment` | Admin (the shop's part, body `trackingReference`) |
 | `POST` | `/api/orders/fulfilment/{id}/cancel` | Admin |
@@ -251,6 +252,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 
 | Spec | PR | What it added |
 | :-- | :-- | :-- |
+| [096-staff-order-search](../../specs/096-staff-order-search/) | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) | Staff find any order: `GET /api/orders/staff`, `/admin/orders/find` (#194). |
 | [011-order-shipping](../../specs/011-order-shipping/) | #31 | Staff fulfilment: `Paid` to `Preparing` to `Shipped` with a tracking reference, as guarded updates. |
 | [035-seller-shipments](../../specs/035-seller-shipments/) | #79 | `order_shipments`, one part per seller plus the shop's; the order row lock; `orders.Status` as a summary; the seller's endpoints. |
 | [036-parcel-shop-names](../../specs/036-parcel-shop-names/) | #80 | Each parcel and line says which shop it comes from. |

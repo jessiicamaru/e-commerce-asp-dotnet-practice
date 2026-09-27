@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `2180af2`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d3a4ad5`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**158 endpoints** across 7 services.
+**159 endpoints** across 7 services.
 
 ## Identity (43)
 
@@ -121,7 +121,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (38)
+## Order (39)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -152,6 +152,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/sales/{id}/return/refuse` | Seller |  |
 | `POST` | `/api/orders/sales/{id}/shipment` | Seller | A seller has sent THEIR part, with a tracking reference. Repeating it is a no-op. |
 | `GET` | `/api/orders/shipping-options` | anyone | The delivery options and what each costs. Public - prices are not a secret. |
+| `GET` | `/api/orders/staff` | Admin | Staff: find any order - by the start of its id, by customer, in any status, newest first (#194, specs/096). ⚠️ Owner-unscoped: the Admin role is the whole permission. |
 | `GET` | `/api/orders/{id}` | signed in | One of the caller's own orders. Answers 404 both when the order does not exist and when it belongs to another shopper. |
 | `POST` | `/api/orders/{id}/cancel` | signed in | The customer cancels their own paid order while every parcel is still waiting (specs/039). 404 for none or not theirs; 409 once anything is being prepared or shipped; repeating it is a no-op. |
 | `POST` | `/api/orders/{id}/preparing` | Admin | Staff: Paid → Preparing. Repeating it is a no-op; from any other state, 409. |

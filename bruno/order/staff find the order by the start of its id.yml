@@ -1,0 +1,37 @@
+info:
+  name: staff find the order by the start of its id
+  type: http
+  seq: 12
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/staff?search={{orderIdPrefix}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // What a customer quotes: the first eight characters of the id.
+        bru.setVar("orderIdPrefix", bru.getVar("orderId").substring(0, 8));
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the order is in it, with whose it is", function() {
+          var ours = res.body.items.filter(function(o) { return o.orderId === bru.getVar("orderId"); });
+          expect(ours).to.have.length(1);
+          expect(ours[0].userId).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/096 (#194): any order, in any status, by the start of its id - the fulfilment queue lists only paid ones.

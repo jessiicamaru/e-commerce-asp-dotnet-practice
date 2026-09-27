@@ -150,6 +150,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [093](../../specs/093-review-default-pending/) | Pending by default | #192 | #184: `products.ReviewStatus` defaults to `'Pending'`, so an earlier image inserting a seller's product after a rollback files it for review instead of on sale; set by SQL, because a model default would drop `Approved` from EF's inserts |
 | [094](../../specs/094-untested-promises/) | Untested promises | #201 | #186: fourteen tests for seven behaviours that were fixed or promised but not held - remount toasts, the wording fallback, frozen tax, the saga's relay, concurrent retries and applications - each shown by a mutation; the staff review list gains the paging rule it lacked |
 | [095](../../specs/095-suspended-seller/) | A ban closes the shop | #202 | #193: banning a seller takes every product of theirs off the shelf within seconds - announced by Identity, copied onto the products by Catalog - and lifting the ban puts them back; a lock does not |
+| [096](../../specs/096-staff-order-search/) | Find any order | #203 | #194: an administrator finds any order - by the start of its id, the customer's email or its status, failed and cancelled included - at `/admin/orders/find` |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
