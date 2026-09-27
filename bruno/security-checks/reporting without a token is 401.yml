@@ -1,0 +1,32 @@
+info:
+  name: reporting without a token is 401
+  type: http
+  seq: 64
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/reports"
+  body:
+    type: json
+    data: |-
+      {
+        "targetType": "Product",
+        "targetId": "00000000-0000-0000-0000-000000000001",
+        "reason": "Spam"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

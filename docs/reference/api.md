@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `93208a0`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `ff8f2bf`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**167 endpoints** across 7 services.
+**170 endpoints** across 7 services.
 
 ## Identity (44)
 
@@ -55,7 +55,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (54)
+## Catalog (57)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -109,6 +109,9 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/questions/{id}/answer/restore` | Admin, Moderator | Show a hidden answer again. |
 | `POST` | `/api/questions/{id}/hide` | Admin, Moderator | Hide a question and its answer from the product page. The asker is told why. |
 | `POST` | `/api/questions/{id}/restore` | Admin, Moderator | Show a hidden question again. |
+| `GET` | `/api/reports` | Admin, Moderator |  |
+| `POST` | `/api/reports` | signed in | Anybody signed in. Who reports comes from the token. |
+| `POST` | `/api/reports/{targetType}/{targetId}/dismiss` | Admin, Moderator |  |
 | `GET` | `/api/reviews` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/hide` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/restore` | Admin, Moderator |  |

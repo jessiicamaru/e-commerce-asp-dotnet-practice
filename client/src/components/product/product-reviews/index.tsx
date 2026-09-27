@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { StarInput, StarRating } from '@/components/product/star-rating'
+import { ReportButton } from '@/components/report/report-button'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
@@ -87,6 +88,9 @@ function ReviewItem({ review, language }: { review: Review; language: string }) 
         <span className="text-muted-foreground text-xs">
           {new Date(review.createdAt).toLocaleDateString(language)}
           {review.edited && ` · ${t('reviews.edited')}`}
+        </span>
+        <span className="ml-auto">
+          <ReportButton targetType="Review" targetId={review.id} />
         </span>
       </div>
       {review.body && <p className="text-sm leading-relaxed whitespace-pre-line">{review.body}</p>}

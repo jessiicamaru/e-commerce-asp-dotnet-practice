@@ -14,6 +14,7 @@
     "returns": "Trả hàng",
     "vouchers": "Mã giảm giá",
     "questions": "Hỏi đáp",
+    "reports": "Báo cáo",
     "emails": "Email",
     "emailDelivery": "Tình trạng gửi email",
     "notifications": "Thông báo",
@@ -163,6 +164,39 @@
       "QuestionRestored": "Hiện lại câu hỏi",
       "AnswerHidden": "Ẩn câu trả lời",
       "AnswerRestored": "Hiện lại câu trả lời"
+    }
+  },
+  "reports": {
+    "title": "Báo cáo",
+    "subtitle": "Những gì người mua báo cáo, nhiều báo cáo nhất trước. Xử lý, hoặc giữ nguyên - cách nào mọi người báo cáo cũng được báo kết quả.",
+    "loadFailed": "Không tải được các báo cáo.",
+    "none": "Không có gì đang chờ - không có báo cáo nào mở.",
+    "target": {
+      "Review": "Đánh giá",
+      "Question": "Câu hỏi",
+      "Product": "Sản phẩm"
+    },
+    "count_one": "{{count}} báo cáo",
+    "count_other": "{{count}} báo cáo",
+    "latest": "mới nhất {{when}}",
+    "on": "về “{{product}}”",
+    "act": {
+      "Review": "Ẩn đánh giá",
+      "Question": "Ẩn câu hỏi",
+      "Product": "Gỡ sản phẩm"
+    },
+    "actBody": "Nội dung rời khỏi cửa hàng, tác giả được báo lý do, và mọi người báo cáo được báo là đã xử lý.",
+    "reason": "Lý do",
+    "acted": "Xong - người báo cáo đã được báo.",
+    "dismiss": "Không xử lý",
+    "dismissed": "Đã bỏ qua các báo cáo - người báo cáo đã được báo.",
+    "reasons": "Lý do được nêu",
+    "reasonName": {
+      "Spam": "Spam",
+      "Offensive": "Xúc phạm",
+      "Misleading": "Gây hiểu lầm",
+      "Counterfeit": "Hàng giả",
+      "Other": "Khác"
     }
   },
   "users": {

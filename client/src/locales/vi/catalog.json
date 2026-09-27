@@ -65,6 +65,31 @@
     "in_other": "Còn {{count}} sản phẩm",
     "reserved_other": "{{count}} đang được giữ cho đơn"
   },
+  "report": {
+    "action": "Báo cáo",
+    "open": {
+      "Review": "Báo cáo đánh giá này",
+      "Question": "Báo cáo câu hỏi này",
+      "Product": "Báo cáo sản phẩm này"
+    },
+    "title": {
+      "Review": "Báo cáo đánh giá này",
+      "Question": "Báo cáo câu hỏi này",
+      "Product": "Báo cáo sản phẩm này"
+    },
+    "body": "Cho chúng tôi biết có gì không ổn. Nhân viên xem mọi báo cáo; bạn sẽ được báo kết quả.",
+    "reason": {
+      "Spam": "Spam hoặc quảng cáo",
+      "Offensive": "Xúc phạm hoặc lăng mạ",
+      "Misleading": "Sai sự thật hoặc gây hiểu lầm",
+      "Counterfeit": "Hàng giả hoặc không đúng mô tả",
+      "Other": "Lý do khác"
+    },
+    "details": "Điều nhân viên cần biết (không bắt buộc)",
+    "send": "Gửi báo cáo",
+    "sent": "Cảm ơn bạn - nhân viên sẽ xem xét.",
+    "failed": "Không gửi được báo cáo."
+  },
   "reviews": {
     "title": "Đánh giá",
     "average": "Được chấm {{average}} trên 5",

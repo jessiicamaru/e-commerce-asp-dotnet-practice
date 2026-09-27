@@ -94,6 +94,63 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.ToTable("category_translations", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ContentReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("ReporterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TargetType", "TargetId")
+                        .HasFilter("\"Status\" = 'Open'");
+
+                    b.HasIndex("TargetType", "TargetId", "ReporterId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_content_reports_open_per_reporter")
+                        .HasFilter("\"Status\" = 'Open'");
+
+                    b.ToTable("content_reports", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -782,6 +839,15 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.HasOne("Ecommerce.Catalog.Domain.Entities.Category", null)
                         .WithMany("Translations")
                         .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ContentReport", b =>
+                {
+                    b.HasOne("Ecommerce.Catalog.Domain.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

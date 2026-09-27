@@ -56,6 +56,7 @@ export const queryKeys = {
   productReviews: (productId: string, page: number) => ['reviews', productId, page] as const,
   myReview: (productId: string) => ['reviews', productId, 'mine'] as const,
   staffReviews: (hidden: boolean, page: number) => ['staff-reviews', hidden, page] as const,
+  reportQueue: (page: number) => ['reports', page] as const,
   shopApplications: (status: string, page: number) => ['shop-applications', status, page] as const,
   auditEntry: (id: string) => ['audit-entry', id] as const,
   auditSummary: (from: string) => ['audit-summary', from] as const,

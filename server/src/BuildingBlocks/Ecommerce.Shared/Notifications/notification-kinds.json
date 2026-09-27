@@ -44,6 +44,8 @@
     "NewQuestion": { "required": ["product"] },
     "QuestionAnswered": { "required": ["product"] },
     "QuestionHidden": { "required": ["product", "reason"] },
-    "AnswerHidden": { "required": ["product", "reason"] }
+    "AnswerHidden": { "required": ["product", "reason"] },
+    "ReportActioned": { "required": ["product"] },
+    "ReportDismissed": { "required": ["product"] }
   }
 }

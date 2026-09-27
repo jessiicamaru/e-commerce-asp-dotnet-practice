@@ -1,0 +1,34 @@
+info:
+  name: once decided it may be reported again
+  type: http
+  seq: 17
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/reports"
+  body:
+    type: json
+    data: |-
+      {
+        "targetType": "Review",
+        "targetId": "{{reviewId}}",
+        "reason": "Spam",
+        "details": "Bruno reports it"
+      }
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 201", function() {
+          expect(res.status).to.equal(201);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

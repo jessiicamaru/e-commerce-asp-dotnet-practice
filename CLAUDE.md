@@ -616,6 +616,11 @@ Roles (`Admin`, `Customer`, `Seller`, `Moderator`) and the first administrator a
 startup by `DataInitializer`, from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. The bootstrap path closes as soon
 as any admin exists. Self-registration always grants `Customer`.
 
+**Shoppers report reviews, questions and products** (specs/101, #199): `content_reports` in Catalog, one open report per
+person per thing (partial unique index), `/admin/reports` for staff, most reported first. ⚠️ **Acting is the existing
+hide or take-down**, which closes the thing's reports in its own stage callback (`ContentReports.CloseAsync`) and tells
+each reporter - a new way to hide content must call it too, or its reports stay open. Nothing auto-hides.
+
 **A lock is decided with the person's history in view** (specs/100, #198): `GET /api/audit/people/{id}` (Staff) -
 Moderation entries whose `AboutUserId` is that person, the category fixed in code, reasons without snapshots. ⚠️ An
 audit entry about someone's CONTENT must name them: `RecordAsync(..., aboutUserId: author)` - a `User` subject fills

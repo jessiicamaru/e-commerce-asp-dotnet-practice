@@ -1,0 +1,41 @@
+info:
+  name: a shopper reports the review
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/reports"
+  body:
+    type: json
+    data: |-
+      {
+        "targetType": "Review",
+        "targetId": "{{reviewId}}",
+        "reason": "Spam",
+        "details": "Bruno reports it"
+      }
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 201", function() {
+          expect(res.status).to.equal(201);
+        });
+        test("the report is open on the review", function() {
+          expect(res.body.targetId).to.equal(bru.getVar("reviewId"));
+          expect(res.body.reason).to.equal("Spam");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/101 (#199): anybody signed in who did not write it reports a review, with a reason from a short list.

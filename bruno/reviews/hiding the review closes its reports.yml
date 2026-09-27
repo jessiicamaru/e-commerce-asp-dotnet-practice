@@ -1,0 +1,34 @@
+info:
+  name: hiding the review closes its reports
+  type: http
+  seq: 18
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/reviews/{{reviewId}}/hide"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Bruno acts on a report"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The existing hide closes the review's open reports in its own transaction (specs/101), whichever page staff used.

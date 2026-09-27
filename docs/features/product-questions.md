@@ -120,3 +120,4 @@ Mutation checks (specs/076): each of these turns `ProductQuestionTests` red.
 - **An asker cannot edit or delete their question.** Staff can hide it.
 - **The shop's own questions notify nobody in particular.** Staff read the queue.
 - **No rate limit beyond the gateway's.**
+- **A question is reported with its answer** (specs/101): hiding either closes the question's reports.
