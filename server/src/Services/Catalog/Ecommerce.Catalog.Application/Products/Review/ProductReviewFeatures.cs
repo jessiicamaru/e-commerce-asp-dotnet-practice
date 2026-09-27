@@ -1,5 +1,6 @@
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Application.Reports;
 using Ecommerce.Catalog.Application.Common.Models;
 using Ecommerce.Catalog.Application.Products.Common;
 using Ecommerce.Catalog.Application.Products.Saved;
@@ -66,7 +67,8 @@ public class ProductReviewHandlers(
     IRequestCurrency currency,
     IOptions<CurrencyOptions> money,
     ISavedProductRepository saved,
-    IEmailSender email) :
+    IEmailSender email,
+    IContentReportRepository reports) :
     IRequestHandler<GetReviewQueueQuery, PaginatedList<ProductResponse>>,
     IRequestHandler<ApproveProductCommand, ProductResponse>,
     IRequestHandler<RejectProductCommand, ProductResponse>,
@@ -80,6 +82,7 @@ public class ProductReviewHandlers(
     private readonly INotifier _notifier = notifier;
     private readonly ISavedProductRepository _saved = saved;
     private readonly IEmailSender _email = email;
+    private readonly IContentReportRepository _reports = reports;
 
     public async Task<PaginatedList<ProductResponse>> Handle(GetReviewQueueQuery request, CancellationToken cancellationToken)
     {
@@ -139,7 +142,8 @@ public class ProductReviewHandlers(
             ?? throw new NotFoundException($"Product with ID '{productId}' was not found.");
         var reviewer = _currentUser.Id ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
 
-        var moved = await _products.TryReviewAsync(product.Id, from, to, reason, reviewer, DateTime.UtcNow, async ct =>
+        var now = DateTime.UtcNow;
+        var moved = await _products.TryReviewAsync(product.Id, from, to, reason, reviewer, now, async ct =>
         {
             await _audit.RecordAsync(AuditCategory.Moderation, action, "Product", product.Id.ToString(),
                 $"\"{product.Name}\" {verb}" + (reason is null ? "" : $": {reason}"),
@@ -159,6 +163,14 @@ public class ProductReviewHandlers(
             if (to == ProductReviewStatus.Approved && product.IsActive && product.Availability)
             {
                 await SavedProductNotices.BackOnSaleAsync(product, _saved, _notifier, _email, ct);
+            }
+
+            // Off the shelf: whoever reported it is told it was dealt with (specs/101). Only a listed product can be
+            // reported, so only a take-down closes reports.
+            if (action == "ProductTakenDown")
+            {
+                await ContentReports.CloseAsync(_reports, _notifier, ReportTarget.Product, product.Id, product.Id, product.Name,
+                    ReportStatus.Actioned, reviewer, now, ct);
             }
         }, cancellationToken);
 

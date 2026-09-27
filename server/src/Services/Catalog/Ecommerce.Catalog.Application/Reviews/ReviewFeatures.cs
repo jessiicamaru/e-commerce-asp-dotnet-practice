@@ -1,5 +1,6 @@
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Application.Reports;
 using Ecommerce.Catalog.Application.Common.Models;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Shared.Audit;
@@ -89,7 +90,8 @@ public class ReviewHandlers(
     IProductRepository products,
     ICurrentUser currentUser,
     IAuditTrail audit,
-    INotifier notifier) :
+    INotifier notifier,
+    IContentReportRepository reports) :
     IRequestHandler<RecordReviewEligibilityCommand>,
     IRequestHandler<GetProductReviewsQuery, PaginatedList<ReviewResponse>>,
     IRequestHandler<GetMyReviewQuery, MyReviewResponse>,
@@ -106,6 +108,7 @@ public class ReviewHandlers(
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
+    private readonly IContentReportRepository _reports = reports;
 
     /// <summary>What a shopper can buy - the public lookup's rule, and asking a question's: one rule (specs/092).</summary>
     private static bool OnSale(Product product) => product.OnShelf;
@@ -236,6 +239,10 @@ public class ReviewHandlers(
             await _notifier.NotifyAsync(review.CustomerId, NotificationKind.ReviewHidden,
                 new Dictionary<string, string> { ["product"] = product?.Name ?? "", ["reason"] = reason },
                 $"/products/{review.ProductId}", ct);
+
+            // Whoever reported it is told it was dealt with, in this transaction (specs/101).
+            await ContentReports.CloseAsync(_reports, _notifier, ReportTarget.Review, review.Id, review.ProductId,
+                product?.Name ?? "", ReportStatus.Actioned, by, now, ct);
         }, cancellationToken);
         if (hidden == 0)
             throw new ConflictException("This review is already hidden.");

@@ -96,6 +96,7 @@ public class CatalogTestFixture : IAsyncLifetime
         services.AddScoped<IProductViewRepository, ProductViewRepository>();
         services.AddScoped<ISavedProductRepository, SavedProductRepository>();
         services.AddScoped<IProductQuestionRepository, ProductQuestionRepository>();
+        services.AddScoped<IContentReportRepository, ContentReportRepository>();
 
         // The orphan scan (specs/033) needs one read, not twenty-one, so it depends on the
         // narrow interface the repository also implements. Forwarded rather than registered

@@ -1,5 +1,6 @@
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Common.Interfaces;
+using Ecommerce.Catalog.Application.Reports;
 using Ecommerce.Catalog.Application.Common.Models;
 using Ecommerce.Catalog.Domain.Entities;
 using Ecommerce.Shared.Audit;
@@ -102,7 +103,8 @@ public class QuestionHandlers(
     IProductRepository products,
     ICurrentUser currentUser,
     IAuditTrail audit,
-    INotifier notifier) :
+    INotifier notifier,
+    IContentReportRepository reports) :
     IRequestHandler<GetProductQuestionsQuery, PaginatedList<QuestionResponse>>,
     IRequestHandler<AskQuestionCommand, QuestionResponse>,
     IRequestHandler<AnswerQuestionCommand, QuestionResponse>,
@@ -122,6 +124,7 @@ public class QuestionHandlers(
     private readonly ICurrentUser _currentUser = currentUser;
     private readonly IAuditTrail _audit = audit;
     private readonly INotifier _notifier = notifier;
+    private readonly IContentReportRepository _reports = reports;
 
     public async Task<PaginatedList<QuestionResponse>> Handle(GetProductQuestionsQuery request, CancellationToken cancellationToken)
     {
@@ -231,7 +234,9 @@ public class QuestionHandlers(
         var product = await _products.GetByIdAsync(question.ProductId, cancellationToken);
         var reason = request.Reason.Trim();
 
-        var hidden = await _questions.TryHideAsync(question.Id, reason, Caller(), DateTime.UtcNow, async ct =>
+        var (by, now) = (Caller(), DateTime.UtcNow);
+
+        var hidden = await _questions.TryHideAsync(question.Id, reason, by, now, async ct =>
         {
             await _audit.RecordAsync(AuditCategory.Moderation, "QuestionHidden", "Question", question.Id.ToString(),
                 $"A question hidden: {reason}", new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct,
@@ -241,6 +246,10 @@ public class QuestionHandlers(
             await _notifier.NotifyAsync(question.AskerId, NotificationKind.QuestionHidden,
                 new Dictionary<string, string> { ["product"] = product?.Name ?? "", ["reason"] = reason },
                 $"/products/{question.ProductId}", ct);
+
+            // Whoever reported it is told it was dealt with, in this transaction (specs/101).
+            await ContentReports.CloseAsync(_reports, _notifier, ReportTarget.Question, question.Id, question.ProductId,
+                product?.Name ?? "", ReportStatus.Actioned, by, now, ct);
         }, cancellationToken);
         if (hidden == 0)
             throw new ConflictException("This question is already hidden.");
@@ -272,7 +281,9 @@ public class QuestionHandlers(
         var product = await _products.GetByIdAsync(question.ProductId, cancellationToken);
         var reason = request.Reason.Trim();
 
-        var hidden = await _questions.TryHideAnswerAsync(question.Id, reason, Caller(), DateTime.UtcNow, async ct =>
+        var (by, now) = (Caller(), DateTime.UtcNow);
+
+        var hidden = await _questions.TryHideAnswerAsync(question.Id, reason, by, now, async ct =>
         {
             await _audit.RecordAsync(AuditCategory.Moderation, "AnswerHidden", "Question", question.Id.ToString(),
                 $"An answer hidden: {reason}", new { AnswerHidden = false }, new { AnswerHidden = true, Reason = reason },
@@ -284,6 +295,10 @@ public class QuestionHandlers(
                     new Dictionary<string, string> { ["product"] = product?.Name ?? "", ["reason"] = reason },
                     $"/products/{question.ProductId}", ct);
             }
+
+            // A question is reported with its answer: hiding the answer is acting on the report too (specs/101).
+            await ContentReports.CloseAsync(_reports, _notifier, ReportTarget.Question, question.Id, question.ProductId,
+                product?.Name ?? "", ReportStatus.Actioned, by, now, ct);
         }, cancellationToken);
         if (hidden == 0)
             throw new ConflictException("This question has no visible answer to hide.");

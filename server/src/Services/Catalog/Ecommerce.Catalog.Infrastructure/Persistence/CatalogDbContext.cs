@@ -24,6 +24,7 @@ public class CatalogDbContext : DbContext
     public DbSet<SavedProduct> SavedProducts => Set<SavedProduct>();
 
     public DbSet<ProductQuestion> ProductQuestions => Set<ProductQuestion>();
+    public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
     public DbSet<VariantOptionTranslation> VariantOptionTranslations => Set<VariantOptionTranslation>();
 

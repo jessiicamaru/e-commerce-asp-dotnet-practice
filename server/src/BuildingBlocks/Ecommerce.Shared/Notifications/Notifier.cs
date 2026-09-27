@@ -30,6 +30,10 @@ public static class NotificationKind
     public const string AccountBanned = "AccountBanned";
     public const string ReviewHidden = "ReviewHidden";
 
+    // What became of something a shopper reported (specs/101) - never who decided
+    public const string ReportActioned = "ReportActioned";
+    public const string ReportDismissed = "ReportDismissed";
+
     // Somebody's application to sell (specs/044)
     public const string ShopApproved = "ShopApproved";
     public const string ShopRejected = "ShopRejected";
