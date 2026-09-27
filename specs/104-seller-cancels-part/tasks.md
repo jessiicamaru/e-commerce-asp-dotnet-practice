@@ -37,4 +37,4 @@ description: "Task list for A seller cancels the part of an order they cannot fu
 - [X] T011 Mutations (quickstart Scenario 4), eleven, each red; Order 299, Inventory 78, Payment 28, Activity 40, client 526
 - [X] T012 [P] Bruno 318/318 (4 new); rebuilt Inventory and Payment, then Order and the storefront; both new queues bound; `verify-saga.sh`; the live check (quickstart Scenario 5); post-design Constitution re-check: no violations
 - [X] T013 Docs: fulfilment, marketplace, audit-and-notifications, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T014 Merged as #224, closing #211
+- [x] T014 Merged as #224, closing #211

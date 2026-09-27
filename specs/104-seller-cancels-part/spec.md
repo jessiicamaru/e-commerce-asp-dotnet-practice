@@ -2,7 +2,7 @@
 
 **Feature Branch**: `104-seller-cancels-part` | **Created**: 2026-09-27 | **Issue**: #211
 
-**Status**: Draft
+**Status**: Merged (#224, 2026-09-27)
 
 **Input**: Issue #211 - "a seller cannot cancel the part of an order they cannot fulfil".
 
