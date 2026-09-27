@@ -384,10 +384,6 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 
 - **One commission rate for everybody** (`Marketplace:CommissionRate`). There is no per-seller or
   per-category rate.
-- **A missing commission rate is not caught at startup.** `ConfiguredCommissionRate` throws when the
-  setting is missing or outside [0, 1), but `Program.cs` resolves only `IShippingOptions` and
-  `ITaxRates` eagerly, so a missing rate surfaces at the first checkout as a 500, not as a refusal to
-  start. `appsettings.json` ships `0.1`, so this only bites a deployment that removes it.
 - **A payout moves no money.** Payment is a stub; a payout is a ledger entry. It always settles
   everything due in one currency - there is no partial payout.
 - **Only a ban closes a shop.** Banning a seller takes every product of theirs off the shelf until the ban is
@@ -411,6 +407,7 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 | [095-suspended-seller](../../specs/095-suspended-seller/) | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) | A ban closes a seller's shop: `SellerSuspensionChangedEvent`, `sellers.Suspended`, `products.SellerSuspended` (#193). |
 | [099-shop-page](../../specs/099-shop-page/) | [#206](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/206) | A shop has a page: `/shops/:sellerId`, `GET /api/shops/{id}`, `?sellerId=` on the listing, the seller's description and `SellerDescribedEvent` (#197). |
 | [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `stock_items.LowStockThreshold`, `StockRanLowEvent`, `StockRunningLow`; the line beside the stock count (#200). |
+| [103-commission-at-startup](../../specs/103-commission-at-startup/) | [#223](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/223) | A missing or impossible `Marketplace:CommissionRate` stops Order at startup (`RequiredSettings.Check`) instead of failing the first checkout (#210). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |

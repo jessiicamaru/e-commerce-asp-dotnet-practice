@@ -41,12 +41,12 @@ registration.
 | **II. Clean Architecture Layering** | **Pass.** The check lives in Infrastructure, beside the registrations it resolves; the WebApi only calls it. |
 | **III. Atomic Writes and Idempotent Messaging** | **Not applicable.** Nothing is written or published. |
 | **IV. Identity Comes From the Token** | **Not applicable.** No request is involved. |
-| **V. Evidence Over Assumption** | **Planned.** A test over the real registration, one mutation, and the rebuilt container through `verify-saga.sh`; the evidence is recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** `RequiredSettingsTests` (7) over the real registration, red before the fix (5 of 7) and green after; dropping the shipping check is red too; the real process refuses to start without the rate; Order 293/293; the rebuilt container through `verify-saga.sh`. |
 
 This change brings Order into line with the constitution's **Configuration** rule: a required setting that is missing
 must fail at startup, not on every request.
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): no violations.
 
 ## Project Structure
 
