@@ -169,12 +169,10 @@ builder.AddObservability("order");
 
 var app = builder.Build();
 
-// Resolved now, not at the first checkout: a missing or malformed Shipping:Options stops the service
-// here, where the log says why, instead of turning every checkout into a 500 (constitution:
-// Configuration). ConfiguredShippingOptions validates in its constructor; since specs/098 it only seeds
-// the table, which is what checkout reads.
-_ = app.Services.GetRequiredService<Ecommerce.Order.Infrastructure.Shipping.ConfiguredShippingOptions>();
-_ = app.Services.GetRequiredService<Ecommerce.Order.Application.Common.Interfaces.ITaxRates>();
+// Resolved now, not at the first checkout: a missing or malformed shipping, tax or commission setting stops
+// the service here, where the log says why, instead of turning every checkout into a 500 (constitution:
+// Configuration). One list, tested over the real registration (specs/103).
+Ecommerce.Order.Infrastructure.RequiredSettings.Check(app.Services);
 
 app.UseExceptionHandler();
 

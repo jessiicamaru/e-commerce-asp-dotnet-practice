@@ -506,8 +506,8 @@ own parcel itself.
 
 **The shop knows what it owes each seller** (specs/037). At checkout the order freezes
 `orders.CommissionRate` (`Marketplace:CommissionRate`, one rate for everybody; `ConfiguredCommissionRate`
-throws rather than read a missing or out-of-range rate as zero - on first use, so a missing rate is a 500 at
-the first checkout rather than a refusal to start; `appsettings.json` ships 0.1) and each part freezes `GoodsTotal`, `Commission` and
+throws rather than read a missing or out-of-range rate as zero, **at startup** since specs/103 (#210) - Order's required
+settings are resolved in one list, `RequiredSettings.Check`, and a new one goes there; `appsettings.json` ships 0.1) and each part freezes `GoodsTotal`, `Commission` and
 `ShippingShare` - the delivery charge split **equally** between the parts in the currency's smallest
 unit, the remainder to the first (shop first, then by seller id), pure code in `Earnings`. Commission is
 on goods **before tax**; tax stays with the shop, which charged it. The shop's own part takes no
