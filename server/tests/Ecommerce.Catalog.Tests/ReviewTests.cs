@@ -95,7 +95,9 @@ public class ReviewTests(CatalogTestFixture fixture) : IDisposable
 
         await SendAsync(new RestoreReviewCommand(spam.Id));
         Assert.Equal((3.00m, 2), await RatingAsync(product.Id));
-        Assert.Contains(Audited(spam.Id), e => e.Action == "ReviewHidden" && e.Category == "Moderation");
+        // About its author (specs/100), so it is in their history when staff decide about them next.
+        Assert.Contains(Audited(spam.Id), e => e.Action == "ReviewHidden" && e.Category == "Moderation" && e.AboutUserId == lan);
+        Assert.Contains(Audited(spam.Id), e => e.Action == "ReviewRestored" && e.AboutUserId == lan);
     }
 
     [Fact]

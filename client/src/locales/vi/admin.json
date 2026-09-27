@@ -158,7 +158,11 @@
       "ReviewPosted": "Đăng đánh giá",
       "ReviewEdited": "Sửa đánh giá",
       "ReviewHidden": "Ẩn đánh giá",
-      "ReviewRestored": "Hiện lại đánh giá"
+      "ReviewRestored": "Hiện lại đánh giá",
+      "QuestionHidden": "Ẩn câu hỏi",
+      "QuestionRestored": "Hiện lại câu hỏi",
+      "AnswerHidden": "Ẩn câu trả lời",
+      "AnswerRestored": "Hiện lại câu trả lời"
     }
   },
   "users": {
@@ -202,7 +206,18 @@
     "unlocked": "Đã mở khoá {{email}}.",
     "banned": "Đã cấm {{email}}.",
     "banLifted": "Đã gỡ lệnh cấm cho {{email}}.",
-    "you": "bạn"
+    "you": "bạn",
+    "showHistory": "Lịch sử…",
+    "history": {
+      "title": "Các quyết định trước đây",
+      "dialogTitle": "Những gì nhân viên đã quyết định về {{email}}",
+      "dialogBody": "Khoá, cấm, đơn mở gian hàng, và đánh giá, câu hỏi, sản phẩm bị gỡ khỏi cửa hàng - mới nhất trước.",
+      "none": "Chưa có ghi nhận nào - chưa từng có quyết định về người này.",
+      "loadFailed": "Không tải được lịch sử của người này.",
+      "by": "bởi {{who}} ({{role}})",
+      "more_one": "và {{count}} quyết định trước đó",
+      "more_other": "và {{count}} quyết định trước đó"
+    }
   },
   "roles": {
     "Admin": "Quản trị viên",

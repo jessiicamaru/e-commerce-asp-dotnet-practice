@@ -158,7 +158,11 @@
       "ReviewPosted": "Review posted",
       "ReviewEdited": "Review edited",
       "ReviewHidden": "Review hidden",
-      "ReviewRestored": "Review shown again"
+      "ReviewRestored": "Review shown again",
+      "QuestionHidden": "Question hidden",
+      "QuestionRestored": "Question shown again",
+      "AnswerHidden": "Answer hidden",
+      "AnswerRestored": "Answer shown again"
     }
   },
   "users": {
@@ -202,7 +206,18 @@
     "unlocked": "{{email}} is unlocked.",
     "banned": "{{email}} is banned.",
     "banLifted": "{{email}}'s ban is lifted.",
-    "you": "you"
+    "you": "you",
+    "showHistory": "History…",
+    "history": {
+      "title": "Earlier decisions",
+      "dialogTitle": "What staff decided about {{email}}",
+      "dialogBody": "Locks, bans, shop applications, and reviews, questions and products taken off the shop - newest first.",
+      "none": "Nothing on record - no earlier decision about this person.",
+      "loadFailed": "Could not load this person's history.",
+      "by": "by {{who}} ({{role}})",
+      "more_one": "and {{count}} earlier decision",
+      "more_other": "and {{count}} earlier decisions"
+    }
   },
   "roles": {
     "Admin": "Administrator",

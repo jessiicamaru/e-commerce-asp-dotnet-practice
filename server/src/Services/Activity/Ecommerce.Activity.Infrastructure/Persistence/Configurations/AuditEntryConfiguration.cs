@@ -31,5 +31,7 @@ public class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEntry>
         builder.HasIndex(x => new { x.Category, x.OccurredAt });
         builder.HasIndex(x => new { x.ActorId, x.OccurredAt });
         builder.HasIndex(x => new { x.SubjectType, x.SubjectId });
+        // A person's moderation history, newest first (specs/100).
+        builder.HasIndex(x => new { x.AboutUserId, x.OccurredAt });
     }
 }

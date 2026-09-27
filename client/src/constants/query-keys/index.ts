@@ -47,6 +47,7 @@ export const queryKeys = {
   emailTemplateVersions: (template: string, language: string) => ['email-templates', template, language, 'versions'] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   accounts: (search: string, page: number) => ['accounts', search, page] as const,
+  personHistory: (id: string, page: number, pageSize: number) => ['person-history', id, page, pageSize] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,
   reviewQueue: (status: string, page: number) => ['review-queue', status, page] as const,
   myDecisions: ['my-decisions'] as const,

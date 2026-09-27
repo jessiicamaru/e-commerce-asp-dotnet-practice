@@ -13,6 +13,10 @@ namespace Ecommerce.Contracts.Activity;
 /// <param name="Before">JSON snapshot before the change, secrets redacted; null for a creation.</param>
 /// <param name="After">JSON snapshot after the change, secrets redacted; null for a deletion.</param>
 /// <param name="Service">Which service recorded it.</param>
+/// <param name="AboutUserId">
+/// The person a moderation decision is about (specs/100): the user locked, the author of the review hidden, the seller of
+/// the product taken down. Null when it is about nobody in particular - and from a publisher older than this field.
+/// </param>
 public record AuditEntryRecorded(
     Guid EntryId,
     string Category,
@@ -26,4 +30,5 @@ public record AuditEntryRecorded(
     string? Before,
     string? After,
     string Service,
-    DateTime OccurredAt);
+    DateTime OccurredAt,
+    Guid? AboutUserId = null);

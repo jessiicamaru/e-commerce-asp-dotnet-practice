@@ -129,6 +129,7 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
         Assert.Equal(("Rejected", "Tell us what you sell"), (rejected.Status, rejected.DecisionReason));
         var notice = Assert.Single(published.OfType<UserNotificationRequested>());
         Assert.Equal((registered.Id, "ShopRejected", "Tell us what you sell"), (notice.RecipientId, notice.Kind, notice.Data["reason"]));
+        Assert.Equal(registered.Id, Assert.Single(published.OfType<AuditEntryRecorded>()).AboutUserId);   // the applicant (specs/100)
 
         var again = await SendAsync(registered.Id, new ApplyForShopCommand("Mai Lens", "Used Fujifilm bodies", null));
         Assert.Equal("Pending", again.Status);

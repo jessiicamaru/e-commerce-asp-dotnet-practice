@@ -230,7 +230,7 @@ public class ReviewHandlers(
         {
             await _audit.RecordAsync(AuditCategory.Moderation, "ReviewHidden", "Review", review.Id.ToString(),
                 $"A {review.Rating}-star review hidden: {reason}",
-                new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct);
+                new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct, aboutUserId: review.CustomerId);
 
             // Its author learns why it disappeared (#128, specs/059).
             await _notifier.NotifyAsync(review.CustomerId, NotificationKind.ReviewHidden,
@@ -252,7 +252,8 @@ public class ReviewHandlers(
         var restored = await _reviews.TryRestoreAsync(review.Id, review.ProductId, ct =>
             _audit.RecordAsync(AuditCategory.Moderation, "ReviewRestored", "Review", review.Id.ToString(),
                 $"A {review.Rating}-star review shown again",
-                new { Hidden = true, Reason = reason }, new { Hidden = false }, cancellationToken: ct), cancellationToken);
+                new { Hidden = true, Reason = reason }, new { Hidden = false }, cancellationToken: ct, aboutUserId: review.CustomerId),
+            cancellationToken);
         if (restored == 0)
             throw new ConflictException("This review is not hidden.");
 

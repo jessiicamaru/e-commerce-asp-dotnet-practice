@@ -275,6 +275,7 @@ public class ModerationTests(IdentityTestFixture fixture)
         (audit, notices) = await PublishedAsync(Admin, new LockUserCommand(id, 2, "Cooling off"), RoleNames.Admin);
         Assert.Equal(("Moderation", "AccountLocked"), (Assert.Single(audit).Category, audit[0].Action));
         Assert.Contains("Cooling off", audit[0].After);
+        Assert.Equal(id, audit[0].AboutUserId);   // a User subject is about that user (specs/100)
 
         // #128 (specs/059): the person is told - and once the lock ends, this is their record of why.
         var locked = Assert.Single(notices);

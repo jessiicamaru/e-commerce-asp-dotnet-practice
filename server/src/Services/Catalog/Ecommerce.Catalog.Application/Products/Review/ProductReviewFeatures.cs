@@ -144,7 +144,7 @@ public class ProductReviewHandlers(
             await _audit.RecordAsync(AuditCategory.Moderation, action, "Product", product.Id.ToString(),
                 $"\"{product.Name}\" {verb}" + (reason is null ? "" : $": {reason}"),
                 new { ReviewStatus = product.ReviewStatus.ToString() }, new { ReviewStatus = to.ToString(), Reason = reason },
-                cancellationToken: ct);
+                cancellationToken: ct, aboutUserId: product.SellerId);
 
             // The shop's own products have nobody to tell.
             if (product.SellerId is { } seller)

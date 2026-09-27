@@ -14,10 +14,10 @@ public class AuditRepository(ActivityDbContext context) : IAuditRepository
         // One statement, idempotent by the publisher's id: a redelivery affects no row (research D4).
         var inserted = await _context.Database.ExecuteSqlInterpolatedAsync($"""
             INSERT INTO audit_entries ("Id", "Category", "Action", "ActorId", "ActorEmail", "ActorRole",
-                "SubjectType", "SubjectId", "Summary", "Before", "After", "Changes", "ChangeCount",
+                "SubjectType", "SubjectId", "Summary", "AboutUserId", "Before", "After", "Changes", "ChangeCount",
                 "Service", "OccurredAt", "RecordedAt")
             VALUES ({e.Id}, {e.Category}, {e.Action}, {e.ActorId}, {e.ActorEmail}, {e.ActorRole},
-                {e.SubjectType}, {e.SubjectId}, {e.Summary}, CAST({e.Before} AS jsonb), CAST({e.After} AS jsonb),
+                {e.SubjectType}, {e.SubjectId}, {e.Summary}, {e.AboutUserId}, CAST({e.Before} AS jsonb), CAST({e.After} AS jsonb),
                 CAST({e.Changes} AS jsonb), {e.ChangeCount}, {e.Service}, {e.OccurredAt}, {e.RecordedAt})
             ON CONFLICT ("Id") DO NOTHING
             """, cancellationToken);
@@ -51,6 +51,20 @@ public class AuditRepository(ActivityDbContext context) : IAuditRepository
                 x.Summary, x.Service, x.OccurredAt, x.ChangeCount))
             .ToListAsync(cancellationToken);
 
+        return (items, total);
+    }
+
+    public async Task<(List<AuditEntry> Items, int TotalCount)> GetAboutAsync(
+        Guid userId, string category, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var query = _context.AuditEntries.AsNoTracking().Where(x => x.AboutUserId == userId && x.Category == category);
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(x => x.OccurredAt)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
         return (items, total);
     }
 
