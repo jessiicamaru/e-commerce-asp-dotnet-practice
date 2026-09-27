@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `0f6bc9b`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `93208a0`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**166 endpoints** across 7 services.
+**167 endpoints** across 7 services.
 
 ## Identity (44)
 
@@ -188,12 +188,13 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/payments` | Admin |  |
 | `GET` | `/api/payments/{orderId}` | Admin |  |
 
-## Activity (14)
+## Activity (15)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
 | `GET` | `/api/audit` | Admin | A page of entries, newest first, filtered by category, action, actor, subject and period. |
 | `GET` | `/api/audit/mine` | Admin, Moderator |  |
+| `GET` | `/api/audit/people/{userId}` | Admin, Moderator |  |
 | `GET` | `/api/audit/summary` | Admin | How many entries each category holds in a period. |
 | `GET` | `/api/audit/{id}` | Admin | One entry, with its snapshots and field-level diff. |
 | `GET` | `/api/notifications` | signed in |  |

@@ -156,6 +156,16 @@ has run out is shown as no lock. The row menu offers each person only the action
 and never an action on one's own account or on an administrator's; the server refuses the same things
 on its own.
 
+**A decision is made with the person's history in view** (specs/100, #198). The lock and ban dialog
+lists the latest five decisions staff made about the person - what, when, by whom and the reason - and
+"History…" on the row menu opens all of them, paged. They come from `GET /api/audit/people/{userId}`
+(Staff): the audit log's **Moderation** entries whose `AboutUserId` is that person, never any other
+category and never the snapshots. Every entry says whom it is about: a `User` subject by itself
+(`AuditTrail` fills it), and a decision about content names its author or seller - a review, question or
+answer hidden or restored, a product approved, rejected or taken down, a shop application decided.
+Locks and bans from before were backfilled from their subject; content decisions from before name
+nobody, because Activity never knew their authors.
+
 ## Rules and guarantees
 
 1. **Staff is Admin or Moderator, named once.** `StaffRoles.Staff` in `Ecommerce.Shared` is what every
@@ -235,6 +245,7 @@ Full list in [api.md](../reference/api.md).
 | `GET` | `/api/products/review`, `POST /api/products/{id}/approve`, `/reject`, `/take-down` | Admin, Moderator |
 | `GET` | `/api/reviews`, `POST /api/reviews/{id}/hide`, `/restore` | Admin, Moderator |
 | `GET` | `/api/audit/mine` | Admin, Moderator |
+| `GET` | `/api/audit/people/{userId}` | Admin, Moderator - that person's Moderation entries, with reasons, no snapshots |
 | `GET` | `/api/audit`, `/api/audit/summary`, `/api/audit/{id}` | Admin |
 | `GET` | `/api/orders/fulfilment`, `/api/orders/fulfilment/{id}` | Admin |
 | `POST` | `/api/orders/payouts` | Admin |
@@ -254,7 +265,7 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | `layouts/admin-layout` | The console's frame; the sidebar lists only the pages the role can use. |
 | `pages/admin-home` (`/admin`) | Administrator: the fulfilment queue. Moderator: redirected to `/admin/moderation`. |
 | `pages/admin-moderation` | What waits in the product and shop queues, and the caller's last 8 decisions. |
-| `pages/admin-users` | Search, role badges, lock and ban status, a row menu per person; `stop-dialog.tsx` offers preset durations (1, 3, 7, 14, 30, 90, 365 days), only those up to 30 for a moderator. |
+| `pages/admin-users` | Search, role badges, lock and ban status, a row menu per person; `stop-dialog.tsx` offers preset durations (1, 3, 7, 14, 30, 90, 365 days), only those up to 30 for a moderator, above the person's latest decisions (`person-history.tsx`); "History…" opens `history-dialog.tsx`, paged (specs/100). |
 | `pages/admin-shops` | Shop applications, a tab per status. |
 | `pages/admin-products` | Sellers' products waiting, approved or rejected; approve, reject with a reason, take down. |
 | `pages/admin-reviews` | Reviews, visible or hidden; hide with a reason, restore. |
@@ -273,6 +284,7 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | `Ecommerce.Identity.Tests/ForbiddenProblemTests` | A 403's facts reach the response body in Production, a date as ISO 8601 UTC, and never hide `traceId`. |
 | `Ecommerce.Catalog.Tests/ProductReviewTests`, `ReviewTests` | Product review moves and review hiding ([catalog](catalog.md), [ratings and reviews](ratings-and-reviews.md)). |
 | `Ecommerce.Activity.Tests/AuditLogTests` | Filtering by actor and category, which `/api/audit/mine` relies on. |
+| `Ecommerce.Activity.Tests/PersonHistoryTests` | A person's decisions newest first with their reasons, nobody else's, and nothing outside Moderation (specs/100). |
 | client `pages/admin-users` (specs/050) | "Unlock" is disabled for yourself, for a moderator seen by a moderator, and for a lock beyond a moderator's reach. |
 | client `pages/sign-in` | A locked person is told why and until when in their language and time; a banned one why; a wrong password only "wrong"; another 403 its sentence; no sentence the generic one. |
 | client `pages/admin-users`, `admin-shops`, `admin-moderation`, `admin-products`, `admin-reviews`, `layouts/admin-layout`, `components/auth/require-role` | What each role is offered and what each action sends. |
@@ -285,7 +297,9 @@ No message is specific to moderation. Staff actions publish, through the acting 
   there (specs/065).
 - **Nothing closes a shop or removes `Seller`**; locking the account stops the person, not their
   listings. Taking a product down is per product.
-- **The audit log is an administrator's.** A moderator sees only their own Moderation decisions.
+- **The audit log is an administrator's.** A moderator sees their own Moderation decisions, and one
+  person's Moderation history at a time (specs/100) - nothing else.
+- **Content decisions from before specs/100 name nobody** and are missing from a person's history.
 
 ## History
 
@@ -302,3 +316,4 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | [050-unlock-rules](../../specs/050-unlock-rules/) | [#131](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/131) | `ModerationRules.EnsureMayRelease`: nobody unlocks themselves, only an administrator unlocks a moderator, a moderator lifts only a lock within their reach (#121). |
 | [088-relock-limits](../../specs/088-relock-limits/) | [#187](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/187) | `ModerationRules.EnsureMayShorten`: locking again cannot shorten a lock beyond the caller's reach (#180). |
 | [065-revoke-access-tokens](../../specs/065-revoke-access-tokens/) | [#148](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/148) | A lock, a ban or a role revoked stops the access tokens already issued within seconds, in every service (#112). |
+| [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | A person's moderation history in the lock dialog and from the users page; `AboutUserId` on audit entries; `GET /api/audit/people/{userId}` (#198). |

@@ -44,7 +44,6 @@ role and several carriers are left out.
 
 | Issue | Title |
 | :-- | :-- |
-| [#198](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/198) | A moderator decides a lock without seeing the person's history |
 | [#199](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/199) | Shoppers cannot report a review, a question or a product |
 | [#200](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/200) | A seller is not told when a variant runs low |
 
@@ -68,6 +67,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | :-- | :-- | :-- |
 | [#196](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/196) | Delivery options and the carrier can only be changed by redeploying | [#205](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/205) (specs/098) |
 | [#197](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/197) | A shopper cannot see a seller's shop | [#206](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/206) (specs/099) |
+| [#198](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/198) | A moderator decides a lock without seeing the person's history | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) (specs/100) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |
@@ -118,4 +118,4 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 ## Suggested order
 
 The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done, and returns (#107) and seller insights (#111). Vouchers (#108) are done, and so are saved products (#109), product questions (#110), editable emails and notices (#150) and object storage (#114);
-and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27. Next, filed 2026-09-27 from the design-record rebuild: #180 and #183 first (security, both done), then #181, #182, #185, #184 and #186 - all done. Next, from the 2026-09-27 audit: #193 (a defect, done), then #194, #195, #196 and #197 (done), then #198, #199 and #200.
+and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27. Next, filed 2026-09-27 from the design-record rebuild: #180 and #183 first (security, both done), then #181, #182, #185, #184 and #186 - all done. Next, from the 2026-09-27 audit: #193 (a defect, done), then #194, #195, #196, #197 and #198 (done), then #199 and #200.
