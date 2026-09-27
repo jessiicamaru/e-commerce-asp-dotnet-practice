@@ -180,6 +180,8 @@ Found by searching every `RecordAsync(` call in `server/src`. **Actor** is who t
 | `ProductSentForReview` | Moderation | Product | Catalog | A seller changes an approved product's text or photographs; it goes back to `Pending`. | caller |
 | `ProductResubmitted` | Moderation | Product | Catalog | A seller sends a rejected product back to the queue. | caller |
 | `ProductApproved` / `ProductRejected` / `ProductTakenDown` | Moderation | Product | Catalog | Staff decide a product (inside the guarded move). | caller |
+| `ShopPaused` / `ShopResumed` | Catalog | Shop | Catalog | A seller pauses or reopens their shop (specs/107). | caller |
+| `ShopClosed` / `ShopReopened` | Moderation | Shop | Catalog | Staff close a shop with a reason, or reopen it (specs/107). | caller |
 | `ReviewPosted` / `ReviewEdited` | Catalog | Review | Catalog | A customer writes or rewrites their review. | caller |
 | `ReviewHidden` / `ReviewRestored` | Moderation | Review | Catalog | Staff hide or restore a review. | caller |
 | `ReportsDismissed` | Moderation | Review, Question or Product | Catalog | Staff dismiss what shoppers reported (specs/101). | caller |
@@ -238,6 +240,8 @@ would roll back the payout or the decision it announces.
 | `ProductApproved` | seller | `product` | `/shop/products/{id}` | Staff approve a product (Catalog). |
 | `ProductRejected` | seller | `product`, `reason` | `/shop/products/{id}` | Staff reject a product (Catalog). |
 | `ProductTakenDown` | seller | `product`, `reason` | `/shop/products/{id}` | Staff take an approved product down (Catalog). |
+| `ShopClosed` | seller | `reason` | `/shop` | Staff close their shop (Catalog, specs/107). |
+| `ShopReopened` | seller | - | `/shop` | Staff reopen it (Catalog, specs/107). |
 | `NewReview` | seller | `product`, `rating` | `/products/{id}` | A customer's first review of the product - not its edits (Catalog). |
 | `ParcelAutoDelivered` | the parcel's seller (not for the shop's own) | `orderId` | `/shop/sales/{id}` | The 7-day sweep takes the parcel as delivered - nobody confirmed it (Order, specs/059). |
 | `AccountLocked` | the person | `until` (ISO 8601 UTC, worded in the reader's time), `reason` | none | Staff lock the account (Identity, specs/059). Unreadable while locked - the reason is shown at sign-in - and afterwards their record of why. |
@@ -405,3 +409,4 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `StockRunningLow` and the `left` placeholder; `LowStockThresholdSet` (#200). |
 | [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | `PartCancelled` notice and audit action (#211). |
 | [105-correct-tracking](../../specs/105-correct-tracking/) | [#225](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/225) | `TrackingCorrected` notice and audit action (#212). |
+| [107-shop-closure](../../specs/107-shop-closure/) | #227 | `ShopPaused`/`ShopResumed`/`ShopClosed`/`ShopReopened` audit actions; `ShopClosed`, `ShopReopened` notices (#214). |

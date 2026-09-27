@@ -318,5 +318,25 @@
     "save": "Lưu tài khoản",
     "saved": "Đã lưu tài khoản nhận tiền.",
     "emailed": "Chúng tôi gửi email cho bạn mỗi khi thông tin này thay đổi. Nếu nhận email đó mà bạn không đổi, hãy đổi mật khẩu."
+  },
+  "shopState": {
+    "title": "Cửa hàng của bạn",
+    "state": {
+      "Open": "Đang mở",
+      "Paused": "Tạm nghỉ",
+      "Closed": "Bị đóng bởi quản trị",
+      "Suspended": "Bị đình chỉ"
+    },
+    "pause": "Tạm nghỉ bán",
+    "pauseTitle": "Tạm nghỉ cửa hàng?",
+    "pauseBody": "Sản phẩm của bạn sẽ rời khỏi cửa hàng cho đến khi bạn mở lại - không ai tìm thấy hay mua được. Các đơn đã thanh toán vẫn chờ bạn giao.",
+    "keepOpen": "Vẫn mở",
+    "paused": "Cửa hàng của bạn đang tạm nghỉ.",
+    "reopen": "Mở lại cửa hàng",
+    "reopened": "Cửa hàng của bạn đã mở lại.",
+    "pausedSince": "Tạm nghỉ từ {{at}}. Người mua thấy bạn đang vắng mặt.",
+    "closedBecause": "Quản trị viên đã đóng cửa hàng của bạn lúc {{at}}: {{reason}}. Sản phẩm của bạn không được bán cho đến khi quản trị mở lại; các đơn đã thanh toán vẫn cần được giao.",
+    "suspended": "Tài khoản của bạn bị cấm nên cửa hàng đã đóng.",
+    "failed": "Không thể thay đổi cửa hàng."
   }
 }

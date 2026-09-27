@@ -269,7 +269,8 @@
     "tab": {
       "Pending": "Waiting",
       "Approved": "Approved",
-      "Rejected": "Rejected"
+      "Rejected": "Rejected",
+      "Closed": "Closed shops"
     },
     "none": "Nothing here.",
     "loadFailed": "Could not load applications.",
@@ -285,7 +286,24 @@
     "approved": "“{{shop}}” is open.",
     "rejected": "“{{shop}}” was not approved.",
     "decided": "Decided {{when}}",
-    "unconfirmed": "Email not confirmed"
+    "unconfirmed": "Email not confirmed",
+    "close": {
+      "button": "Close shop",
+      "title": "Close {{shop}}?",
+      "body": "Its products leave the shop at once. The seller keeps their account, reads your reason, and cannot reopen it - only staff can.",
+      "reason": "Reason (the seller reads this)",
+      "keep": "Keep it open",
+      "confirm": "Close shop",
+      "done": "{{shop}} is closed.",
+      "failed": "The shop could not be closed."
+    },
+    "closed": {
+      "none": "No shop is closed.",
+      "when": "Closed {{when}}",
+      "alsoPaused": "Also paused by its seller",
+      "reopen": "Reopen",
+      "reopened": "{{shop}} is open again."
+    }
   },
   "review": {
     "title": "Products to review",

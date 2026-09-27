@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangleIcon, ArrowRightIcon, PackageIcon, ReceiptTextIcon, WalletIcon } from 'lucide-react'
 import { ProductImage } from '@/components/product/product-image'
 import { PageTitle } from '@/components/seller/page-title'
+import { ShopStateCard } from '@/components/seller/shop-state'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
@@ -50,6 +51,7 @@ export function ShopPage() {
     return (
       <section className="grid gap-6">
         <PageTitle title={t('menu.overview')} />
+        <ShopStateCard />
         <div className="bg-card ring-border/60 grid justify-items-start gap-3 rounded-3xl p-8 ring-1">
           <h2 className="text-lg font-semibold">{t('empty.title')}</h2>
           <p className="text-muted-foreground max-w-prose text-sm">{t('empty.body')}</p>
@@ -64,6 +66,7 @@ export function ShopPage() {
   return (
     <section className="grid gap-6">
       <PageTitle title={t('menu.overview')} subtitle={t('overview.subtitle')} />
+      <ShopStateCard />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat icon={PackageIcon} label={t('overview.listings')} value={String(listings.data.totalCount)} />

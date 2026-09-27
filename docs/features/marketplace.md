@@ -400,7 +400,8 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | `Ecommerce.Order.Tests/PayoutTests` | Terms recorded at checkout; balance moves on the way → due → paid out; failed orders count nowhere; nothing due is 409 and leaves nothing; simultaneous payouts pay each part once; one currency at a time; older parts are never paid; no payout account is 409 and claims nothing; a payout freezes where it went. |
 | `Ecommerce.Identity.Tests/PayoutAccountTests` | A seller sets and reads their account masked, the email and audit carry the last four only; a customer has none to set; a bad number is 400; the administrator's read is whole. |
 | client `pages/open-shop`, `shop*`, `admin-shops`, `admin-payouts`, `components/seller/*`, `components/auth/require-role`, `components/layout/user-menu` | What each page sends and shows, and how a server refusal is shown. |
-| Bruno `seller/`, `security-checks/` | The round trip: register a seller, wait for review, approve, approving again is 409, sign in again as a seller, the shop name reaches the catalogue, stock, sales, balance, payouts; 401/403/404 cases. |
+| Bruno `seller/`, `security-checks/` | The round trip: register a seller, wait for review, approve, approving again is 409, sign in again as a seller, the shop name reaches the catalogue, stock, sales, balance, payouts, pausing and closing the shop; 401/403/404/409 cases. |
+| `Ecommerce.Catalog.Tests/ShopClosureTests` | Pausing takes the shop off the shelf and reopening tells savers once; 409s; staff close with a reason the seller cannot undo; staff reopening keeps a pause; a lifted ban does not reopen a paused or closed shop; approval while paused stays off; the page says paused, hides closed; audit categories. |
 
 **A banned seller's shop is closed** (specs/095, #193). Identity announces `SellerSuspensionChangedEvent(SellerId,
 Suspended, ChangedAt)` in the ban's transaction, and again when it is lifted. Catalog records it on `sellers`
@@ -410,6 +411,24 @@ checkout. Reopening tells the savers of products back on sale. ⚠️ This read 
 sells a banned seller's product a little longer, which staff can cancel (specs/039); asking Identity live would make
 every page depend on it. A lock does not close a shop. Paid orders of a suspended seller wait for staff to cancel them.
 
+**A seller pauses their shop, and staff close one** (specs/107, #214) - both without touching the account. Catalog's
+`sellers` row holds them (`PausedAt`; `ClosedAt`, `ClosedReason`, `ClosedBy`): the shelf is Catalog's, so it is
+decided there, in the same transaction as the products.
+
+- `products.SellerSuspended` now means **the shop is not open** - banned, paused or closed - and one statement writes
+  it from the whole row (`SellerRepository.ApplyShopStateAsync`). ⚠️ Three independent reasons: lifting one (a ban
+  lifted while the seller is away) never reopens a shop another keeps shut, which is why the ban path no longer
+  writes its own bool. `OnShelf` did not change.
+- ⚠️ **Approval takes the shop's state** (`TryReviewAsync`): a product listed while its shop is paused would
+  otherwise go on sale when a moderator approves it.
+- The seller pauses and reopens at `/shop` (`POST /api/shops/mine/pause`, `/reopen`). Staff close with a reason the
+  seller reads (`POST /api/shops/{id}/close`) from the shop's page, and reopen from the "Closed shops" tab of
+  `/admin/shops` (`GET /api/shops/closed`, `POST /api/shops/{id}/reopen`). ⚠️ The seller's moves are guarded by
+  `"ClosedAt" IS NULL`: **a seller never reopens what staff closed**; staff reopening leaves the seller's own pause.
+- A paused shop's page answers `paused: true` ("taking a break"); a closed one is a 404, like a banned one.
+- Paid orders are untouched: the seller still ships them. Reopening from either side tells savers of what is back
+  on sale; staff closing and reopening tell the seller (`ShopClosed`, `ShopReopened`).
+
 ## Known limits
 
 - **One commission rate for everybody** (`Marketplace:CommissionRate`). There is no per-seller or
@@ -418,10 +437,9 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
   everything due in one currency - there is no partial payout. It records where it would have gone (specs/106);
   one account per seller, for every currency, with no waiting period after a change - the email and the
   "changed recently" mark are the guard.
-- **Only a ban closes a shop.** Banning a seller takes every product of theirs off the shelf until the ban is
-  lifted (specs/095); a lock stops the person, not their listings. There is no closing a shop while
-  leaving the person a customer, no seller pausing their own shop, and no removing `Seller` - the only
-  role granted or revoked through the API is `Moderator`.
+- **A shop is closed by a ban, a seller's pause or staff's closure** (specs/095, 107); a lock stops the person, not
+  their listings. A pause has no end date, and a closure keeps one reason (its history is the audit log). There is
+  no removing `Seller` - the only role granted or revoked through the API is `Moderator`.
 - **A new role reaches a session at its next refresh**, and an access token lives out its 15 minutes.
 - Built since, and described on their own pages:
   - how a seller's shop is doing, in [seller insights](seller-insights.md) (specs/068);
@@ -441,6 +459,8 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 | [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `stock_items.LowStockThreshold`, `StockRanLowEvent`, `StockRunningLow`; the line beside the stock count (#200). |
 | [103-commission-at-startup](../../specs/103-commission-at-startup/) | [#223](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/223) | A missing or impossible `Marketplace:CommissionRate` stops Order at startup (`RequiredSettings.Check`) instead of failing the first checkout (#210). |
 | [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | A seller cancels their part of an order they cannot fulfil; a cancelled part earns nothing and gives back their voucher (#211). |
+| [106-payout-accounts](../../specs/106-payout-accounts/) | [#226](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/226) | A seller gives a payout account (Identity `seller_payout_accounts`); a payout asks for it over gRPC and freezes bank, holder and last four (#213). |
+| [107-shop-closure](../../specs/107-shop-closure/) | #227 | A seller pauses their shop, staff close one with a reason; `sellers.PausedAt`/`ClosedAt`, one shelf statement for all three reasons (#214). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |

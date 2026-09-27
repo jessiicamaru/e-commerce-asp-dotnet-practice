@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92c41c6`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `07db6e0`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**178 endpoints** across 7 services.
+**184 endpoints** across 7 services.
 
 ## Identity (47)
 
@@ -58,7 +58,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (57)
+## Catalog (63)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -118,7 +118,13 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/reviews` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/hide` | Admin, Moderator |  |
 | `POST` | `/api/reviews/{id}/restore` | Admin, Moderator |  |
+| `GET` | `/api/shops/closed` | Admin, Moderator |  |
+| `GET` | `/api/shops/mine` | Seller | The caller's own shop; no seller id anywhere in the request. |
+| `POST` | `/api/shops/mine/pause` | Seller |  |
+| `POST` | `/api/shops/mine/reopen` | Seller |  |
 | `GET` | `/api/shops/{sellerId}` | anyone |  |
+| `POST` | `/api/shops/{sellerId}/close` | Admin, Moderator |  |
+| `POST` | `/api/shops/{sellerId}/reopen` | Admin, Moderator |  |
 
 ## Cart (5)
 

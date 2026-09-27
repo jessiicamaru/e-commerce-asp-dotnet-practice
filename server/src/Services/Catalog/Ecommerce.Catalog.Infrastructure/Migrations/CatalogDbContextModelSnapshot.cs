@@ -546,6 +546,16 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Property<Guid>("SellerId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ClosedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ClosedReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -554,6 +564,9 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("ObservedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PausedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ShopName")
@@ -570,6 +583,9 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("SellerId");
+
+                    b.HasIndex("ClosedAt")
+                        .HasFilter("\"ClosedAt\" IS NOT NULL");
 
                     b.ToTable("sellers", (string)null);
                 });

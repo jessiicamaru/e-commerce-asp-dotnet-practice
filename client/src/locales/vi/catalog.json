@@ -20,7 +20,8 @@
     "notFound": "Gian hàng này hiện không mở cửa.",
     "onSale_one": "{{count}} sản phẩm đang bán",
     "onSale_other": "{{count}} sản phẩm đang bán",
-    "productsFailed": "Không tải được sản phẩm của gian hàng này."
+    "productsFailed": "Không tải được sản phẩm của gian hàng này.",
+    "paused": "Cửa hàng đang tạm nghỉ - chưa có gì được bán cho đến khi người bán quay lại."
   },
   "product": {
     "back": "← Về cửa hàng",

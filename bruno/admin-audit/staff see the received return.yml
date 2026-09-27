@@ -17,8 +17,17 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
+        // The Received list is a queue, oldest first, and every run leaves one more: page through it rather than
+        // assume this run's return is among the first fifty.
+        const axios = require("axios");
+        let ids = res.body.items.map(function(r) { return r.id; });
+        for (let page = 2; !ids.includes(bru.getVar("returnId")) && (page - 1) * 50 < res.body.totalCount; page++) {
+          const next = await axios.get(bru.interpolate("{{baseUrl}}/api/orders/returns?status=Received&pageSize=50&page=") + page,
+            { headers: { Authorization: "Bearer " + bru.getVar("adminToken") } });
+          ids = ids.concat(next.data.items.map(function(r) { return r.id; }));
+        }
         test("this return, received", function() {
-          expect(res.body.items.map(function(r) { return r.id; })).to.include(bru.getVar("returnId"));
+          expect(ids).to.include(bru.getVar("returnId"));
         });
 
 settings:

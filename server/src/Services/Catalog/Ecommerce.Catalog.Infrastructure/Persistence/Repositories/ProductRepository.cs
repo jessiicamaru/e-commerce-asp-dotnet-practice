@@ -420,6 +420,9 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
 
             // Back into the queue stamps the submission; a decision stamps the reviewer.
             var submitting = to == ProductReviewStatus.Pending;
+            // Approval is the only way onto the shelf, so it takes the shop's state with it (specs/107 research D3):
+            // a product listed while its shop was paused or closed would otherwise go on sale when approved.
+            var approving = to == ProductReviewStatus.Approved;
             var moved = await _context.Products
                 .Where(p => p.Id == productId && from.Contains(p.ReviewStatus))
                 .ExecuteUpdateAsync(set => set
@@ -427,7 +430,10 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                     .SetProperty(p => p.ReviewReason, reason)
                     .SetProperty(p => p.SubmittedAt, p => submitting ? at : p.SubmittedAt)
                     .SetProperty(p => p.ReviewedAt, p => submitting ? p.ReviewedAt : at)
-                    .SetProperty(p => p.ReviewedBy, p => submitting ? p.ReviewedBy : reviewedBy), cancellationToken);
+                    .SetProperty(p => p.ReviewedBy, p => submitting ? p.ReviewedBy : reviewedBy)
+                    .SetProperty(p => p.SellerSuspended, p => approving
+                        ? _context.Sellers.Any(s => s.SellerId == p.SellerId && (s.Suspended || s.PausedAt != null || s.ClosedAt != null))
+                        : p.SellerSuspended), cancellationToken);
 
             if (moved == 0)
             {

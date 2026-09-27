@@ -20,7 +20,8 @@
     "notFound": "This shop is not open.",
     "onSale_one": "{{count}} product on sale",
     "onSale_other": "{{count}} products on sale",
-    "productsFailed": "This shop's products could not be loaded."
+    "productsFailed": "This shop's products could not be loaded.",
+    "paused": "This shop is taking a break - nothing is on sale until its seller is back."
   },
   "product": {
     "back": "← Back to the shop",

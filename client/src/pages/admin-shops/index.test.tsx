@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { PAGE_SIZE } from '@/constants/shared'
 import { ShopApplications } from '@/services/shop-applications'
+import { Shops } from '@/services/shops'
 import type { ShopApplication } from '@/services/shop-applications/types'
 import { refusal } from '@/test/refusal'
 import { renderAsModerator } from '@/test/render'
@@ -101,5 +102,30 @@ describe('AdminShopsPage and unconfirmed applicants (specs/063)', () => {
 
     expect(await screen.findByText('Lan Film')).toBeInTheDocument()
     expect(screen.getAllByText(i18n.t('admin:shops.unconfirmed'))).toHaveLength(1)
+  })
+})
+
+describe('AdminShopsPage, the closed shops (specs/107)', () => {
+  const closed = {
+    sellerId: 's1', shopName: 'Mai Lens', state: 'Closed' as const, pausedAt: '2026-09-26T08:00:00Z',
+    closedAt: '2026-09-27T08:00:00Z', closedReason: 'Counterfeit listings',
+  }
+  const closedPage = { items: [closed], pageNumber: 1, totalPages: 1, totalCount: 1, hasPreviousPage: false, hasNextPage: false }
+
+  /** A different list behind the same tabs: it must not ask for applications with a status that is not one. */
+  it('lists the closed shops with the reason, and reopens one', async () => {
+    const applications = vi.spyOn(ShopApplications, 'list')
+    const list = vi.spyOn(Shops, 'closed').mockResolvedValue(closedPage)
+    const reopen = vi.spyOn(Shops, 'reopen').mockResolvedValue({ ...closed, state: 'Paused', closedAt: null, closedReason: null })
+    const user = userEvent.setup()
+    renderPage('/admin/shops?status=Closed')
+
+    expect(await screen.findByText('Counterfeit listings')).toBeInTheDocument()
+    expect(screen.getByText('Also paused by its seller')).toBeInTheDocument()
+    expect(list).toHaveBeenCalledWith(1, PAGE_SIZE)
+    expect(applications).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Reopen' }))
+    await waitFor(() => expect(reopen).toHaveBeenCalledWith('s1'))
   })
 })

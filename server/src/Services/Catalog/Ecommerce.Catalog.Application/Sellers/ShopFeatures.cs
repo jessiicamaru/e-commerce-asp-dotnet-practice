@@ -11,7 +11,8 @@ public record RecordShopDescriptionCommand(Guid SellerId, string? Description, D
 public record GetShopQuery(Guid SellerId) : IRequest<ShopResponse>;
 
 /// <param name="ProductCount">How many of its products are on the shelf now.</param>
-public record ShopResponse(Guid SellerId, string ShopName, string? Description, int ProductCount);
+/// <param name="Paused">Its seller is away (specs/107): the page answers and says so, with nothing on the shelf.</param>
+public record ShopResponse(Guid SellerId, string ShopName, string? Description, int ProductCount, bool Paused = false);
 
 public class ShopHandlers(ISellerRepository sellers, IProductRepository products) :
     IRequestHandler<RecordShopDescriptionCommand, bool>,
@@ -27,12 +28,13 @@ public class ShopHandlers(ISellerRepository sellers, IProductRepository products
 
     public async Task<ShopResponse> Handle(GetShopQuery request, CancellationToken cancellationToken)
     {
-        // One 404 for "no such shop", "not heard of its name yet" and "closed" (specs/095) - a closed shop is not a page.
+        // One 404 for "no such shop", "not heard of its name yet", "banned" (specs/095) and "closed by staff"
+        // (specs/107) - a closed shop is not a page. A paused one is: a shopper following its link learns it is away.
         var seller = await _sellers.GetAsync(request.SellerId, cancellationToken);
-        if (seller is null || string.IsNullOrEmpty(seller.ShopName) || seller.Suspended)
+        if (seller is null || string.IsNullOrEmpty(seller.ShopName) || seller.Suspended || seller.ClosedAt is not null)
             throw new NotFoundException("Shop not found.");
 
         var onShelf = await _products.CountOnShelfBySellerAsync(seller.SellerId, cancellationToken);
-        return new ShopResponse(seller.SellerId, seller.ShopName, seller.Description, onShelf);
+        return new ShopResponse(seller.SellerId, seller.ShopName, seller.Description, onShelf, seller.PausedAt is not null);
     }
 }

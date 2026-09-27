@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
@@ -6,7 +7,7 @@ import { ApiError } from '@/config/axios'
 import { Product } from '@/services/product'
 import type { Product as ProductModel } from '@/services/product/types'
 import { Shops } from '@/services/shops'
-import { renderSignedOut } from '@/test/render'
+import { renderAsCustomer, renderAsModerator, renderSignedOut } from '@/test/render'
 import { ShopFrontPage } from '.'
 
 const lens: ProductModel = {
@@ -32,7 +33,7 @@ beforeEach(async () => {
 describe('ShopFrontPage', () => {
   /** What the page is for (specs/099): the shop's words, and only that shop's products. */
   it('shows the shop and asks for its products only', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: 'Used Fujifilm bodies.', productCount: 1 })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: 'Used Fujifilm bodies.', productCount: 1, paused: false })
     const list = vi.spyOn(Product, 'list').mockResolvedValue({
       items: [lens], pageNumber: 1, totalPages: 1, totalCount: 1, hasPreviousPage: false, hasNextPage: false,
     })
@@ -47,7 +48,7 @@ describe('ShopFrontPage', () => {
 
   /** The description is the seller's text: shown as text, never as markup. */
   it('shows a description as text', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: '<b>bold</b>', productCount: 0 })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: '<b>bold</b>', productCount: 0, paused: false })
     vi.spyOn(Product, 'list').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
     renderShop()
 
@@ -61,5 +62,54 @@ describe('ShopFrontPage', () => {
     renderShop()
 
     expect(await screen.findByText('This shop is not open.')).toBeInTheDocument()
+  })
+})
+
+describe('ShopFrontPage, paused and closed (specs/107)', () => {
+  const empty = { items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false }
+  const route = (
+    <Routes>
+      <Route path="/shops/:sellerId" element={<ShopFrontPage />} />
+    </Routes>
+  )
+
+  /** A shopper following a link to a shop on holiday learns it is away, not that it vanished. */
+  it('says a paused shop is taking a break', async () => {
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: true })
+    vi.spyOn(Product, 'list').mockResolvedValue(empty)
+    renderShop()
+
+    expect(await screen.findByRole('status')).toHaveTextContent('This shop is taking a break')
+    expect(screen.queryByText('0 products on sale')).not.toBeInTheDocument()
+  })
+
+  /** Staff close a shop from its page, and only with the reason its seller will read. */
+  it('lets staff close the shop with a reason', async () => {
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
+    vi.spyOn(Product, 'list').mockResolvedValue(empty)
+    const close = vi.spyOn(Shops, 'close').mockResolvedValue({
+      sellerId: 's1', shopName: 'Mai Lens', state: 'Closed', pausedAt: null, closedAt: '2026-09-27T08:00:00Z', closedReason: 'Fakes',
+    })
+    vi.spyOn(Shops, 'closed').mockResolvedValue(empty)
+    const user = userEvent.setup()
+    renderAsModerator(route, '/shops/s1')
+
+    await user.click(await screen.findByRole('button', { name: 'Close shop' }))
+    const dialog = await screen.findByRole('dialog')
+    const confirm = within(dialog).getByRole('button', { name: 'Close shop' })
+    expect(confirm).toBeDisabled()
+    await user.type(within(dialog).getByLabelText('Reason (the seller reads this)'), '  Fakes ')
+    await user.click(confirm)
+
+    await waitFor(() => expect(close).toHaveBeenCalledWith('s1', 'Fakes'))
+  })
+
+  it('offers a customer no way to close it', async () => {
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
+    vi.spyOn(Product, 'list').mockResolvedValue(empty)
+    renderAsCustomer(route, '/shops/s1')
+
+    expect(await screen.findByRole('heading', { name: 'Mai Lens' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close shop' })).not.toBeInTheDocument()
   })
 })

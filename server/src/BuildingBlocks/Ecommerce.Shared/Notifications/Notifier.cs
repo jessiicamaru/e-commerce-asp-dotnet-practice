@@ -52,6 +52,10 @@ public static class NotificationKind
     public const string ProductRejected = "ProductRejected";
     public const string ProductTakenDown = "ProductTakenDown";
 
+    // Staff closed or reopened a seller's shop (specs/107)
+    public const string ShopClosed = "ShopClosed";
+    public const string ShopReopened = "ShopReopened";
+
     // Somebody reviewed a seller's product (specs/046)
     public const string NewReview = "NewReview";
 

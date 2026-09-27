@@ -21,11 +21,14 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { PAGE_SIZE } from '@/constants/shared'
+import { useClosedShops, useShopMoves } from '@/hooks/shop'
 import { useDecideShopApplication, useShopApplications } from '@/hooks/shop-applications'
 import type { ShopApplication, ShopApplicationStatus } from '@/services/shop-applications/types'
 import { cn } from '@/utils/shared'
 
-const TABS: ShopApplicationStatus[] = ['Pending', 'Approved', 'Rejected']
+/** The three application queues, and the shops staff closed (specs/107) - a different list behind the same tabs. */
+type Tab = ShopApplicationStatus | 'Closed'
+const TABS: Tab[] = ['Pending', 'Approved', 'Rejected', 'Closed']
 
 /**
  * Who is asking to sell (specs/044) - a moderator's first queue. Approving opens the shop at once;
@@ -33,18 +36,13 @@ const TABS: ShopApplicationStatus[] = ['Pending', 'Approved', 'Rejected']
  * the server's 409, shown in its words.
  */
 export function AdminShopsPage() {
-  const { t, i18n } = useTranslation('admin')
+  const { t } = useTranslation('admin')
   const [params, setParams] = useSearchParams()
-  const asked = params.get('status') as ShopApplicationStatus | null
+  const asked = params.get('status') as Tab | null
   const status = asked && TABS.includes(asked) ? asked : 'Pending'
   const page = Number(params.get('page') ?? '1') || 1
-  const [rejecting, setRejecting] = useState<ShopApplication | null>(null)
 
-  const list = useShopApplications(status, page, PAGE_SIZE)
-  const decide = useDecideShopApplication()
-  const failed = decide.approve.error ?? decide.reject.error
-
-  const go = (next: { status?: ShopApplicationStatus; page?: number }) => {
+  const go = (next: { status?: Tab; page?: number }) => {
     const merged = new URLSearchParams()
     merged.set('status', next.status ?? status)
     if (next.page && next.page > 1) merged.set('page', String(next.page))
@@ -73,6 +71,79 @@ export function AdminShopsPage() {
         ))}
       </div>
 
+      {status === 'Closed' ? (
+        <ClosedShops page={page} onPage={(next) => go({ page: next })} />
+      ) : (
+        <Applications status={status} page={page} onPage={(next) => go({ page: next })} />
+      )}
+    </section>
+  )
+}
+
+/**
+ * The shops staff closed, newest first (specs/107), each with the reason its seller reads and a Reopen. Reopening puts
+ * its products back unless the seller had paused it themselves - that pause is theirs.
+ */
+function ClosedShops({ page, onPage }: { page: number; onPage: (page: number) => void }) {
+  const { t, i18n } = useTranslation('admin')
+  const list = useClosedShops(page, PAGE_SIZE)
+  const { reopen } = useShopMoves()
+
+  if (list.isError) return <ErrorMessage>{t('shops.loadFailed')}</ErrorMessage>
+  if (list.isPending || !list.data) return <LoadingRows />
+  if (list.data.totalCount === 0) return <p className="bg-card ring-border/60 rounded-3xl p-8 text-sm ring-1">{t('shops.closed.none')}</p>
+
+  return (
+    <>
+      <ServerError error={reopen.error} fallback={t('shops.loadFailed')} />
+      <div className="grid gap-3">
+        {list.data.items.map((s) => (
+          <article key={s.sellerId} className="bg-card ring-border/60 grid gap-2 rounded-3xl p-5 ring-1">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-semibold">{s.shopName}</h3>
+                <p className="text-muted-foreground text-xs">
+                  {t('shops.closed.when', { when: new Date(s.closedAt ?? '').toLocaleString(i18n.language) })}
+                  {s.pausedAt && <Badge variant="outline" className="ml-2">{t('shops.closed.alsoPaused')}</Badge>}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                className="rounded-full px-3"
+                disabled={reopen.isPending}
+                onClick={() =>
+                  reopen.mutateAsync(s.sellerId).then(() => toast.success(t('shops.closed.reopened', { shop: s.shopName })), () => {})
+                }
+              >
+                <CheckIcon /> {t('shops.closed.reopen')}
+              </Button>
+            </div>
+            <p className="text-sm whitespace-pre-line">{s.closedReason}</p>
+          </article>
+        ))}
+      </div>
+      <Pager page={page} pageSize={PAGE_SIZE} totalCount={list.data.totalCount} onChange={onPage} />
+    </>
+  )
+}
+
+function Applications({
+  status,
+  page,
+  onPage,
+}: {
+  status: ShopApplicationStatus
+  page: number
+  onPage: (page: number) => void
+}) {
+  const { t, i18n } = useTranslation('admin')
+  const [rejecting, setRejecting] = useState<ShopApplication | null>(null)
+  const list = useShopApplications(status, page, PAGE_SIZE)
+  const decide = useDecideShopApplication()
+  const failed = decide.approve.error ?? decide.reject.error
+
+  return (
+    <>
       <ServerError error={failed} fallback={t('shops.loadFailed')} />
 
       {list.isError ? (
@@ -124,7 +195,7 @@ export function AdminShopsPage() {
               </article>
             ))}
           </div>
-          <Pager page={page} pageSize={PAGE_SIZE} totalCount={list.data.totalCount} onChange={(next) => go({ page: next })} />
+          <Pager page={page} pageSize={PAGE_SIZE} totalCount={list.data.totalCount} onChange={onPage} />
         </>
       )}
 
@@ -143,7 +214,7 @@ export function AdminShopsPage() {
           />
         )}
       </Dialog>
-    </section>
+    </>
   )
 }
 

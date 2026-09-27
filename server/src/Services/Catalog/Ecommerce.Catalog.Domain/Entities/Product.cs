@@ -69,9 +69,10 @@ public class Product
     public bool IsActive { get; set; } = true;
 
     /// <summary>
-    /// The seller's shop is closed - their account is banned (#193, specs/095). A copy of Catalog's <c>sellers</c> read
-    /// model, written for all of the seller's products at once when Identity announces it, so that
-    /// <see cref="OnShelf"/> stays a property of the product.
+    /// The seller's shop is not open (<see cref="Seller.Open"/>): their account is banned (#193, specs/095), they paused
+    /// it, or staff closed it (#214, specs/107). A copy of the <c>sellers</c> row, written for all of the seller's
+    /// products at once by <c>SellerRepository.ApplyShopStateAsync</c> - and on approval - so that <see cref="OnShelf"/>
+    /// stays a property of the product. The name is from specs/095 and kept, so a rolled-back image still reads it.
     /// </summary>
     public bool SellerSuspended { get; set; }
 
