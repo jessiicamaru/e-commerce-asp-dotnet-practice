@@ -26,7 +26,7 @@ description: "Task list for A seller's list of the returns of their parcels"
 - [x] T006 Mutations (quickstart Scenario 3), each red; full Order and client suites
 - [x] T007 [P] Bruno; rebuilt Order and storefront; post-design Constitution re-check
 - [x] T008 Docs: returns, marketplace, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T009 Merged as #228, closing #215
+- [x] T009 Merged as #228, closing #215
 
 ## Evidence
 

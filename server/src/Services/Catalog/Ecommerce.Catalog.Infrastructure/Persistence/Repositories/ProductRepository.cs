@@ -273,7 +273,8 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         string currency = "",
         string defaultCurrency = "",
         Guid? sellerId = null,
-        bool listedOnly = true)
+        bool listedOnly = true,
+        ProductFilter? filter = null)
     {
         // Variants come with the page: the card shows a "from" price and whether the prices differ.
         // Translations too, or every card would fall back to the default language (specs/021), and
@@ -330,13 +331,48 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             query = query.Where(p => matching.Contains(p.Id));
         }
 
+        var inDefaultCurrency = string.IsNullOrEmpty(currency)
+            || string.Equals(currency, defaultCurrency, StringComparison.OrdinalIgnoreCase);
+
+        // Only what can be bought now (#216, specs/109) - the availability read model, for display like the card's badge.
+        if (filter is { InStock: true })
+        {
+            query = query.Where(p => p.Availability);
+        }
+
+        // A range of the "from" price the card shows, in the currency ASKED FOR - never converted (specs/022).
+        if (filter is { } f && (f.MinPrice is not null || f.MaxPrice is not null))
+        {
+            var min = f.MinPrice;
+            var max = f.MaxPrice;
+            if (inDefaultCurrency)
+            {
+                // products.Price IS the default currency's "from" price, kept by RecomputeProductRollupAsync - and
+                // indexed (IX_products_Price).
+                if (min is { } lo) query = query.Where(p => p.Price >= lo);
+                if (max is { } hi) query = query.Where(p => p.Price <= hi);
+            }
+            else
+            {
+                // ⚠️ The ids of a grouped join, never the sort's correlated MIN per product: that is a SubPlan run for
+                // every product, the shape specs/074 measured at 457 ms on 100,000 and took out of the search. A
+                // product with no active variant priced in this currency has no group, so it is excluded.
+                var inRange =
+                    from price in _context.VariantPrices
+                    join variant in _context.ProductVariants on price.VariantId equals variant.Id
+                    where variant.IsActive && price.Currency == currency
+                    group price.Amount by variant.ProductId into prices
+                    where (min == null || prices.Min() >= min) && (max == null || prices.Min() <= max)
+                    select prices.Key;
+                query = query.Where(p => inRange.Contains(p.Id));
+            }
+        }
+
         // Sorting by price sorts by the price in the currency being ASKED FOR. Sorting by the
         // default currency and labelling the result "cheapest first" would be visibly wrong the moment
         // the two lists are not proportional - which they are not, because an administrator sets each
         // one (specs/022). A product not priced in this currency sorts last: SQL puts NULL last
         // ascending, and `NULLS LAST` is asked for explicitly on the descending sort.
-        var inDefaultCurrency = string.IsNullOrEmpty(currency)
-            || string.Equals(currency, defaultCurrency, StringComparison.OrdinalIgnoreCase);
 
         System.Linq.Expressions.Expression<Func<Product, decimal?>> byPrice = inDefaultCurrency
             ? p => p.Price

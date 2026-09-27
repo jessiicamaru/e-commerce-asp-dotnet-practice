@@ -152,5 +152,12 @@
     "answerHiddenBecause": "Answer hidden: {{reason}}",
     "noneWaiting": "No questions are waiting for an answer.",
     "noneAnswered": "Nothing answered yet."
-  }
+  },
+  "price": {
+    "label": "Price ({{currency}})",
+    "min": "Min",
+    "max": "Max",
+    "reversed": "The minimum is above the maximum."
+  },
+  "inStockOnly": "In stock only"
 }

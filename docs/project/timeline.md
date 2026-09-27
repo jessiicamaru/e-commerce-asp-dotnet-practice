@@ -163,6 +163,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [106](../../specs/106-payout-accounts/) | Payout accounts | #226 | #213: a seller gives one payout account in Identity (masked to them, emailed on every change); Order asks for it over Admin-only gRPC and freezes bank, holder and last four digits on each payout; none is a 409 |
 | [107](../../specs/107-shop-closure/) | Shop pause and closure | #227 | #214: a seller pauses their shop and staff close one with a reason, without touching the account; one shelf statement recomputes from ban, pause and closure |
 | [108](../../specs/108-seller-returns/) | A seller's returns | #228 | #215: a seller lists the returns of their own parcels by state at `/shop/returns`, and each sale with one is badged |
+| [109](../../specs/109-catalogue-filters/) | Catalogue filters | #229 | #216: the catalogue filters by a range of the "from" price in the currency being browsed in, and by what is in stock - both indexed, both in the address |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

@@ -80,6 +80,11 @@ export interface ProductQuery {
   sortBy?: SortBy
   /** One shop's products (specs/099), for its page. */
   sellerId?: string
+  /** A range of the "from" price, in the currency being browsed in - never converted (specs/109). */
+  minPrice?: number
+  maxPrice?: number
+  /** Only what can be bought now. Sent only when true. */
+  inStock?: boolean
 }
 
 /**

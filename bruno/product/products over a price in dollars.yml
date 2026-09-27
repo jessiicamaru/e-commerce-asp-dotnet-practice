@@ -1,0 +1,35 @@
+info:
+  name: products over a price in dollars
+  type: http
+  seq: 68
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products?minPrice=1000&currency=USD&pageSize=50"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("every one has a dollar price of at least the minimum - none converted, none unpriced", function() {
+          res.body.items.forEach(function(p) {
+            expect(p.currency).to.equal("USD");
+            expect(p.price).to.not.equal(null);
+            expect(p.price).to.be.at.least(1000);
+          });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/109: in any other currency the range reads that currency's prices; a product with none is left out (specs/022).
+
