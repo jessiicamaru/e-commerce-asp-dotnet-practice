@@ -50,7 +50,11 @@ public class PasswordResetTests(IdentityTestFixture fixture)
         Assert.Equal(ResetTokens.Hash(token), stored.TokenHash);
         Assert.True(stored.ExpiresAt <= DateTime.UtcNow.AddMinutes(30));
 
-        await SendAsync(new DispatchEmailsCommand(DateTime.UtcNow));
+        // Until nothing is left: the dispatcher sends the oldest 50 due, and the collection's other tests leave
+        // plenty of confirmation emails pending in the shared database - one pass stopped reaching this one once
+        // there were more than 50 of them (specs/099 added three tests that register people).
+        var now = DateTime.UtcNow;
+        while (await SendAsync(new DispatchEmailsCommand(now)) > 0) { }
         var sent = Assert.Single(_fixture.Mail.SentTo(email), m => m.Subject == "Đặt lại mật khẩu của bạn");
         Assert.Contains($"http://shop.test/reset-password?token={Uri.EscapeDataString(token)}", sent.Body);
 
