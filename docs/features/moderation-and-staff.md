@@ -310,8 +310,9 @@ No message is specific to moderation. Staff actions publish, through the acting 
 
 - **A service restarted within an hour of a stop forgets it**, and a token it held lives out its minutes
   there (specs/065).
-- **Nothing closes a shop or removes `Seller`**; locking the account stops the person, not their
-  listings. Taking a product down is per product.
+- **Only a ban closes a shop** (specs/095): it takes the seller's products off the shelf until lifted. A lock
+  stops the person, not their listings; nothing closes a shop alone or removes `Seller`, and taking a
+  product down is per product.
 - **The audit log is an administrator's.** A moderator sees their own Moderation decisions, and one
   person's Moderation history at a time (specs/100) - nothing else.
 - **Content decisions from before specs/100 name nobody** and are missing from a person's history.

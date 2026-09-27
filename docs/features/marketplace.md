@@ -390,9 +390,10 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
   start. `appsettings.json` ships `0.1`, so this only bites a deployment that removes it.
 - **A payout moves no money.** Payment is a stub; a payout is a ledger entry. It always settles
   everything due in one currency - there is no partial payout.
-- **Nothing takes a shop away.** The only role that can be granted or revoked through the API is
-  `Moderator`; there is no endpoint to close a shop or remove `Seller`. Locking the account
-  ([moderation](moderation-and-staff.md)) stops the person, not their listings.
+- **Only a ban closes a shop.** Banning a seller takes every product of theirs off the shelf until the ban is
+  lifted (specs/095); a lock stops the person, not their listings. There is no closing a shop while
+  leaving the person a customer, no seller pausing their own shop, and no removing `Seller` - the only
+  role granted or revoked through the API is `Moderator`.
 - **A new role reaches a session at its next refresh**, and an access token lives out its 15 minutes.
 - Built since, and described on their own pages:
   - how a seller's shop is doing, in [seller insights](seller-insights.md) (specs/068);
