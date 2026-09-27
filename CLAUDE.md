@@ -515,7 +515,9 @@ older image's order. Payment is still a stub: a payout is a ledger entry, not a 
 state, one order with the shop's parcel and its next step, and the payouts due with a confirmed "record
 payout". It needed one new endpoint, `GET /api/orders/fulfilment/{id}` (Admin): ⚠️ **the one read of an
 order that is not scoped to its owner** - the role on the route is the whole permission, so its handler
-(`GetOrderForStaffQuery`) must never sit behind any other route. The parcel steps are one component,
+(`GetOrderForStaffQuery`) must never sit behind any other route - and **`GET /api/orders/staff`** (specs/096, #194) is
+the second, the same way: any order by id prefix, customer and status, at `/admin/orders/find`, the email resolved by
+the storefront through Identity (Order never learns emails). The parcel steps are one component,
 `components/order/parcel-actions`, for a seller's parcel and the shop's.
 
 **A paid order can be cancelled** (specs/039) - by its customer while every parcel still waits

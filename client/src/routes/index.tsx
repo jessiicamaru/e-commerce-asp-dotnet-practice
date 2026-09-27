@@ -23,6 +23,7 @@ import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrderPage } from '@/pages/admin-order'
+import { AdminOrderSearchPage } from '@/pages/admin-order-search'
 import { AdminReturnsPage } from '@/pages/admin-returns'
 import { AdminEmailDeliveryPage } from '@/pages/admin-email-delivery'
 import { AdminVouchersPage } from '@/pages/admin-vouchers'
@@ -172,6 +173,14 @@ export function AppRoutes() {
             }
           >
             <Route index element={<AdminHome />} />
+            <Route
+              path="orders/find"
+              element={
+                <RequireRole role={['Admin']}>
+                  <AdminOrderSearchPage />
+                </RequireRole>
+              }
+            />
             <Route path="orders/:id" element={<AdminOrderPage />} />
             <Route path="returns" element={<AdminReturnsPage />} />
             <Route

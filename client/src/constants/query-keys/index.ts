@@ -1,6 +1,6 @@
 import type { ProductQuery } from '@/services/product/types'
 import type { CheckoutChoice } from '@/services/order/types'
-import type { QueueState } from '@/services/admin/types'
+import type { QueueState, StaffOrderQuery } from '@/services/admin/types'
 import type { AuditFilter } from '@/services/audit/types'
 
 /**
@@ -25,6 +25,7 @@ export const queryKeys = {
   balance: () => ['balance'] as const,
   payouts: (page: number) => ['payouts', page] as const,
   adminQueue: (status: QueueState, page: number) => ['admin-queue', status, page] as const,
+  staffOrders: (query: StaffOrderQuery) => ['staff-orders', query] as const,
   adminOrder: (id: string) => ['admin-order', id] as const,
   payoutsDue: () => ['payouts-due'] as const,
   adminReturns: (status: string, page: number) => ['admin-returns', status, page] as const,

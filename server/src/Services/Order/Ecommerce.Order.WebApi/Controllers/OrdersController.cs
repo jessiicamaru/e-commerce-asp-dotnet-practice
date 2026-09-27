@@ -13,6 +13,7 @@ using Ecommerce.Order.Application.Orders.Queries.GetMySale;
 using Ecommerce.Order.Application.Orders.Queries.GetMySales;
 using Ecommerce.Order.Application.Orders.Queries.GetOrderForStaff;
 using Ecommerce.Order.Application.Orders.Queries.GetOrdersForFulfilment;
+using Ecommerce.Order.Application.Orders.Queries.GetOrdersForStaff;
 using Ecommerce.Order.Application.Orders.Queries.GetPayoutsDue;
 using Ecommerce.Order.Application.Orders.Queries.GetShippingOptions;
 using Microsoft.AspNetCore.Authorization;
@@ -186,6 +187,17 @@ public class OrdersController : ApiControllerBase
 
     // ------------------------------------------------------------------ fulfilment (staff)
     // Since specs/035 these move the SHOP's part of the order - its own goods - and nothing a seller sold.
+
+    /// <summary>
+    /// Staff: find any order - by the start of its id, by customer, in any status, newest first (#194, specs/096).
+    /// ⚠️ Owner-unscoped: the Admin role is the whole permission.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpGet("staff")]
+    public async Task<IActionResult> SearchForStaff([FromQuery] GetOrdersForStaffQuery query)
+    {
+        return Ok(await Mediator.Send(query));
+    }
 
     /// <summary>Staff: every customer's orders in one fulfilment status - Paid, Preparing or Shipped.</summary>
     [Authorize(Roles = "Admin")]

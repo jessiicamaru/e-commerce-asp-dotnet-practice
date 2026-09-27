@@ -41,4 +41,4 @@ existed.
 - [X] T014 [P] Bruno `seller/` seq 18-22: ban, 404, lift, 200, sign in again
 - [X] T015 Rebuilt Identity and Catalog; Bruno through the gateway
 - [X] T016 Docs: `docs/features/marketplace.md`, `docs/features/moderation-and-staff.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T017 Merged as #202, closing #193
+- [X] T017 Merged as #202 (2026-09-27), closing #193

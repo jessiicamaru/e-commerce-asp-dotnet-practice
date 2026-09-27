@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
-import { BellIcon, GavelIcon, LayoutDashboardIcon, MailIcon, MailWarningIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
+import { BellIcon, GavelIcon, LayoutDashboardIcon, MailIcon, MailWarningIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, SearchIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth/useAuth'
 import { cn } from '@/utils/shared'
 
@@ -22,6 +22,7 @@ export function AdminLayout() {
   const links = [
     { to: '/admin/overview', end: false, icon: LayoutDashboardIcon, label: t('menu.overview'), adminOnly: true },
     { to: '/admin', end: true, icon: TruckIcon, label: t('menu.fulfilment'), adminOnly: true },
+    { to: '/admin/orders/find', end: false, icon: SearchIcon, label: t('menu.findOrder'), adminOnly: true },
     { to: '/admin/returns', end: false, icon: Undo2Icon, label: t('menu.returns'), adminOnly: true },
     { to: '/admin/payouts', end: false, icon: WalletIcon, label: t('menu.payouts'), adminOnly: true },
     { to: '/admin/vouchers', end: false, icon: TicketPercentIcon, label: t('menu.vouchers'), adminOnly: true },
