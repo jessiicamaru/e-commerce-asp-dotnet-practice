@@ -234,7 +234,8 @@ public class QuestionHandlers(
         var hidden = await _questions.TryHideAsync(question.Id, reason, Caller(), DateTime.UtcNow, async ct =>
         {
             await _audit.RecordAsync(AuditCategory.Moderation, "QuestionHidden", "Question", question.Id.ToString(),
-                $"A question hidden: {reason}", new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct);
+                $"A question hidden: {reason}", new { Hidden = false }, new { Hidden = true, Reason = reason }, cancellationToken: ct,
+                aboutUserId: question.AskerId);
 
             // Its asker learns why it disappeared, as a reviewer does (specs/059).
             await _notifier.NotifyAsync(question.AskerId, NotificationKind.QuestionHidden,
@@ -255,7 +256,8 @@ public class QuestionHandlers(
 
         var restored = await _questions.TryRestoreAsync(question.Id, ct =>
             _audit.RecordAsync(AuditCategory.Moderation, "QuestionRestored", "Question", question.Id.ToString(),
-                "A question shown again", new { Hidden = true, Reason = reason }, new { Hidden = false }, cancellationToken: ct),
+                "A question shown again", new { Hidden = true, Reason = reason }, new { Hidden = false }, cancellationToken: ct,
+                aboutUserId: question.AskerId),
             cancellationToken);
         if (restored == 0)
             throw new ConflictException("This question is not hidden.");
@@ -274,7 +276,7 @@ public class QuestionHandlers(
         {
             await _audit.RecordAsync(AuditCategory.Moderation, "AnswerHidden", "Question", question.Id.ToString(),
                 $"An answer hidden: {reason}", new { AnswerHidden = false }, new { AnswerHidden = true, Reason = reason },
-                cancellationToken: ct);
+                cancellationToken: ct, aboutUserId: question.AnsweredBy);
 
             if (question.AnsweredBy is { } author)
             {
@@ -298,7 +300,7 @@ public class QuestionHandlers(
         var restored = await _questions.TryRestoreAnswerAsync(question.Id, ct =>
             _audit.RecordAsync(AuditCategory.Moderation, "AnswerRestored", "Question", question.Id.ToString(),
                 "An answer shown again", new { AnswerHidden = true, Reason = reason }, new { AnswerHidden = false },
-                cancellationToken: ct), cancellationToken);
+                cancellationToken: ct, aboutUserId: question.AnsweredBy), cancellationToken);
         if (restored == 0)
             throw new ConflictException("This answer is not hidden.");
 

@@ -1,0 +1,43 @@
+info:
+  name: a moderator reads the customer's history
+  type: http
+  seq: 15
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/audit/people/{{customerId}}"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The entries reach Activity by message (specs/041): give the broker a moment.
+        await new Promise(function(resolve) { setTimeout(resolve, 2000); });
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the lock is there, with its reason, and the unlock after it", function() {
+          var actions = res.body.items.map(function(e) { return e.action; });
+          expect(actions.indexOf("AccountUnlocked")).to.be.below(actions.indexOf("AccountLocked"));
+          var lock = res.body.items.find(function(e) { return e.action === "AccountLocked"; });
+          expect(lock.reason).to.equal("Bruno checks the lock");
+        });
+        test("nothing but moderation - the sign-in is not here", function() {
+          res.body.items.forEach(function(e) { expect(e.action).to.not.equal("SignedIn"); });
+          expect(res.body.items[0]).to.not.have.property("before");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/100 (#198): what staff decided about a person, for the next moderator to read before deciding.
+  Moderation entries only - the customer signed in at seq 14, and that Security entry is not here.

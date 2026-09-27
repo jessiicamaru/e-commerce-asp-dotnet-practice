@@ -22,11 +22,12 @@ import { PAGE_SIZE } from '@/constants/shared'
 import { useAuth } from '@/context/auth/useAuth'
 import { useAccountActions, useAccounts } from '@/hooks/accounts'
 import { MODERATOR_MAX_LOCK_DAYS, type Account } from '@/services/accounts/types'
+import { HistoryDialog } from './history-dialog'
 import { StopDialog, type Stop } from './stop-dialog'
 
 /**
  * Staff look after people here (specs/043): find somebody by email or name, make them a moderator, or
- * stop an account.
+ * stop an account - and read what staff decided about them before (specs/100).
  *
  * <p>
  * What each person is offered follows their role - an administrator grants, revokes and bans; a
@@ -43,6 +44,7 @@ export function AdminUsersPage() {
   const page = Number(params.get('page') ?? '1') || 1
   const [draft, setDraft] = useState(search)
   const [stopping, setStopping] = useState<{ kind: Stop; account: Account } | null>(null)
+  const [reading, setReading] = useState<Account | null>(null)
   // When the page opened: what "days still to run" is measured from, fixed rather than read in render.
   const [now] = useState(() => Date.now())
 
@@ -157,6 +159,8 @@ export function AdminUsersPage() {
                             <EllipsisIcon />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-52">
+                            <DropdownMenuItem onClick={() => setReading(a)}>{t('users.showHistory')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             {isAdmin && !admin && !moderator && !a.bannedAt && (
                               <DropdownMenuItem onClick={() => act.grant.mutate(a.id, { onSuccess: done('users.granted', a) })}>
                                 {t('users.grant')}
@@ -206,6 +210,8 @@ export function AdminUsersPage() {
           <Pager page={page} pageSize={PAGE_SIZE} totalCount={accounts.data.totalCount} onChange={(next) => go({ page: next })} />
         </>
       )}
+
+      <HistoryDialog account={reading} onClose={() => setReading(null)} />
 
       <StopDialog
         stopping={stopping}

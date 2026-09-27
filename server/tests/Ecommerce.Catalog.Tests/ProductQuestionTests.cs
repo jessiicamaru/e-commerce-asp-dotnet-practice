@@ -154,6 +154,7 @@ public class ProductQuestionTests(CatalogTestFixture fixture) : IDisposable
         var told = Assert.Single(Notices("QuestionHidden", product.Name));
         Assert.Equal(asker, told.RecipientId);
         Assert.Equal("Off topic", told.Data["reason"]);
+        Assert.Equal(asker, Audited("QuestionHidden", older.Id).AboutUserId);   // the asker's history (specs/100)
         Assert.Contains((await SendAsync(new GetQuestionsForStaffQuery(Hidden: true, PageSize: 50))).Items, q => q.Id == older.Id);
 
         await SendAsync(new RestoreQuestionCommand(older.Id));
@@ -178,6 +179,7 @@ public class ProductQuestionTests(CatalogTestFixture fixture) : IDisposable
         Assert.Null(shown.Answer);
         Assert.Null(shown.AnsweredAt);
         Assert.Equal(seller, Assert.Single(Notices("AnswerHidden", product.Name)).RecipientId);
+        Assert.Equal(seller, Audited("AnswerHidden", question.Id).AboutUserId);   // the answer's author (specs/100)
 
         As(seller, "Seller");
         var locked = await Assert.ThrowsAsync<ConflictException>(() => SendAsync(new AnswerQuestionCommand(question.Id, "Same thing again")));
@@ -235,6 +237,10 @@ public class ProductQuestionTests(CatalogTestFixture fixture) : IDisposable
     }
 
     // ------------------------------------------------------------------ helpers
+
+    private AuditEntryRecorded Audited(string action, Guid questionId) =>
+        Assert.Single(_fixture.Harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message),
+            e => e.Action == action && e.SubjectId == questionId.ToString());
 
     private List<UserNotificationRequested> Notices(string kind, string productName) =>
         _fixture.Harness.Published.Select<UserNotificationRequested>().Select(x => x.Context.Message)

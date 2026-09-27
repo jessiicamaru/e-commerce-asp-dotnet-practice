@@ -206,7 +206,7 @@ public class ShopApplicationHandlers(
                 await _audit.RecordAsync(AuditCategory.Moderation, "ShopApproved", "ShopApplication", application.Id.ToString(),
                     $"\"{application.ShopName}\" approved for {row.Email}",
                     before: new { Status = "Pending" }, after: new { Status = "Approved", Roles = user.Roles.Select(r => r.Name).OrderBy(n => n) },
-                    cancellationToken: ct);
+                    cancellationToken: ct, aboutUserId: user.Id);
                 await _notifier.NotifyAsync(user.Id, NotificationKind.ShopApproved,
                     new Dictionary<string, string> { ["shop"] = application.ShopName }, "/shop", ct);
             }, cancellationToken);
@@ -225,7 +225,8 @@ public class ShopApplicationHandlers(
             {
                 await _audit.RecordAsync(AuditCategory.Moderation, "ShopRejected", "ShopApplication", application.Id.ToString(),
                     $"\"{application.ShopName}\" rejected for {row.Email}",
-                    before: new { Status = "Pending" }, after: new { Status = "Rejected", Reason = reason }, cancellationToken: ct);
+                    before: new { Status = "Pending" }, after: new { Status = "Rejected", Reason = reason }, cancellationToken: ct,
+                    aboutUserId: application.UserId);
                 await _notifier.NotifyAsync(application.UserId, NotificationKind.ShopRejected,
                     new Dictionary<string, string> { ["shop"] = application.ShopName, ["reason"] = reason }, "/open-shop", ct);
             }, cancellationToken);

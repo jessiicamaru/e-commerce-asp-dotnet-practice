@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { PAGE_SIZE } from '@/constants/shared'
 import { Accounts } from '@/services/accounts'
-import type { Account } from '@/services/accounts/types'
+import type { Account, ModerationHistoryEntry } from '@/services/accounts/types'
 import { refusal } from '@/test/refusal'
 import { renderAsAdmin, renderAsModerator } from '@/test/render'
 import { AdminUsersPage } from '.'
@@ -31,8 +31,17 @@ async function openActions(user: ReturnType<typeof userEvent.setup>, email: stri
   return screen.findByRole('menu')
 }
 
+const decision = (over: Partial<ModerationHistoryEntry>): ModerationHistoryEntry => ({
+  id: 'e1', action: 'AccountLocked', actorEmail: 'mod@example.test', actorRole: 'Moderator', subjectType: 'User',
+  subjectId: 'u-lan', summary: 'locked', reason: null, occurredAt: '2026-09-01T10:00:00Z', ...over,
+})
+
+const history = (...items: ModerationHistoryEntry[]) => ({ items, page: 1, pageSize: 5, totalCount: items.length })
+
 beforeEach(async () => {
   await i18n.changeLanguage('en')
+  // Nobody has a history unless a test says so (specs/100).
+  vi.spyOn(Accounts, 'history').mockResolvedValue(history())
 })
 
 describe('AdminUsersPage (specs/043)', () => {
@@ -177,5 +186,64 @@ describe('AdminUsersPage (specs/043)', () => {
     await user.click(within(menu).getByRole('menuitem', { name: 'Unlock' }))
 
     expect(await screen.findByText('User not found.')).toBeInTheDocument()
+  })
+})
+
+describe("A person's history (specs/100)", () => {
+  /** The issue's acceptance: before locking, the moderator sees the person was locked twice before, and why. */
+  it('shows the earlier decisions and their reasons where a lock is decided', async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
+    const read = vi.spyOn(Accounts, 'history').mockResolvedValue({
+      ...history(
+        decision({ id: 'e3', action: 'AccountLocked', reason: 'Abuse in reviews', occurredAt: '2026-09-20T10:00:00Z' }),
+        decision({ id: 'e2', action: 'ReviewHidden', reason: 'Advertising', subjectType: 'Review', occurredAt: '2026-09-10T10:00:00Z' }),
+        decision({ id: 'e1', action: 'AccountLocked', reason: 'Spam', occurredAt: '2026-09-01T10:00:00Z' }),
+      ),
+      totalCount: 7,
+    })
+    const user = userEvent.setup()
+    renderPage(renderAsModerator)
+
+    const menu = await openActions(user, 'lan@example.test')
+    await user.click(within(menu).getByRole('menuitem', { name: 'Lock…' }))
+    const dialog = await screen.findByRole('dialog')
+
+    const earlier = await within(dialog).findByRole('list', { name: 'Earlier decisions' })
+    expect(within(earlier).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      expect.stringMatching(/Account locked.*“Abuse in reviews”/),
+      expect.stringMatching(/Review hidden.*“Advertising”/),
+      expect.stringMatching(/Account locked.*“Spam”/),
+    ])
+    expect(within(dialog).getByText('and 4 earlier decisions')).toBeInTheDocument()
+    expect(read).toHaveBeenCalledWith('u-lan', 1, 5)
+  })
+
+  it('says when there is nothing on record', async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
+    const user = userEvent.setup()
+    renderPage(renderAsModerator)
+
+    const menu = await openActions(user, 'lan@example.test')
+    await user.click(within(menu).getByRole('menuitem', { name: 'Lock…' }))
+
+    expect(await within(await screen.findByRole('dialog')).findByText(/Nothing on record/)).toBeInTheDocument()
+  })
+
+  it("opens the whole history from the person's menu, paged", async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
+    const read = vi.spyOn(Accounts, 'history').mockResolvedValue({
+      items: [decision({ action: 'ShopRejected', subjectType: 'ShopApplication', reason: 'Tell us what you sell' })],
+      page: 1, pageSize: 10, totalCount: 11,
+    })
+    const user = userEvent.setup()
+    renderPage(renderAsModerator)
+
+    const menu = await openActions(user, 'lan@example.test')
+    await user.click(within(menu).getByRole('menuitem', { name: 'History…' }))
+    const dialog = await screen.findByRole('dialog', { name: 'What staff decided about lan@example.test' })
+
+    expect(await within(dialog).findByText('“Tell us what you sell”')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: /next/i }))
+    await waitFor(() => expect(read).toHaveBeenLastCalledWith('u-lan', 2, 10))
   })
 })

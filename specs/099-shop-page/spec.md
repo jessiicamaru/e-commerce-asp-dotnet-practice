@@ -2,7 +2,7 @@
 
 **Feature Branch**: `099-shop-page` | **Created**: 2026-09-27 | **Issue**: #197
 
-**Status**: Draft
+**Status**: Merged (#206, 2026-09-27)
 
 **Input**: Issue #197 - "a shopper cannot see a seller's shop".
 

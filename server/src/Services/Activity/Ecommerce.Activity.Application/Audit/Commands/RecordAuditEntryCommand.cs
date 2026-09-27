@@ -33,6 +33,7 @@ public class RecordAuditEntryCommandHandler(IAuditRepository audit) : IRequestHa
             SubjectType = e.SubjectType,
             SubjectId = e.SubjectId,
             Summary = e.Summary,
+            AboutUserId = e.AboutUserId,
             Before = e.Before,
             After = e.After,
             Changes = JsonSerializer.Serialize(changes, Json),

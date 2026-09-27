@@ -147,6 +147,9 @@ public class ProductReviewTests(CatalogTestFixture fixture) : IDisposable
         await SendAsync(new TakeDownProductCommand(product.Id, "Counterfeit"));
         var told = Notices(product.Name).Single(n => n.Kind == "ProductTakenDown");
         Assert.Equal((_alice, "Counterfeit"), (told.RecipientId, told.Data["reason"]));
+        // In its seller's history (specs/100).
+        Assert.Contains(_fixture.Harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message),
+            e => e.Action == "ProductTakenDown" && e.SubjectId == product.Id.ToString() && e.AboutUserId == _alice);
 
         As(Guid.CreateVersion7(), "Customer");
         Assert.Null(await SendAsync(new GetProductByIdQuery(product.Id)));

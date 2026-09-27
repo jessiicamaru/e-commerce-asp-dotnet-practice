@@ -21,6 +21,12 @@ public class AuditEntry
     public string? SubjectId { get; set; }
     public string Summary { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The person the entry is about (specs/100): the user locked, the author of a review hidden, the seller of a product
+    /// taken down. Null for entries about nobody in particular, and for content decisions recorded before the field.
+    /// </summary>
+    public Guid? AboutUserId { get; set; }
+
     /// <summary>JSON snapshots, secrets already redacted by the publisher.</summary>
     public string? Before { get; set; }
     public string? After { get; set; }

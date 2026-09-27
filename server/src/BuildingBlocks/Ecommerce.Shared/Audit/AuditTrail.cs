@@ -38,6 +38,10 @@ public interface IAuditTrail
     /// <param name="before">Anything serialisable; secrets are redacted. Null for a creation.</param>
     /// <param name="after">Anything serialisable; secrets are redacted. Null for a deletion.</param>
     /// <param name="actor">Overrides the caller - null means "whoever the token says", and no token the system.</param>
+    /// <param name="aboutUserId">
+    /// The person the entry is about, when that is not the subject itself: the author of a review hidden, the seller of a
+    /// product taken down (specs/100). A <c>User</c> subject is about that user without saying so.
+    /// </param>
     Task RecordAsync(
         string category,
         string action,
@@ -47,7 +51,8 @@ public interface IAuditTrail
         object? before = null,
         object? after = null,
         AuditActor? actor = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        Guid? aboutUserId = null);
 }
 
 /// <remarks>
@@ -72,7 +77,8 @@ public class AuditTrail(IPublishEndpoint publish, AuditTrailOptions options, ICu
         object? before = null,
         object? after = null,
         AuditActor? actor = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? aboutUserId = null)
     {
         var who = actor ?? (_currentUser?.Id is not { } id
             ? new AuditActor(null, null, null)
@@ -91,7 +97,8 @@ public class AuditTrail(IPublishEndpoint publish, AuditTrailOptions options, ICu
             AuditSnapshot.Serialize(before),
             AuditSnapshot.Serialize(after),
             _options.ServiceName,
-            DateTime.UtcNow), cancellationToken);
+            DateTime.UtcNow,
+            aboutUserId ?? (subjectType == "User" && Guid.TryParse(subjectId, out var user) ? user : null)), cancellationToken);
     }
 }
 

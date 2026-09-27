@@ -128,7 +128,9 @@ visible, and loads the latest 8 only when opened; choosing one marks it read and
    its own guarded `UPDATE` (specs/019), so the entry is saved immediately afterwards rather than with it.
 10. **The audit log is an administrator's.** `AuditController` is `[Authorize(Roles = "Admin")]`: it
     names who did what to whom, and a moderator reading who locked them would be reading their own
-    file. `GET /api/audit/mine` gives staff only their own **Moderation** entries.
+    file. `GET /api/audit/mine` gives staff only their own **Moderation** entries, and
+    `GET /api/audit/people/{userId}` one person's **Moderation** entries - the category fixed in code,
+    the reason read out of the snapshot, the snapshots themselves not returned (specs/100).
 11. **A notice stores a kind and data, never a sentence.** *Why:* a sentence stored in the language of
     the moment would stay in it; worded by the storefront, one notice reads Vietnamese on one visit and
     English on the next (specs/042 D1). An unknown kind still shows, generically.
@@ -275,7 +277,7 @@ Activity database - see [data-model.md](../reference/data-model.md#activity---ec
 
 | Table | Columns | Indexes |
 | :-- | :-- | :-- |
-| [`audit_entries`](../reference/data-model.md#audit_entries) | `Id` (the publisher's entry id), `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `Before` / `After` (`jsonb`), `Changes` (`jsonb`), `ChangeCount`, `Service`, `OccurredAt`, `RecordedAt` | `OccurredAt`; `(Category, OccurredAt)`; `(ActorId, OccurredAt)`; `(SubjectType, SubjectId)` |
+| [`audit_entries`](../reference/data-model.md#audit_entries) | `Id` (the publisher's entry id), `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `AboutUserId` (specs/100), `Before` / `After` (`jsonb`), `Changes` (`jsonb`), `ChangeCount`, `Service`, `OccurredAt`, `RecordedAt` | `OccurredAt`; `(Category, OccurredAt)`; `(ActorId, OccurredAt)`; `(SubjectType, SubjectId)`; `(AboutUserId, OccurredAt)` |
 | [`notification_wording_versions`](../reference/data-model.md#notification_wording_versions) | `Id`, `Key`, `Language`, `Version`, `IsDefault`, `Text`, `CreatedAt`, `CreatedBy` | unique `(Key, Language, Version)`; CHECK `"IsDefault" OR "Text" IS NOT NULL` |
 | [`notifications`](../reference/data-model.md#notifications) | `Id` (the publisher's id), `RecipientId`, `Kind`, `Data` (`jsonb`), `Link`, `CreatedAt`, `ReadAt` | `(RecipientId, CreatedAt)`; `IX_notifications_unread` on `RecipientId WHERE "ReadAt" IS NULL` |
 
@@ -292,6 +294,7 @@ Full list in [api.md](../reference/api.md); gateway routes `/api/audit/**`, `/ap
 | `GET` | `/api/audit/summary?from=&to=` | Admin |
 | `GET` | `/api/audit/{id}` | Admin |
 | `GET` | `/api/audit/mine?page=&pageSize=` | Admin, Moderator - their own Moderation entries |
+| `GET` | `/api/audit/people/{userId}?page=&pageSize=` | Admin, Moderator - one person's Moderation entries, with reasons, no snapshots (specs/100) |
 | `GET` | `/api/notifications?unreadOnly=&page=&pageSize=` | signed in - their own |
 | `GET` | `/api/notifications/unread-count` | signed in |
 | `POST` | `/api/notifications/{id}/read` | signed in - 204, or 404 for none or not theirs |
@@ -311,7 +314,7 @@ From [messages.md](../reference/messages.md).
 
 | Message | Fields | Published by | Consumed by |
 | :-- | :-- | :-- | :-- |
-| `AuditEntryRecorded` | `EntryId`, `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `Before`, `After`, `Service`, `OccurredAt` | Identity, Catalog, Inventory, Order, Payment, and Activity itself for notice wording edits (specs/078), through `Ecommerce.Shared` | Activity `RecordAuditEntryConsumer` |
+| `AuditEntryRecorded` | `EntryId`, `Category`, `Action`, `ActorId`, `ActorEmail`, `ActorRole`, `SubjectType`, `SubjectId`, `Summary`, `Before`, `After`, `Service`, `OccurredAt`, `AboutUserId` (optional, specs/100: the person it is about) | Identity, Catalog, Inventory, Order, Payment, and Activity itself for notice wording edits (specs/078), through `Ecommerce.Shared` | Activity `RecordAuditEntryConsumer` |
 | `UserNotificationRequested` | `NotificationId`, `RecipientId`, `Kind`, `Data`, `Link`, `OccurredAt` | Identity, Catalog, Order, through `Ecommerce.Shared` | Activity `RecordNotificationConsumer` |
 
 ## Storefront
@@ -336,7 +339,8 @@ From [messages.md](../reference/messages.md).
 | :-- | :-- |
 | `Ecommerce.Activity.Tests/AuditDiffTests` | Only changed fields; nested paths; creation and deletion; appearing and disappearing fields; type changes; the 200-change cap. |
 | `Ecommerce.Activity.Tests/RedactionTests` | Secret-looking fields are redacted at any depth, by name. |
-| `Ecommerce.Activity.Tests/AuditTrailTests` | The actor is the caller's most powerful role; nobody signed in is the system unless an actor is given. |
+| `Ecommerce.Activity.Tests/AuditTrailTests` | The actor is the caller's most powerful role; nobody signed in is the system unless an actor is given; an entry says whom it is about (specs/100). |
+| `Ecommerce.Activity.Tests/PersonHistoryTests` | One person's Moderation entries, newest first, with reasons; nothing from another category (specs/100). |
 | `Ecommerce.Activity.Tests/AuditLogTests` | Kept with its diff; a redelivery kept once; filters; the summary; unknown entry 404; unknown category 400. |
 | `Ecommerce.Activity.Tests/NotificationWordingTests` (7) | A save is what the storefront is given, in that language only, and a reset takes it away. An unknown placeholder is refused by name. Plural keys work, and an unknown key or language is a 404. What could run in a bell is stripped, and a link stays on the web or the shop. A stale or future version is a 409, and the store gives a number once. Reset and restore are audited versions. The overview's placeholders include an optional key's. |
 | client `utils/notifications` (placeholders), `components/shared/notice-text`, `utils/notifications/wording.test.ts`, `pages/admin-wording` | `describeNotification` fills exactly the declared placeholders, and the bundled words use only what their kind carries. Values are escaped. Sanitising and links. An edit laid over the bundle, and the bundle back after a reset. The console saves on top of its version and shows a refusal. |
@@ -387,3 +391,4 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [045-product-review](../../specs/045-product-review/) | [#97](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/97) | Product review actions and notices; `GET /api/audit/mine`. |
 | [046-product-reviews](../../specs/046-product-reviews/) | [#98](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/98) | Review actions; `NewReview`. |
 | [048-notification-wording](../../specs/048-notification-wording/) | [#129](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/129) | `notification-kinds.json` and `NotificationContract`: each kind's data keys declared once and tested on both sides; the five kinds that showed placeholders read as sentences (#119). |
+| [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | `AuditEntryRecorded.AboutUserId`, filled from a User subject and named by content decisions; `audit_entries.AboutUserId`, backfilled; `GET /api/audit/people/{userId}` (#198). |

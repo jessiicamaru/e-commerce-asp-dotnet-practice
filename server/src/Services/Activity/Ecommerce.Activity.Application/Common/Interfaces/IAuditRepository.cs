@@ -14,6 +14,10 @@ public interface IAuditRepository
     Task<(List<AuditEntrySummaryResponse> Items, int TotalCount)> GetPageAsync(
         AuditFilter filter, int page, int pageSize, CancellationToken cancellationToken = default);
 
+    /// <summary>The entries of one category about one person, newest first (specs/100).</summary>
+    Task<(List<AuditEntry> Items, int TotalCount)> GetAboutAsync(
+        Guid userId, string category, int page, int pageSize, CancellationToken cancellationToken = default);
+
     Task<AuditEntry?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<List<CategoryCountResponse>> CountByCategoryAsync(

@@ -36,4 +36,4 @@ description: "Task list for A shop has a page"
 - [X] T013 [P] Bruno `seller/` seq 83-85 and `security-checks/` seq 61-62
 - [X] T014 Rebuilt Identity, Catalog, the gateway and the storefront; Bruno 296/296; the page checked at `:8088`
 - [X] T015 Docs: `docs/features/marketplace.md`, `docs/features/catalog.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T016 Merged as #206, closing #197
+- [x] T016 Merged as #206, closing #197

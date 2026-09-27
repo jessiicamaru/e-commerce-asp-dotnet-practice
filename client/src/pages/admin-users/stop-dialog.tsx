@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { Account } from '@/services/accounts/types'
 import { cn } from '@/utils/shared'
+import { PersonHistory } from './person-history'
 
 export type Stop = 'lock' | 'ban'
 
@@ -22,7 +23,8 @@ const DAYS = [1, 3, 7, 14, 30, 90, 365]
 
 /**
  * Asks how long and why before an account is locked, or why before it is banned (specs/043). The reason
- * is required - the person reads it when they next try to sign in.
+ * is required - the person reads it when they next try to sign in. Above it, what staff decided about this
+ * person before (specs/100), so no decision is made as if it were the first.
  */
 export function StopDialog({
   stopping,
@@ -75,6 +77,11 @@ function StopForm({
           <DialogTitle>{t(kind === 'lock' ? 'users.lockTitle' : 'users.banTitle', { email: account.email })}</DialogTitle>
           <DialogDescription>{t(kind === 'lock' ? 'users.lockBody' : 'users.banBody')}</DialogDescription>
         </DialogHeader>
+
+        <div className="grid max-h-56 gap-2 overflow-y-auto">
+          <p className="text-sm font-medium">{t('users.history.title')}</p>
+          <PersonHistory userId={account.id} pageSize={5} />
+        </div>
 
         {kind === 'lock' && (
           <div className="grid gap-2">

@@ -1,6 +1,6 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
-import type { Account, AccountPage } from './types'
+import type { Account, AccountPage, ModerationHistoryPage } from './types'
 
 /**
  * People, as staff look after them (specs/043) - Identity through the gateway. Looking people up and
@@ -12,6 +12,12 @@ export class Accounts {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
     if (search) params.set('search', search)
     const { data } = await http.get<AccountPage>(`/users?${params}`)
+    return data
+  }
+
+  /** What staff decided about this person before, newest first (specs/100) - Activity, Moderation entries only. */
+  static async history(id: string, page: number, pageSize: number): Promise<ModerationHistoryPage> {
+    const { data } = await http.get<ModerationHistoryPage>(`/audit/people/${id}?page=${page}&pageSize=${pageSize}`)
     return data
   }
 

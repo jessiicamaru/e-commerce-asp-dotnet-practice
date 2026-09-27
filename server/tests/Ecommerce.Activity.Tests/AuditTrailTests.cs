@@ -58,6 +58,30 @@ public class AuditTrailTests
         Assert.Equal(who, sent.Single(s => s.Action == "SignedIn").ActorId);
     }
 
+    /// <summary>Whom an entry is about (specs/100): a User subject says so itself; content names its author.</summary>
+    [Fact]
+    public async Task An_entry_says_whom_it_is_about()
+    {
+        await using var provider = Build(new FakeUser { Id = Guid.NewGuid(), Roles = { "Moderator" } });
+        var harness = provider.GetRequiredService<ITestHarness>();
+        await harness.Start();
+        var (locked, author) = (Guid.NewGuid(), Guid.NewGuid());
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var trail = scope.ServiceProvider.GetRequiredService<IAuditTrail>();
+            await trail.RecordAsync(AuditCategory.Moderation, "AccountLocked", "User", locked.ToString(), "Locked");
+            await trail.RecordAsync(AuditCategory.Moderation, "ReviewHidden", "Review", Guid.NewGuid().ToString(), "Hidden",
+                aboutUserId: author);
+            await trail.RecordAsync(AuditCategory.Catalog, "ProductUpdated", "Product", Guid.NewGuid().ToString(), "Renamed");
+        }
+
+        var sent = harness.Published.Select<AuditEntryRecorded>().Select(x => x.Context.Message).ToList();
+        Assert.Equal(locked, sent.Single(s => s.Action == "AccountLocked").AboutUserId);
+        Assert.Equal(author, sent.Single(s => s.Action == "ReviewHidden").AboutUserId);
+        Assert.Null(sent.Single(s => s.Action == "ProductUpdated").AboutUserId);
+    }
+
     private static ServiceProvider Build(FakeUser user)
     {
         var services = new ServiceCollection();

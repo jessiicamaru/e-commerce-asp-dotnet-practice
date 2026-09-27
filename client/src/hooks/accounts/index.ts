@@ -11,13 +11,27 @@ export function useAccounts(search: string, page: number, pageSize: number) {
   })
 }
 
+/** What staff decided about one person before (specs/100). */
+export function usePersonHistory(id: string, page: number, pageSize: number) {
+  return useQuery({
+    queryKey: queryKeys.personHistory(id, page, pageSize),
+    queryFn: () => Accounts.history(id, page, pageSize),
+    placeholderData: (previous) => previous,
+  })
+}
+
 /**
  * What staff do to an account (specs/043). Each re-reads the list rather than patching it: the server
  * decides what the account now holds.
  */
 export function useAccountActions() {
   const queryClient = useQueryClient()
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['accounts'] })
+  // A decision is also a new line in the person's history (specs/100).
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['accounts'] }),
+      queryClient.invalidateQueries({ queryKey: ['person-history'] }),
+    ])
 
   return {
     grant: useMutation({ mutationFn: (id: string) => Accounts.grantModerator(id), onSuccess: refresh }),
