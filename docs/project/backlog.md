@@ -46,7 +46,6 @@ The first audit's #193-#200 are done (see below). A second audit on 2026-09-27, 
 
 | Issue | Title |
 | :-- | :-- |
-| [#212](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/212) | A mistyped tracking reference can never be corrected |
 | [#213](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/213) | Sellers have nowhere to receive their payouts |
 | [#214](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/214) | A shop can be closed only by banning its seller, and a seller cannot pause it |
 | [#215](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/215) | A seller has no list of the returns of their parcels |
@@ -83,6 +82,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#200](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/200) | A seller is not told when a variant runs low | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) (specs/102) |
 | [#210](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/210) | A missing commission rate fails the first checkout, not startup | [#223](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/223) (specs/103) |
 | [#211](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/211) | A seller cannot cancel the part of an order they cannot fulfil | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) (specs/104) |
+| [#212](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/212) | A mistyped tracking reference can never be corrected | [#225](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/225) (specs/105) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |

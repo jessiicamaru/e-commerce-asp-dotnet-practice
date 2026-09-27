@@ -50,6 +50,12 @@ export class Admin {
     return data
   }
 
+  /** The shop's own shipped part's tracking reference, corrected (specs/105). */
+  static async correctShopTracking(id: string, trackingReference: string): Promise<Order> {
+    const { data } = await http.put<Order>(`/orders/fulfilment/${id}/tracking`, { trackingReference })
+    return data
+  }
+
   static async cancel(id: string): Promise<Order> {
     const { data } = await http.post<Order>(`/orders/fulfilment/${id}/cancel`)
     return data

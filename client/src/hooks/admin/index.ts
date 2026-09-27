@@ -57,6 +57,16 @@ export function useStaffCancelOrder(id: string) {
   })
 }
 
+/** Correct the shop's part's tracking reference (specs/105). */
+export function useStaffCorrectShopTracking(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (reference: string) => Admin.correctShopTracking(id, reference),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.adminOrder(id) }),
+  })
+}
+
 /** Cancel only the shop's part of an order (specs/104). */
 export function useStaffCancelShopPart(id: string) {
   const queryClient = useQueryClient()

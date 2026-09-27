@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d1bfc89`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `7fd7d05`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**173 endpoints** across 7 services.
+**175 endpoints** across 7 services.
 
 ## Identity (44)
 
@@ -127,7 +127,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (45)
+## Order (47)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -144,6 +144,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/received` | Admin |  |
 | `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/refuse` | Admin |  |
 | `POST` | `/api/orders/fulfilment/{id}/shop-part/cancel` | Admin | Staff: cancel only the shop's own part, with a reason the buyer reads (specs/104). |
+| `PUT` | `/api/orders/fulfilment/{id}/tracking` | Admin | Staff: correct the shop's own shipped part's tracking reference (specs/105). |
 | `GET` | `/api/orders/insights/revenue` | Admin |  |
 | `GET` | `/api/orders/insights/top-buyers` | Admin |  |
 | `GET` | `/api/orders/insights/top-products` | Admin |  |
@@ -163,6 +164,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/sales/{id}/return/received` | Seller |  |
 | `POST` | `/api/orders/sales/{id}/return/refuse` | Seller |  |
 | `POST` | `/api/orders/sales/{id}/shipment` | Seller | A seller has sent THEIR part, with a tracking reference. Repeating it is a no-op. |
+| `PUT` | `/api/orders/sales/{id}/tracking` | Seller | A seller corrects THEIR shipped part's tracking reference until it is delivered (specs/105). |
 | `GET` | `/api/orders/shipping-options` | anyone | The delivery options and what each costs. Public - prices are not a secret. |
 | `GET` | `/api/orders/staff` | Admin | Staff: find any order - by the start of its id, by customer, in any status, newest first (#194, specs/096). ⚠️ Owner-unscoped: the Admin role is the whole permission. |
 | `GET` | `/api/orders/{id}` | signed in | One of the caller's own orders. Answers 404 both when the order does not exist and when it belongs to another shopper. |

@@ -30,6 +30,9 @@ public static class NotificationKind
     public const string AccountBanned = "AccountBanned";
     public const string ReviewHidden = "ReviewHidden";
 
+    // A shipped parcel's tracking reference was corrected (specs/105)
+    public const string TrackingCorrected = "TrackingCorrected";
+
     // One part of a buyer's order was cancelled by its seller or staff; the rest goes on (specs/104)
     public const string PartCancelled = "PartCancelled";
 

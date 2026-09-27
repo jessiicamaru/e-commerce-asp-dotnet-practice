@@ -85,6 +85,14 @@ public static class OrderNotices
         return notifier.NotifyAsync(buyerId, NotificationKind.PartCancelled, data, $"/orders/{orderId}", ct);
     }
 
+    /// <summary>A parcel's tracking reference corrected (specs/105): the buyer follows the new one.</summary>
+    public static Task TrackingCorrectedAsync(INotifier notifier, Guid buyerId, Guid orderId, string? shop, string tracking, CancellationToken ct)
+    {
+        var data = new Dictionary<string, string>(About(orderId)) { ["tracking"] = tracking };
+        if (shop is not null) data["shop"] = shop;
+        return notifier.NotifyAsync(buyerId, NotificationKind.TrackingCorrected, data, $"/orders/{orderId}", ct);
+    }
+
     public static Task ReceivedAsync(INotifier notifier, OrderNoticeFacts f, Guid shipmentId, CancellationToken ct)
     {
         // The shop's own parcel arriving has nobody to tell; a seller's does.

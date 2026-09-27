@@ -109,5 +109,14 @@
     "keep": "Giữ lại",
     "confirm": "Huỷ phần này",
     "done": "Đã huỷ phần này."
+  },
+  "correctTracking": {
+    "button": "Sửa",
+    "title": "Sửa mã vận đơn",
+    "body": "Dành cho mã nhập sai. Người mua được báo mã mới, và mã cũ vẫn được lưu lại. Có thể sửa cho đến khi kiện hàng được giao.",
+    "reference": "Mã vận đơn",
+    "keep": "Giữ nguyên",
+    "confirm": "Lưu mã đã sửa",
+    "done": "Đã sửa mã vận đơn."
   }
 }

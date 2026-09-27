@@ -116,6 +116,12 @@ export class Order {
     return data
   }
 
+  /** The seller corrects THEIR shipped part's tracking reference until it is delivered (specs/105). */
+  static async correctSaleTracking(id: string, trackingReference: string): Promise<Sale> {
+    const { data } = await http.put<Sale>(`/orders/sales/${id}/tracking`, { trackingReference })
+    return data
+  }
+
   static async prepareSale(id: string): Promise<Sale> {
     const { data } = await http.post<Sale>(`/orders/sales/${id}/preparing`)
     return data

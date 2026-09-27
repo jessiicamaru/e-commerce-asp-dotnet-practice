@@ -161,6 +161,15 @@ public interface IOrderRepository
         Func<CancelledPart, CancellationToken, Task> stage,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Corrects a shipped, undelivered, uncancelled part's tracking reference (specs/105) under the order's row lock,
+    /// rewriting the order's summary reference and never <c>ShippedAt</c>. <paramref name="stage"/> gets the old
+    /// reference and runs in the transaction only when something changed.
+    /// </summary>
+    Task<Orders.Commands.CorrectTracking.TrackingCorrectionOutcome> TryCorrectTrackingAsync(
+        Guid orderId, Guid? sellerId, string trackingReference, DateTime at,
+        Func<string?, CancellationToken, Task> stage, CancellationToken cancellationToken = default);
+
     /// <summary>A seller's shop name as frozen on the order's lines (specs/036); null for the shop's own or when none was recorded.</summary>
     Task<string?> GetSellerNameAsync(Guid orderId, Guid? sellerId, CancellationToken cancellationToken = default);
 

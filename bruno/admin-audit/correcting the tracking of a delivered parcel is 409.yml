@@ -1,0 +1,38 @@
+info:
+  name: correcting the tracking of a delivered parcel is 409
+  type: http
+  seq: 26
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/orders/fulfilment/{{orderId}}/tracking"
+  body:
+    type: json
+    data: |-
+      {
+        "trackingReference": "VN-FIXED-1"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("says why, in words", function() {
+          expect(res.body.detail).to.contain("delivered");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/105 (#212): a tracking reference can be corrected while the parcel is on its way - this one was delivered (seq 13),
+  so there is nothing left to track.

@@ -208,3 +208,20 @@ describe("AdminOrderPage the shop's own part (specs/104)", () => {
     expect(screen.queryByRole('button', { name: /Cancel this part/ })).toBeNull()
   })
 })
+
+describe("AdminOrderPage correcting the shop's tracking reference (specs/105)", () => {
+  it("sends the corrected reference of the shop's shipped parcel", async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([{ ...shop('Shipped'), trackingReference: 'SHOP-1' }, hers]))
+    const correct = vi.spyOn(Admin, 'correctShopTracking').mockResolvedValue(order([{ ...shop('Shipped'), trackingReference: 'SHOP-2' }, hers]))
+    const user = userEvent.setup()
+    renderAt()
+
+    await user.click(await screen.findByRole('button', { name: /Correct/ }))
+    const dialog = await screen.findByRole('dialog')
+    await user.clear(within(dialog).getByRole('textbox'))
+    await user.type(within(dialog).getByRole('textbox'), 'SHOP-2')
+    await user.click(within(dialog).getByRole('button', { name: 'Save the correction' }))
+
+    await waitFor(() => expect(correct).toHaveBeenCalledWith('o-1', 'SHOP-2'))
+  })
+})

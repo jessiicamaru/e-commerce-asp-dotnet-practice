@@ -159,6 +159,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [102](../../specs/102-low-stock-notice/) | Low-stock notice | #209 | #200: a seller is told when a sale takes one of their variants below its line - once per crossing, with a line of their own or the shop's default |
 | [103](../../specs/103-commission-at-startup/) | Commission rate at startup | #223 | #210: Order without a usable commission rate refuses to start instead of answering the first checkout with a 500 |
 | [104](../../specs/104-seller-cancels-part/) | Seller cancels a part | #224 | #211: a seller who cannot fulfil their part cancels it with a reason - the buyer is refunded that part and the rest of the order ships; the last part cancels the order |
+| [105](../../specs/105-correct-tracking/) | Correct a tracking reference | #225 | #212: a mistyped tracking reference is corrected while the parcel is on its way, with the buyer told and both references on the record |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

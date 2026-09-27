@@ -547,6 +547,9 @@ what they do**, because two classes called `OrderCancelledConsumer` would share 
 ⚠️ `Sales.Statuses` (what a seller SEES) now includes `Cancelled`, so a seller stops preparing; balances
 and payouts count `Sales.Earning`, which does not - confusing the two would pay sellers for cancelled
 orders. `verify-saga.sh` cancels a second order and asserts the stock back and one full refund.
+**A mistyped tracking reference is corrected** (specs/105, #212) - `PUT /api/orders/sales/{id}/tracking` or
+`/fulfilment/{id}/tracking` - only while shipped and not delivered, under the row lock; ⚠️ `ShippedAt` never moves (the
+auto-delivery week and the return window count from it), and every correction is audited and tells the buyer.
 **One part can be cancelled too** (specs/104, #211): its seller (`POST /api/orders/sales/{id}/cancel`) or staff for the
 shop's (`/fulfilment/{id}/shop-part/cancel`), with a reason, before it ships - under the same row lock. ⚠️ Columns, not a
 status: `order_shipments.CancelledAt` (+ reason, by, `CancelRefund`), and **every reader of parts must skip a cancelled

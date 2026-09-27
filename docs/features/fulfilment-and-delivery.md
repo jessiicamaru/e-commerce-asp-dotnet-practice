@@ -57,7 +57,7 @@ The order's status is a summary in words an older image already knows:
 | some started, not all shipped | `Preparing` | as above |
 | all shipped | `Shipped` | as above |
 
-A repeated step is a no-op answered 200 (`AlreadyThere`). Shipping again with a different tracking reference is 409. The staff queue (`GET /api/orders/fulfilment?status=Paid|Preparing|Shipped`, oldest first, page size 12 by default) lists paid orders whose **shop** part is in that state, plus orders with no parts whose own status matches.
+A repeated step is a no-op answered 200 (`AlreadyThere`). Shipping again with a different tracking reference is 409 - a mistyped one is **corrected** instead (specs/105, #212): `PUT /api/orders/sales/{id}/tracking` (the seller) or `/fulfilment/{id}/tracking` (Admin, the shop's part), while the part is shipped and not delivered, under the order's row lock. `ShippedAt` does not move, so automatic delivery still counts from when the parcel left; every correction is audited with both references and tells the buyer (`TrackingCorrected`). The staff queue (`GET /api/orders/fulfilment?status=Paid|Preparing|Shipped`, oldest first, page size 12 by default) lists paid orders whose **shop** part is in that state, plus orders with no parts whose own status matches.
 
 ### Cancellation
 
@@ -184,6 +184,8 @@ Full list: [../reference/api.md](../reference/api.md).
 | `POST` | `/api/orders/fulfilment/{id}/cancel` | Admin |
 | `POST` | `/api/orders/fulfilment/{id}/shop-part/cancel` | Admin - the shop's own part only (specs/104) |
 | `POST` | `/api/orders/sales/{id}/cancel` | Seller - their own part, before it ships (specs/104) |
+| `PUT` | `/api/orders/sales/{id}/tracking` | Seller - correct their shipped part's reference until delivered (specs/105) |
+| `PUT` | `/api/orders/fulfilment/{id}/tracking` | Admin - the shop's part's (specs/105) |
 | `GET` | `/api/payments/{orderId}` | Admin (includes `refundedAmount`, `refundedAt`) |
 | `GET` | `/api/reservations/{orderId}` | Admin |
 | `GET` | `/api/notifications`, `/api/notifications/unread-count` | signed in (own notices only) |
@@ -212,6 +214,7 @@ Notices sent by Order (`OrderNotices`), with the link each carries:
 | `OrderCancelled` | buyer | the order is cancelled (data: `by`) | `/orders/{id}` |
 | `SaleCancelled` | each seller with a part | the order is cancelled | `/shop/sales/{id}` |
 | `PartCancelled` | buyer | one part is cancelled, the rest going on (data: `reason`, `shop`) | `/orders/{id}` |
+| `TrackingCorrected` | buyer | a shipped parcel's reference is corrected (data: `tracking`, `shop`) | `/orders/{id}` |
 | `ParcelReceived` | the part's seller | the customer confirms a seller's parcel | `/shop/sales/{id}` |
 | `PayoutRecorded` | seller | a payout is recorded | `/shop/payouts` |
 
@@ -244,6 +247,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 | [`ShipmentTests`](../../server/tests/Ecommerce.Order.Tests/ShipmentTests.cs) | One part per seller and one for the shop; a seller moves only their own part; not theirs is 404 in the same words; unpaid orders cannot be started; the order is `Shipped` only when every part is, even when two ship at once; staff move only the shop's part; a single-parcel order carries its tracking; missing parts are made in the order's state; the address disappears once the seller's part ships. |
 | [`FulfilmentTests`](../../server/tests/Ecommerce.Order.Tests/FulfilmentTests.cs) | Staff read any order; prepare then ship; a legacy `Completed` order reads as `Paid`; repeats are no-ops but a different tracking reference is refused; ten concurrent prepares move once. |
 | [`PartCancellationTests`](../../server/tests/Ecommerce.Order.Tests/PartCancellationTests.cs) | A seller cancels their part and the rest ships to `Shipped`; its refund is its goods less discounts plus tax; shipped, not theirs and a repeat; the last part cancels the order; two sellers at once cancel it exactly once (the lock); a cancelled part earns nothing and gives its seller's voucher back; staff cancel the shop's part only (specs/104). |
+| [`TrackingCorrectionTests`](../../server/tests/Ecommerce.Order.Tests/TrackingCorrectionTests.cs) | A correction shows on the sale and the order, tells the buyer and audits both references, and leaves `ShippedAt`; the same reference is a no-op; not shipped, delivered, cancelled and not theirs are refused; staff correct the shop's part (specs/105). |
 | [`CancellationTests`](../../server/tests/Ecommerce.Order.Tests/CancellationTests.cs) | Customer cancels while every parcel waits, not once one is prepared; staff can while preparing; nobody once shipped; twice changes nothing; cancel and ship at once leave exactly one winner; a cancelled order leaves every balance and no payout claims it; its seller sees it cancelled and cannot move it. |
 | [`DeliveryTests`](../../server/tests/Ecommerce.Order.Tests/DeliveryTests.cs) | Shipping records `ShippedAt`; the customer confirms a shipped parcel, not an unshipped one, not somebody else's; twice changes nothing; the sweep delivers once; each delivery announces its products once; Order refuses to start without a sensible period. |
 | [`ShopNameTests`](../../server/tests/Ecommerce.Order.Tests/ShopNameTests.cs) | The shop name is frozen per line; a later rename does not rename an order; each parcel says who sends it. |
@@ -269,7 +273,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
   seller to cancel theirs - the buyer cancels the whole order while it waits.
 - **A part cancellation tells the buyer in the app only.** The whole order's cancellation is also an email.
 - **Payment is a stub.** A refund is a ledger row recorded through `Provider = "Stub"`; no money moves. A real provider is deliberately deferred.
-- **Shipping is manual.** No carrier integration: a person types the tracking reference, and it cannot be changed after shipping (a different reference is 409). Despatch is not a saga step (specs/011 research D2).
+- **Shipping is manual.** No carrier integration: a person types the tracking reference, and can correct it only until the parcel is delivered (shipping again with a different reference is 409). Despatch is not a saga step (specs/011 research D2).
 - **Moderators have no part in fulfilment.** Every fulfilment and staff-cancel endpoint is `Admin` only.
 - **A seller's parcel notices are in the app only.** The buyer's shipped parcel is also an email (specs/083, [email](email.md)); a seller's new sale, received parcel and payout are not. The bell polls every 30 s rather than being pushed.
 - **Parcels delivered before specs/046 give no right to review**, and parts from before specs/037 carry no earnings; neither is backfilled.
@@ -292,3 +296,4 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 | [042-in-app-notifications](../../specs/042-in-app-notifications/) | #94 | Notices to buyers and sellers, staged with each change. |
 | [046-product-reviews](../../specs/046-product-reviews/) | #98 | `ParcelDeliveredEvent` published in the delivery transaction; the sweep locks its rows first. |
 | [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | #224 | One part cancelled before it ships - by its seller, or staff for the shop's; `OrderPartCancelledEvent`; the last part cancels the order; Payment refunds what is left (#211). |
+| [105-correct-tracking](../../specs/105-correct-tracking/) | #225 | A shipped part's tracking reference corrected until it is delivered; `TrackingCorrected` (#212). |
