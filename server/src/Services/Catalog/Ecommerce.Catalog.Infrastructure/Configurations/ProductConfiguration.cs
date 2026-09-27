@@ -41,6 +41,12 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         // The moderators' queue: pending, oldest submission first.
         builder.HasIndex(p => new { p.ReviewStatus, p.SubmittedAt });
+        // A price range in the default currency (#216, specs/109) - over what is on the shelf only, the predicate every
+        // listing carries (Product.OnShelf spelled out), so the planner takes it over the review index; it serves the
+        // default currency's price sort too.
+        builder.HasIndex(p => p.Price)
+            .HasDatabaseName("IX_products_on_shelf_Price")
+            .HasFilter("\"ReviewStatus\" = 'Approved' AND \"IsActive\" AND NOT \"SellerSuspended\"");
         builder.Property(p => p.Price).HasColumnType("decimal(18,2)");
 
         // Required, defaulting to false: a product Inventory has never announced must read as

@@ -26,7 +26,7 @@ public interface IProductRepository : ILiveImageKeys
     /// Which language's translations to search as well as the default text (specs/021). Empty searches
     /// the default text only, which is what a caller with no request does.
     /// </param>
-    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "", string currency = "", string defaultCurrency = "", Guid? sellerId = null, bool listedOnly = true);
+    Task<(List<Product> Items, int TotalCount)> GetPaginatedAsync(int pageNumber, int pageSize, Guid? categoryId, string? searchTerm, string? sortBy, CancellationToken cancellationToken = default, string language = "", string currency = "", string defaultCurrency = "", Guid? sellerId = null, bool listedOnly = true, ProductFilter? filter = null);
     Task AddAsync(Product product, CancellationToken cancellationToken = default);
 
     /// <summary>The moderators' queue or history for one review status (specs/045), with what a card shows.</summary>
@@ -215,3 +215,9 @@ public interface ILiveImageKeys
 {
     Task<HashSet<string>> GetLiveImageKeysAsync(CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// What a shopper narrows the catalogue to (#216, specs/109): a range of the "from" price in the request's currency -
+/// never converted, and a product with no price in it is excluded - and only what is in stock.
+/// </summary>
+public record ProductFilter(decimal? MinPrice = null, decimal? MaxPrice = null, bool InStock = false);

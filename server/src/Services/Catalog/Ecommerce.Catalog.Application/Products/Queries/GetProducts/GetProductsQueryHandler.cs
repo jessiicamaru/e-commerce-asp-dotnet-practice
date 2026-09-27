@@ -36,7 +36,8 @@ public class GetProductsQueryHandler(
             _language.Current,
             _currency.Current.Code,
             _money.DefaultCurrency,
-            request.SellerId
+            request.SellerId,
+            filter: new ProductFilter(request.MinPrice, request.MaxPrice, request.InStock)
         );
 
         // ONE query for every shop name on the page. FR-003 exists to stop this becoming one call

@@ -21,6 +21,8 @@ public class VariantPriceConfiguration : IEntityTypeConfiguration<VariantPrice>
         // charged depend on which row the query read first - the money equivalent of the ambiguity
         // the unique index on translations prevents for words.
         builder.HasIndex(p => new { p.VariantId, p.Currency }).IsUnique();
+        // A price range in any other currency: the grouped join starts from one currency's prices (specs/109).
+        builder.HasIndex(p => new { p.Currency, p.Amount });
 
         builder.HasOne<ProductVariant>()
             .WithMany(v => v.Prices)
