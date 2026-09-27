@@ -35,4 +35,4 @@ description: "Task list for Shoppers report a review, a question or a product"
 - [X] T012 [P] Bruno `reviews/` seq 12-20, `security-checks/` seq 64-65
 - [X] T013 Rebuilt Catalog, the gateway and the storefront; Bruno 309/309
 - [X] T014 Docs: `docs/features/moderation-and-staff.md`, `ratings-and-reviews.md`, `product-questions.md`, `audit-and-notifications.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T015 Merged as #208, closing #199
+- [x] T015 Merged as #208, closing #199

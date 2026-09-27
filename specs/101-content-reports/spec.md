@@ -2,7 +2,7 @@
 
 **Feature Branch**: `101-content-reports` | **Created**: 2026-09-27 | **Issue**: #199
 
-**Status**: Draft
+**Status**: Merged (#208, 2026-09-27)
 
 **Input**: Issue #199 - "shoppers cannot report a review, a question or a product".
 
