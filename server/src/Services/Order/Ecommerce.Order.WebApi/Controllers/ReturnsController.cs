@@ -35,6 +35,12 @@ public class ReturnsController : ApiControllerBase
 
     // ------------------------------------------------------------------ the seller - their parcel of a sale
 
+    /// <summary>The returns of the caller's own parcels, by state, oldest waiting first (specs/108).</summary>
+    [Authorize(Roles = "Seller")]
+    [HttpGet("sales/returns")]
+    public async Task<IActionResult> ListSale([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 12) =>
+        Ok(await Mediator.Send(new GetSaleReturnsQuery(status, page, pageSize)));
+
     [Authorize(Roles = "Seller")]
     [HttpPost("sales/{id:guid}/return/accept")]
     public async Task<IActionResult> AcceptSale(Guid id) =>

@@ -118,9 +118,15 @@ public class ReturnRepository(OrderDbContext context) : IReturnRepository
     }
 
     public async Task<(List<ReturnResponse> Items, int TotalCount)> GetPageAsync(
-        ReturnStatus? status, int page, int pageSize, CancellationToken cancellationToken = default)
+        ReturnStatus? status, int page, int pageSize, CancellationToken cancellationToken = default, Guid? ofSeller = null)
     {
         var query = _context.ParcelReturns.AsNoTracking();
+        // A seller's own parcels only (specs/108): SellerId was written from the parcel when the return was asked for.
+        if (ofSeller is { } seller)
+        {
+            query = query.Where(r => r.SellerId == seller);
+        }
+
         if (status is { } s)
         {
             query = query.Where(r => r.Status == s);

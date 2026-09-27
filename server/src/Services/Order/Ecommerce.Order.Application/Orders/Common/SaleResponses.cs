@@ -49,6 +49,7 @@ public static class Sales
 /// All four are null when the terms were not recorded - an order from before that.
 /// </param>
 /// <param name="PaidOut">Whether a payout has covered it.</param>
+/// <param name="ReturnStatus">The state of the return of the caller's parcel of this order, if any (specs/108).</param>
 /// <remarks>
 /// ⚠️ <b>No order total</b>, on purpose (research D4): on an order mixing sellers it includes goods that
 /// are not the caller's, and delivery and tax are computed over the whole order.
@@ -66,7 +67,8 @@ public record SaleSummaryResponse(
     decimal? Commission = null,
     decimal? ShippingShare = null,
     decimal? Payout = null,
-    bool PaidOut = false);
+    bool PaidOut = false,
+    string? ReturnStatus = null);
 
 
 /// <summary>
