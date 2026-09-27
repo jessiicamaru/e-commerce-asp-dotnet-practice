@@ -177,7 +177,7 @@ public class EmailTemplateTests(IdentityTestFixture fixture) : IAsyncLifetime
     {
         var list = await AsAdmin(new GetEmailTemplatesQuery());
 
-        Assert.Equal(22, list.Count);   // 11 emails in 2 languages since specs/083
+        Assert.Equal(24, list.Count);   // 12 emails in 2 languages since specs/106 (PayoutAccountChanged)
         var reset = list.Single(t => t.Template == EmailTemplate.PasswordReset && t.Language == "vi");
         Assert.Equal((true, 0), (reset.IsDefault, reset.Version));
         Assert.Equal(["name", "link"], reset.Placeholders);

@@ -1,7 +1,7 @@
 info:
   name: the shop page lists only what is on its shelf
   type: http
-  seq: 85
+  seq: 88
 
 http:
   method: GET
@@ -34,4 +34,4 @@ settings:
 
 docs: |-
   specs/099: the shop's products are the public listing with a `sellerId` - the same shelf rule as the
-  catalogue, so a product a moderator took down (seq 78) is not here.
+  catalogue, so a product a moderator took down (seq 81) is not here.

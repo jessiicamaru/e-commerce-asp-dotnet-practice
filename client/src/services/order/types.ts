@@ -277,6 +277,10 @@ export interface Payout {
   amount: number
   partCount: number
   createdAt: string
+  /** Where it went, frozen when recorded (specs/106); null on payouts from before. Never the whole number. */
+  paidToBank?: string | null
+  paidToHolder?: string | null
+  paidToAccountLast4?: string | null
 }
 
 export interface PayoutPage {

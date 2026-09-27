@@ -1,7 +1,7 @@
 info:
   name: disabling it again is 409
   type: http
-  seq: 64
+  seq: 67
 
 http:
   method: POST

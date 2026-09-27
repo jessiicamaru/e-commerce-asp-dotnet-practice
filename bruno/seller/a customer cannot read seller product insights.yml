@@ -1,7 +1,7 @@
 info:
   name: a customer cannot read seller product insights
   type: http
-  seq: 59
+  seq: 62
 
 http:
   method: GET

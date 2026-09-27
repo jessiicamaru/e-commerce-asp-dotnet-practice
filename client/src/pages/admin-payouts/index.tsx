@@ -18,7 +18,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { usePaySeller, usePayoutsDue } from '@/hooks/admin'
+import { Badge } from '@/components/ui/badge'
+import { usePaySeller, usePayoutAccounts, usePayoutsDue } from '@/hooks/admin'
 import type { PayoutDue } from '@/services/admin/types'
 import { money } from '@/utils/shared'
 
@@ -38,6 +39,11 @@ export function AdminPayoutsPage() {
   const pay = usePaySeller()
   // One dialog for the page, open while a row is being confirmed, rather than one per row.
   const [confirming, setConfirming] = useState<PayoutDue | null>(null)
+  // Where each goes (specs/106): read in full from Identity, administrators only.
+  const sellerIds = [...new Set((due.data ?? []).map((row) => row.sellerId))].sort()
+  const accounts = usePayoutAccounts(sellerIds)
+  // When the page opened - "changed recently" is measured from here, not re-read in render.
+  const [now] = useState(() => Date.now())
 
   if (due.isError) {
     return <ErrorMessage>{t('payouts.loadFailed')}</ErrorMessage>
@@ -72,25 +78,48 @@ export function AdminPayoutsPage() {
               <TableRow>
                 <TableHead>{t('payouts.columns.seller')}</TableHead>
                 <TableHead>{t('payouts.columns.parts')}</TableHead>
+                <TableHead>{t('payouts.columns.account')}</TableHead>
                 <TableHead className="text-right">{t('payouts.columns.due')}</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {due.data.map((row) => (
+              {due.data.map((row) => {
+                const account = accounts.data?.find((a) => a.sellerId === row.sellerId)
+                // A changed account is how payout fraud starts: a person looks before paying (research D3).
+                const recent = account && now - new Date(account.updatedAt).getTime() < 7 * 86_400_000
+                return (
                 <TableRow key={`${row.sellerId}-${row.currency}`}>
                   <TableCell className="font-medium whitespace-normal">{nameOf(row)}</TableCell>
                   <TableCell>{row.parts}</TableCell>
+                  <TableCell className="text-xs whitespace-normal">
+                    {accounts.isPending ? (
+                      '…'
+                    ) : account ? (
+                      <div className="grid gap-1">
+                        <span>{account.bankName} · {account.accountHolder}</span>
+                        <span className="font-mono">{account.accountNumber}</span>
+                        {recent && (
+                          <Badge variant="destructive" className="w-fit">
+                            {t('payouts.changedRecently', { at: new Date(account.updatedAt).toLocaleDateString() })}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <Badge variant="outline">{t('payouts.noAccount')}</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">
                     <Price value={row.due} currency={row.currency} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" className="rounded-full px-3" disabled={pay.isPending} onClick={() => setConfirming(row)}>
+                    <Button size="sm" className="rounded-full px-3" disabled={pay.isPending || !account} onClick={() => setConfirming(row)}>
                       <WalletIcon /> {t('payouts.pay')}
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         </div>

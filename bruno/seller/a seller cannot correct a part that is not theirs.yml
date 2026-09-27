@@ -1,7 +1,7 @@
 info:
   name: a seller cannot correct a part that is not theirs
   type: http
-  seq: 91
+  seq: 94
 
 http:
   method: PUT

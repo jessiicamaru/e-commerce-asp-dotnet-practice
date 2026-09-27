@@ -20,8 +20,15 @@ function renderPage() {
   )
 }
 
+const maisAccount = {
+  sellerId: 's-mai', bankName: 'Vietcombank', accountHolder: 'NGUYEN THI MAI', accountNumber: '0071001234321',
+  updatedAt: '2026-01-01T00:00:00Z',
+}
+
 beforeEach(async () => {
   await i18n.changeLanguage('en')
+  // Every seller on the list has a payout account unless a test says otherwise (specs/106).
+  vi.spyOn(Admin, 'payoutAccounts').mockResolvedValue([maisAccount])
 })
 
 describe('AdminPayoutsPage', () => {
@@ -82,5 +89,33 @@ describe('AdminPayoutsPage', () => {
     renderPage()
 
     expect(await screen.findByText('Nothing is due.')).toBeInTheDocument()
+  })
+})
+
+describe('AdminPayoutsPage payout accounts (specs/106)', () => {
+  it('shows where each payout goes, in full, for the administrator paying', async () => {
+    vi.spyOn(Admin, 'due').mockResolvedValue([mai])
+    const read = vi.spyOn(Admin, 'payoutAccounts')
+    renderPage()
+
+    expect(await screen.findByText('0071001234321')).toBeInTheDocument()
+    expect(read).toHaveBeenCalledWith(['s-mai'])
+  })
+
+  it('cannot pay a seller with no payout account', async () => {
+    vi.spyOn(Admin, 'due').mockResolvedValue([mai])
+    vi.spyOn(Admin, 'payoutAccounts').mockResolvedValue([])
+    renderPage()
+
+    expect(await screen.findByText('No payout account - cannot pay')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Record payout|Pay/ })).toBeDisabled()
+  })
+
+  it('warns about an account changed in the last week', async () => {
+    vi.spyOn(Admin, 'due').mockResolvedValue([mai])
+    vi.spyOn(Admin, 'payoutAccounts').mockResolvedValue([{ ...maisAccount, updatedAt: new Date().toISOString() }])
+    renderPage()
+
+    expect(await screen.findByText(/check before paying/)).toBeInTheDocument()
   })
 })

@@ -60,14 +60,17 @@
     "columns": {
       "seller": "Người bán",
       "parts": "Số kiện",
-      "due": "Đến hạn"
+      "due": "Đến hạn",
+      "account": "Tài khoản nhận tiền"
     },
     "unnamed": "Người bán {{id}}",
     "pay": "Ghi nhận đã trả",
     "confirmTitle": "Ghi nhận đã trả cho {{seller}}?",
     "confirmBody": "Sàn ghi nhận đã trả {{amount}} cho {{count}} kiện. Hệ thống không chuyển tiền - đây là ghi sổ, và không huỷ được.",
     "confirm": "Ghi nhận",
-    "paid": "Đã ghi nhận {{amount}} cho {{seller}}."
+    "paid": "Đã ghi nhận {{amount}} cho {{seller}}.",
+    "noAccount": "Chưa có tài khoản - chưa thể chi trả",
+    "changedRecently": "Đổi ngày {{at}} - kiểm tra trước khi chi trả"
   },
   "audit": {
     "title": "Nhật ký hoạt động",
@@ -432,7 +435,8 @@
       "AccountLocked": "Tài khoản bị khóa",
       "AccountBanned": "Tài khoản bị cấm",
       "PasswordReset": "Đặt lại mật khẩu",
-      "EmailConfirmation": "Xác nhận email"
+      "EmailConfirmation": "Xác nhận email",
+      "PayoutAccountChanged": "Đổi tài khoản nhận tiền"
     },
     "language": {
       "vi": "Tiếng Việt",

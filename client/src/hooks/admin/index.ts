@@ -108,6 +108,15 @@ export function usePayoutsDue() {
   return useQuery({ queryKey: queryKeys.payoutsDue(), queryFn: () => Admin.due() })
 }
 
+/** The payout accounts of the sellers on the due list, in full (specs/106). */
+export function usePayoutAccounts(sellerIds: string[]) {
+  return useQuery({
+    queryKey: queryKeys.payoutAccounts(sellerIds),
+    queryFn: () => Admin.payoutAccounts(sellerIds),
+    enabled: sellerIds.length > 0,
+  })
+}
+
 /** Records a payout, then re-reads the due list - whatever happened, it has changed. */
 export function usePaySeller() {
   const queryClient = useQueryClient()

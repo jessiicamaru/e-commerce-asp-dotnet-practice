@@ -1,11 +1,11 @@
 info:
-  name: a customer cannot read seller revenue
+  name: a customer cannot read payout accounts
   type: http
-  seq: 61
+  seq: 70
 
 http:
   method: GET
-  url: "{{baseUrl}}/api/orders/sales/insights/revenue"
+  url: "{{baseUrl}}/api/sellers/payout-accounts?sellerIds=00000000-0000-0000-0000-000000000001"
   auth:
     type: bearer
     token: "{{customerToken}}"
@@ -23,6 +23,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-docs: |-
-  Seller only (specs/068). A customer has no sales, and the role on the route says so before any query runs.

@@ -1,11 +1,11 @@
 info:
-  name: a seller disables their voucher
+  name: the seller reads their payout account masked
   type: http
-  seq: 66
+  seq: 40
 
 http:
-  method: POST
-  url: "{{baseUrl}}/api/vouchers/{{sellerVoucherId}}/disable"
+  method: GET
+  url: "{{baseUrl}}/api/sellers/me/payout-account"
   auth:
     type: bearer
     token: "{{sellerToken}}"
@@ -17,8 +17,9 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("disabled", function() {
-          expect(res.body.status).to.equal("Disabled");
+        test("masked", function() {
+          expect(res.body.bankName).to.equal("Vietcombank");
+          expect(res.body.accountNumberMasked).to.equal("•••• 4321");
         });
 
 settings:
@@ -26,6 +27,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-docs: |-
-  Stops it being used from now on; orders that used it keep it, frozen on them.

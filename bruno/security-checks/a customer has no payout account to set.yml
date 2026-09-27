@@ -1,20 +1,18 @@
 info:
-  name: a customer cannot create a voucher
+  name: a customer has no payout account to set
   type: http
-  seq: 68
+  seq: 71
 
 http:
-  method: POST
-  url: "{{baseUrl}}/api/vouchers"
+  method: PUT
+  url: "{{baseUrl}}/api/sellers/me/payout-account"
   body:
     type: json
     data: |-
       {
-        "code": "CUSTOMER-TRY",
-        "name": "Mine",
-        "benefit": "Percent",
-        "percent": 90,
-        "amounts": [{ "currency": "VND" }]
+        "bankName": "Vietcombank",
+        "accountHolder": "BRUNO SELLER",
+        "accountNumber": "0071 0012 34321"
       }
   auth:
     type: bearer
@@ -33,6 +31,3 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-docs: |-
-  Administrators and sellers make vouchers; a customer uses one by its code at checkout.

@@ -1,7 +1,7 @@
 info:
   name: a seller asking about their own product is 403
   type: http
-  seq: 73
+  seq: 76
 
 http:
   method: POST

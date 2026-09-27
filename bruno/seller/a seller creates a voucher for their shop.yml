@@ -1,7 +1,7 @@
 info:
   name: a seller creates a voucher for their shop
   type: http
-  seq: 60
+  seq: 63
 
 http:
   method: POST

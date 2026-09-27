@@ -203,7 +203,8 @@
     "columns": {
       "date": "Ngày",
       "sales": "Gồm",
-      "amount": "Số tiền"
+      "amount": "Số tiền",
+      "to": "Đến"
     }
   },
   "apply": {
@@ -304,5 +305,18 @@
       "answered": "Đã trả lời"
     },
     "yourAnswer": "Bạn trả lời"
+  },
+  "payoutAccount": {
+    "title": "Tài khoản nhận tiền",
+    "hint": "Nơi cửa hàng chuyển số tiền phải trả cho bạn.",
+    "none": "Chưa có tài khoản nhận tiền - cửa hàng chưa thể chi trả cho bạn cho đến khi bạn thêm.",
+    "updated": "Thay đổi lần cuối {{at}}",
+    "change": "Thay đổi",
+    "bank": "Ngân hàng",
+    "holder": "Chủ tài khoản",
+    "number": "Số tài khoản",
+    "save": "Lưu tài khoản",
+    "saved": "Đã lưu tài khoản nhận tiền.",
+    "emailed": "Chúng tôi gửi email cho bạn mỗi khi thông tin này thay đổi. Nếu nhận email đó mà bạn không đổi, hãy đổi mật khẩu."
   }
 }
