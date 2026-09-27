@@ -12,7 +12,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/
 import { Label } from '@/components/ui/label'
 import { CURRENCIES } from '@/config/money'
 import { useRemoveVariantImage, useSetVariantPrice, useUploadVariantImage } from '@/hooks/product'
-import { useSetStock } from '@/hooks/stock'
+import { useSetLowStockThreshold, useSetStock } from '@/hooks/stock'
 import type { Product, Variant } from '@/services/product/types'
 import type { Stock } from '@/services/stock/types'
 import { groupDigits, pendingChanges } from './pending-changes'
@@ -49,18 +49,22 @@ export function VariantEditor({
   const { t } = useTranslation('seller')
   const setPrice = useSetVariantPrice(product.id)
   const setStock = useSetStock(product.id)
+  const setLowStock = useSetLowStockThreshold()
   const upload = useUploadVariantImage(product.id)
   const removeImage = useRemoveVariantImage(product.id)
 
   const [typedPrices, setTypedPrices] = useState<Record<string, string>>({})
   const [typedOnHand, setTypedOnHand] = useState<string | undefined>(undefined)
+  const [typedLowStock, setTypedLowStock] = useState<string | undefined>(undefined)
   const [saving, setSaving] = useState(false)
 
+  // The variant's own line; the shop's default shows as a placeholder instead (specs/102).
+  const ownLowStock = stock && !stock.lowStockThresholdIsDefault ? stock.lowStockThreshold : null
   const changes = pendingChanges(
-    { prices: typedPrices, onHand: typedOnHand },
-    { prices, onHand: stock?.quantityOnHand ?? null },
+    { prices: typedPrices, onHand: typedOnHand, lowStock: typedLowStock },
+    { prices, onHand: stock?.quantityOnHand ?? null, lowStock: ownLowStock },
   )
-  const dirty = changes.prices.length > 0 || changes.onHand !== null
+  const dirty = changes.prices.length > 0 || changes.onHand !== null || changes.lowStock !== undefined
 
   // The server folds the product's picture into a variant that has none (specs/032), so "has its own"
   // is "differs from the product's".
@@ -75,8 +79,12 @@ export function VariantEditor({
       if (changes.onHand !== null) {
         await setStock.mutateAsync({ variantId: variant.id, quantityOnHand: changes.onHand })
       }
+      if (changes.lowStock !== undefined) {
+        await setLowStock.mutateAsync({ variantId: variant.id, threshold: changes.lowStock.threshold })
+      }
       setTypedPrices({})
       setTypedOnHand(undefined)
+      setTypedLowStock(undefined)
       toast.success(t('variant.saved'))
     } catch {
       // Shown below by ServerError, in the server's own words.
@@ -131,7 +139,7 @@ export function VariantEditor({
         </div>
 
         <div className="grid content-start gap-3">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {CURRENCIES.map((currency) => {
               const current = prices[currency] ?? null
               const inputId = `price-${variant.id}-${currency}`
@@ -172,10 +180,30 @@ export function VariantEditor({
                 />
               </InputGroup>
             </div>
+
+            <div className="grid gap-1.5">
+              <Label htmlFor={`lowstock-${variant.id}`} className="text-xs">
+                {t('stock.lowStockAt')}
+              </Label>
+              <InputGroup className="h-10 rounded-xl">
+                <InputGroupInput
+                  id={`lowstock-${variant.id}`}
+                  inputMode="numeric"
+                  disabled={!stock}
+                  title={t('stock.lowStockHint')}
+                  placeholder={stock ? t('stock.lowStockDefault', { count: stock.lowStockThreshold }) : '—'}
+                  value={typedLowStock ?? (ownLowStock === null ? '' : String(ownLowStock))}
+                  onChange={(event) => setTypedLowStock(event.target.value)}
+                />
+              </InputGroup>
+            </div>
           </div>
 
           {!stock && !stockPending && <p className="text-muted-foreground text-xs">{t('stock.notRegisteredYet')}</p>}
-          <ServerError error={setPrice.error ?? setStock.error ?? upload.error ?? removeImage.error} fallback={t('listing.loadFailed')} />
+          <ServerError
+            error={setPrice.error ?? setStock.error ?? setLowStock.error ?? upload.error ?? removeImage.error}
+            fallback={t('listing.loadFailed')}
+          />
 
           <div className="flex items-center justify-end gap-2">
             {dirty && (
@@ -185,6 +213,7 @@ export function VariantEditor({
                 onClick={() => {
                   setTypedPrices({})
                   setTypedOnHand(undefined)
+                  setTypedLowStock(undefined)
                 }}
               >
                 {t('action.cancel', { ns: 'common' })}

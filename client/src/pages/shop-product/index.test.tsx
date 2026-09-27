@@ -87,6 +87,7 @@ beforeEach(async () => {
   )
   vi.spyOn(Stock, 'get').mockResolvedValue({
     productId: 'p1', sku: 'SONY-A7M4', quantityOnHand: 3, quantityReserved: 2, quantityAvailable: 1,
+    lowStockThreshold: 5, lowStockThresholdIsDefault: true,
   })
 })
 
@@ -208,6 +209,7 @@ describe('SellerProductPage stock', () => {
   it('sets stock against the variant, with the number as a number', async () => {
     const setOnHand = vi.spyOn(Stock, 'setOnHand').mockResolvedValue({
       productId: 'p1', sku: 'SONY-A7M4', quantityOnHand: 9, quantityReserved: 2, quantityAvailable: 7,
+      lowStockThreshold: 5, lowStockThresholdIsDefault: true,
     })
     const user = userEvent.setup()
     renderPage()
@@ -221,6 +223,26 @@ describe('SellerProductPage stock', () => {
 
     await waitFor(() => expect(setOnHand).toHaveBeenCalledWith('p1', 9))
     expect(typeof setOnHand.mock.calls[0][1]).toBe('number')
+  })
+
+  /** The low-stock line (specs/102): the shop's default is shown, a number is sent as a number, an emptied box as null. */
+  it('shows the default low-stock line and sends a chosen one', async () => {
+    const setLine = vi.spyOn(Stock, 'setLowStockThreshold').mockResolvedValue({
+      productId: 'p1', sku: 'SONY-A7M4', quantityOnHand: 3, quantityReserved: 2, quantityAvailable: 1,
+      lowStockThreshold: 2, lowStockThresholdIsDefault: false,
+    })
+    const setOnHand = vi.spyOn(Stock, 'setOnHand')
+    const user = userEvent.setup()
+    renderPage()
+
+    const box = await screen.findByLabelText(/Warn me below/i)
+    await waitFor(() => expect(box).toHaveAttribute('placeholder', '5 (shop default)'))
+    expect(box).toHaveValue('')
+    fireEvent.change(box, { target: { value: '2' } })
+    await user.click(screen.getByRole('button', { name: /Save variant/i }))
+
+    await waitFor(() => expect(setLine).toHaveBeenCalledWith('p1', 2))
+    expect(setOnHand).not.toHaveBeenCalled()   // the stock count was not touched, so it is not re-sent
   })
 
   /**

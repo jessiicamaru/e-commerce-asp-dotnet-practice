@@ -1,0 +1,35 @@
+info:
+  name: clearing the line puts it back on the default
+  type: http
+  seq: 88
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/stock/{{sellerProductId}}/low-stock-threshold"
+  body:
+    type: json
+    data: |-
+      {
+        "threshold": null
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the shop's default again", function() {
+          expect(res.body.lowStockThresholdIsDefault).to.equal(true);
+          expect(res.body.lowStockThreshold).to.be.a("number");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -16,6 +16,9 @@ public class StockItemConfiguration : IEntityTypeConfiguration<StockItem>
             t.HasCheckConstraint(
                 "ck_stock_items_reserved_within_on_hand",
                 "\"QuantityReserved\" >= 0 AND \"QuantityReserved\" <= \"QuantityOnHand\"");
+            t.HasCheckConstraint(
+                "ck_stock_items_low_stock_threshold_in_range",
+                "\"LowStockThreshold\" IS NULL OR \"LowStockThreshold\" BETWEEN 0 AND 100000");
         });
 
         builder.HasKey(x => x.Id);

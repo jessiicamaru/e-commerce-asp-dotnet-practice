@@ -1,3 +1,4 @@
+using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
@@ -96,6 +97,9 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // Who did what, through the outbox with every change (specs/041).
 builder.Services.AddAuditTrail("inventory");
+
+// The shop's low-stock line (specs/102), read once: a value it cannot use stops the service here, not at a sale.
+builder.Services.AddSingleton(LowStockSettings.From(builder.Configuration));
 
 builder.Services.Configure<ReservationExpiryOptions>(
     builder.Configuration.GetSection(ReservationExpiryOptions.SectionName));

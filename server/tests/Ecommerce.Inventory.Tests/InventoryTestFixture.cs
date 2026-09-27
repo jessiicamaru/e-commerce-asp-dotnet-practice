@@ -71,6 +71,7 @@ public class InventoryTestFixture : IAsyncLifetime
         services.AddSingleton<IConfiguration>(configuration);
         services.AddLogging();
         services.AddApplication();
+        services.AddSingleton(LowStock);
 
         services.AddDbContext<InventoryDbContext>(options => options.UseNpgsql(_connectionString));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -116,6 +117,9 @@ public class InventoryTestFixture : IAsyncLifetime
 
     /// <summary>Who the tests act as. An administrator unless a test says otherwise.</summary>
     public TestCaller Caller { get; } = new();
+
+    /// <summary>The shop's low-stock line in tests: the shipped default, 5 (specs/102).</summary>
+    public LowStockSettings LowStock { get; } = new(LowStockSettings.Default);
 
     /// <summary>What Catalog would say about who owns a variant.</summary>
     public TestOwners Owners { get; } = new();

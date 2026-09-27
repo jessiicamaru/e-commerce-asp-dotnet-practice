@@ -46,6 +46,7 @@
     "QuestionHidden": "Your question about “{{product}}” was hidden: {{reason}}",
     "AnswerHidden": "Your answer about “{{product}}” was hidden: {{reason}}",
     "ReportActioned": "Thank you - what you reported about “{{product}}” was taken off the shop.",
-    "ReportDismissed": "We looked at what you reported about “{{product}}” and left it as it is."
+    "ReportDismissed": "We looked at what you reported about “{{product}}” and left it as it is.",
+    "StockRunningLow": "“{{product}}” is running low: {{left}} left."
   }
 }

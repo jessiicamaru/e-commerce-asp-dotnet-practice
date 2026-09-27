@@ -28,6 +28,12 @@ public class StockItem
 
     public int QuantityAvailable => QuantityOnHand - QuantityReserved;
 
+    /// <summary>
+    /// The variant's own low-stock line (specs/102): its seller is told when a sale takes available stock below it.
+    /// Null means the shop's default; 0 means never tell.
+    /// </summary>
+    public int? LowStockThreshold { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

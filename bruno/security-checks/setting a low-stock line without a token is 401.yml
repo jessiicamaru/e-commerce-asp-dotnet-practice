@@ -1,0 +1,30 @@
+info:
+  name: setting a low-stock line without a token is 401
+  type: http
+  seq: 66
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/stock/00000000-0000-0000-0000-000000000001/low-stock-threshold"
+  body:
+    type: json
+    data: |-
+      {
+        "threshold": 3
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

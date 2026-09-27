@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `ff8f2bf`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `80d41cf`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**170 endpoints** across 7 services.
+**171 endpoints** across 7 services.
 
 ## Identity (44)
 
@@ -175,7 +175,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/vouchers/mine` | Admin, Seller | The caller's vouchers: the platform's for an administrator, their own for a seller. |
 | `POST` | `/api/vouchers/{id}/disable` | Admin, Seller | Stops it being used. Not yours is a 404; already disabled is a 409. |
 
-## Inventory (4)
+## Inventory (5)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -183,6 +183,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/stock` | anyone |  |
 | `GET` | `/api/stock/{productId}` | anyone | Stock for one sellable unit. Since specs/020 the id is a variant id - what a customer actually buys. For every product that existed before variants, its id is also its only variant's id, so an old link still works. |
 | `PUT` | `/api/stock/{productId}` | Seller, Admin | Sets stock for one sellable unit; the id is a variant id (specs/020). |
+| `PUT` | `/api/stock/{productId}/low-stock-threshold` | Seller, Admin | A variant's own low-stock line (specs/102): null is the shop default, 0 never tells. Same owners as stock. |
 
 ## Payment (2)
 

@@ -156,6 +156,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [099](../../specs/099-shop-page/) | A shop has a page | #206 | #197: a shop's name on a product leads to its page - the seller's own description and everything the shop has on the shelf; the seller writes the description beside the rename |
 | [100](../../specs/100-moderation-history/) | Moderation history | #207 | #198: a moderator locking somebody sees what staff decided about them before, and why - earlier locks, reviews and questions hidden, products taken down, shop applications refused |
 | [101](../../specs/101-content-reports/) | Content reports | #208 | #199: shoppers report a review, a question or a product; moderators work through a queue, most reported first, and every reporter is told how it ended |
+| [102](../../specs/102-low-stock-notice/) | Low-stock notice | #209 | #200: a seller is told when a sale takes one of their variants below its line - once per crossing, with a line of their own or the shop's default |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

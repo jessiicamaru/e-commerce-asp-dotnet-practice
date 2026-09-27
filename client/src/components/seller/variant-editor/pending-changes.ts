@@ -4,8 +4,13 @@
  * else changed a minute ago.
  */
 export function pendingChanges(
-  typed: { prices: Record<string, string>; onHand: string | undefined },
-  current: { prices: Record<string, number | null>; onHand: number | null },
+  typed: { prices: Record<string, string>; onHand: string | undefined; lowStock?: string },
+  current: {
+    prices: Record<string, number | null>
+    onHand: number | null
+    /** The variant's own line, or null when it follows the shop's default (specs/102). */
+    lowStock?: number | null
+  },
 ) {
   const prices = Object.entries(typed.prices)
     .filter(([, value]) => value.trim() !== '')
@@ -18,7 +23,19 @@ export function pendingChanges(
       ? onHandNumber
       : null
 
-  return { prices, onHand }
+  return { prices, onHand, lowStock: lowStockChange(typed.lowStock, current.lowStock ?? null) }
+}
+
+/**
+ * The low-stock line to send, or undefined for no change (specs/102). An emptied box means "the shop's default" -
+ * sent as null, and only when the variant has a line of its own to give up. 0 is a value: never warn.
+ */
+function lowStockChange(typed: string | undefined, own: number | null): { threshold: number | null } | undefined {
+  if (typed === undefined) return undefined
+  if (typed.trim() === '') return own === null ? undefined : { threshold: null }
+  const value = Number(typed)
+  if (!Number.isInteger(value) || value < 0 || value > 100_000 || value === own) return undefined
+  return { threshold: value }
 }
 
 /**

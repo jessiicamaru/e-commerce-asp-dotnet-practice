@@ -30,6 +30,9 @@ public static class NotificationKind
     public const string AccountBanned = "AccountBanned";
     public const string ReviewHidden = "ReviewHidden";
 
+    // A sale took one of a seller's variants below its low-stock line (specs/102)
+    public const string StockRunningLow = "StockRunningLow";
+
     // What became of something a shopper reported (specs/101) - never who decided
     public const string ReportActioned = "ReportActioned";
     public const string ReportDismissed = "ReportDismissed";

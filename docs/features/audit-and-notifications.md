@@ -184,6 +184,7 @@ Found by searching every `RecordAsync(` call in `server/src`. **Actor** is who t
 | `ReviewHidden` / `ReviewRestored` | Moderation | Review | Catalog | Staff hide or restore a review. | caller |
 | `ReportsDismissed` | Moderation | Review, Question or Product | Catalog | Staff dismiss what shoppers reported (specs/101). | caller |
 | `StockSet` | Catalog | Variant | Inventory | `PUT /api/stock/{variantId}`. | caller |
+| `LowStockThresholdSet` | Catalog | Variant | Inventory | `PUT /api/stock/{variantId}/low-stock-threshold` (specs/102). | caller |
 | `ReservationsExpired` | System | Reservation | Inventory | The expiry sweeper returns holds to the shelf. | system |
 | `StockReturned` | Order | Order | Inventory | A cancelled order's units are put back. | system |
 | `OrderPlaced` | Order | Order | Order | Checkout. | caller |
@@ -240,6 +241,7 @@ would roll back the payout or the decision it announces.
 | `ReviewHidden` | the review's author | `product`, `reason` | `/products/{id}` | A moderator hides the review (Catalog, specs/059). |
 | `ReportActioned` | each person who reported it | `product` | `/products/{id}` | Staff hide the reported review, question or answer, or take the product down (Catalog, specs/101). Never who decided. |
 | `ReportDismissed` | each person who reported it | `product` | `/products/{id}` | Staff look and leave it as it is (Catalog, specs/101). |
+| `StockRunningLow` | the product's seller | `product` (name and options), `left` | `/shop/products/{id}` | A sale took the variant below its low-stock line (Catalog, from Inventory's `StockRanLowEvent`, specs/102). |
 
 The shop's own goods have nobody to tell: no `NewSale`, `SaleCancelled`, `ParcelReceived` or product
 notice goes out for them.
@@ -396,3 +398,4 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [048-notification-wording](../../specs/048-notification-wording/) | [#129](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/129) | `notification-kinds.json` and `NotificationContract`: each kind's data keys declared once and tested on both sides; the five kinds that showed placeholders read as sentences (#119). |
 | [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | `AuditEntryRecorded.AboutUserId`, filled from a User subject and named by content decisions; `audit_entries.AboutUserId`, backfilled; `GET /api/audit/people/{userId}` (#198). |
 | [101-content-reports](../../specs/101-content-reports/) | [#208](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/208) | `ReportActioned`, `ReportDismissed`; `ReportsDismissed` (#199). |
+| [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `StockRunningLow` and the `left` placeholder; `LowStockThresholdSet` (#200). |

@@ -49,6 +49,9 @@ namespace Ecommerce.Inventory.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("LowStockThreshold")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -73,6 +76,8 @@ namespace Ecommerce.Inventory.Infrastructure.Migrations
 
                     b.ToTable("stock_items", null, t =>
                         {
+                            t.HasCheckConstraint("ck_stock_items_low_stock_threshold_in_range", "\"LowStockThreshold\" IS NULL OR \"LowStockThreshold\" BETWEEN 0 AND 100000");
+
                             t.HasCheckConstraint("ck_stock_items_on_hand_non_negative", "\"QuantityOnHand\" >= 0");
 
                             t.HasCheckConstraint("ck_stock_items_reserved_within_on_hand", "\"QuantityReserved\" >= 0 AND \"QuantityReserved\" <= \"QuantityOnHand\"");

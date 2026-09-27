@@ -120,6 +120,16 @@ administrator skips the call entirely. The endpoint can answer three different 4
 A newly listed product has no stock (`QuantityOnHand = 0`) until the seller sets it; stocking is a
 second step on the listing's page, not a field on the create form.
 
+**A seller is told when a variant runs low** (specs/102, #200). When a checkout's reservation takes a
+variant's available stock from at or above its line to below it, Inventory stages `StockRanLowEvent` in
+that same transaction, and Catalog - which knows the seller and the words - sends them `StockRunningLow`
+("“X-T5 · Colour: Silver” is running low: 4 left"). The crossing is judged from before and after under
+the reservation's row lock, with **no stored flag**: staying below never crosses again, and stock coming
+back (a failed payment, a restock) makes the next fall a new crossing. The line is
+`stock_items.LowStockThreshold` (null = `Inventory:LowStock:DefaultThreshold`, 5; 0 = never), set by the
+seller beside the stock count through `PUT /api/stock/{variantId}/low-stock-threshold` with the same
+ownership check. A seller's own adjustment tells nobody, and nobody is told about the shop's own goods.
+
 ### Sales and parcels
 
 At checkout Order prices each line with `CatalogPricing.PriceVariants`, whose `PricedVariant` carries
@@ -294,6 +304,7 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `GET` | `/api/products/mine` | Seller |
 | `POST`, `PUT`, `DELETE` | `/api/products/...` (create, variants, prices, translations, images, delete) | Seller, Admin - ownership checked in the handler |
 | `PUT` | `/api/stock/{variantId}` | Seller, Admin - ownership asked of Catalog |
+| `PUT` | `/api/stock/{variantId}/low-stock-threshold` | Seller, Admin - the same ownership check (specs/102) |
 | `GET` | `/api/orders/sales`, `/api/orders/sales/{id}` | Seller |
 | `POST` | `/api/orders/sales/{id}/preparing`, `/api/orders/sales/{id}/shipment` | Seller |
 | `GET` | `/api/orders/sales/balance` | Seller |
@@ -310,6 +321,7 @@ From [messages.md](../reference/messages.md) and [grpc.md](../reference/grpc.md)
 | `SellerRegisteredEvent` | Identity, on approval | Catalog `SellerRegisteredConsumer` | `SellerId`, `ShopName`, `RegisteredAt` |
 | `SellerRenamedEvent` | Identity, on rename | Catalog `SellerRenamedConsumer` | `SellerId`, `ShopName`, `RenamedAt` |
 | `SellerDescribedEvent` | Identity, on a description | Catalog `SellerDescribedConsumer` | `SellerId`, `Description` (null = cleared), `DescribedAt` |
+| `StockRanLowEvent` | Inventory, in a reservation that crossed a line | Catalog `StockRanLowConsumer` | `VariantId`, `QuantityAvailable`, `Threshold`, `OccurredAt` (specs/102) |
 | `AuditEntryRecorded`, `UserNotificationRequested` | Identity, Catalog, Order | Activity | decisions, payouts, sales (see [audit and notifications](audit-and-notifications.md)) |
 | gRPC `CatalogOwnership.GetVariantOwners` | Inventory | Catalog | who owns each variant, asked per stock write |
 | gRPC `CatalogPricing.PriceVariants` | Order | Catalog | `PricedVariant.seller_id` (field 9) and `seller_name` (field 10), both `optional` |
@@ -329,7 +341,7 @@ broker returns.
 | `pages/shop` (`/shop`) | The shop at a glance: listings, what has run out, recent sales, revenue per currency. |
 | `pages/shop-products` (`/shop/products`) | The seller's listings with Inventory's real stock count. |
 | `pages/shop-product-new` (`/shop/products/new`) | Lists a product; the price is the default currency's amount. |
-| `pages/shop-product` (`/shop/products/:id`) | Photograph, variants, prices per currency, stock, variant photographs; `components/seller/variant-editor`, `review-banner`. |
+| `pages/shop-product` (`/shop/products/:id`) | Photograph, variants, prices per currency, stock and its low-stock line (specs/102), variant photographs; `components/seller/variant-editor`, `review-banner`. |
 | `pages/shop-sales`, `pages/shop-sale` | The seller's sales and one sale, with `components/seller/sale-earnings` and the parcel steps. |
 | `pages/shop-payouts` (`/shop/payouts`) | One card per currency: on the way, due, paid out; and the payouts list. |
 | `components/seller/rename-shop-dialog` | Renames the shop. |
@@ -349,6 +361,8 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | `Ecommerce.Identity.Tests/SellerRolesTests` | A customer holds `Customer` only; an applicant is a customer; an approved seller holds `Seller` and `Customer`; refresh keeps the roles. |
 | `Ecommerce.Catalog.Tests/SellerOwnershipTests` | Per write operation, another seller's product is 404; the shop's own cannot be adopted; an administrator passes; "my listings" holds only mine; a rename changes the listings without writing one; an overtaken rename loses. |
 | `Ecommerce.Catalog.Tests/VariantOwnershipTests`, `VariantSellerPricingTests` | The gRPC answers: owner per variant, `seller_id` empty-but-present for the shop, the shop name or no name. |
+| `Ecommerce.Inventory.Tests/LowStockTests` | A sale crossing the line publishes once; below it, none; back above then down, again; exactly at the line is not low; a variant's own line and 0; a seller's adjustment and a redelivery publish nothing; several variants judged each; the line's owner, range and default; an unusable configured default stops startup (specs/102). |
+| `Ecommerce.Catalog.Tests/LowStockNoticeTests` | The seller is told the product, the variant and how many are left; the shop's own goods and a variant that is gone tell nobody (specs/102). |
 | `Ecommerce.Inventory.Tests/SellerStockTests` | A seller stocks their own; another's is 404 and never 403; the shop's own is refused; an administrator costs no call to Catalog; a missing stock row says something different; Catalog unreachable is not a refusal. |
 | `Ecommerce.Order.Tests/SellerSalesTests`, `ShopNameTests` | The seller and shop name are frozen per line; a sale holds only the seller's lines and nothing about the customer; unpaid orders are never sales; not-yours and not-there read alike. |
 | `Ecommerce.Catalog.Tests/ShopPageTests` | The seller filter lists only that seller's products on the shelf; the shop read carries name, description and count; unknown, unnamed and suspended are 404; an older description loses. |
@@ -395,6 +409,7 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 | [027-seller-accounts](../../specs/027-seller-accounts/) | [#64](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/64) | The `Seller` role, `register-seller`, `seller_profiles`, `products.SellerId`, `SellerOwnership`, Catalog's `sellers` read model, the rename, Identity's first outbox. |
 | [095-suspended-seller](../../specs/095-suspended-seller/) | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) | A ban closes a seller's shop: `SellerSuspensionChangedEvent`, `sellers.Suspended`, `products.SellerSuspended` (#193). |
 | [099-shop-page](../../specs/099-shop-page/) | [#206](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/206) | A shop has a page: `/shops/:sellerId`, `GET /api/shops/{id}`, `?sellerId=` on the listing, the seller's description and `SellerDescribedEvent` (#197). |
+| [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `stock_items.LowStockThreshold`, `StockRanLowEvent`, `StockRunningLow`; the line beside the stock count (#200). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |
