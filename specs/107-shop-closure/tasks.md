@@ -29,7 +29,7 @@ description: "Task list for A seller pauses their shop, and staff close one"
 - [x] T009 Mutations (quickstart Scenario 3), each red; the full Catalog and client suites
 - [x] T010 [P] Bruno; a rebuilt Catalog and storefront; the post-design Constitution re-check
 - [x] T011 Docs: marketplace, moderation-and-staff, catalog, audit-and-notifications, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T012 Merged as #227, closing #214
+- [x] T012 Merged as #227, closing #214
 
 ## Evidence
 
