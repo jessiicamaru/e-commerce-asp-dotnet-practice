@@ -39,6 +39,10 @@ Apply each change below on its own, run the suite named beside it, and expect it
 | :-- | :-- |
 | `after < threshold` becomes `after <= threshold` | `LowStockTests` |
 | `before >= threshold` dropped | `LowStockTests` |
-| `threshold > 0` dropped | `LowStockTests` |
+| `threshold > 0` dropped | none - an **equivalent mutant**: with a line of 0, `after < 0` can never hold, because the CHECK keeps available stock at 0 or more. The guard stays as a statement of intent |
+| 0 read as "no choice" (`LowStockThreshold is > 0 ? … : DefaultThreshold`) | `LowStockTests` - the real way 0 could break |
 | `LowStockThreshold ??` ignored (always the default) | `LowStockTests` |
 | The consumer notifies when `SellerId` is null | `LowStockNoticeTests` |
+| `pendingChanges` never clears a line from an emptied box | client `utils/logic.test.ts` |
+| The variant editor never sends the line | client `pages/shop-product` |
+| `describeNotification` does not fill `left` | client `utils/notifications` |

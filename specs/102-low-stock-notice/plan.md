@@ -58,9 +58,11 @@ threshold beside the stock count.
 | **II. Clean Architecture Layering** | **Pass.** The crossing rule is pure Application code (`LowStock.Crossed`), storage is in Infrastructure, and the controller and consumer only send. |
 | **III. Atomic Writes and Idempotent Messaging** | **Pass.** The event is staged in the reservation's transaction before its one save. The publisher is idempotent through the reservation's duplicate check, and the consumer through the inbox. |
 | **IV. Identity Comes From the Token** | **Pass.** The threshold endpoint takes no seller id; ownership comes from the token through `StockOwnership`. |
-| **V. Evidence Over Assumption** | **Planned.** Inventory and Catalog tests against real databases (SC-001, SC-002), client tests, five mutations (quickstart Scenario 4), and Bruno through rebuilt containers. The evidence is recorded in `tasks.md` as each task completes. |
+| **V. Evidence Over Assumption** | **Pass.** 18 Inventory tests and 2 Catalog tests against real databases, 3 client tests; seven mutations each caught and one found equivalent and recorded (quickstart Scenario 4); full suites Inventory 75, Catalog 241, Activity 40, Order 286, client 516; Bruno 314/314 and `verify-saga.sh` through rebuilt containers; the `CatalogSvcStockRanLow` queue bound with one consumer. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md` T013.
+**Post-design re-check** (after implementation): no violations. The event is staged before the reservation's one save
+(III); Inventory makes no call to Catalog (I); the threshold route reads the seller from the token and asks ownership
+live, as setting stock does (IV).
 
 ## Project Structure
 
