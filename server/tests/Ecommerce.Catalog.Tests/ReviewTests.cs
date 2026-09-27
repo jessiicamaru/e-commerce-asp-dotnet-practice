@@ -210,6 +210,24 @@ public class ReviewTests(CatalogTestFixture fixture) : IDisposable
         return caller.Id.Value;
     }
 
+    /// <summary>
+    /// #186 (specs/094): the staff list had no paging validator - a page of 100,000 hidden reviews was one request -
+    /// while every other paged query in Catalog is held to 1-50.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(1, 51)]
+    [InlineData(1, 100_000)]
+    [InlineData(0, 12)]
+    public async Task The_staff_list_is_paged_like_every_other(int pageNumber, int pageSize)
+    {
+        AsStaff();
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            SendAsync(new GetReviewsForStaffQuery(Hidden: true, pageNumber, pageSize)));
+        await SendAsync(new GetReviewsForStaffQuery(Hidden: true, 1, 50));   // the most a page may hold
+    }
+
     private void AsStaff()
     {
         var caller = Caller();

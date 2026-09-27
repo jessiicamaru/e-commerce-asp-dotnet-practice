@@ -148,4 +148,40 @@ describe('AdminEmailsPage (specs/077)', () => {
 
     await waitFor(() => expect(told).toHaveBeenCalledWith('Saved. The next email says this.'))
   })
+
+  /** The same remount after a reset and a restore (#186, specs/094) - specs/080 fixed all three, but only save was held. */
+  it('says it was reset even when the editor is gone by the time the reset answers', async () => {
+    vi.spyOn(EmailTemplates, 'list').mockResolvedValue([email({ isDefault: false, version: 3, updatedAt: '2026-09-26T08:00:00Z' })])
+    let answer: (reset: EmailTemplate) => void = () => {}
+    vi.spyOn(EmailTemplates, 'reset').mockReturnValue(new Promise<EmailTemplate>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsAdmin(<AdminEmailsPage />, '/admin/emails')
+
+    await user.click(await screen.findByRole('button', { name: 'Reset to default' }))
+    unmount()
+    answer(email({ version: 4 }))
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith('Back to the built-in words.'))
+  })
+
+  it('says it was restored even when the editor is gone by the time the restore answers', async () => {
+    vi.spyOn(EmailTemplates, 'list').mockResolvedValue([email({ isDefault: false, version: 2, updatedAt: '2026-09-26T08:00:00Z' })])
+    vi.spyOn(EmailTemplates, 'versions').mockResolvedValue([
+      { version: 2, isDefault: false, subject: 'b', bodyHtml: '<p>b</p>', createdAt: '2026-09-26T08:00:00Z', createdBy: 'u1' },
+      { version: 1, isDefault: false, subject: 'a', bodyHtml: '<p>a</p>', createdAt: '2026-09-25T08:00:00Z', createdBy: 'u1' },
+    ])
+    let answer: (restored: EmailTemplate) => void = () => {}
+    vi.spyOn(EmailTemplates, 'restore').mockReturnValue(new Promise<EmailTemplate>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsAdmin(<AdminEmailsPage />, '/admin/emails')
+
+    expect(await screen.findByText('Current')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Restore' }))
+    unmount()
+    answer(email({ version: 3 }))
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith('Version 1 restored.'))
+  })
 })

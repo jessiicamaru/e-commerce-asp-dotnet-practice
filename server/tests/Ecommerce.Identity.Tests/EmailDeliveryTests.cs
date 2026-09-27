@@ -71,6 +71,34 @@ public class EmailDeliveryTests(IdentityTestFixture fixture)
         Assert.Contains("only a failed one", again.Message);
     }
 
+    /// <summary>
+    /// Two administrators pressing "Send again" at the same moment (#186, specs/094): the guarded UPDATE lets exactly
+    /// one through; the rest are 409 and move nothing, and the person receives the email once.
+    /// </summary>
+    [Fact]
+    public async Task Simultaneous_retries_of_one_email_send_it_once()
+    {
+        var (person, address) = await PersonAsync();
+        var failed = await EmailAsync(person, EmailTemplate.OrderPaid, OutgoingEmailStatus.Failed);
+
+        var attempts = await Task.WhenAll(Enumerable.Range(0, 5).Select(async _ =>
+        {
+            try
+            {
+                await SendAsync(new RetryEmailCommand(failed));
+                return true;
+            }
+            catch (ConflictException)
+            {
+                return false;
+            }
+        }));
+
+        Assert.Equal(1, attempts.Count(ok => ok));
+        await SendAsync(new DispatchEmailsCommand(DateTime.UtcNow.AddSeconds(1)));
+        Assert.Single(_fixture.Mail.SentTo(address));
+    }
+
     /// <summary>A reset link is dead after 30 minutes: sending it later helps nobody. The person asks for a new one.</summary>
     [Fact]
     public async Task A_reset_or_confirmation_link_is_never_sent_again()

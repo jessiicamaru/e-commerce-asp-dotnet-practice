@@ -1,8 +1,10 @@
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Commands.SubmitOrder;
+using Ecommerce.Order.Application.Orders.Queries.GetMyOrderById;
 using Ecommerce.Order.Domain.Entities;
 using Ecommerce.Order.Domain.Enums;
 using Ecommerce.Order.Infrastructure.Persistence;
+using MassTransit.Testing;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +49,34 @@ public class TotalsPersistenceTests(OrderTestFixture fixture)
         Assert.Equal(3.50m, vn.TaxTotal);
         // 29.97 x 20% = 5.99 (5.994), delivery 5.00 x 20% = 1.00
         Assert.Equal(6.99m, gb.TaxTotal);
+    }
+
+    /// <summary>
+    /// #186 (specs/094): the rates are read once, at startup, so "changed in configuration" means a restart. An order
+    /// placed before it keeps the rate and the tax it was charged (specs/012) - read back through the restarted service,
+    /// whose new checkouts do use the new rate (which is what shows the restart took effect).
+    /// </summary>
+    [Fact]
+    public async Task A_rate_changed_after_the_order_does_not_change_it()
+    {
+        var placed = await CheckoutToAsync("VN");   // 10%
+
+        await using var restarted = _fixture.RestartedWith(s => s.AddSingleton<ITaxRates>(new FixedRate(0.25m)));
+        await restarted.GetRequiredService<ITestHarness>().Start();
+        await using var scope = restarted.CreateAsyncScope();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
+        var read = await sender.Send(new GetMyOrderByIdQuery(placed.OrderId));
+        Assert.Equal((0.10m, 3.50m, placed.TotalAmount), (read.TaxRate, read.TaxTotal, read.TotalAmount));
+        Assert.Equal(3.00m, Assert.Single(read.Items).TaxAmount);
+
+        var afterRestart = await sender.Send(new SubmitOrderCommand(null, "standard"));
+        Assert.Equal(0.25m, afterRestart.TaxRate);
+    }
+
+    private sealed class FixedRate(decimal rate) : ITaxRates
+    {
+        public decimal RateFor(string country) => rate;
     }
 
     [Fact]

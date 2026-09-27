@@ -104,7 +104,13 @@ public class OrderTestFixture : IAsyncLifetime
         await Harness.Start();
     }
 
-    private ServiceProvider BuildProvider()
+    /// <summary>
+    /// The same service, started again with <paramref name="with"/> registered last - a restart with changed
+    /// configuration (specs/094), against the same database. The caller disposes it.
+    /// </summary>
+    public ServiceProvider RestartedWith(Action<IServiceCollection> with) => BuildProvider(with);
+
+    private ServiceProvider BuildProvider(Action<IServiceCollection>? with = null)
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -195,6 +201,8 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddEmailSender();
             x.AddConsumer<OrderFailedConsumer>();
         });
+
+        with?.Invoke(services);
 
         return services.BuildServiceProvider(true);
     }

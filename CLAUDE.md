@@ -97,11 +97,11 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (51 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (25 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (266 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (210 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
-(14 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (174 tests, PostgreSQL on 5435) and
-`Ecommerce.Activity.Tests` (35 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (17 tests -
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (57 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (26 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (268 tests,
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (221 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+(19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (184 tests, PostgreSQL on 5435) and
+`Ecommerce.Activity.Tests` (36 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (13 tests, no database - the
 gateway's real pipeline through WebApplicationFactory, specs/062). They run against a **real PostgreSQL** — the guarantees under test are the

@@ -28,7 +28,7 @@ description: "Task list for A product inserted without a review status waits for
 
 - [X] T006 Mutations (quickstart Scenario 3); `Ecommerce.Catalog.Tests` 217/217
 - [X] T007 Docs: `docs/features/catalog.md`, CLAUDE.md, `docs/project/backlog.md`, `docs/project/timeline.md` (`generate_reference.py` run: it records no defaults, only its stamps changed - not committed)
-- [ ] T008 Merged as #192, closing #184
+- [X] T008 Merged as #192 (2026-09-27), closing #184
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `093-review-default-pending` | **Created**: 2026-09-27 | **Issue**: #184
 
-**Status**: Draft
+**Status**: Merged (#192, 2026-09-27)
 
 **Input**: Issue #184 - "during a rollback a seller's new product goes on sale unreviewed".
 

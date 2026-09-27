@@ -49,7 +49,9 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
         var (published, approved) = await PublishedAsync(Moderator, new ApproveShopApplicationCommand(id), RoleNames.Moderator);
 
         Assert.Equal("Approved", approved.Status);
-        Assert.Equal((registered.Id, "Mai Lens"), (Assert.Single(published.OfType<SellerRegisteredEvent>()).SellerId, "Mai Lens"));
+        // The shop's name is what Catalog shows on every listing (specs/027) - read from the event, not restated (#186).
+        var opened = Assert.Single(published.OfType<SellerRegisteredEvent>());
+        Assert.Equal((registered.Id, "Mai Lens"), (opened.SellerId, opened.ShopName));
         var notice = Assert.Single(published.OfType<UserNotificationRequested>());
         Assert.Equal((registered.Id, "ShopApproved"), (notice.RecipientId, notice.Kind));
         var entry = Assert.Single(published.OfType<AuditEntryRecorded>());
@@ -77,6 +79,23 @@ public class ShopApplicationTests(IdentityTestFixture fixture)
 
         Assert.Equal(1, attempts.Count(ok => ok));
         Assert.True(await HasShopAsync(registered.Id));
+    }
+
+    /// <summary>
+    /// Two tabs pressing Apply at once (#186, specs/094): the rule reads "none pending" in both, so it is the partial
+    /// unique index that lets one through - and the loser must hear 409, not a 500.
+    /// </summary>
+    [Fact]
+    public async Task Two_simultaneous_applications_leave_one_waiting()
+    {
+        var customer = await SendAsync(Guid.Empty, new RegisterCommand(AnEmail(), Password, "Lan", "Pham"));
+        await _fixture.ConfirmEmailAsync(customer.Id);
+
+        var attempts = await Task.WhenAll(Enumerable.Range(0, 5).Select(i => Attempt(() =>
+            SendAsync(customer.Id, new ApplyForShopCommand($"Lan Film {i}", null, null)))));
+
+        Assert.Equal(1, attempts.Count(ok => ok));
+        Assert.Single(await SendAsync(customer.Id, new GetMyShopApplicationsQuery()), a => a.Status == "Pending");
     }
 
     [Fact]

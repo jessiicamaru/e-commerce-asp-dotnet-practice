@@ -96,4 +96,45 @@ describe('AdminWordingPage (specs/078)', () => {
 
     await waitFor(() => expect(told).toHaveBeenCalledWith('Saved. Readers see it on their next load.'))
   })
+
+  /** The same remount after a reset and a restore (#186, specs/094) - specs/080 fixed all three, but only save was held. */
+  it('says it was reset even when the editor is gone by the time the reset answers', async () => {
+    vi.spyOn(NotificationWording, 'overview').mockResolvedValue(
+      overview({ entries: [{ key: 'NewSale', language: 'en', text: 'Sold: {{order}}', isDefault: false, version: 2, updatedAt: '2026-09-26T08:00:00Z', updatedBy: 'u1' }] }),
+    )
+    let answer: (reset: WordingEntry) => void = () => {}
+    vi.spyOn(NotificationWording, 'reset').mockReturnValue(new Promise<WordingEntry>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsAdmin(<AdminWordingPage />, '/admin/notifications')
+
+    await user.click(await screen.findByRole('button', { name: 'Edit NewSale (en)' }))
+    await user.click(screen.getByRole('button', { name: "Back to the storefront's words" }))
+    unmount()
+    answer({ key: 'NewSale', language: 'en', text: null, isDefault: true, version: 3, updatedAt: '', updatedBy: 'u1' })
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith("Back to the storefront's own words."))
+  })
+
+  it('says it was restored even when the editor is gone by the time the restore answers', async () => {
+    vi.spyOn(NotificationWording, 'overview').mockResolvedValue(
+      overview({ entries: [{ key: 'NewSale', language: 'en', text: 'Sold: {{order}}', isDefault: false, version: 2, updatedAt: '2026-09-26T08:00:00Z', updatedBy: 'u1' }] }),
+    )
+    vi.spyOn(NotificationWording, 'versions').mockResolvedValue([
+      { key: 'NewSale', language: 'en', text: 'Sold: {{order}}', isDefault: false, version: 2, updatedAt: '2026-09-26T08:00:00Z', updatedBy: 'u1' },
+      { key: 'NewSale', language: 'en', text: 'A sale: {{order}}', isDefault: false, version: 1, updatedAt: '2026-09-25T08:00:00Z', updatedBy: 'u1' },
+    ])
+    let answer: (restored: WordingEntry) => void = () => {}
+    vi.spyOn(NotificationWording, 'restore').mockReturnValue(new Promise<WordingEntry>((resolve) => (answer = resolve)))
+    const told = vi.spyOn(toast, 'success').mockReturnValue('t')
+    const user = userEvent.setup()
+    const { unmount } = renderAsAdmin(<AdminWordingPage />, '/admin/notifications')
+
+    await user.click(await screen.findByRole('button', { name: 'Edit NewSale (en)' }))
+    await user.click(await screen.findByRole('button', { name: 'Restore' }))
+    unmount()
+    answer({ key: 'NewSale', language: 'en', text: 'A sale: {{order}}', isDefault: false, version: 3, updatedAt: '', updatedBy: 'u1' })
+
+    await waitFor(() => expect(told).toHaveBeenCalledWith('Version 1 restored.'))
+  })
 })
