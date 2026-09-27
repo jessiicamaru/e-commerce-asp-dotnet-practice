@@ -18,13 +18,26 @@ export function CatalogPage() {
   const categoryId = params.get('category') ?? ''
   const sortBy = (params.get('sort') as SortBy | null) ?? 'name_asc'
   const pageNumber = Number(params.get('page') ?? '1') || 1
+  // A price range in the currency being browsed in, and "in stock only" (specs/109) - in the URL like the rest.
+  const minPrice = params.get('min') ?? ''
+  const maxPrice = params.get('max') ?? ''
+  const inStock = params.get('stock') === '1'
 
   const categories = useCategories()
-  const products = useProducts({ pageNumber, pageSize: PAGE_SIZE, searchTerm, categoryId, sortBy })
+  const products = useProducts({
+    pageNumber,
+    pageSize: PAGE_SIZE,
+    searchTerm,
+    categoryId,
+    sortBy,
+    minPrice: bound(minPrice),
+    maxPrice: bound(maxPrice),
+    inStock: inStock || undefined,
+  })
 
   // The hero belongs to the landing view only. Once somebody has searched or filtered, the results
   // are what they came for and a hero is in the way of them.
-  const landing = !searchTerm && !categoryId && pageNumber === 1
+  const landing = !searchTerm && !categoryId && !minPrice && !maxPrice && !inStock && pageNumber === 1
 
   function update(changes: Record<string, string>) {
     const next = new URLSearchParams(params)
@@ -64,6 +77,9 @@ export function CatalogPage() {
           searchTerm={searchTerm}
           categoryId={categoryId}
           sortBy={sortBy}
+          minPrice={minPrice}
+          maxPrice={maxPrice}
+          inStock={inStock}
           categories={categories.data ?? []}
           onChange={update}
         />
@@ -100,4 +116,10 @@ export function CatalogPage() {
       </section>
     </>
   )
+}
+
+/** A bound from the address: a number, or nothing - a typo in a shared link is no bound, not a 400. */
+function bound(value: string): number | undefined {
+  const n = Number(value)
+  return value.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : undefined
 }
