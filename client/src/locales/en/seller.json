@@ -319,5 +319,25 @@
     "save": "Save account",
     "saved": "Payout account saved.",
     "emailed": "We email you whenever this changes. If you get that email and did not change it, change your password."
+  },
+  "shopState": {
+    "title": "Your shop",
+    "state": {
+      "Open": "Open",
+      "Paused": "Paused",
+      "Closed": "Closed by staff",
+      "Suspended": "Suspended"
+    },
+    "pause": "Pause shop",
+    "pauseTitle": "Pause your shop?",
+    "pauseBody": "Your products leave the shop until you reopen it - nobody can find or buy them. Orders already paid still wait for you to ship them.",
+    "keepOpen": "Keep it open",
+    "paused": "Your shop is paused.",
+    "reopen": "Reopen shop",
+    "reopened": "Your shop is open again.",
+    "pausedSince": "Paused since {{at}}. Shoppers see that you are away.",
+    "closedBecause": "Staff closed your shop on {{at}}: {{reason}}. Your products are off the shop until staff reopen it; orders already paid still need shipping.",
+    "suspended": "Your account is banned, so your shop is closed.",
+    "failed": "The shop could not be changed."
   }
 }

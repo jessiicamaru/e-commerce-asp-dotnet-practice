@@ -1,22 +1,26 @@
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { StoreIcon } from 'lucide-react'
+import { PauseCircleIcon, StoreIcon } from 'lucide-react'
 import { ProductCard } from '@/components/product/product-card'
+import { CloseShop } from '@/components/admin/close-shop'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { PAGE_SIZE } from '@/constants/shared'
 import { queryKeys } from '@/constants/query-keys'
+import { useAuth } from '@/context/auth/useAuth'
 import { useProducts } from '@/hooks/product'
 import { Shops } from '@/services/shops'
 
 /**
  * A shop's page (specs/099): its name and the seller's own words, then what it has on the shelf, paged like the catalogue.
  * A closed or unknown shop is the server's 404, shown as "not found". The description is shown as text, never as markup.
+ * A paused shop (specs/107) answers and says its seller is away; staff close a shop from here.
  */
 export function ShopFrontPage() {
   const { t } = useTranslation('catalog')
   const { sellerId = '' } = useParams()
+  const { isStaff } = useAuth()
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
   const shop = useQuery({ queryKey: queryKeys.shopFront(sellerId), queryFn: () => Shops.get(sellerId), retry: false })
@@ -36,7 +40,14 @@ export function ShopFrontPage() {
             <StoreIcon className="size-7" /> {shop.data.shopName}
           </h1>
           {shop.data.description && <p className="text-muted-foreground whitespace-pre-line">{shop.data.description}</p>}
-          <p className="text-sm">{t('shop.onSale', { count: shop.data.productCount })}</p>
+          {shop.data.paused ? (
+            <p className="flex items-center gap-2 text-sm font-medium" role="status">
+              <PauseCircleIcon className="size-4" /> {t('shop.paused')}
+            </p>
+          ) : (
+            <p className="text-sm">{t('shop.onSale', { count: shop.data.productCount })}</p>
+          )}
+          {isStaff && <CloseShop sellerId={shop.data.sellerId} shopName={shop.data.shopName} />}
         </header>
       )}
 

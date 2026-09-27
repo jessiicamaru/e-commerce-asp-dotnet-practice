@@ -269,7 +269,8 @@
     "tab": {
       "Pending": "Đang chờ",
       "Approved": "Đã duyệt",
-      "Rejected": "Đã từ chối"
+      "Rejected": "Đã từ chối",
+      "Closed": "Cửa hàng bị đóng"
     },
     "none": "Không có đơn nào.",
     "loadFailed": "Không tải được danh sách đơn.",
@@ -285,7 +286,24 @@
     "approved": "Đã mở gian hàng “{{shop}}”.",
     "rejected": "Đã từ chối “{{shop}}”.",
     "decided": "Quyết định lúc {{when}}",
-    "unconfirmed": "Email chưa xác nhận"
+    "unconfirmed": "Email chưa xác nhận",
+    "close": {
+      "button": "Đóng cửa hàng",
+      "title": "Đóng {{shop}}?",
+      "body": "Sản phẩm của cửa hàng rời khỏi kệ ngay. Người bán vẫn giữ tài khoản, đọc được lý do của bạn và không thể tự mở lại - chỉ quản trị mới mở được.",
+      "reason": "Lý do (người bán sẽ đọc)",
+      "keep": "Vẫn mở",
+      "confirm": "Đóng cửa hàng",
+      "done": "Đã đóng {{shop}}.",
+      "failed": "Không thể đóng cửa hàng."
+    },
+    "closed": {
+      "none": "Không có cửa hàng nào bị đóng.",
+      "when": "Đóng lúc {{when}}",
+      "alsoPaused": "Người bán cũng đang tạm nghỉ",
+      "reopen": "Mở lại",
+      "reopened": "Đã mở lại {{shop}}."
+    }
   },
   "review": {
     "title": "Sản phẩm chờ duyệt",

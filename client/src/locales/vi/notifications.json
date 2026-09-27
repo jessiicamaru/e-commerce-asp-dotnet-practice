@@ -48,6 +48,8 @@
     "ReportDismissed": "Chúng tôi đã xem nội dung bạn báo cáo về “{{product}}” và giữ nguyên.",
     "StockRunningLow": "“{{product}}” sắp hết hàng: còn {{left}}.",
     "PartCancelled": "Một phần của đơn {{order}} từ {{shop}} đã bị huỷ: {{reason}}. Bạn sẽ được hoàn tiền phần đó.",
-    "TrackingCorrected": "Mã vận đơn của kiện hàng từ {{shop}} trong đơn {{order}} đã được sửa: {{tracking}}"
+    "TrackingCorrected": "Mã vận đơn của kiện hàng từ {{shop}} trong đơn {{order}} đã được sửa: {{tracking}}",
+    "ShopClosed": "Quản trị viên đã đóng cửa hàng của bạn: {{reason}}",
+    "ShopReopened": "Quản trị viên đã mở lại cửa hàng của bạn - sản phẩm đã được bán trở lại."
   }
 }

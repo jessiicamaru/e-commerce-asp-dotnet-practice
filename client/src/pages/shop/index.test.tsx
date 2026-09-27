@@ -5,6 +5,7 @@ import { Order } from '@/services/order'
 import type { SaleSummary } from '@/services/order/types'
 import { Product } from '@/services/product'
 import type { Product as ProductModel } from '@/services/product/types'
+import { Shops } from '@/services/shops'
 import { renderAsSeller } from '@/test/render'
 import { ShopPage } from '.'
 import { noEarnings } from '@/test/fixtures'
@@ -32,6 +33,9 @@ beforeEach(async () => {
   // Pinned: the page would otherwise assert English on one machine and Vietnamese on another.
   await i18n.changeLanguage('en')
   vi.spyOn(Order, 'sales').mockResolvedValue({ items: [], page: 1, pageSize: 100, totalCount: 0 })
+  vi.spyOn(Shops, 'mine').mockResolvedValue({
+    sellerId: 's1', shopName: 'Mai Lens', state: 'Open', pausedAt: null, closedAt: null, closedReason: null,
+  })
 })
 
 describe('ShopPage (overview)', () => {
