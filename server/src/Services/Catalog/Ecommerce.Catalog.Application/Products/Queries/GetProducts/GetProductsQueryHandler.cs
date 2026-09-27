@@ -35,7 +35,8 @@ public class GetProductsQueryHandler(
             cancellationToken,
             _language.Current,
             _currency.Current.Code,
-            _money.DefaultCurrency
+            _money.DefaultCurrency,
+            request.SellerId
         );
 
         // ONE query for every shop name on the page. FR-003 exists to stop this becoming one call

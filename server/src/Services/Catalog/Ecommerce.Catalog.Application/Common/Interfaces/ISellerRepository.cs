@@ -25,6 +25,14 @@ public interface ISellerRepository
     /// </summary>
     Task<bool> TryRecordSuspensionAsync(Guid sellerId, bool suspended, DateTime changedAt, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Records a shop's description if nothing newer is stored (#197, specs/099); a seller not known yet is created with an
+    /// empty name the registration fills in. Returns whether anything changed.
+    /// </summary>
+    Task<bool> TryRecordDescriptionAsync(Guid sellerId, string? description, DateTime observedAt, CancellationToken cancellationToken = default);
+
+    Task<Seller?> GetAsync(Guid sellerId, CancellationToken cancellationToken = default);
+
     /// <summary>The names for these sellers, for building a page of products in one query.</summary>
     Task<Dictionary<Guid, string>> GetNamesAsync(IEnumerable<Guid> sellerIds, CancellationToken cancellationToken = default);
 }

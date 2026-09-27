@@ -41,4 +41,10 @@ public class Seller
 
     /// <summary>When Identity decided the suspension; the ordering guard, separate from the name's.</summary>
     public DateTime? SuspensionChangedAt { get; set; }
+
+    /// <summary>The seller's words about their shop, for its page (#197, specs/099). Display only.</summary>
+    public string? Description { get; set; }
+
+    /// <summary>When Identity said so; the description's own ordering guard.</summary>
+    public DateTime? DescriptionObservedAt { get; set; }
 }

@@ -237,6 +237,11 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
                 && !p.SellerSuspended && p.Availability)
             .ToListAsync(cancellationToken);
 
+    public Task<int> CountOnShelfBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
+        // Product.OnShelf, spelled out for SQL.
+        _context.Products.CountAsync(p => p.SellerId == sellerId && p.ReviewStatus == ProductReviewStatus.Approved
+            && p.IsActive && !p.SellerSuspended, cancellationToken);
+
     private sealed class RollupFlip
     {
         public bool Was { get; init; }

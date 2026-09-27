@@ -31,4 +31,11 @@ public class SellersController : ApiControllerBase
     {
         return Ok(await Mediator.Send(command));
     }
+
+    /// <summary>The caller's shop described for its page, or cleared (specs/099). At most 500 characters.</summary>
+    [HttpPut("me/description")]
+    public async Task<IActionResult> Describe([FromBody] DescribeShopCommand command)
+    {
+        return Ok(await Mediator.Send(command));
+    }
 }

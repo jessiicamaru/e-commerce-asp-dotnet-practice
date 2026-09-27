@@ -16,6 +16,7 @@ public class SellerProfileConfiguration : IEntityTypeConfiguration<SellerProfile
         builder.Property(p => p.UserId).ValueGeneratedNever();
 
         builder.Property(p => p.ShopName).HasMaxLength(100).IsRequired();
+        builder.Property(p => p.Description).HasMaxLength(500);
         builder.Property(p => p.CreatedAt).IsRequired();
         builder.Property(p => p.UpdatedAt).IsRequired();
 

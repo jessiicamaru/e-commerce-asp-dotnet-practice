@@ -22,6 +22,9 @@ public class SellerProfile
 
     public string ShopName { get; set; } = string.Empty;
 
+    /// <summary>A few words a shopper reads on the shop's page (#197, specs/099); null when the seller wrote none.</summary>
+    public string? Description { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

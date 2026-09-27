@@ -10,7 +10,11 @@ using Ecommerce.Shared.Audit;
 namespace Ecommerce.Application.Sellers;
 
 /// <summary>What a seller's own shop looks like to them (specs/027).</summary>
-public record SellerProfileResponse(Guid SellerId, string ShopName, DateTime CreatedAt);
+public record SellerProfileResponse(Guid SellerId, string ShopName, DateTime CreatedAt, string? Description = null)
+{
+    public static SellerProfileResponse From(Domain.Entities.SellerProfile profile) =>
+        new(profile.UserId, profile.ShopName, profile.CreatedAt, profile.Description);
+}
 
 /// <summary>The caller's own shop. Never anybody else's - there is no id to pass.</summary>
 public record GetMyShopQuery : IRequest<SellerProfileResponse>;
@@ -49,7 +53,7 @@ public class GetMyShopQueryHandler(IUserRepository users, ICurrentUser currentUs
         var profile = await _users.GetSellerProfileAsync(userId, cancellationToken)
             ?? throw new NotFoundException("This account does not sell on the shop.");
 
-        return new SellerProfileResponse(profile.UserId, profile.ShopName, profile.CreatedAt);
+        return SellerProfileResponse.From(profile);
     }
 }
 
@@ -90,6 +94,53 @@ public class RenameShopCommandHandler(
             cancellationToken: cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
 
-        return new SellerProfileResponse(profile.UserId, profile.ShopName, profile.CreatedAt);
+        return SellerProfileResponse.From(profile);
+    }
+}
+
+/// <summary>
+/// The caller's shop described in their own words, or the words cleared (#197, specs/099). Not moderated, like the name:
+/// a seller's words about their own shop, shown to shoppers as text.
+/// </summary>
+public record DescribeShopCommand(string? Description) : IRequest<SellerProfileResponse>;
+
+public class DescribeShopCommandValidator : AbstractValidator<DescribeShopCommand>
+{
+    public DescribeShopCommandValidator() =>
+        RuleFor(x => x.Description).MaximumLength(500).WithMessage("A shop description is at most 500 characters.");
+}
+
+public class DescribeShopCommandHandler(
+    IUserRepository users,
+    ICurrentUser currentUser,
+    IPublishEndpoint publishEndpoint,
+    IAuditTrail audit) : IRequestHandler<DescribeShopCommand, SellerProfileResponse>
+{
+    private readonly IUserRepository _users = users;
+    private readonly ICurrentUser _currentUser = currentUser;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly IAuditTrail _audit = audit;
+
+    public async Task<SellerProfileResponse> Handle(DescribeShopCommand request, CancellationToken cancellationToken)
+    {
+        // Whose shop comes from the token, as for the name.
+        var userId = _currentUser.Id
+            ?? throw new UnauthorizedAccessException("The access token does not carry a valid user id.");
+        var profile = await _users.GetSellerProfileAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("This account does not sell on the shop.");
+
+        var before = new { profile.Description };
+        profile.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        profile.UpdatedAt = DateTime.UtcNow;
+
+        // With the save, so Catalog's copy and this row cannot disagree for long (Principle III).
+        await _publishEndpoint.Publish(
+            new SellerDescribedEvent(profile.UserId, profile.Description, profile.UpdatedAt), cancellationToken);
+        await _audit.RecordAsync(
+            AuditCategory.User, "ShopDescribed", "Seller", profile.UserId.ToString(), "Shop description changed",
+            before, new { profile.Description }, cancellationToken: cancellationToken);
+        await _users.SaveChangesAsync(cancellationToken);
+
+        return SellerProfileResponse.From(profile);
     }
 }

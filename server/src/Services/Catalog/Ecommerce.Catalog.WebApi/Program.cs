@@ -207,6 +207,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<SellerRegisteredConsumer>();
     x.AddConsumer<SellerRenamedConsumer>();
     x.AddConsumer<SellerSuspensionChangedConsumer>();
+    x.AddConsumer<SellerDescribedConsumer>();
     x.AddConsumer<ReviewEligibilityConsumer>();
 
     // Queue names are derived from consumer CLASS names, and two services naming a consumer the
