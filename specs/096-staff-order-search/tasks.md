@@ -29,4 +29,4 @@ description: "Task list for Staff find any order"
 - [X] T009 [P] Bruno `order/` seq 12-13
 - [X] T010 Rebuilt Order and the storefront; Bruno through the gateway
 - [X] T011 Docs: `docs/features/fulfilment-and-delivery.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T012 Merged as #203, closing #194
+- [X] T012 Merged as #203 (2026-09-27), closing #194
