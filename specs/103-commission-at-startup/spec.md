@@ -2,7 +2,7 @@
 
 **Feature Branch**: `103-commission-at-startup` | **Created**: 2026-09-27 | **Issue**: #210
 
-**Status**: Draft
+**Status**: Merged (#223, 2026-09-27)
 
 **Input**: Issue #210 - "a missing commission rate fails the first checkout, not startup".
 
