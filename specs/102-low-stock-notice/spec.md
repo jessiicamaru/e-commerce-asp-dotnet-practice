@@ -2,7 +2,7 @@
 
 **Feature Branch**: `102-low-stock-notice` | **Created**: 2026-09-27 | **Issue**: #200
 
-**Status**: Draft
+**Status**: Merged (#209, 2026-09-27)
 
 **Input**: Issue #200 - "a seller is not told when a variant runs low".
 

@@ -41,4 +41,4 @@ description: "Task list for A seller is told when a variant runs low"
 - [X] T012 Mutations (quickstart Scenario 4), each red but one equivalent (recorded); Inventory 75, Catalog 241, Activity 40, Order 286, client 516
 - [X] T013 [P] Bruno: seller sets and reads the threshold; another seller's 404; 401. Rebuilt Inventory, Catalog, the gateway and the storefront; Bruno 314/314; `verify-saga.sh` passes; post-design Constitution re-check: no violations
 - [X] T014 Docs: `docs/features/marketplace.md`, `docs/features/audit-and-notifications.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T015 Merged as #209, closing #200
+- [x] T015 Merged as #209, closing #200
