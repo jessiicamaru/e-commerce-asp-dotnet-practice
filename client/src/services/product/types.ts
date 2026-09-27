@@ -78,6 +78,8 @@ export interface ProductQuery {
   categoryId?: string
   searchTerm?: string
   sortBy?: SortBy
+  /** One shop's products (specs/099), for its page. */
+  sellerId?: string
 }
 
 /**

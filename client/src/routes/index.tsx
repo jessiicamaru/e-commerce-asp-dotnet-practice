@@ -14,6 +14,7 @@ import { OrdersPage } from '@/pages/orders'
 import { SavedPage } from '@/pages/saved'
 import { ShopInsightsPage } from '@/pages/shop-insights'
 import { ProductPage } from '@/pages/product'
+import { ShopFrontPage } from '@/pages/shop-front'
 import { ShopPage } from '@/pages/shop'
 import { SellerProductPage } from '@/pages/shop-product'
 import { ShopProductsPage } from '@/pages/shop-products'
@@ -64,6 +65,7 @@ export function AppRoutes() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<CatalogPage />} />
           <Route path="/products/:id" element={<ProductPage />} />
+          <Route path="/shops/:sellerId" element={<ShopFrontPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

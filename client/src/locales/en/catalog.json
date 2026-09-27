@@ -16,6 +16,12 @@
   "resultCountFor_one": "{{count}} product for “{{term}}”",
   "resultCountFor_other": "{{count}} products for “{{term}}”",
   "loadFailed": "The catalogue could not be loaded. Is the backend running?",
+  "shop": {
+    "notFound": "This shop is not open.",
+    "onSale_one": "{{count}} product on sale",
+    "onSale_other": "{{count}} products on sale",
+    "productsFailed": "This shop's products could not be loaded."
+  },
   "product": {
     "back": "← Back to the shop",
     "notFound": "This product does not exist.",
@@ -36,6 +42,7 @@
     "signInToAdd": "<0>Sign in</0> to add this to your cart.",
     "viewCart": "View cart",
     "soldBy": "Sold by {{seller}}",
+    "soldByShop": "Sold by <shop>{{seller}}</shop>",
     "theShop": "The shop"
   },
   "pager": {

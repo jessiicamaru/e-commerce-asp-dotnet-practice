@@ -14,6 +14,7 @@ export const queryKeys = {
   categories: () => ['categories'] as const,
   categoriesIn: (language: string) => ['categories', 'in', language] as const,
   myShop: () => ['my-shop'] as const,
+  shopFront: (sellerId: string) => ['shop-front', sellerId] as const,
   cart: () => ['cart'] as const,
   addresses: () => ['addresses'] as const,
   me: () => ['me'] as const,

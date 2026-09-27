@@ -23,3 +23,16 @@ export function useRenameShop() {
     },
   })
 }
+
+/** The shop's description (specs/099). Its page reads Catalog's copy, fed through the broker - not instant. */
+export function useDescribeShop() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (description: string | null) => Seller.describe(description),
+    onSuccess: async (shop) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.myShop() })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.shopFront(shop.sellerId) })
+    },
+  })
+}

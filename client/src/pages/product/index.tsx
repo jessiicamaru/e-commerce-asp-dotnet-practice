@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
@@ -72,7 +72,18 @@ export function ProductPage() {
               <SaveButton productId={product.id} className="shrink-0" />
             </div>
             <p className="text-muted-foreground mt-1 text-sm">
-              {t('product.soldBy', { seller: product.sellerName ?? t('product.theShop') })}
+              <Trans
+                t={t}
+                i18nKey="product.soldByShop"
+                values={{ seller: product.sellerName ?? t('product.theShop') }}
+                components={{
+                  shop: product.sellerId ? (
+                    <Link to={`/shops/${product.sellerId}`} className="text-foreground font-medium hover:underline" />
+                  ) : (
+                    <span />
+                  ),
+                }}
+              />
             </p>
             {product.ratingCount > 0 && product.ratingAverage !== null && (
               <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm hover:underline">
