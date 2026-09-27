@@ -175,3 +175,36 @@ describe('AdminOrderPage returns (specs/067)', () => {
     expect(screen.queryByRole('button', { name: /Refuse/ })).not.toBeInTheDocument()
   })
 })
+
+describe("AdminOrderPage the shop's own part (specs/104)", () => {
+  it("cancels only the shop's part, with the reason typed, and the rest goes on", async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([shop('Paid'), hers]))
+    const cancel = vi.spyOn(Admin, 'cancelShopPart').mockResolvedValue(order([shop('Paid'), hers]))
+    const user = userEvent.setup()
+    renderAt()
+
+    await user.click(await screen.findByRole('button', { name: /Cancel this part/ }))
+    const dialog = await screen.findByRole('dialog')
+    await user.type(within(dialog).getByRole('textbox'), 'Discontinued')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel this part' }))
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith('o-1', 'Discontinued'))
+  })
+
+  it("says the shop's part was cancelled and why, and offers no step for it", async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([{ ...shop('Cancelled'), cancelReason: 'Discontinued', cancelledBy: 'Staff' }, hers]))
+    renderAt()
+
+    expect(await screen.findByText(/The shop's part was cancelled: Discontinued/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Start preparing|Cancel this part/ })).toBeNull()
+  })
+
+  /** One part only: cancelling it IS cancelling the order, which has its own button. */
+  it('offers no part cancel on an order that is the shop part alone', async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([shop('Paid')]))
+    renderAt()
+
+    await screen.findByRole('button', { name: /Start preparing/ })
+    expect(screen.queryByRole('button', { name: /Cancel this part/ })).toBeNull()
+  })
+})

@@ -190,3 +190,16 @@ describe('placeholders (specs/078)', () => {
     expect(text).not.toContain('<img')
   })
 })
+
+describe('a part cancelled on its own (specs/104)', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en')
+  })
+
+  it("names the shop it came from, or the shop itself, and the reason", () => {
+    expect(describeNotification(t('en'), n('PartCancelled', { shop: 'Mai Lens', reason: 'Out of stock' })))
+      .toBe('Part of order 01a0cee7 from Mai Lens was cancelled: Out of stock. You will be refunded for it.')
+    expect(describeNotification(t('en'), n('PartCancelled', { reason: 'Discontinued' })))
+      .toContain('from the shop was cancelled: Discontinued')
+  })
+})

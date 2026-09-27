@@ -48,6 +48,7 @@
     "AnswerHidden": { "required": ["product", "reason"] },
     "ReportActioned": { "required": ["product"] },
     "ReportDismissed": { "required": ["product"] },
-    "StockRunningLow": { "required": ["product", "left"] }
+    "StockRunningLow": { "required": ["product", "left"] },
+    "PartCancelled": { "required": ["orderId", "reason"], "optional": ["shop"] }
   }
 }

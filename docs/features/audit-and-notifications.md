@@ -191,6 +191,7 @@ Found by searching every `RecordAsync(` call in `server/src`. **Actor** is who t
 | `OrderPaid` | Order | Order | Order | The saga's `OrderCompletedEvent` settles the order. | system |
 | `OrderFailed` | Order | Order | Order | The saga's `OrderFailedEvent` settles the order. | system |
 | `OrderCancelled` | Order | Order | Order | The customer or staff cancel a paid order. | caller |
+| `PartCancelled` | Order | Order | Order | A seller or staff cancel one part of an order (specs/104). | caller |
 | `ParcelPrepared` / `ParcelShipped` | Order | Order | Order | Staff move the shop's parcel, or a seller moves theirs. | caller |
 | `ParcelReceived` | Order | Order | Order | The customer confirms a parcel arrived. | caller |
 | `DeliveriesAutoConfirmed` | System | Parcel | Order | The delivery sweeper takes unconfirmed parcels as delivered (no subject id). | system |
@@ -225,6 +226,7 @@ would roll back the payout or the decision it announces.
 | `ParcelShipped` | buyer | `orderId`, `tracking`, `shop` (a seller's parcel only) | `/orders/{id}` | Staff or a seller ship a parcel (Order). |
 | `OrderCancelled` | buyer | `orderId`, `by` (`Customer` or `Staff`) | `/orders/{id}` | The order is cancelled (Order). |
 | `SaleCancelled` | each seller on the order | `orderId` | `/shop/sales/{id}` | The same moment (Order). |
+| `PartCancelled` | buyer | `orderId`, `reason`, `shop` (none for the shop's own) | `/orders/{id}` | One part cancelled, the rest going on (Order, specs/104). |
 | `ParcelReceived` | the parcel's seller (not for the shop's own) | `orderId` | `/shop/sales/{id}` | The customer confirms receipt (Order). |
 | `PayoutRecorded` | seller | `amount`, `currency` | `/shop/payouts` | An administrator records a payout (Order). |
 | `ModeratorGranted` | the person | none | `/admin` | An administrator grants `Moderator` (Identity). |
@@ -399,3 +401,4 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | `AuditEntryRecorded.AboutUserId`, filled from a User subject and named by content decisions; `audit_entries.AboutUserId`, backfilled; `GET /api/audit/people/{userId}` (#198). |
 | [101-content-reports](../../specs/101-content-reports/) | [#208](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/208) | `ReportActioned`, `ReportDismissed`; `ReportsDismissed` (#199). |
 | [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `StockRunningLow` and the `left` placeholder; `LowStockThresholdSet` (#200). |
+| [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | `PartCancelled` notice and audit action (#211). |

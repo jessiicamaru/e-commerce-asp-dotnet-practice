@@ -32,6 +32,8 @@ public record OrderSummaryResponse(
 /// <param name="Id">The parcel's own id - what a customer names when they say it arrived (specs/040).</param>
 /// <param name="DeliveredAt">When it was confirmed as received; null until then.</param>
 /// <param name="DeliveryConfirmedBy">"Customer" or "Auto".</param>
+/// <param name="CancelledAt">When the part was cancelled on its own (specs/104) - its status then reads Cancelled.</param>
+/// <param name="CancelledBy">"Seller" or "Staff".</param>
 public record ShipmentResponse(
     string Status,
     string? TrackingReference,
@@ -41,7 +43,10 @@ public record ShipmentResponse(
     Guid? Id = null,
     DateTime? DeliveredAt = null,
     string? DeliveryConfirmedBy = null,
-    Ecommerce.Order.Application.Returns.ReturnResponse? Return = null);
+    Ecommerce.Order.Application.Returns.ReturnResponse? Return = null,
+    DateTime? CancelledAt = null,
+    string? CancelReason = null,
+    string? CancelledBy = null);
 
 public record ShippingAddressResponse(
     string RecipientName,

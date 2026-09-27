@@ -40,6 +40,9 @@ public class RestockCancelledOrderCommandHandler(
 
     public const string Reason = "Returned: order cancelled";
 
+    /// <summary>The same settlement for one part cancelled on its own (specs/104) - worded so the ledger says which.</summary>
+    public const string PartReason = "Returned: part cancelled";
+
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IStockRepository _stockRepository = stockRepository;
     private readonly IReservationRepository _reservationRepository = reservationRepository;
@@ -52,10 +55,11 @@ public class RestockCancelledOrderCommandHandler(
 
         await _unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
-            var confirmed = await _reservationRepository
-                .GetByOrderIdAndStatusAsync(request.OrderId, ReservationStatus.Confirmed, ct);
-            var held = await _reservationRepository
-                .GetByOrderIdAndStatusAsync(request.OrderId, ReservationStatus.Held, ct);
+            var confirmed = Only(await _reservationRepository
+                .GetByOrderIdAndStatusAsync(request.OrderId, ReservationStatus.Confirmed, ct));
+            var held = Only(await _reservationRepository
+                .GetByOrderIdAndStatusAsync(request.OrderId, ReservationStatus.Held, ct));
+            var reason = request.VariantIds is null ? Reason : PartReason;
 
             if (confirmed.Count == 0 && held.Count == 0)
             {
@@ -78,7 +82,7 @@ public class RestockCancelledOrderCommandHandler(
                     stock.UpdatedAt = now;
                 }
 
-                Settle(reservation, now);
+                Settle(reservation, now, reason);
             }
 
             foreach (var reservation in held)
@@ -89,7 +93,7 @@ public class RestockCancelledOrderCommandHandler(
                     stock.UpdatedAt = now;
                 }
 
-                Settle(reservation, now);
+                Settle(reservation, now, reason);
             }
 
             settled = confirmed.Count + held.Count;
@@ -99,19 +103,23 @@ public class RestockCancelledOrderCommandHandler(
             await StockAvailabilityAnnouncer.AnnounceAsync(_publishEndpoint, stockItems, ct);
             await _audit.RecordAsync(
                 AuditCategory.Order, "StockReturned", "Order", request.OrderId.ToString(),
-                $"Put back {confirmed.Sum(r => r.Quantity) + held.Sum(r => r.Quantity)} unit(s) of a cancelled order",
+                $"Put back {confirmed.Sum(r => r.Quantity) + held.Sum(r => r.Quantity)} unit(s) of a cancelled {(request.VariantIds is null ? "order" : "part")}",
                 after: new { Returned = confirmed.Sum(r => r.Quantity), Released = held.Sum(r => r.Quantity) },
                 cancellationToken: ct);
             await _reservationRepository.SaveChangesAsync(ct);
         }, cancellationToken);
 
         return settled;
+
+        // A part's reservations only - the rest of the order goes on (specs/104).
+        List<Domain.Entities.StockReservation> Only(List<Domain.Entities.StockReservation> rows) =>
+            request.VariantIds is null ? rows : rows.Where(r => request.VariantIds.Contains(r.ProductId)).ToList();
     }
 
-    private static void Settle(Domain.Entities.StockReservation reservation, DateTime at)
+    private static void Settle(Domain.Entities.StockReservation reservation, DateTime at, string reason)
     {
         reservation.Status = ReservationStatus.Released;
         reservation.SettledAt = at;
-        reservation.SettlementReason = Reason;
+        reservation.SettlementReason = reason;
     }
 }

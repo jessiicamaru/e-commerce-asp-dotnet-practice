@@ -1,0 +1,38 @@
+info:
+  name: cancelling the shop part of a shipped order is 409
+  type: http
+  seq: 25
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/orders/fulfilment/{{orderId}}/shop-part/cancel"
+  body:
+    type: json
+    data: |-
+      {
+        "reason": "Out of stock"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("says why, in words", function() {
+          expect(res.body.detail).to.contain("shipped");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/104 (#211): staff cancel only the shop's part of an order - before it ships. This one went out (seq 6), so it is a
+  return now, not a cancellation.

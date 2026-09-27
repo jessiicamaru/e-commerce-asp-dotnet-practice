@@ -72,3 +72,23 @@ describe('OrderShipments', () => {
     expect(container).toBeEmptyDOMElement()
   })
 })
+
+describe('OrderShipments a cancelled part (specs/104)', () => {
+  it('says which part was cancelled and why, and does not count it as a parcel on its way', () => {
+    render(
+      <OrderShipments
+        shipments={[
+          { status: 'Shipped', trackingReference: 'VN-A', items: ['Viltrox 56mm'], sellerName: 'Mai Lens', isShop: false },
+          {
+            status: 'Cancelled', trackingReference: null, items: ['SanDisk 64GB'], sellerName: 'Saigon Accessories', isShop: false,
+            cancelledAt: '2026-09-27T09:00:00Z', cancelReason: 'Out of stock', cancelledBy: 'Seller',
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: '1 of 1 parcels shipped' })).toBeInTheDocument()
+    expect(screen.getByText('Cancelled')).toBeInTheDocument()
+    expect(screen.getByText(/Cancelled: Out of stock\. You are refunded what you paid for it\./)).toBeInTheDocument()
+  })
+})

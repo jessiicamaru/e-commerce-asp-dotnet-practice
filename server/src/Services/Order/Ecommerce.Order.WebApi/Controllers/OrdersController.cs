@@ -174,6 +174,19 @@ public class OrdersController : ApiControllerBase
         return Ok(await Mediator.Send(new ShipMySaleCommand(id, request.TrackingReference ?? string.Empty)));
     }
 
+    public record CancelPartRequest(string? Reason);
+
+    /// <summary>
+    /// A seller cancels THEIR part before it ships, with a reason the buyer reads (specs/104). The rest of the order
+    /// goes on; the last part cancels the order. Repeating it is a no-op.
+    /// </summary>
+    [Authorize(Roles = "Seller")]
+    [HttpPost("sales/{id:guid}/cancel")]
+    public async Task<IActionResult> CancelMySalePart(Guid id, [FromBody] CancelPartRequest request)
+    {
+        return Ok(await Mediator.Send(new CancelSalePartCommand(id, request.Reason ?? string.Empty)));
+    }
+
     // ------------------------------------------------------------------ money (specs/037)
 
     /// <summary>A seller's money per currency: on the way, due, paid out.</summary>
@@ -251,6 +264,14 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> CancelForStaff(Guid id)
     {
         return Ok(await Mediator.Send(new CancelOrderCommand(id)));
+    }
+
+    /// <summary>Staff: cancel only the shop's own part, with a reason the buyer reads (specs/104).</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("fulfilment/{id:guid}/shop-part/cancel")]
+    public async Task<IActionResult> CancelShopPart(Guid id, [FromBody] CancelPartRequest request)
+    {
+        return Ok(await Mediator.Send(new CancelShopPartCommand(id, request.Reason ?? string.Empty)));
     }
 
     /// <summary>Staff: Paid → Preparing. Repeating it is a no-op; from any other state, 409.</summary>

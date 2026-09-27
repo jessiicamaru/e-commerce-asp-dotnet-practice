@@ -39,10 +39,12 @@
     "status": {
       "Paid": "Chờ xử lý",
       "Preparing": "Đang chuẩn bị",
-      "Shipped": "Đã gửi"
+      "Shipped": "Đã gửi",
+      "Cancelled": "Đã huỷ"
     },
     "from": "từ {{shop}}",
-    "theShop": "Cửa hàng"
+    "theShop": "Cửa hàng",
+    "cancelledWhy": "Đã huỷ: {{reason}}. Bạn được hoàn số tiền đã trả cho phần này."
   },
   "soldBy": "Bán bởi {{shop}}",
   "cancel": {
@@ -98,5 +100,14 @@
     "escalateConfirm": "Nhờ cửa hàng",
     "escalated": "Đã chuyển cho nhân viên cửa hàng.",
     "escalateUntil": "Bạn có thể yêu cầu đến {{at}}."
+  },
+  "cancelPart": {
+    "button": "Huỷ phần này…",
+    "title": "Huỷ phần này của đơn hàng?",
+    "body": "Hàng được trả về kho và người mua được hoàn số tiền đã trả cho phần này. Phần còn lại của đơn vẫn tiếp tục; nếu đây là phần cuối cùng thì cả đơn bị huỷ. Không thể hoàn tác.",
+    "reason": "Lý do - người mua sẽ đọc",
+    "keep": "Giữ lại",
+    "confirm": "Huỷ phần này",
+    "done": "Đã huỷ phần này."
   }
 }

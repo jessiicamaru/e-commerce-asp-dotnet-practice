@@ -88,6 +88,25 @@ sequenceDiagram
 
 `OrderCancelledEvent` carries only `OrderId`, `CancelledAt` and `CancelledBy` (`Customer` or `Staff`). Inventory puts back what its own reservations say, and Payment refunds what its own payment row says. The Orchestrator is not involved: the saga ended at payment, and cancellation is a decision Order owns.
 
+### Cancelling one part
+
+A seller cancels **their own part** before it ships (`POST /api/orders/sales/{id}/cancel`), and an administrator the
+**shop's own part** (`POST /api/orders/fulfilment/{id}/shop-part/cancel`), each with a reason the buyer reads
+(specs/104, #211). Under the order's row lock - the one every move takes - the part gets `CancelledAt`, `CancelReason`,
+`CancelledBy` and `CancelRefund` (columns, not a status value: it keeps the `Pending` or `Preparing` it had), with a
+guarded `UPDATE ... WHERE "CancelledAt" IS NULL AND "Status" IN ('Pending','Preparing')`.
+
+- **Other parts remain**: `OrderPartCancelledEvent` (the part's variants and its refund) is staged. Inventory's
+  `RestockCancelledPartConsumer` returns those variants' reservations exactly as a whole cancellation does (held
+  released, confirmed back on hand); Payment's `RefundCancelledPartConsumer` refunds the part's goods less their
+  discounts, plus their tax (the sum a received return refunds), once per part. Delivery is not refunded - it is per
+  order, and the order still ships. That seller's own voucher is given back. The buyer is told (`PartCancelled`).
+- **It is the last part**: the order is cancelled whole, down the path above (`OrderCancelledEvent`, `CancelledBy`
+  "Seller" or "Staff"), and Payment refunds **what is left** after earlier part refunds - never a part twice.
+
+A cancelled part is done everywhere: it never moves again, the order's summary does not wait for it, the customer's
+cancel-all ignores it, it earns nothing, and insights leave it out as they leave out a received return.
+
 ### Delivery
 
 A customer confirms one parcel with `POST /api/orders/{id}/shipments/{shipmentId}/received`. `TryConfirmDeliveryAsync` runs one guarded statement, with the owner in the same query:
@@ -163,6 +182,8 @@ Full list: [../reference/api.md](../reference/api.md).
 | `POST` | `/api/orders/{id}/preparing` | Admin (the shop's part) |
 | `POST` | `/api/orders/{id}/shipment` | Admin (the shop's part, body `trackingReference`) |
 | `POST` | `/api/orders/fulfilment/{id}/cancel` | Admin |
+| `POST` | `/api/orders/fulfilment/{id}/shop-part/cancel` | Admin - the shop's own part only (specs/104) |
+| `POST` | `/api/orders/sales/{id}/cancel` | Seller - their own part, before it ships (specs/104) |
 | `GET` | `/api/payments/{orderId}` | Admin (includes `refundedAmount`, `refundedAt`) |
 | `GET` | `/api/reservations/{orderId}` | Admin |
 | `GET` | `/api/notifications`, `/api/notifications/unread-count` | signed in (own notices only) |
@@ -173,7 +194,8 @@ See [../reference/messages.md](../reference/messages.md).
 
 | Message | Published by | Consumed by |
 | :-- | :-- | :-- |
-| `OrderCancelledEvent` (`OrderId`, `CancelledAt`, `CancelledBy`) | Order | Inventory (`RestockCancelledOrderConsumer`), Payment (`RefundCancelledOrderConsumer`) |
+| `OrderCancelledEvent` (`OrderId`, `CancelledAt`, `CancelledBy`) | Order | Inventory (`RestockCancelledOrderConsumer`), Payment (`RefundCancelledOrderConsumer`) - what is left after part refunds |
+| `OrderPartCancelledEvent` (`OrderId`, `PartId`, `VariantIds`, `Amount`, `Currency`, `CancelledAt`, `CancelledBy`) | Order, one part cancelled while the rest goes on (specs/104) | Inventory (`RestockCancelledPartConsumer`), Payment (`RefundCancelledPartConsumer`) |
 | `ParcelDeliveredEvent` (`OrderId`, `ShipmentId`, `BuyerId`, `ProductIds`, `DeliveredAt`) | Order | Catalog (`ReviewEligibilityConsumer`) |
 | `StockAvailabilityChangedEvent` | Inventory, after a restock | Catalog |
 | `UserNotificationRequested` | Order | Activity (`RecordNotificationConsumer`) |
@@ -189,6 +211,7 @@ Notices sent by Order (`OrderNotices`), with the link each carries:
 | `ParcelShipped` | buyer | any part ships (data: tracking, shop name if any) | `/orders/{id}` |
 | `OrderCancelled` | buyer | the order is cancelled (data: `by`) | `/orders/{id}` |
 | `SaleCancelled` | each seller with a part | the order is cancelled | `/shop/sales/{id}` |
+| `PartCancelled` | buyer | one part is cancelled, the rest going on (data: `reason`, `shop`) | `/orders/{id}` |
 | `ParcelReceived` | the part's seller | the customer confirms a seller's parcel | `/shop/sales/{id}` |
 | `PayoutRecorded` | seller | a payout is recorded | `/shop/payouts` |
 
@@ -220,6 +243,7 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 | :-- | :-- |
 | [`ShipmentTests`](../../server/tests/Ecommerce.Order.Tests/ShipmentTests.cs) | One part per seller and one for the shop; a seller moves only their own part; not theirs is 404 in the same words; unpaid orders cannot be started; the order is `Shipped` only when every part is, even when two ship at once; staff move only the shop's part; a single-parcel order carries its tracking; missing parts are made in the order's state; the address disappears once the seller's part ships. |
 | [`FulfilmentTests`](../../server/tests/Ecommerce.Order.Tests/FulfilmentTests.cs) | Staff read any order; prepare then ship; a legacy `Completed` order reads as `Paid`; repeats are no-ops but a different tracking reference is refused; ten concurrent prepares move once. |
+| [`PartCancellationTests`](../../server/tests/Ecommerce.Order.Tests/PartCancellationTests.cs) | A seller cancels their part and the rest ships to `Shipped`; its refund is its goods less discounts plus tax; shipped, not theirs and a repeat; the last part cancels the order; two sellers at once cancel it exactly once (the lock); a cancelled part earns nothing and gives its seller's voucher back; staff cancel the shop's part only (specs/104). |
 | [`CancellationTests`](../../server/tests/Ecommerce.Order.Tests/CancellationTests.cs) | Customer cancels while every parcel waits, not once one is prepared; staff can while preparing; nobody once shipped; twice changes nothing; cancel and ship at once leave exactly one winner; a cancelled order leaves every balance and no payout claims it; its seller sees it cancelled and cannot move it. |
 | [`DeliveryTests`](../../server/tests/Ecommerce.Order.Tests/DeliveryTests.cs) | Shipping records `ShippedAt`; the customer confirms a shipped parcel, not an unshipped one, not somebody else's; twice changes nothing; the sweep delivers once; each delivery announces its products once; Order refuses to start without a sensible period. |
 | [`ShopNameTests`](../../server/tests/Ecommerce.Order.Tests/ShopNameTests.cs) | The shop name is frozen per line; a later rename does not rename an order; each parcel says who sends it. |
@@ -241,7 +265,9 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 ## Known limits
 
 - **A delivered parcel is returned, not cancelled** ([returns](returns.md), specs/066). Once any part has shipped, the order cannot be cancelled; within 7 days of its delivery, a parcel can be sent back.
-- **Cancellation is whole-order only.** There is no cancelling one seller's part.
+- **A part is cancelled whole.** There is no cancelling some lines of a part (specs/104), and a buyer cannot ask a
+  seller to cancel theirs - the buyer cancels the whole order while it waits.
+- **A part cancellation tells the buyer in the app only.** The whole order's cancellation is also an email.
 - **Payment is a stub.** A refund is a ledger row recorded through `Provider = "Stub"`; no money moves. A real provider is deliberately deferred.
 - **Shipping is manual.** No carrier integration: a person types the tracking reference, and it cannot be changed after shipping (a different reference is 409). Despatch is not a saga step (specs/011 research D2).
 - **Moderators have no part in fulfilment.** Every fulfilment and staff-cancel endpoint is `Admin` only.
@@ -265,3 +291,4 @@ Audit actions: `ParcelPrepared`, `ParcelShipped`, `OrderCancelled`, `ParcelRecei
 | [041-audit-log](../../specs/041-audit-log/) | #93 | Audit entries for every parcel move, cancellation, delivery, restock and refund. |
 | [042-in-app-notifications](../../specs/042-in-app-notifications/) | #94 | Notices to buyers and sellers, staged with each change. |
 | [046-product-reviews](../../specs/046-product-reviews/) | #98 | `ParcelDeliveredEvent` published in the delivery transaction; the sweep locks its rows first. |
+| [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | #224 | One part cancelled before it ships - by its seller, or staff for the shop's; `OrderPartCancelledEvent`; the last part cancels the order; Payment refunds what is left (#211). |

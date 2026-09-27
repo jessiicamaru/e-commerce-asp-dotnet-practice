@@ -49,7 +49,8 @@
     "lines": "The whole order",
     "customer": "Customer",
     "cancelledByCustomer": "The customer cancelled this order. Nothing left to send.",
-    "cancelledByStaff": "The shop cancelled this order. Nothing left to send."
+    "cancelledByStaff": "The shop cancelled this order. Nothing left to send.",
+    "shopPartCancelled": "The shop's part was cancelled: {{reason}}. The rest of the order goes on."
   },
   "payouts": {
     "title": "Seller payouts",

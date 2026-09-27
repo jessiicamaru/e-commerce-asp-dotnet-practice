@@ -305,6 +305,7 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `POST`, `PUT`, `DELETE` | `/api/products/...` (create, variants, prices, translations, images, delete) | Seller, Admin - ownership checked in the handler |
 | `PUT` | `/api/stock/{variantId}` | Seller, Admin - ownership asked of Catalog |
 | `PUT` | `/api/stock/{variantId}/low-stock-threshold` | Seller, Admin - the same ownership check (specs/102) |
+| `POST` | `/api/orders/sales/{id}/cancel` | Seller - their own part, before it ships (specs/104) |
 | `GET` | `/api/orders/sales`, `/api/orders/sales/{id}` | Seller |
 | `POST` | `/api/orders/sales/{id}/preparing`, `/api/orders/sales/{id}/shipment` | Seller |
 | `GET` | `/api/orders/sales/balance` | Seller |
@@ -408,6 +409,7 @@ every page depend on it. A lock does not close a shop. Paid orders of a suspende
 | [099-shop-page](../../specs/099-shop-page/) | [#206](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/206) | A shop has a page: `/shops/:sellerId`, `GET /api/shops/{id}`, `?sellerId=` on the listing, the seller's description and `SellerDescribedEvent` (#197). |
 | [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `stock_items.LowStockThreshold`, `StockRanLowEvent`, `StockRunningLow`; the line beside the stock count (#200). |
 | [103-commission-at-startup](../../specs/103-commission-at-startup/) | [#223](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/223) | A missing or impossible `Marketplace:CommissionRate` stops Order at startup (`RequiredSettings.Check`) instead of failing the first checkout (#210). |
+| [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | A seller cancels their part of an order they cannot fulfil; a cancelled part earns nothing and gives back their voucher (#211). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |

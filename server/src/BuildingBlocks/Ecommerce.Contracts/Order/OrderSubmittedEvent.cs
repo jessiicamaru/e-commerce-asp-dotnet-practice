@@ -49,9 +49,26 @@ public record OrderFailedEvent(
 /// A paid order was cancelled before anything shipped (specs/039). Inventory puts its stock back and
 /// Payment records a refund - each from its own rows, which is why this carries no items and no amount.
 /// </summary>
-/// <param name="CancelledBy">"Customer" or "Staff".</param>
+/// <param name="CancelledBy">"Customer", "Staff" - or "Seller", when a seller cancelled the last part (specs/104).</param>
 public record OrderCancelledEvent(
     Guid OrderId,
     DateTime CancelledAt,
     string CancelledBy
 );
+
+/// <summary>
+/// One part of a paid order was cancelled before it shipped, and the rest goes on (specs/104). Inventory returns the
+/// reservations of <paramref name="VariantIds"/>; Payment refunds <paramref name="Amount"/> - the part's goods less
+/// their discounts, plus their tax, which only Order can work out. The last part cancels the order instead
+/// (<see cref="OrderCancelledEvent"/>).
+/// </summary>
+/// <param name="PartId">The part - an <c>order_shipments</c> id; Payment's refund is unique on it.</param>
+/// <param name="CancelledBy">"Seller" or "Staff".</param>
+public record OrderPartCancelledEvent(
+    Guid OrderId,
+    Guid PartId,
+    List<Guid> VariantIds,
+    decimal Amount,
+    string Currency,
+    DateTime CancelledAt,
+    string CancelledBy);

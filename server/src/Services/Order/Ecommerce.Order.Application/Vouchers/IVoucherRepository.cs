@@ -51,6 +51,12 @@ public interface IVoucherRepository
     /// </summary>
     Task ReleaseForOrderAsync(Guid orderId, DateTime at, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Gives back the uses of ONE seller's vouchers on an order, when that seller's part is cancelled on its own
+    /// (specs/104 research D5) - their discount bought nothing. Once: only redemptions still held are released.
+    /// </summary>
+    Task ReleaseForSellerAsync(Guid orderId, Guid sellerId, DateTime at, CancellationToken cancellationToken = default);
+
     Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken = default);
 
     Task AddAsync(Voucher voucher, CancellationToken cancellationToken = default);

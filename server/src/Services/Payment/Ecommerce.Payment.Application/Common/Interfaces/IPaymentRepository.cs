@@ -15,7 +15,7 @@ public interface IPaymentRepository
 
     Task AddAsync(Domain.Entities.Payment payment, CancellationToken cancellationToken = default);
 
-    /// <summary>The refund of a whole order, if any (specs/039) - not a returned parcel's.</summary>
+    /// <summary>The refund of a whole order, if any (specs/039) - not a returned parcel's, nor a cancelled part's.</summary>
     Task<Refund?> GetRefundAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     /// <summary>The refunds recorded for these orders, by order id - one query for a page of payments.</summary>
@@ -25,6 +25,9 @@ public interface IPaymentRepository
 
     /// <summary>The refund of one returned parcel, if any (specs/066).</summary>
     Task<Refund?> GetReturnRefundAsync(Guid returnId, CancellationToken cancellationToken = default);
+
+    /// <summary>The refund of one part cancelled on its own, if any (specs/104).</summary>
+    Task<Refund?> GetPartRefundAsync(Guid partId, CancellationToken cancellationToken = default);
 
     /// <summary>Everything refunded for an order so far, whole or by parcel - never more than was paid.</summary>
     Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken cancellationToken = default);

@@ -104,6 +104,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<RefundLatePaymentConsumer>();
     // specs/066: a returned parcel is refunded - its goods and their tax.
     x.AddConsumer<RefundReturnedParcelConsumer>();
+    // One part of an order cancelled on its own (specs/104).
+    x.AddConsumer<RefundCancelledPartConsumer>();
 
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
         cfg.UseEntityFrameworkOutbox<PaymentDbContext>(context));

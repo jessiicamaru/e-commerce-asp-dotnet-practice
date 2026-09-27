@@ -85,6 +85,9 @@ namespace Ecommerce.Payment.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("PartId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("PaymentId")
                         .HasColumnType("uuid");
 
@@ -103,7 +106,11 @@ namespace Ecommerce.Payment.Infrastructure.Migrations
 
                     b.HasIndex("OrderId")
                         .IsUnique()
-                        .HasFilter("\"ReturnId\" IS NULL");
+                        .HasFilter("\"ReturnId\" IS NULL AND \"PartId\" IS NULL");
+
+                    b.HasIndex("PartId")
+                        .IsUnique()
+                        .HasFilter("\"PartId\" IS NOT NULL");
 
                     b.HasIndex("PaymentId");
 

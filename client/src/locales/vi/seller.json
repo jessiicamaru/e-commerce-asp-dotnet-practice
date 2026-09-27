@@ -168,7 +168,8 @@
     "shipTo": "Giao tới",
     "addressGone": "Kiện hàng đã được gửi, nên địa chỉ giao không còn hiển thị.",
     "cancelled": "Đơn này đã bị huỷ - không cần chuẩn bị hay gửi hàng.",
-    "received": "Khách đã nhận hàng ngày {{at}}."
+    "received": "Khách đã nhận hàng ngày {{at}}.",
+    "partCancelled": "Bạn đã huỷ phần của mình trong đơn này: {{reason}}. Người mua đã được hoàn tiền phần đó."
   },
   "earnings": {
     "title": "Bạn nhận",

@@ -110,6 +110,12 @@ export class Order {
   }
 
   /** The seller starts preparing THEIR part of this order (specs/035). The token says whose. */
+  /** The seller cancels THEIR part before it ships, with a reason the buyer reads (specs/104). */
+  static async cancelSalePart(id: string, reason: string): Promise<Sale> {
+    const { data } = await http.post<Sale>(`/orders/sales/${id}/cancel`, { reason })
+    return data
+  }
+
   static async prepareSale(id: string): Promise<Sale> {
     const { data } = await http.post<Sale>(`/orders/sales/${id}/preparing`)
     return data

@@ -46,6 +46,9 @@ internal static class FulfilmentStep
                 throw new ConflictException(
                     $"Order is {OrderMapping.Describe(result.OrderStatus!.Value)}; only a Paid order can be fulfilled.");
 
+            case ShipmentMoveOutcome.PartCancelled:
+                throw new ConflictException("The shop's part of this order was cancelled; there is nothing to send.");
+
             case ShipmentMoveOutcome.NoSuchPart when result.OrderStatus is null:
                 throw new NotFoundException("Order not found.");
 

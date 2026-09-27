@@ -39,10 +39,12 @@
     "status": {
       "Paid": "Waiting",
       "Preparing": "Being prepared",
-      "Shipped": "Shipped"
+      "Shipped": "Shipped",
+      "Cancelled": "Cancelled"
     },
     "from": "from {{shop}}",
-    "theShop": "the shop"
+    "theShop": "the shop",
+    "cancelledWhy": "Cancelled: {{reason}}. You are refunded what you paid for it."
   },
   "soldBy": "Sold by {{shop}}",
   "cancel": {
@@ -98,5 +100,14 @@
     "escalateConfirm": "Ask the shop",
     "escalated": "Sent to the shop’s staff.",
     "escalateUntil": "You can ask until {{at}}."
+  },
+  "cancelPart": {
+    "button": "Cancel this part…",
+    "title": "Cancel this part of the order?",
+    "body": "Its goods go back on the shelf and the buyer is refunded what they paid for them. The rest of the order goes on; if this is the last part, the whole order is cancelled. This cannot be undone.",
+    "reason": "Reason - the buyer reads it",
+    "keep": "Keep it",
+    "confirm": "Cancel this part",
+    "done": "Part cancelled."
   }
 }

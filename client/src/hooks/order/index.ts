@@ -113,6 +113,8 @@ export function useMoveSale(id: string) {
   return {
     prepare: useMutation({ mutationFn: () => Order.prepareSale(id), onSuccess: refresh }),
     ship: useMutation({ mutationFn: (trackingReference: string) => Order.shipSale(id, trackingReference), onSuccess: refresh }),
+    // Their part cancelled (specs/104): it earns nothing, so the balance is re-read too.
+    cancelPart: useMutation({ mutationFn: (reason: string) => Order.cancelSalePart(id, reason), onSuccess: refresh }),
   }
 }
 

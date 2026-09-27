@@ -117,6 +117,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<OrderCompletedConsumer>();
     // specs/039: a cancelled order puts its stock back. Registered, or it never runs and never complains.
     x.AddConsumer<RestockCancelledOrderConsumer>();
+    // One part of an order cancelled on its own (specs/104).
+    x.AddConsumer<RestockCancelledPartConsumer>();
     // specs/066: a returned parcel's units go back on the shelf.
     x.AddConsumer<RestockReturnedParcelConsumer>();
     x.AddConsumer<ProductCreatedConsumer>();

@@ -116,6 +116,22 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
             FROM released r WHERE u."VoucherId" = r."VoucherId" AND u."CustomerId" = r."CustomerId" AND u."Uses" > 0
             """, cancellationToken);
 
+    public Task ReleaseForSellerAsync(Guid orderId, Guid sellerId, DateTime at, CancellationToken cancellationToken = default) =>
+        // The statement above, limited to that seller's own vouchers - a redemption records whose it was (specs/069).
+        _context.Database.ExecuteSqlInterpolatedAsync($"""
+            WITH released AS (
+                UPDATE voucher_redemptions SET "ReleasedAt" = {at}
+                WHERE "OrderId" = {orderId} AND "ReleasedAt" IS NULL AND "SellerId" = {sellerId}
+                RETURNING "VoucherId", "CustomerId"
+            ), totals AS (
+                UPDATE vouchers v SET "UsedCount" = v."UsedCount" - 1
+                FROM released r WHERE v."Id" = r."VoucherId" AND v."UsedCount" > 0
+                RETURNING v."Id"
+            )
+            UPDATE voucher_customer_uses u SET "Uses" = u."Uses" - 1
+            FROM released r WHERE u."VoucherId" = r."VoucherId" AND u."CustomerId" = r."CustomerId" AND u."Uses" > 0
+            """, cancellationToken);
+
     public Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken = default) =>
         _context.Vouchers.AnyAsync(v => v.Code == code, cancellationToken);
 

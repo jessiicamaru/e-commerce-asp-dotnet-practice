@@ -7,7 +7,9 @@ import type { Order } from '@/services/order/types'
  * An order an older image wrote has no parcels at all (specs/035 D3); then the whole order is the shop's,
  * in the order's own state, which is exactly what the server's staff endpoints move.
  */
-export function shopParcelOf(order: Order): { status: string; trackingReference: string | null; items: string[] } | null {
+export function shopParcelOf(
+  order: Order,
+): { status: string; trackingReference: string | null; items: string[]; cancelReason?: string | null } | null {
   const shipments = order.shipments ?? []
 
   if (shipments.length === 0) {
@@ -19,5 +21,7 @@ export function shopParcelOf(order: Order): { status: string; trackingReference:
   }
 
   const shop = shipments.find((s) => s.isShop)
-  return shop ? { status: shop.status, trackingReference: shop.trackingReference, items: shop.items } : null
+  return shop
+    ? { status: shop.status, trackingReference: shop.trackingReference, items: shop.items, cancelReason: shop.cancelReason }
+    : null
 }

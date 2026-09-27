@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `80d41cf`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d1bfc89`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**171 endpoints** across 7 services.
+**173 endpoints** across 7 services.
 
 ## Identity (44)
 
@@ -127,7 +127,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (43)
+## Order (45)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -143,6 +143,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/accept` | Admin |  |
 | `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/received` | Admin |  |
 | `POST` | `/api/orders/fulfilment/{id}/shipments/{shipmentId}/return/refuse` | Admin |  |
+| `POST` | `/api/orders/fulfilment/{id}/shop-part/cancel` | Admin | Staff: cancel only the shop's own part, with a reason the buyer reads (specs/104). |
 | `GET` | `/api/orders/insights/revenue` | Admin |  |
 | `GET` | `/api/orders/insights/top-buyers` | Admin |  |
 | `GET` | `/api/orders/insights/top-products` | Admin |  |
@@ -156,6 +157,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/orders/sales/insights/top-products` | Seller |  |
 | `GET` | `/api/orders/sales/payouts` | Seller | The payouts made to a seller, newest first. |
 | `GET` | `/api/orders/sales/{id}` | Seller | One sale, the seller's own lines only. 404 - one wording - for no such order, nothing of theirs on it, failed, or still settling. |
+| `POST` | `/api/orders/sales/{id}/cancel` | Seller | A seller cancels THEIR part before it ships, with a reason the buyer reads (specs/104). The rest of the order goes on; the last part cancels the order. Repeating it is a no-op. |
 | `POST` | `/api/orders/sales/{id}/preparing` | Seller | A seller starts preparing THEIR part of this order (specs/035). 404 - one wording - when it is not their sale, not there, not paid or failed; 409 when their part is not waiting. |
 | `POST` | `/api/orders/sales/{id}/return/accept` | Seller |  |
 | `POST` | `/api/orders/sales/{id}/return/received` | Seller |  |

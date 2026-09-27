@@ -99,6 +99,10 @@ internal static class SellerStep
             case ShipmentMoveOutcome.OrderCancelled:
                 throw new ConflictException(Sales.Cancelled);
 
+            // Their own part, which they cancelled (specs/104).
+            case ShipmentMoveOutcome.PartCancelled:
+                throw new ConflictException(PartCancellation.Cancelled);
+
             default: // WrongState - it IS theirs, so saying where it stands discloses nothing new
                 if (result.Current == to)
                 {

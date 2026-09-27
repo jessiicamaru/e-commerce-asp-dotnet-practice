@@ -146,6 +146,24 @@ public interface IOrderRepository
     /// Publishes the event. Called only when the order was cancelled by THIS call, between the guarded
     /// UPDATE and the save, so the outbox message commits with the row.
     /// </param>
+    /// <summary>
+    /// Cancels one part of a paid order before it ships (specs/104) under the order's row lock, the same one every
+    /// parcel move takes. The last part left cancels the order whole. <paramref name="stage"/> runs inside the
+    /// transaction, after the guarded update and before the one save - only when it cancelled something.
+    /// </summary>
+    /// <param name="sellerId">The part's seller; null for the shop's own part.</param>
+    Task<PartCancelOutcome> TryCancelPartAsync(
+        Guid orderId,
+        Guid? sellerId,
+        string reason,
+        string cancelledBy,
+        DateTime at,
+        Func<CancelledPart, CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>A seller's shop name as frozen on the order's lines (specs/036); null for the shop's own or when none was recorded.</summary>
+    Task<string?> GetSellerNameAsync(Guid orderId, Guid? sellerId, CancellationToken cancellationToken = default);
+
     Task<CancelOutcome> TryCancelAsync(
         Guid orderId,
         Guid? ownerId,

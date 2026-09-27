@@ -84,6 +84,12 @@ export interface Shipment {
   deliveryConfirmedBy?: string | null
   /** Its return, once one was asked for (specs/066); a parcel has at most one. */
   return?: ParcelReturn | null
+  /** Set when this part was cancelled on its own before it shipped (specs/104); its status then reads 'Cancelled'. */
+  cancelledAt?: string | null
+  /** Why - what the seller or staff wrote for the buyer. */
+  cancelReason?: string | null
+  /** 'Seller' or 'Staff'. */
+  cancelledBy?: string | null
 }
 
 /** Where a return has got to (specs/066), as the server names it. */
@@ -243,7 +249,11 @@ export interface Sale {
   shippingShare: number | null
   payout: number | null
   /** Whether a payout has covered it. */
-  paidOut: boolean
+  paidOut: boolean
+  /** Their part cancelled on its own (specs/104) - its status reads 'Cancelled'. */
+  cancelledAt?: string | null
+  cancelReason?: string | null
+  cancelledBy?: string | null
 }
 
 /**

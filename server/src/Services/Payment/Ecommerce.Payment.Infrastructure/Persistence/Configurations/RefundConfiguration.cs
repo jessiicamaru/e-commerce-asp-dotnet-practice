@@ -19,8 +19,10 @@ public class RefundConfiguration : IEntityTypeConfiguration<Refund>
         // One refund of the WHOLE order: the second delivery of a cancellation is a unique violation, not a
         // second refund (research D3). Since specs/066 an order may also have one refund per returned parcel,
         // so the rule is partial - and each return is refunded once, by its own index.
-        builder.HasIndex(x => x.OrderId).IsUnique().HasFilter("\"ReturnId\" IS NULL");
+        // Since specs/104 a part cancelled on its own is refunded by its own index too, so the whole's excludes both.
+        builder.HasIndex(x => x.OrderId).IsUnique().HasFilter("\"ReturnId\" IS NULL AND \"PartId\" IS NULL");
         builder.HasIndex(x => x.ReturnId).IsUnique().HasFilter("\"ReturnId\" IS NOT NULL");
+        builder.HasIndex(x => x.PartId).IsUnique().HasFilter("\"PartId\" IS NOT NULL");
 
         builder.HasOne<Domain.Entities.Payment>()
             .WithMany()

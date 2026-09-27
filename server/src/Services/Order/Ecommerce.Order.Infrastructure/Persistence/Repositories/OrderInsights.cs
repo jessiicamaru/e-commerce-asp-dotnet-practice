@@ -55,7 +55,11 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
     private IQueryable<ReturnedParcel> ReturnedIn(DateTime from, DateTime to) =>
         SoldIn(from, to).SelectMany(
             o => _context.ParcelReturns.Where(r => r.OrderId == o.Id && r.Status == ReturnStatus.Received),
-            (o, r) => new ReturnedParcel { UserId = o.UserId, PaidAt = o.PaidAt, CreatedAt = o.CreatedAt, Currency = o.Currency, Refund = r.RefundAmount ?? 0m });
+            (o, r) => new ReturnedParcel { UserId = o.UserId, PaidAt = o.PaidAt, CreatedAt = o.CreatedAt, Currency = o.Currency, Refund = r.RefundAmount ?? 0m })
+        // And each part cancelled on its own (specs/104): refunded, never delivered - the same as a parcel that came back.
+        .Concat(SoldIn(from, to).SelectMany(
+            o => _context.OrderShipments.Where(s => s.OrderId == o.Id && s.CancelRefund != null),
+            (o, s) => new ReturnedParcel { UserId = o.UserId, PaidAt = o.PaidAt, CreatedAt = o.CreatedAt, Currency = o.Currency, Refund = s.CancelRefund ?? 0m }));
 
     /// <summary>An object initializer rather than a record, so EF can group over it (see <see cref="SellerLine"/>).</summary>
     private sealed class ReturnedParcel
@@ -73,7 +77,8 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
             .SelectMany(o => o.Items, (o, i) => new { Order = o, Item = i })
             // Not the lines of a parcel that came back (specs/084) - a line belongs to its seller's parcel (specs/035).
             .Where(x => !_context.OrderShipments.Any(s =>
-                s.OrderId == x.Order.Id && s.SellerId == x.Item.SellerId && s.Return != null && s.Return.Status == ReturnStatus.Received))
+                s.OrderId == x.Order.Id && s.SellerId == x.Item.SellerId
+                && (s.CancelledAt != null || (s.Return != null && s.Return.Status == ReturnStatus.Received))))
             .Select(x => new { x.Item.ProductId, x.Order.Currency, x.Order.CreatedAt, x.Item.ProductName, x.Item.Quantity, x.Item.UnitPrice })
             .GroupBy(x => new { x.ProductId, x.Currency })
             .Select(g => new
@@ -99,7 +104,8 @@ public class OrderInsights(OrderDbContext context) : IOrderInsights
             .SelectMany(o => o.Items, (o, i) => new { Order = o, Item = i })
             .Where(x => x.Item.SellerId == sellerId)
             .Where(x => !_context.OrderShipments.Any(s =>
-                s.OrderId == x.Order.Id && s.SellerId == sellerId && s.Return != null && s.Return.Status == ReturnStatus.Received))
+                s.OrderId == x.Order.Id && s.SellerId == sellerId
+                && (s.CancelledAt != null || (s.Return != null && s.Return.Status == ReturnStatus.Received))))
             .Select(x => new SellerLine
             {
                 OrderId = x.Order.Id,
