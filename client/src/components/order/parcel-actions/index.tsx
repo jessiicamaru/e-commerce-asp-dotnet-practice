@@ -1,3 +1,4 @@
+import { TrackingLink } from '@/components/order/tracking-link'
 import { useState } from 'react'
 import type { UseMutationResult } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -136,7 +137,7 @@ export function ParcelActions({
 
       {status === 'Shipped' && trackingReference && (
         <p className="text-sm">
-          {t('fulfil.trackingIs')} <span className="font-mono font-semibold">{trackingReference}</span>
+          {t('fulfil.trackingIs')} <TrackingLink reference={trackingReference} />
         </p>
       )}
 

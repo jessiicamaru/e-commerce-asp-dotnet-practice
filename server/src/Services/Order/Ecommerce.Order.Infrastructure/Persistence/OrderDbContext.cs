@@ -16,6 +16,8 @@ public class OrderDbContext : DbContext
     public DbSet<Payout> Payouts => Set<Payout>();
     public DbSet<ParcelReturn> ParcelReturns => Set<ParcelReturn>();
     public DbSet<Voucher> Vouchers => Set<Voucher>();
+    public DbSet<DeliveryOption> DeliveryOptions => Set<DeliveryOption>();
+    public DbSet<Carrier> Carriers => Set<Carrier>();
     public DbSet<VoucherCustomerUse> VoucherCustomerUses => Set<VoucherCustomerUse>();
     public DbSet<VoucherRedemption> VoucherRedemptions => Set<VoucherRedemption>();
 

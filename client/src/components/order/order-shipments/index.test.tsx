@@ -1,7 +1,13 @@
-import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render as renderBare, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import i18n from '@/config/i18n'
 import { OrderShipments } from '.'
+
+// A tracking reference asks who the carrier is (specs/098), which needs a query client.
+const render = (ui: ReactNode) =>
+  renderBare(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>)
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')

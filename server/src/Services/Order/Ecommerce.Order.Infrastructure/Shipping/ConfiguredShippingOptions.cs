@@ -5,13 +5,14 @@ using Microsoft.Extensions.Configuration;
 namespace Ecommerce.Order.Infrastructure.Shipping;
 
 /// <summary>
-/// Delivery options from configuration (<c>Shipping:Options</c>), checked once, at startup.
+/// Delivery options from configuration (<c>Shipping:Options</c>), checked once, at startup - since specs/098 (#196) the
+/// SEED for the <c>delivery_options</c> table (<see cref="DeliverySeed"/>), which is what checkout reads.
 /// </summary>
 /// <remarks>
 /// A misconfiguration - no options, a duplicate code, a negative price, nothing priced in the shop's
 /// own currency - stops the service from starting, rather than surfacing as a strange checkout
-/// (constitution: fail at startup, not per request). Configuration rather than a table: two rows that
-/// rarely change do not need screens.
+/// (constitution: fail at startup, not per request). The original "configuration rather than a table: two rows
+/// that rarely change do not need screens" was reversed by specs/098, once staff ran the shop from the console.
 /// </remarks>
 public class ConfiguredShippingOptions : IShippingOptions
 {

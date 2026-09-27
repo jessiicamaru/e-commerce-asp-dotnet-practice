@@ -1,3 +1,4 @@
+import { TrackingLink } from '@/components/order/tracking-link'
 import { useTranslation } from 'react-i18next'
 import { PackageIcon, PackageCheckIcon, TruckIcon } from 'lucide-react'
 import type { UseMutationResult } from '@tanstack/react-query'
@@ -73,7 +74,7 @@ export function OrderShipments({
               </ul>
               {shipment.trackingReference && (
                 <p className="text-xs">
-                  {t('parcels.tracking')} <span className="font-mono font-semibold">{shipment.trackingReference}</span>
+                  {t('parcels.tracking')} <TrackingLink reference={shipment.trackingReference} />
                 </p>
               )}
               {receive && <ReceiveParcel shipment={shipment} receive={receive} />}

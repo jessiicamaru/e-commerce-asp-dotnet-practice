@@ -1,3 +1,4 @@
+import { TrackingLink } from '@/components/order/tracking-link'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
@@ -84,7 +85,9 @@ export function OrderPage() {
         </p>
       )}
       {order.trackingReference && (
-        <p className="mt-3 text-sm">{t('order.tracking', { reference: order.trackingReference })}</p>
+        <p className="mt-3 text-sm">
+          {t('parcels.tracking')} <TrackingLink reference={order.trackingReference} />
+        </p>
       )}
       {/* One parcel: the list below is not drawn, so its "received" lives here (specs/040). */}
       {order.shipments?.length === 1 && (
