@@ -49,7 +49,8 @@
     "lines": "Toàn bộ đơn",
     "customer": "Khách hàng",
     "cancelledByCustomer": "Khách đã huỷ đơn này. Không còn gì để gửi.",
-    "cancelledByStaff": "Cửa hàng đã huỷ đơn này. Không còn gì để gửi."
+    "cancelledByStaff": "Cửa hàng đã huỷ đơn này. Không còn gì để gửi.",
+    "shopPartCancelled": "Phần của cửa hàng đã bị huỷ: {{reason}}. Phần còn lại của đơn vẫn tiếp tục."
   },
   "payouts": {
     "title": "Thanh toán người bán",

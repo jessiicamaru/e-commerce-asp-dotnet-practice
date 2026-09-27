@@ -44,6 +44,12 @@ export class Admin {
   }
 
   /** Staff cancel any paid order until its first parcel has shipped (specs/039). */
+  /** Only the shop's own part, with a reason the buyer reads (specs/104). */
+  static async cancelShopPart(id: string, reason: string): Promise<Order> {
+    const { data } = await http.post<Order>(`/orders/fulfilment/${id}/shop-part/cancel`, { reason })
+    return data
+  }
+
   static async cancel(id: string): Promise<Order> {
     const { data } = await http.post<Order>(`/orders/fulfilment/${id}/cancel`)
     return data

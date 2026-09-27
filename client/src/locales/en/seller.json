@@ -169,7 +169,8 @@
     "shipTo": "Ship to",
     "addressGone": "Your parcel has been sent, so the delivery address is no longer shown.",
     "cancelled": "This order was cancelled - there is nothing to prepare or send.",
-    "received": "The customer received it on {{at}}."
+    "received": "The customer received it on {{at}}.",
+    "partCancelled": "You cancelled your part of this order: {{reason}}. The buyer was refunded for it."
   },
   "earnings": {
     "title": "You receive",

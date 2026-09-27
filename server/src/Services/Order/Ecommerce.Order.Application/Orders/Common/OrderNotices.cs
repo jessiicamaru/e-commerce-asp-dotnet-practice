@@ -7,7 +7,8 @@ namespace Ecommerce.Order.Application.Orders.Common;
 
 /// <summary>What a notification about an order needs (specs/042).</summary>
 /// <param name="Language">What the order was placed in (specs/021) - and so what its emails are written in (specs/060).</param>
-public record OrderNoticeFacts(Guid OrderId, Guid BuyerId, decimal Total, string Currency, List<ParcelFact> Parcels, string Language = "")
+/// <param name="Refunded">What parts cancelled on their own already refunded (specs/104) - never refunded again.</param>
+public record OrderNoticeFacts(Guid OrderId, Guid BuyerId, decimal Total, string Currency, List<ParcelFact> Parcels, string Language = "", decimal Refunded = 0m)
 {
     /// <summary>Every seller with a parcel on the order - never the shop, which has nobody to tell.</summary>
     public IEnumerable<Guid> Sellers => Parcels.Where(p => p.SellerId is not null).Select(p => p.SellerId!.Value).Distinct();
@@ -65,14 +66,23 @@ public static class OrderNotices
     {
         await notifier.NotifyAsync(f.BuyerId, NotificationKind.OrderCancelled,
             new Dictionary<string, string>(About(f.OrderId)) { ["by"] = by }, $"/orders/{f.OrderId}", ct);
-        // A whole paid order is refunded in full (specs/039); the email says how much, in the order's language (specs/083).
+        // A whole paid order is refunded in full (specs/039) - less what parts cancelled on their own already refunded
+        // (specs/104); the email says how much, in the order's language (specs/083).
         await email.SendAsync(f.BuyerId, EmailTemplate.OrderCancelled,
-            new Dictionary<string, string>(About(f.OrderId)) { ["total"] = Money(f.Total), ["currency"] = f.Currency }, f.Language, ct);
+            new Dictionary<string, string>(About(f.OrderId)) { ["total"] = Money(f.Total - f.Refunded), ["currency"] = f.Currency }, f.Language, ct);
 
         foreach (var seller in f.Sellers)
         {
             await notifier.NotifyAsync(seller, NotificationKind.SaleCancelled, About(f.OrderId), $"/shop/sales/{f.OrderId}", ct);
         }
+    }
+
+    /// <summary>One part cancelled, the rest going on (specs/104): the buyer is told which and why - never by whom.</summary>
+    public static Task PartCancelledAsync(INotifier notifier, Guid buyerId, Guid orderId, string? shop, string reason, CancellationToken ct)
+    {
+        var data = new Dictionary<string, string>(About(orderId)) { ["reason"] = reason };
+        if (shop is not null) data["shop"] = shop;
+        return notifier.NotifyAsync(buyerId, NotificationKind.PartCancelled, data, $"/orders/{orderId}", ct);
     }
 
     public static Task ReceivedAsync(INotifier notifier, OrderNoticeFacts f, Guid shipmentId, CancellationToken ct)

@@ -49,7 +49,7 @@ public class PaymentRepository(PaymentDbContext context) : IPaymentRepository
 
     public async Task<Domain.Entities.Refund?> GetRefundAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        return await _context.Refunds.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == orderId && x.ReturnId == null, cancellationToken);
+        return await _context.Refunds.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == orderId && x.ReturnId == null && x.PartId == null, cancellationToken);
     }
 
     public async Task<Dictionary<Guid, Domain.Entities.Refund>> GetRefundsAsync(
@@ -57,7 +57,8 @@ public class PaymentRepository(PaymentDbContext context) : IPaymentRepository
     {
         return await _context.Refunds
             .AsNoTracking()
-            .Where(x => orderIds.Contains(x.OrderId) && x.ReturnId == null)
+            // The whole order's refund only: a part's (specs/104) or a return's would be a second row per order.
+            .Where(x => orderIds.Contains(x.OrderId) && x.ReturnId == null && x.PartId == null)
             .ToDictionaryAsync(x => x.OrderId, cancellationToken);
     }
 
@@ -68,6 +69,9 @@ public class PaymentRepository(PaymentDbContext context) : IPaymentRepository
 
     public Task<Domain.Entities.Refund?> GetReturnRefundAsync(Guid returnId, CancellationToken cancellationToken = default) =>
         _context.Refunds.AsNoTracking().FirstOrDefaultAsync(x => x.ReturnId == returnId, cancellationToken);
+
+    public Task<Domain.Entities.Refund?> GetPartRefundAsync(Guid partId, CancellationToken cancellationToken = default) =>
+        _context.Refunds.AsNoTracking().FirstOrDefaultAsync(x => x.PartId == partId, cancellationToken);
 
     public async Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken cancellationToken = default) =>
         await _context.Refunds.AsNoTracking().Where(x => x.OrderId == orderId).SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0m;

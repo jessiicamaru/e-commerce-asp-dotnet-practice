@@ -57,6 +57,19 @@ export function useStaffCancelOrder(id: string) {
   })
 }
 
+/** Cancel only the shop's part of an order (specs/104). */
+export function useStaffCancelShopPart(id: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (reason: string) => Admin.cancelShopPart(id, reason),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.adminOrder(id) })
+      await queryClient.invalidateQueries({ queryKey: ['admin-queue'] })
+    },
+  })
+}
+
 /** Returns in one state, a page at a time (specs/066). */
 export function useReturnQueue(status: string, page: number, pageSize: number) {
   return useQuery({

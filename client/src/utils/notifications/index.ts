@@ -26,7 +26,7 @@ export function describeNotification(t: TFunction<'notifications'>, n: AppNotifi
     amount: d.amount && d.currency ? money(Number(d.amount), d.currency) : '',
     tracking: d.tracking ?? '',
     // A parcel with no seller is the shop's own; a shop application with no name is a hole.
-    shop: d.shop ?? (n.kind === 'ParcelShipped' ? t('theShop') : ''),
+    shop: d.shop ?? (n.kind === 'ParcelShipped' || n.kind === 'PartCancelled' ? t('theShop') : ''),
     by: d.by === 'Customer' ? t('byYou') : t('byShop'),
     product: d.product ?? '',
     reason: d.reason ?? '',

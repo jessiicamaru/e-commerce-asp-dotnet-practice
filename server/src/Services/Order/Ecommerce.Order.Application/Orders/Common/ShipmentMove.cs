@@ -24,7 +24,10 @@ public enum ShipmentMoveOutcome
     /// The order was cancelled (specs/039), and the caller DOES have a part on it - anyone else is told
     /// <see cref="NoSuchPart"/>, so this answer never confirms that somebody else sold on an order.
     /// </summary>
-    OrderCancelled
+    OrderCancelled,
+
+    /// <summary>The caller's part was cancelled on its own (specs/104): it never moves again.</summary>
+    PartCancelled
 }
 
 /// <param name="Current">The part's status after the attempt, when there is a part.</param>

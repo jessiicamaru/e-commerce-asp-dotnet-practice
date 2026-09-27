@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { OrderLines } from '@/components/order/order-lines'
+import { CancelPart } from '@/components/order/cancel-part'
 import { ParcelActions } from '@/components/order/parcel-actions'
 import { ReturnDecision } from '@/components/order/return-decision'
 import { SaleEarnings } from '@/components/seller/sale-earnings'
@@ -30,7 +31,7 @@ export function ShopSalePage() {
   const { t, i18n } = useTranslation('seller')
   const { id = '' } = useParams()
   const sale = useSale(id)
-  const { prepare, ship } = useMoveSale(id)
+  const { prepare, ship, cancelPart } = useMoveSale(id)
   const { accept, refuse, receive } = useSaleReturn(id)
 
   const back = (
@@ -97,9 +98,15 @@ export function ShopSalePage() {
             <CardContent>
               {/* Cancelled (specs/039): nothing to prepare or send, and the server refuses a step anyway. */}
               {data.status === 'Cancelled' ? (
-                <p className="text-destructive text-sm font-medium">{t('fulfil.cancelled')}</p>
+                <p className="text-destructive text-sm font-medium">
+                  {data.cancelledAt ? t('fulfil.partCancelled', { reason: data.cancelReason ?? '' }) : t('fulfil.cancelled')}
+                </p>
               ) : (
-                <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
+                <div className="grid gap-4">
+                  <ParcelActions status={data.status} trackingReference={data.trackingReference} prepare={prepare} ship={ship} />
+                  {/* Not sent yet: a seller who cannot fulfil it says so (specs/104) - the rest of the order goes on. */}
+                  {data.status !== 'Shipped' && <CancelPart cancel={cancelPart} />}
+                </div>
               )}
               {data.deliveredAt && (
                 <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">

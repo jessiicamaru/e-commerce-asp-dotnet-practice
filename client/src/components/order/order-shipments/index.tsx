@@ -35,9 +35,10 @@ export function OrderShipments({
   return (
     <section className="grid gap-3" aria-label={t('parcels.title')}>
       <h2 className="text-lg font-semibold">
+        {/* A part cancelled on its own (specs/104) is not on its way, nor waited for. */}
         {t('parcels.heading', {
           shipped: shipments.filter((s) => s.status === 'Shipped').length,
-          count: shipments.length,
+          count: shipments.filter((s) => s.status !== 'Cancelled').length,
         })}
       </h2>
       <ul className="grid gap-2 sm:grid-cols-2">
@@ -72,6 +73,9 @@ export function OrderShipments({
                   <li key={i}>{item}</li>
                 ))}
               </ul>
+              {shipment.cancelledAt && (
+                <p className="text-destructive text-xs">{t('parcels.cancelledWhy', { reason: shipment.cancelReason ?? '' })}</p>
+              )}
               {shipment.trackingReference && (
                 <p className="text-xs">
                   {t('parcels.tracking')} <TrackingLink reference={shipment.trackingReference} />

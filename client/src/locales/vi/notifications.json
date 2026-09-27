@@ -46,6 +46,7 @@
     "AnswerHidden": "Câu trả lời của bạn về “{{product}}” đã bị ẩn: {{reason}}",
     "ReportActioned": "Cảm ơn bạn - nội dung bạn báo cáo về “{{product}}” đã được gỡ khỏi cửa hàng.",
     "ReportDismissed": "Chúng tôi đã xem nội dung bạn báo cáo về “{{product}}” và giữ nguyên.",
-    "StockRunningLow": "“{{product}}” sắp hết hàng: còn {{left}}."
+    "StockRunningLow": "“{{product}}” sắp hết hàng: còn {{left}}.",
+    "PartCancelled": "Một phần của đơn {{order}} từ {{shop}} đã bị huỷ: {{reason}}. Bạn sẽ được hoàn tiền phần đó."
   }
 }

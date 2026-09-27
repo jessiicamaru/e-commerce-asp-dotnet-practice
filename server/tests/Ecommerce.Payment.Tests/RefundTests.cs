@@ -175,6 +175,8 @@ public class RefundTests(PaymentTestFixture fixture)
 
         public Task<Domain.Entities.Refund?> GetReturnRefundAsync(Guid returnId, CancellationToken ct = default)
             => Task.FromResult<Domain.Entities.Refund?>(null);
+        public Task<Domain.Entities.Refund?> GetPartRefundAsync(Guid partId, CancellationToken ct = default)
+            => inner.GetPartRefundAsync(partId, ct);
 
         public Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken ct = default)
             => inner.GetRefundedTotalAsync(orderId, ct);

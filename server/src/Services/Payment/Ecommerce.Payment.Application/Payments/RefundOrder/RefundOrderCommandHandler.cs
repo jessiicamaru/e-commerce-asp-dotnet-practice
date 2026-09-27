@@ -52,6 +52,15 @@ public class RefundOrderCommandHandler(
             return false;
         }
 
+        // What is left: a part cancelled on its own (specs/104) was refunded already, and is never refunded twice.
+        var alreadyRefunded = await _paymentRepository.GetRefundedTotalAsync(request.OrderId, cancellationToken);
+        var amount = payment.Amount - alreadyRefunded;
+        if (amount <= 0)
+        {
+            _logger.LogInformation("Order {OrderId} was refunded in parts already; nothing is left to refund.", request.OrderId);
+            return false;
+        }
+
         try
         {
             await _paymentRepository.AddRefundAsync(new Refund
@@ -59,7 +68,7 @@ public class RefundOrderCommandHandler(
                 Id = Guid.CreateVersion7(),
                 PaymentId = payment.Id,
                 OrderId = payment.OrderId,
-                Amount = payment.Amount,
+                Amount = amount,
                 Currency = payment.Currency,
                 // The same provider that took it - "Stub" today, so this moved no money either.
                 Provider = payment.Provider,
@@ -68,8 +77,8 @@ public class RefundOrderCommandHandler(
 
             await _audit.RecordAsync(
                 AuditCategory.Payment, "RefundRecorded", "Order", payment.OrderId.ToString(),
-                $"Refunded {payment.Amount} {payment.Currency} through {payment.Provider}: {request.Reason}",
-                after: new { PaymentId = payment.Id, payment.Amount, payment.Currency, payment.Provider, request.Reason },
+                $"Refunded {amount} {payment.Currency} through {payment.Provider}: {request.Reason}",
+                after: new { PaymentId = payment.Id, Amount = amount, AlreadyRefunded = alreadyRefunded, payment.Currency, payment.Provider, request.Reason },
                 cancellationToken: cancellationToken);
             await _paymentRepository.SaveChangesAsync(cancellationToken);
         }
@@ -82,7 +91,7 @@ public class RefundOrderCommandHandler(
 
         _logger.LogWarning(
             "Refund of {Amount} {Currency} recorded for order {OrderId} through {Provider} ({Reason}) - no money moved if Stub",
-            payment.Amount, payment.Currency, payment.OrderId, payment.Provider, request.Reason);
+            amount, payment.Currency, payment.OrderId, payment.Provider, request.Reason);
         return true;
     }
 

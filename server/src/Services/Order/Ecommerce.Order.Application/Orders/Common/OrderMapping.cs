@@ -32,7 +32,8 @@ public static class OrderMapping
             .OrderBy(s => s.SellerId is not null)
             .ThenBy(s => s.SellerId)
             .Select(s => new ShipmentResponse(
-                Describe(s.Status),
+                // A part cancelled on its own (specs/104) is Cancelled, whatever it was left at.
+                s.CancelledAt is not null ? Describe(OrderStatus.Cancelled) : Describe(s.Status),
                 s.TrackingReference,
                 order.Items
                     .Where(i => i.SellerId == s.SellerId)
@@ -45,7 +46,10 @@ public static class OrderMapping
                 Id: s.Id,
                 DeliveredAt: s.DeliveredAt,
                 DeliveryConfirmedBy: s.DeliveryConfirmedBy,
-                Return: s.Return is { } r ? Returns.ReturnResponse.From(r) : null))
+                Return: s.Return is { } r ? Returns.ReturnResponse.From(r) : null,
+                CancelledAt: s.CancelledAt,
+                CancelReason: s.CancelReason,
+                CancelledBy: s.CancelledBy))
             .ToList();
 
     public static ShippingAddressResponse? ToResponse(Domain.Entities.ShippingAddress? a) =>

@@ -62,6 +62,24 @@ public class OrderShipment
     /// <summary>"Customer" or "Auto" - who said it arrived.</summary>
     public string? DeliveryConfirmedBy { get; set; }
 
+    // Cancelled before it shipped (specs/104). Columns rather than a status value, like delivery: the part keeps the
+    // Pending or Preparing it had, so an older image still reads the row (research D1).
+
+    /// <summary>When the part was cancelled; null while it is not. A cancelled part is never shipped or earned on.</summary>
+    public DateTime? CancelledAt { get; set; }
+
+    /// <summary>Why - what the buyer reads.</summary>
+    public string? CancelReason { get; set; }
+
+    /// <summary>"Seller" or "Staff".</summary>
+    public string? CancelledBy { get; set; }
+
+    /// <summary>
+    /// What cancelling it refunded: goods less discounts, plus tax (research D2). Null for the last part, which
+    /// cancelled the whole order and refunded through it.
+    /// </summary>
+    public decimal? CancelRefund { get; set; }
+
     public Order? Order { get; set; }
 
     /// <summary>Its return, if the buyer asked to send it back (specs/066). At most one.</summary>

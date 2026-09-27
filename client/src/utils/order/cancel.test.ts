@@ -10,6 +10,11 @@ describe('who is offered cancelling (specs/039)', () => {
     expect(customerCanCancel({ status: 'Paid', shipments: null })).toBe(true)
   })
 
+  /** A part a seller cancelled on its own (specs/104) is done: the customer may still cancel the rest. */
+  it('offers the customer the rest of an order one part of which was cancelled', () => {
+    expect(customerCanCancel({ status: 'Paid', shipments: [part('Cancelled'), part('Paid')] })).toBe(true)
+  })
+
   it('stops offering the customer once any parcel is being prepared', () => {
     expect(customerCanCancel({ status: 'Preparing', shipments: [part('Preparing'), part('Paid')] })).toBe(false)
   })

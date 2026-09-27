@@ -257,3 +257,37 @@ describe('ShopSalePage returns (specs/067)', () => {
     expect(screen.queryByText("The buyer’s reason")).not.toBeInTheDocument()
   })
 })
+
+describe('ShopSalePage cancelling the seller part (specs/104)', () => {
+  /** A seller who cannot fulfil it says so, in words the buyer reads - the reason is required, and is what is sent. */
+  it('cancels a waiting part with the reason typed, for this order', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Paid'))
+    const cancel = vi.spyOn(Order, 'cancelSalePart').mockResolvedValue(
+      sale('Cancelled', { cancelledAt: '2026-09-27T09:00:00Z', cancelReason: 'Out of stock', cancelledBy: 'Seller' }))
+    const user = userEvent.setup()
+    renderAt('o-1')
+
+    await user.click(await screen.findByRole('button', { name: /Cancel this part/ }))
+    const dialog = await screen.findByRole('dialog')
+    const confirm = within(dialog).getByRole('button', { name: 'Cancel this part' })
+    expect(confirm).toBeDisabled()   // no reason, no cancelling
+    await user.type(within(dialog).getByRole('textbox'), '  Out of stock  ')
+    await user.click(confirm)
+
+    await waitFor(() => expect(cancel).toHaveBeenCalledWith('o-1', 'Out of stock'))
+  })
+
+  it('offers no cancelling once the part has shipped, and says why a cancelled part is', async () => {
+    vi.spyOn(Order, 'sale').mockResolvedValue(sale('Shipped', { trackingReference: 'VN-1' }))
+    const { unmount } = renderAt('o-1')
+    await screen.findByText(/Sony A7 IV/)
+    expect(screen.queryByRole('button', { name: /Cancel this part/ })).toBeNull()
+    unmount()
+
+    vi.spyOn(Order, 'sale').mockResolvedValue(
+      sale('Cancelled', { cancelledAt: '2026-09-27T09:00:00Z', cancelReason: 'Out of stock', cancelledBy: 'Seller' }))
+    renderAt('o-1')
+    expect(await screen.findByText(/You cancelled your part of this order: Out of stock/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Cancel this part/ })).toBeNull()
+  })
+})

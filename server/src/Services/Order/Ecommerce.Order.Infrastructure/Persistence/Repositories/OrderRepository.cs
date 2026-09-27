@@ -317,6 +317,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.Status,
                 // THEIR part's state (specs/035), when it has one; an order an older image wrote has none.
                 Part = x.Shipments.Where(s => s.SellerId == sellerId).Select(s => (ShipmentStatus?)s.Status).FirstOrDefault(),
+                // Their part cancelled on its own (specs/104) reads Cancelled too.
+                PartCancelled = x.Shipments.Any(s => s.SellerId == sellerId && s.CancelledAt != null),
                 // What it earns them (specs/037), as recorded at checkout - or nulls, never recomputed.
                 Terms = x.Shipments
                     .Where(s => s.SellerId == sellerId)
@@ -333,9 +335,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
         var sales = rows.Select(x => new SaleSummaryResponse(
             x.Id,
-            // Cancelled (specs/039) says so, whatever state its part was left in.
-            x.Status == OrderStatus.Cancelled
-                ? OrderMapping.Describe(x.Status)
+            // Cancelled (specs/039) says so, whatever state its part was left in - and so does their part cancelled
+            // on its own (specs/104).
+            x.Status == OrderStatus.Cancelled || x.PartCancelled
+                ? OrderMapping.Describe(OrderStatus.Cancelled)
                 : x.Part is { } part ? OrderMapping.Describe(part) : OrderMapping.Describe(x.Status),
             x.CreatedAt,
             x.UpdatedAt,
@@ -343,10 +346,11 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             x.Units,
             x.Subtotal,
             x.Currency ?? string.Empty,
-            x.Terms?.GoodsTotal,
-            x.Terms?.Commission,
-            x.Terms?.ShippingShare,
-            Owed(x.Terms?.GoodsTotal, x.Terms?.Commission, x.Terms?.ShippingShare),
+            // A cancelled part earns nothing (specs/104): no terms shown that would read as owed.
+            x.PartCancelled ? null : x.Terms?.GoodsTotal,
+            x.PartCancelled ? null : x.Terms?.Commission,
+            x.PartCancelled ? null : x.Terms?.ShippingShare,
+            x.PartCancelled ? null : Owed(x.Terms?.GoodsTotal, x.Terms?.Commission, x.Terms?.ShippingShare),
             x.Terms?.PaidOut ?? false)).ToList();
 
         return (sales, totalCount);
@@ -385,7 +389,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                         s.ShippingShare,
                         PaidOut = s.PayoutId != null,
                         s.DeliveredAt,
-                        s.Return
+                        s.Return,
+                        s.CancelledAt,
+                        s.CancelReason,
+                        s.CancelledBy
                     })
                     .FirstOrDefault(),
                 x.ShipTo,
@@ -423,12 +430,14 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             _ => ShipmentStatus.Pending
         };
 
-        // A cancelled sale (specs/039): nothing to ship, so no status of a parcel and no address.
-        var cancelled = row.Status == OrderStatus.Cancelled;
+        // A cancelled sale (specs/039), or their part cancelled on its own (specs/104): nothing to ship, so no status
+        // of a parcel, no address, and nothing earned.
+        var partCancelled = row.Part?.CancelledAt is not null;
+        var cancelled = row.Status == OrderStatus.Cancelled || partCancelled;
 
         return new SaleDetailResponse(
             row.Id,
-            cancelled ? OrderMapping.Describe(row.Status) : OrderMapping.Describe(partStatus),
+            cancelled ? OrderMapping.Describe(OrderStatus.Cancelled) : OrderMapping.Describe(partStatus),
             row.CreatedAt,
             row.UpdatedAt,
             row.Items,
@@ -439,13 +448,16 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             // ⚠️ Where to send it - only while sending it is their job (specs/035 research D6). Once
             // their parcel is out, a seller holding the customer's home address has no use for it.
             cancelled || partStatus == ShipmentStatus.Shipped ? null : OrderMapping.ToResponse(row.ShipTo),
-            row.Part?.GoodsTotal,
-            row.Part?.Commission,
-            row.Part?.ShippingShare,
-            Owed(row.Part?.GoodsTotal, row.Part?.Commission, row.Part?.ShippingShare),
+            partCancelled ? null : row.Part?.GoodsTotal,
+            partCancelled ? null : row.Part?.Commission,
+            partCancelled ? null : row.Part?.ShippingShare,
+            partCancelled ? null : Owed(row.Part?.GoodsTotal, row.Part?.Commission, row.Part?.ShippingShare),
             row.Part?.PaidOut ?? false,
             row.Part?.DeliveredAt,
-            row.Part?.Return is { } r ? Ecommerce.Order.Application.Returns.ReturnResponse.From(r) : null);
+            row.Part?.Return is { } r ? Ecommerce.Order.Application.Returns.ReturnResponse.From(r) : null,
+            row.Part?.CancelledAt,
+            row.Part?.CancelReason,
+            row.Part?.CancelledBy);
     }
 
     /// <summary>What the shop owes for a part, or null when its terms were never recorded (specs/037).</summary>
@@ -533,8 +545,9 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
             // 3. The part itself: one guarded statement. `==` on a nullable Guid is translated to
             //    "equal, or both null", so the shop's part (null) is matched as well as a seller's.
+            //    A cancelled part (specs/104) never moves again.
             var part = _context.OrderShipments
-                .Where(s => s.OrderId == orderId && s.SellerId == sellerId && s.Status == from);
+                .Where(s => s.OrderId == orderId && s.SellerId == sellerId && s.Status == from && s.CancelledAt == null);
 
             // Shipping records WHEN, which automatic delivery counts from (specs/040 research D2).
             var moved = trackingReference is null
@@ -550,7 +563,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             var now = await _context.OrderShipments
                 .AsNoTracking()
                 .Where(s => s.OrderId == orderId && s.SellerId == sellerId)
-                .Select(s => new { s.Status, s.TrackingReference })
+                .Select(s => new { s.Status, s.TrackingReference, s.CancelledAt })
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (moved == 0)
@@ -558,7 +571,9 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 await transaction.CommitAsync(cancellationToken); // the parts step 2 may have created
                 return now is null
                     ? new ShipmentMoveResult(ShipmentMoveOutcome.NoSuchPart, OrderStatus: orderStatus)
-                    : new ShipmentMoveResult(
+                    : now.CancelledAt is not null
+                        ? new ShipmentMoveResult(ShipmentMoveOutcome.PartCancelled, now.Status, now.TrackingReference, orderStatus)
+                        : new ShipmentMoveResult(
                         now.Status == to && (trackingReference is null || now.TrackingReference == trackingReference)
                             ? ShipmentMoveOutcome.AlreadyThere
                             : ShipmentMoveOutcome.WrongState,
@@ -567,29 +582,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
 
             // 4. The order's summary, in words an older image still parses (research D4). Computed here,
             //    under the lock, from every part as it now stands.
-            var parts = await _context.OrderShipments
-                .AsNoTracking()
-                .Where(s => s.OrderId == orderId)
-                .Select(s => new { s.Status, s.TrackingReference })
-                .ToListAsync(cancellationToken);
-
-            var summary = parts.All(p => p.Status == ShipmentStatus.Shipped)
-                ? OrderStatus.Shipped
-                : parts.Any(p => p.Status != ShipmentStatus.Pending)
-                    ? OrderStatus.Preparing
-                    : orderStatus.Value;
-
-            // One parcel: the order's tracking IS the part's, so an old reader still shows it. Several:
-            // none of them is "the order's", and the parts carry their own.
-            var summaryTracking = parts.Count == 1 ? parts[0].TrackingReference : null;
-
-            await _context.Orders
-                .Where(o => o.Id == orderId)
-                .ExecuteUpdateAsync(
-                    x => x.SetProperty(o => o.Status, summary)
-                          .SetProperty(o => o.TrackingReference, summaryTracking)
-                          .SetProperty(o => o.UpdatedAt, at),
-                    cancellationToken);
+            var summary = await RewriteSummaryAsync(orderId, orderStatus.Value, at, cancellationToken);
 
             // 5. What goes with the move - its audit entry - in the same transaction (specs/041).
             if (stage is not null)
@@ -785,9 +778,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             //    seen as being prepared, not as waiting.
             await EnsureShipmentsAsync(orderId, cancellationToken);
 
+            // A part cancelled on its own (specs/104) is done: it neither blocks nor counts.
             var parts = await _context.OrderShipments
                 .AsNoTracking()
-                .Where(s => s.OrderId == orderId)
+                .Where(s => s.OrderId == orderId && s.CancelledAt == null)
                 .Select(s => s.Status)
                 .ToListAsync(cancellationToken);
 
@@ -825,6 +819,158 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         });
     }
 
+    /// <summary>
+    /// The order's summary, in words an older image still parses (specs/035 research D4), from every part that is not
+    /// cancelled (specs/104): all shipped is Shipped, any past waiting is Preparing, otherwise Paid. Under the order's lock.
+    /// </summary>
+    private async Task<OrderStatus> RewriteSummaryAsync(Guid orderId, OrderStatus current, DateTime at, CancellationToken cancellationToken)
+    {
+        var parts = await _context.OrderShipments
+            .AsNoTracking()
+            .Where(s => s.OrderId == orderId && s.CancelledAt == null)
+            .Select(s => new { s.Status, s.TrackingReference })
+            .ToListAsync(cancellationToken);
+
+        var summary = parts.Count > 0 && parts.All(p => p.Status == ShipmentStatus.Shipped)
+            ? OrderStatus.Shipped
+            : parts.Any(p => p.Status != ShipmentStatus.Pending)
+                ? OrderStatus.Preparing
+                // Nothing moved: waiting - a legacy Completed row stays as it was, anything else reads Paid again.
+                : current == OrderStatus.Completed ? current : OrderStatus.Paid;
+
+        // One parcel: the order's tracking IS the part's, so an old reader still shows it. Several:
+        // none of them is "the order's", and the parts carry their own.
+        var summaryTracking = parts.Count == 1 ? parts[0].TrackingReference : null;
+
+        await _context.Orders
+            .Where(o => o.Id == orderId)
+            .ExecuteUpdateAsync(
+                x => x.SetProperty(o => o.Status, summary)
+                      .SetProperty(o => o.TrackingReference, summaryTracking)
+                      .SetProperty(o => o.UpdatedAt, at),
+                cancellationToken);
+
+        return summary;
+    }
+
+    public Task<PartCancelOutcome> TryCancelPartAsync(
+        Guid orderId,
+        Guid? sellerId,
+        string reason,
+        string cancelledBy,
+        DateTime at,
+        Func<CancelledPart, CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // 1. The order's row lock - the one every parcel move and the whole-order cancel take (research D6).
+            //    Two sellers cancelling the last two parts at once run one after the other, so exactly one of them
+            //    sees it is the last.
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"""SELECT 1 FROM orders WHERE "Id" = {orderId} FOR UPDATE""", cancellationToken);
+
+            var order = await _context.Orders
+                .AsNoTracking()
+                .Where(o => o.Id == orderId)
+                .Select(o => new { o.Status, o.Currency })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (order is null)
+                return PartCancelOutcome.NotFound;
+
+            // 2. Parts an older image never wrote, in the order's state.
+            if (Payable.Contains(order.Status))
+                await EnsureShipmentsAsync(orderId, cancellationToken);
+
+            var part = await _context.OrderShipments
+                .AsNoTracking()
+                .Where(s => s.OrderId == orderId && s.SellerId == sellerId)
+                .Select(s => new { s.Id, s.Status, s.CancelledAt })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (part is null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+                return PartCancelOutcome.NotFound;
+            }
+
+            if (part.CancelledAt is not null)
+                return PartCancelOutcome.AlreadyCancelled;
+            if (order.Status == OrderStatus.Cancelled)
+                return PartCancelOutcome.OrderCancelled;
+            if (!Payable.Contains(order.Status))
+                return PartCancelOutcome.NotPaid;
+            if (part.Status == ShipmentStatus.Shipped)
+            {
+                await transaction.CommitAsync(cancellationToken);
+                return PartCancelOutcome.Shipped;
+            }
+
+            // 3. What the part is: its lines (every line of a part is its seller's, specs/035), refunded as the buyer
+            //    paid for them - goods less both discounts, plus tax (research D2).
+            var lines = await _context.OrderItems
+                .AsNoTracking()
+                .Where(i => i.OrderId == orderId && i.SellerId == sellerId)
+                .Select(i => new { Variant = i.VariantId ?? i.ProductId, i.UnitPrice, i.Quantity, i.ShopDiscount, i.PlatformDiscount, i.TaxAmount })
+                .ToListAsync(cancellationToken);
+            var refund = lines.Sum(l => l.UnitPrice * l.Quantity - l.ShopDiscount - l.PlatformDiscount + (l.TaxAmount ?? 0m));
+
+            var othersLeft = await _context.OrderShipments
+                .AnyAsync(s => s.OrderId == orderId && s.Id != part.Id && s.CancelledAt == null, cancellationToken);
+            var last = !othersLeft;
+
+            // 4. The guarded statement: not cancelled, not shipped.
+            var cancelled = await _context.OrderShipments
+                .Where(s => s.Id == part.Id && s.CancelledAt == null
+                    && (s.Status == ShipmentStatus.Pending || s.Status == ShipmentStatus.Preparing))
+                .ExecuteUpdateAsync(
+                    x => x.SetProperty(s => s.CancelledAt, at)
+                          .SetProperty(s => s.CancelReason, reason)
+                          .SetProperty(s => s.CancelledBy, cancelledBy)
+                          .SetProperty(s => s.CancelRefund, last ? null : refund)
+                          .SetProperty(s => s.UpdatedAt, at),
+                    cancellationToken);
+            if (cancelled == 0)
+                return PartCancelOutcome.AlreadyCancelled; // unreachable under the lock; guarded all the same
+
+            // 5. Nothing left: the order is cancelled whole (US2). Otherwise the summary stops waiting for this part.
+            if (last)
+            {
+                await _context.Orders
+                    .Where(o => o.Id == orderId && Payable.Contains(o.Status))
+                    .ExecuteUpdateAsync(
+                        x => x.SetProperty(o => o.Status, OrderStatus.Cancelled)
+                              .SetProperty(o => o.CancelledBy, cancelledBy)
+                              .SetProperty(o => o.UpdatedAt, at),
+                        cancellationToken);
+            }
+            else
+            {
+                await RewriteSummaryAsync(orderId, order.Status, at, cancellationToken);
+            }
+
+            // 6. What goes with it, and one save: the row and the outbox messages commit together (Principle III).
+            await stage(new CancelledPart(orderId, part.Id, sellerId, last, refund, order.Currency ?? "",
+                lines.Select(l => l.Variant).Distinct().ToList()), cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return PartCancelOutcome.Cancelled;
+        });
+    }
+
+    public Task<string?> GetSellerNameAsync(Guid orderId, Guid? sellerId, CancellationToken cancellationToken = default) =>
+        sellerId is null
+            ? Task.FromResult<string?>(null)
+            : _context.OrderItems.AsNoTracking()
+                .Where(i => i.OrderId == orderId && i.SellerId == sellerId && i.SellerName != null)
+                .Select(i => i.SellerName)
+                .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<OrderNoticeFacts?> GetNoticeFactsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         await EnsureShipmentsAsync(orderId, cancellationToken);
@@ -838,7 +984,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 o.TotalAmount,
                 o.Currency,
                 o.Language,
-                Parts = o.Shipments.Select(s => new { s.Id, s.SellerId }).ToList(),
+                // A part cancelled on its own (specs/104) is nobody's news any more, and what it refunded is not part of
+                // what a later whole cancellation gives back.
+                Parts = o.Shipments.Where(s => s.CancelledAt == null).Select(s => new { s.Id, s.SellerId }).ToList(),
+                Refunded = o.Shipments.Sum(s => s.CancelRefund ?? 0m),
                 Names = o.Items.Where(i => i.SellerName != null).Select(i => new { i.SellerId, i.SellerName }).ToList()
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -855,7 +1004,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             order.Currency ?? string.Empty,
             order.Parts.Select(p => new ParcelFact(
                 p.Id, p.SellerId, order.Names.FirstOrDefault(n => n.SellerId == p.SellerId)?.SellerName)).ToList(),
-            order.Language ?? string.Empty);
+            order.Language ?? string.Empty,
+            order.Refunded);
     }
 
     public async Task<Domain.Entities.Order?> GetByIdForUserAsync(

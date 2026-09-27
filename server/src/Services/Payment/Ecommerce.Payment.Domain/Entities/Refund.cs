@@ -29,5 +29,11 @@ public class Refund
     /// late payment). An order has at most one refund of the whole, and one per return.
     /// </summary>
     public Guid? ReturnId { get; set; }
+
+    /// <summary>
+    /// The part this refunds, for one seller's part cancelled while the rest of the order goes on (specs/104) -
+    /// null otherwise. One refund per part; a later refund of the whole is what is left after these.
+    /// </summary>
+    public Guid? PartId { get; set; }
     public DateTime RefundedAt { get; set; } = DateTime.UtcNow;
 }

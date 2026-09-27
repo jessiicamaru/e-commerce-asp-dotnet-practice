@@ -30,6 +30,10 @@ public class OrderShipmentConfiguration : IEntityTypeConfiguration<OrderShipment
 
         builder.Property(x => x.DeliveryConfirmedBy).HasMaxLength(16);
 
+        builder.Property(x => x.CancelReason).HasMaxLength(500);
+        builder.Property(x => x.CancelledBy).HasMaxLength(16);
+        builder.Property(x => x.CancelRefund).HasPrecision(18, 2);
+
         // The sweep's question - "shipped, not delivered, shipped before the cutoff" (specs/040).
         builder.HasIndex(x => new { x.Status, x.DeliveredAt, x.ShippedAt });
 

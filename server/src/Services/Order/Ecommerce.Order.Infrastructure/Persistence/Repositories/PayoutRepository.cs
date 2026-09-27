@@ -77,7 +77,9 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
                 && s.GoodsTotal != null
                 && statuses.Contains(s.Order!.Status)
                 // A returned parcel is no money at all (specs/066): not on the way, not due, never paid.
-                && (s.Return == null || s.Return.Status != ReturnStatus.Received));
+                && (s.Return == null || s.Return.Status != ReturnStatus.Received)
+                // Nor is a part cancelled before it shipped (specs/104).
+                && s.CancelledAt == null);
     }
 
     public async Task<List<BalanceResponse>> GetBalanceAsync(Guid sellerId, CancellationToken cancellationToken = default)

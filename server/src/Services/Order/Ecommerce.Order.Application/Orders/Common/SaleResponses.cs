@@ -103,4 +103,7 @@ public record SaleDetailResponse(
     decimal? Payout = null,
     bool PaidOut = false,
     DateTime? DeliveredAt = null,
-    Ecommerce.Order.Application.Returns.ReturnResponse? Return = null);
+    Ecommerce.Order.Application.Returns.ReturnResponse? Return = null,
+    DateTime? CancelledAt = null,
+    string? CancelReason = null,
+    string? CancelledBy = null);
