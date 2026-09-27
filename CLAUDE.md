@@ -650,6 +650,11 @@ for at most 30 days (an administrator for up to a year); only an administrator *
 closes a seller's shop** (specs/095, #193): Identity publishes `SellerSuspensionChangedEvent`, Catalog copies it onto
 the seller's products (`products.SellerSuspended`) and `OnShelf` answers no; a lock does not close a shop, and a
 banned applicant's shop is not approved (409). This read model decides, knowingly - seconds of lag, not a live call.
+**A seller pauses their shop, and staff close one** (specs/107, #214) - Catalog's own `sellers.PausedAt` / `ClosedAt`
+(with a reason the seller reads), `/api/shops/mine/pause|reopen` and `/api/shops/{id}/close|reopen`. ⚠️
+`products.SellerSuspended` now means "the shop is not open" and is written only by `ApplyShopStateAsync` from all three
+reasons - a lifted ban never reopens a paused shop - and by approval (a product approved while paused stays off). A
+seller never reopens what staff closed (`"ClosedAt" IS NULL` guards their moves).
 Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
 depend on the target's row, so they live in `ModerationRules`, not in an attribute. **Unlocking obeys the
 same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody unlocks themselves, only an

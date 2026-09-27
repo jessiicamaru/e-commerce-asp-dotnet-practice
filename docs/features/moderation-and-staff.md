@@ -194,6 +194,9 @@ nobody, because Activity never knew their authors.
    lasts until an administrator lifts it. **A banned seller's shop is closed** (specs/095, #193): the ban announces
    `SellerSuspensionChangedEvent` and Catalog takes every product of theirs off the shelf until the ban is lifted; a
    lock does not close a shop. Approving a banned applicant's shop is 409. The users page reads "Banned · shop closed".
+   **Staff can also close a shop without touching the account** (specs/107, #214): a moderator or administrator
+   closes it with a reason from the shop's page, the seller reads it and cannot reopen it, and staff reopen it from
+   the "Closed shops" tab of `/admin/shops`. The person keeps buying and still ships what they sold.
 6. **A lock and a ban are columns, not a status.** *Why:* they can overlap, and an earlier image must
    still parse the row - the migration only adds nullable columns (specs/043 D1).
 7. **Sign-in says why only after the right password.** Before it, a locked account and a wrong
@@ -310,9 +313,8 @@ No message is specific to moderation. Staff actions publish, through the acting 
 
 - **A service restarted within an hour of a stop forgets it**, and a token it held lives out its minutes
   there (specs/065).
-- **Only a ban closes a shop** (specs/095): it takes the seller's products off the shelf until lifted. A lock
-  stops the person, not their listings; nothing closes a shop alone or removes `Seller`, and taking a
-  product down is per product.
+- **A ban closes a shop, and so does a staff closure** (specs/095, 107) - the closure alone, leaving the account.
+  A lock stops the person, not their listings; nothing removes `Seller`, and taking a product down is per product.
 - **The audit log is an administrator's.** A moderator sees their own Moderation decisions, and one
   person's Moderation history at a time (specs/100) - nothing else.
 - **Content decisions from before specs/100 name nobody** and are missing from a person's history.

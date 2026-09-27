@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `92c41c6`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `07db6e0`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -389,9 +389,13 @@ Entity `Seller`.
 | Column | Type | Null |
 | :-- | :-- | :-- |
 | `SellerId` | uuid |  |
+| `ClosedAt` | timestamp with time zone | yes |
+| `ClosedBy` | uuid | yes |
+| `ClosedReason` | character varying(500) | yes |
 | `Description` | character varying(500) | yes |
 | `DescriptionObservedAt` | timestamp with time zone | yes |
 | `ObservedAt` | timestamp with time zone |  |
+| `PausedAt` | timestamp with time zone | yes |
 | `ShopName` | character varying(100) |  |
 | `Suspended` | boolean |  |
 | `SuspensionChangedAt` | timestamp with time zone | yes |

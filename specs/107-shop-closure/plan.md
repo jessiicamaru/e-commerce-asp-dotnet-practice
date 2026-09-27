@@ -51,9 +51,9 @@ reopens from `/shop`; staff close from the shop's page and reopen from `/admin/s
 | **II. Clean Architecture Layering** | **Pass.** The repository interface is in Application, and the SQL is in Infrastructure. |
 | **III. Atomic Writes and Idempotent Messaging** | **Pass.** Each move is one guarded `UPDATE`. The products' flag, the audit entry and the notices are written in the same transaction through the outbox. A retry after success answers 409 and writes nothing. |
 | **IV. Identity Comes From the Token** | **Pass.** The seller's routes take no seller id (`mine`). Staff routes name the shop, and the role is the permission. |
-| **V. Evidence Over Assumption** | **Planned.** Catalog tests against PostgreSQL for each pair of reasons; mutations; Bruno through rebuilt containers. Recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** Catalog tests against PostgreSQL for each pair of reasons, every one killed by a mutation, and Bruno 340/340 through rebuilt containers - which found the routes missing when the unit tests had not. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): still a pass on all five. No call crosses a service (I); the SQL is in the repository (II); each move is one guarded statement with its shelf flag, audit and notices in one transaction (III); the seller's routes carry no id (IV); the evidence, including what Bruno caught, is in `tasks.md` (V).
 
 ## Project Structure
 
