@@ -38,4 +38,4 @@ description: "Task list for Administrators manage delivery and the carrier"
 - [X] T012 [P] Bruno `order/` seq 14-18
 - [X] T013 Rebuilt Order and the storefront; Bruno through the gateway
 - [X] T014 Docs: `docs/features/shopping-and-checkout.md`, `docs/features/fulfilment-and-delivery.md`, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T015 Merged as #205, closing #196
+- [x] T015 Merged as #205, closing #196

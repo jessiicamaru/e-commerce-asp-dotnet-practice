@@ -2,7 +2,7 @@
 
 **Feature Branch**: `098-delivery-settings` | **Created**: 2026-09-27 | **Issue**: #196
 
-**Status**: Draft
+**Status**: Merged (#205, 2026-09-27)
 
 **Input**: Issue #196 - "delivery options and the carrier can only be changed by redeploying".
 
