@@ -29,7 +29,7 @@ description: "Task list for Behaviour promised but not held by a test"
 - [X] T009 Suites: Identity, Order, Orchestrator, Catalog; storefront 472/472, lint and types clean
 - [X] T010 [P] Bruno `bruno/reviews/a page of the staff list holds at most 50.yml` (`seq: 6`)
 - [X] T011 Docs: `docs/features/ratings-and-reviews.md`, `docs/project/backlog.md`, `docs/project/timeline.md`
-- [ ] T012 Merged as #201, closing #186
+- [X] T012 Merged as #201 (2026-09-27), closing #186
 
 ## Verification
 
