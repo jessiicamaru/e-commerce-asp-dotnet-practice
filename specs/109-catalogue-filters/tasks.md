@@ -26,7 +26,7 @@ description: "Task list for Filter the catalogue by price and by what is in stoc
 - [x] T006 Mutations (quickstart Scenario 3), each red; the full Catalog and client suites
 - [x] T007 [P] Bruno; a rebuilt Catalog and storefront; the post-design Constitution re-check
 - [x] T008 Docs: catalog, shopping-and-checkout, CLAUDE.md, backlog, timeline; `generate_reference.py`
-- [ ] T009 Merged as #229, closing #216
+- [x] T009 Merged as #229, closing #216
 
 ## Evidence
 
