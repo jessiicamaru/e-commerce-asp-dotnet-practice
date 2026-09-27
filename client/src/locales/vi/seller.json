@@ -160,7 +160,7 @@
     "prepare": "Bắt đầu chuẩn bị",
     "prepared": "Đã chuyển sang đang chuẩn bị.",
     "ship": "Đánh dấu đã gửi",
-    "shipHint": "Nhập mã vận đơn của đơn vị vận chuyển. Người mua theo dõi bằng mã này, và không sửa được sau khi lưu.",
+    "shipHint": "Nhập mã vận đơn của đơn vị vận chuyển. Người mua theo dõi bằng mã này; nếu nhập sai, bạn có thể sửa cho đến khi kiện hàng được giao.",
     "tracking": "Mã vận đơn",
     "confirmShip": "Xác nhận đã gửi",
     "shipped": "Đã đánh dấu đã gửi.",

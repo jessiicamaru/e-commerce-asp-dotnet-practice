@@ -1,0 +1,34 @@
+info:
+  name: a seller cannot correct a part that is not theirs
+  type: http
+  seq: 91
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/orders/sales/{{orderId}}/tracking"
+  body:
+    type: json
+    data: |-
+      {
+        "trackingReference": "VN-FIXED-1"
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+        test("the one answer for a sale that is not yours", function() {
+          expect(res.body.detail).to.equal("Sale not found.");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

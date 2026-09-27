@@ -47,9 +47,9 @@ references, and the buyer is told.
 | **II. Clean Architecture Layering** | **Pass.** Rules in Application, the locked transaction in the repository, and routes that only send. |
 | **III. Atomic Writes and Idempotent Messaging** | **Pass.** The update, the audit entry and the notice are staged in one transaction. A repeat of the same reference changes nothing and publishes nothing. |
 | **IV. Identity Comes From the Token** | **Pass.** The seller is the token's subject, and another's part is a 404. |
-| **V. Evidence Over Assumption** | **Planned.** Order and client tests, two mutations, Bruno through rebuilt containers; recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** `TrackingCorrectionTests` (3) against a real database, 3 client tests; four mutations each caught (the delivered check, `ShippedAt` reset, untrimmed reference, the button after delivery); Order 302/302, client 531; Bruno 321/321 through rebuilt containers. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): no violations.
 
 ## Project Structure
 

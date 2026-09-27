@@ -161,7 +161,7 @@
     "prepare": "Start preparing",
     "prepared": "Marked as being prepared.",
     "ship": "Mark as shipped",
-    "shipHint": "Enter the carrier's tracking reference. The customer follows it, and it cannot be changed afterwards.",
+    "shipHint": "Enter the carrier's tracking reference. The customer follows it; a mistake can be corrected until the parcel is delivered.",
     "tracking": "Tracking reference",
     "confirmShip": "Mark as shipped",
     "shipped": "Marked as shipped.",
