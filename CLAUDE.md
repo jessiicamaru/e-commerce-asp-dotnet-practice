@@ -323,7 +323,8 @@ and **indexed since specs/074 (#113)**: `f_unaccent` (an IMMUTABLE wrapper namin
 as `SearchFunctions.Unaccent`) under `pg_trgm` GIN indexes, matched with a `LIKE` whose `%`/`_`/`\` are escaped -
 ⚠️ name the escape (`SearchFunctions.Escape`): Npgsql writes `ESCAPE ''` otherwise. ⚠️ The translations are a
 UNION of ids, not an `OR EXISTS` - that shape kept every product scanned even with the indexes; `SearchIndexTests`
-reads the plan. 452 ms to 1.2 ms on 100,000 products. **Category names are translated too** since specs/026, the same way and with
+reads the plan. 452 ms to 1.2 ms on 100,000 products. **Category names are translated too** since specs/026 - and administrators manage categories at `/admin/categories`
+(specs/097, #195: rename via `PUT /api/categories/{id}`, the slug fixed once created) - the same way and with
 the same per-field fallback; they were called out of scope twice before a redesigned storefront made
 an English page full of `Máy ảnh không gương lật` impossible to keep calling that. ⚠️ **An order freezes its words in the language it was placed in**
 (`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an

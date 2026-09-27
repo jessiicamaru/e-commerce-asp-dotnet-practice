@@ -9,7 +9,7 @@ The catalogue is what a shopper browses and what checkout prices: products filed
 | Shopper (anyone) | Browse the listing with paging, category filter, search and sort; open a product page with its variants, photographs, "from" price and in-stock flag; read it in `vi` or `en` and priced in `VND` or `USD`; fetch product and variant images. Opening a product page reports one view. |
 | Seller | List a product (it waits for review); add variants; reprice or deactivate a variant; set or remove a price per currency; translate the product and its options; upload or remove the product's and each variant's photograph; delete their own product; see their own listings in any review state; resubmit a rejected product. Every write is limited to their own products. |
 | Moderator | Read the review queue (pending oldest first) or the history of approved and rejected products; approve, reject with a reason, or take down an approved product with a reason. |
-| Administrator | Everything a moderator can do. Also: create and delete categories and translate them; list products that belong to the shop itself (they go on sale at once); write to any seller's product; find and reclaim orphaned image files; read the most-viewed products. |
+| Administrator | Everything a moderator can do. Also: create, rename, translate and delete categories - from `/admin/categories` since specs/097 (#195), where the slug is suggested from the name and never changes afterwards; list products that belong to the shop itself (they go on sale at once); write to any seller's product; find and reclaim orphaned image files; read the most-viewed products. |
 | System | Record stock availability from Inventory's announcements; keep a read model of shop names from Identity; recompute each product's "from" price and availability from its variants. |
 
 ## How it works
@@ -103,7 +103,7 @@ All in `ecommerce_catalog_db`. See the [data model](../reference/data-model.md#c
 | [`variant_prices`](../reference/data-model.md#variant_prices) | A variant's price in a non-default currency, unique on (`VariantId`, `Currency`). |
 | [`product_translations`](../reference/data-model.md#product_translations) | Name and description per language. |
 | [`variant_option_translations`](../reference/data-model.md#variant_option_translations) | Option name and value per language. |
-| [`categories`](../reference/data-model.md#categories) | Name, slug, description, optional parent. |
+| [`categories`](../reference/data-model.md#categories) | Name, slug (fixed once created), description, optional parent. `IsActive` is dead data - every row `false`, nothing reads it (specs/097 D3). |
 | [`category_translations`](../reference/data-model.md#category_translations) | Category name and description per language. |
 | [`sellers`](../reference/data-model.md#sellers) | Read model of shop names, fed by Identity's events. |
 | [`product_views`](../reference/data-model.md#product_views) | Views per product per shop day (UTC before specs/082). |
@@ -168,7 +168,8 @@ Through the gateway (`/api/products/**`, `/api/categories/**`). Full list: [API 
 | `POST` | `/api/products/{id}/resubmit` | Seller, Admin |
 | `POST` | `/api/products/{id}/view` | anyone (always 204) |
 | `GET` | `/api/categories` | anyone |
-| `POST` | `/api/categories` | Admin |
+| `POST` | `/api/categories` | Admin (409 when the slug is taken - it was a 500 until specs/097) |
+| `PUT` | `/api/categories/{id}` | Admin - the default-language name and description; the slug never changes (specs/097) |
 | `DELETE` | `/api/categories/{id}` | Admin (409 while products are filed under it) |
 | `PUT` / `DELETE` | `/api/categories/{id}/translations/{language}` | Admin |
 | `GET` | `/api/stock/{productId}` (Inventory) | anyone - the real count, keyed by variant id |
@@ -258,6 +259,7 @@ Bruno: `bruno/product/` (variants, translations, search without diacritics, doll
 | [025-storefront-redesign](../../specs/025-storefront-redesign/) | [#62](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/62) | Deleting an empty category, with the storefront's redesign. |
 | specs/026 (no folder) | [#63](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/63) | Category translations. |
 | [027-seller-accounts](../../specs/027-seller-accounts/) | [#64](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/64) | `products.SellerId`, `SellerOwnership`, the `sellers` read model. |
+| [097-category-admin](../../specs/097-category-admin/) | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) | `/admin/categories`, `PUT /api/categories/{id}`, a duplicate slug is 409 (#195). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65) | Seller pages to list, price, photograph and withdraw products. |
 | [029-delete-product-image](../../specs/029-delete-product-image/) | [#68](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/68) | Deleting a product deletes its image. |
 | - | [#69](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/69) | Seeded photographs, kept out of the repository. |

@@ -1,0 +1,39 @@
+info:
+  name: an administrator renames the category
+  type: http
+  seq: 3
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/categories/{{categoryId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Smart phone {{runId}} renamed",
+        "description": "Renamed by Bruno"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("renamed, and the address kept", function() {
+          expect(res.body.name).to.equal("Smart phone " + bru.getVar("runId") + " renamed");
+          expect(res.body.slug).to.equal("smart-phone-" + bru.getVar("runId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/097 (#195): a category's own text could not be changed after it was created. The slug never changes.

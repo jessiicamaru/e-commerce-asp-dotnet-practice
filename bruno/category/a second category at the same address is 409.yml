@@ -1,0 +1,37 @@
+info:
+  name: a second category at the same address is 409
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Another phone",
+        "description": null,
+        "slug": "smart-phone-{{runId}}",
+        "parentCategoryId": null
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/097: it was a 500 - the handler threw a bare Exception the shared handler cannot map (the #28 class of defect).

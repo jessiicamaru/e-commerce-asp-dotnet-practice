@@ -151,6 +151,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [094](../../specs/094-untested-promises/) | Untested promises | #201 | #186: fourteen tests for seven behaviours that were fixed or promised but not held - remount toasts, the wording fallback, frozen tax, the saga's relay, concurrent retries and applications - each shown by a mutation; the staff review list gains the paging rule it lacked |
 | [095](../../specs/095-suspended-seller/) | A ban closes the shop | #202 | #193: banning a seller takes every product of theirs off the shelf within seconds - announced by Identity, copied onto the products by Catalog - and lifting the ban puts them back; a lock does not |
 | [096](../../specs/096-staff-order-search/) | Find any order | #203 | #194: an administrator finds any order - by the start of its id, the customer's email or its status, failed and cancelled included - at `/admin/orders/find` |
+| [097](../../specs/097-category-admin/) | Categories page | #204 | #195: administrators create, rename, translate and delete categories at `/admin/categories`; the slug stays fixed; a duplicate slug is a 409, no longer a 500 |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
