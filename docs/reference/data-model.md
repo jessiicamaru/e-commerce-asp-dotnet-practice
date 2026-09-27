@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `e5b0a8f`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `c7ba543`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -436,7 +436,41 @@ Entity `CheckoutOutcome`.
 | `UpdatedAt` | timestamp with time zone |  |
 | `UserId` | uuid | yes |
 
-## Order - `ecommerce_order_db` (11 tables)
+## Order - `ecommerce_order_db` (14 tables)
+
+### `carriers`
+
+Entity `Carrier`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | integer |  |
+| `Name` | character varying(100) |  |
+| `TrackingUrlTemplate` | character varying(500) | yes |
+| `UpdatedAt` | timestamp with time zone |  |
+
+### `delivery_option_prices`
+
+Entity `DeliveryOptionPrice`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `OptionCode` | character varying(32) | yes |
+| `Currency` | character varying(3) | yes |
+| `Amount` | decimal(18,2) |  |
+
+### `delivery_options`
+
+Entity `DeliveryOption`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Code` | character varying(32) | yes |
+| `CreatedAt` | timestamp with time zone |  |
+| `IsActive` | boolean |  |
+| `Name` | character varying(100) |  |
+| `SortOrder` | integer |  |
+| `UpdatedAt` | timestamp with time zone |  |
 
 ### `order_items`
 

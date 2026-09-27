@@ -22,6 +22,80 @@ namespace Ecommerce.Order.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Carrier", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TrackingUrlTemplate")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("carriers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_carriers_one_row", "\"Id\" = 1");
+                        });
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.DeliveryOption", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("delivery_options", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.DeliveryOptionPrice", b =>
+                {
+                    b.Property<string>("OptionCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("OptionCode", "Currency");
+
+                    b.ToTable("delivery_option_prices", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_delivery_option_prices_amount_not_negative", "\"Amount\" >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Order", b =>
                 {
                     b.Property<Guid>("Id")
@@ -734,6 +808,15 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                     b.ToTable("OutboxState");
                 });
 
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.DeliveryOptionPrice", b =>
+                {
+                    b.HasOne("Ecommerce.Order.Domain.Entities.DeliveryOption", null)
+                        .WithMany("Prices")
+                        .HasForeignKey("OptionCode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Order", b =>
                 {
                     b.OwnsOne("Ecommerce.Order.Domain.Entities.ShippingAddress", "ShipTo", b1 =>
@@ -887,6 +970,11 @@ namespace Ecommerce.Order.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("InboxMessageId", "InboxConsumerId")
                         .HasPrincipalKey("MessageId", "ConsumerId");
+                });
+
+            modelBuilder.Entity("Ecommerce.Order.Domain.Entities.DeliveryOption", b =>
+                {
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Ecommerce.Order.Domain.Entities.Order", b =>

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
-import { BellIcon, FolderTreeIcon, GavelIcon, LayoutDashboardIcon, MailIcon, MailWarningIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, ScrollTextIcon, SearchIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
+import { BellIcon, FolderTreeIcon, GavelIcon, LayoutDashboardIcon, MailIcon, MailWarningIcon, MessageCircleQuestionIcon, MessageSquareIcon, PackageCheckIcon, PackageIcon, ScrollTextIcon, SearchIcon, ShieldCheckIcon, StoreIcon, TicketPercentIcon, TruckIcon, Undo2Icon, UsersIcon, WalletIcon } from 'lucide-react'
 import { useAuth } from '@/context/auth/useAuth'
 import { cn } from '@/utils/shared'
 
@@ -24,6 +24,7 @@ export function AdminLayout() {
     { to: '/admin', end: true, icon: TruckIcon, label: t('menu.fulfilment'), adminOnly: true },
     { to: '/admin/orders/find', end: false, icon: SearchIcon, label: t('menu.findOrder'), adminOnly: true },
     { to: '/admin/returns', end: false, icon: Undo2Icon, label: t('menu.returns'), adminOnly: true },
+    { to: '/admin/delivery', end: false, icon: PackageIcon, label: t('menu.delivery'), adminOnly: true },
     { to: '/admin/payouts', end: false, icon: WalletIcon, label: t('menu.payouts'), adminOnly: true },
     { to: '/admin/vouchers', end: false, icon: TicketPercentIcon, label: t('menu.vouchers'), adminOnly: true },
     { to: '/admin/categories', end: false, icon: FolderTreeIcon, label: t('menu.categories'), adminOnly: true },

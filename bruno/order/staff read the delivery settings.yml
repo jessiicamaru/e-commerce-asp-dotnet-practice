@@ -1,0 +1,32 @@
+info:
+  name: staff read the delivery settings
+  type: http
+  seq: 14
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/delivery"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the seeded options and the carrier", function() {
+          expect(res.body.options.map(function(o) { return o.code; })).to.include("standard");
+          expect(res.body.carrier.name).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/098 (#196): delivery options and the one carrier live in the database, seeded from configuration.

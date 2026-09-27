@@ -76,7 +76,10 @@ public static class DependencyInjection
         services.AddGrpcClient<AddressReading.AddressReadingClient>(o => o.Address = new Uri(identityGrpc));
         services.AddScoped<IAddressReader, GrpcAddressReader>();
 
-        services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
+        // Configuration seeds the delivery options; the table answers checkout, per request (specs/098).
+        services.AddSingleton<ConfiguredShippingOptions>();
+        services.AddScoped<IShippingOptions, StoredShippingOptions>();
+        services.AddScoped<Ecommerce.Order.Application.Delivery.IDeliveryRepository, DeliveryRepository>();
         services.AddSingleton<ITaxRates, ConfiguredTaxRates>();
         services.AddSingleton<ICommissionRate, ConfiguredCommissionRate>();
 

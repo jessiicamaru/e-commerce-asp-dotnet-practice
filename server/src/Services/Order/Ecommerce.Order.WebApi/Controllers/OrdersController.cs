@@ -1,3 +1,4 @@
+using Ecommerce.Order.Application.Delivery;
 using Ecommerce.Order.Application.Orders.Commands.CancelOrder;
 using Ecommerce.Order.Application.Orders.Commands.ConfirmDelivery;
 using Ecommerce.Order.Application.Orders.Commands.Fulfilment;
@@ -53,6 +54,32 @@ public class OrdersController : ApiControllerBase
     {
         return Ok(await Mediator.Send(new GetCheckoutQuoteQuery(addressId, shippingOption ?? string.Empty, voucherCodes)));
     }
+
+    /// <summary>The carrier's name and tracking template - public, so every page can link a tracking reference (specs/098).</summary>
+    [AllowAnonymous]
+    [HttpGet("delivery/carrier")]
+    public async Task<IActionResult> GetCarrier() => Ok(await Mediator.Send(new GetCarrierQuery()));
+
+    /// <summary>Staff: every delivery option, offered or not, and the carrier (#196, specs/098).</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpGet("delivery")]
+    public async Task<IActionResult> GetDeliverySettings() => Ok(await Mediator.Send(new GetDeliverySettingsQuery()));
+
+    /// <summary>Staff: create an option under a new code or change one. The code never changes.</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("delivery/options/{code}")]
+    public async Task<IActionResult> SaveDeliveryOption(string code, [FromBody] DeliveryOptionBody body) =>
+        Ok(await Mediator.Send(new SaveDeliveryOptionCommand(code, body.Name, body.IsActive, body.SortOrder, body.Prices ?? [])));
+
+    /// <summary>Staff: the carrier's name and tracking address template (<c>{reference}</c> where the reference goes).</summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("delivery/carrier")]
+    public async Task<IActionResult> SaveCarrier([FromBody] CarrierBody body) =>
+        Ok(await Mediator.Send(new SaveCarrierCommand(body.Name, body.TrackingUrlTemplate)));
+
+    public record DeliveryOptionBody(string Name, bool IsActive, int SortOrder, Dictionary<string, decimal>? Prices);
+
+    public record CarrierBody(string Name, string? TrackingUrlTemplate);
 
     /// <summary>The delivery options and what each costs. Public - prices are not a secret.</summary>
     [AllowAnonymous]

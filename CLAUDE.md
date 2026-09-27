@@ -343,8 +343,12 @@ in dong. Amounts are rounded to the currency's minor unit (**dong has none**), a
 sets a price refuses one the currency cannot hold: 9.99 is a price in dollars and is not one in dong.
 An order freezes its `Currency` with its words, and the currency travels on `OrderSubmittedEvent`
 through the saga into `ProcessPaymentCommand`, so `payments.Currency` finally says what its `Amount`
-is. Delivery has a price per currency in `Shipping:Options[].Prices`; an option not priced in the
-checkout's currency is not offered.
+is. Delivery has a price per currency - in Order's `delivery_options` / `delivery_option_prices` since specs/098 (#196),
+edited at `/admin/delivery` and **seeded from `Shipping:Options` with missing codes only** (a restart never undoes an
+edit); checkout reads the table per request (`StoredShippingOptions`). An option not priced in the checkout's currency
+is not offered, and the last one on offer cannot be turned off. The shop has **one carrier** (decided with the user):
+`carriers` holds its name and a tracking template with `{reference}`, public at `GET /api/orders/delivery/carrier`, and
+the storefront's `TrackingLink` links every shop-carrier reference.
 
 **The shop is a marketplace** (specs/027). A **seller** registers through
 `POST /api/auth/register-seller` with a shop name, holds `Seller` **and** `Customer`, and lists

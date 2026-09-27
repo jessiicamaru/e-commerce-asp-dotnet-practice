@@ -99,6 +99,8 @@ public class OrderTestFixture : IAsyncLifetime
         {
             var context = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
             await context.Database.MigrateAsync();
+            await DeliverySeed.RunAsync(context, scope.ServiceProvider.GetRequiredService<ConfiguredShippingOptions>(),
+                scope.ServiceProvider.GetRequiredService<IConfiguration>());
         }
 
         await Harness.Start();
@@ -184,7 +186,10 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddSingleton<ICartReader>(Checkout);
         services.AddSingleton<ICatalogPrices>(Checkout);
         services.AddSingleton<IAddressReader>(Checkout);
-        services.AddSingleton<IShippingOptions, ConfiguredShippingOptions>();
+        // Configuration seeds the table; checkout reads the table (specs/098) - the real classes, as in production.
+        services.AddSingleton<ConfiguredShippingOptions>();
+        services.AddScoped<IShippingOptions, StoredShippingOptions>();
+        services.AddScoped<Ecommerce.Order.Application.Delivery.IDeliveryRepository, DeliveryRepository>();
         services.AddSingleton<ITaxRates, ConfiguredTaxRates>();
 
         // The real consumers, so at least one test per event proves the wiring and not only the

@@ -171,8 +171,9 @@ var app = builder.Build();
 
 // Resolved now, not at the first checkout: a missing or malformed Shipping:Options stops the service
 // here, where the log says why, instead of turning every checkout into a 500 (constitution:
-// Configuration). ConfiguredShippingOptions validates in its constructor.
-_ = app.Services.GetRequiredService<Ecommerce.Order.Application.Common.Interfaces.IShippingOptions>();
+// Configuration). ConfiguredShippingOptions validates in its constructor; since specs/098 it only seeds
+// the table, which is what checkout reads.
+_ = app.Services.GetRequiredService<Ecommerce.Order.Infrastructure.Shipping.ConfiguredShippingOptions>();
 _ = app.Services.GetRequiredService<Ecommerce.Order.Application.Common.Interfaces.ITaxRates>();
 
 app.UseExceptionHandler();
@@ -225,6 +226,16 @@ if (Environment.GetEnvironmentVariable("RUN_MIGRATIONS_ON_STARTUP") == "true")
     await migrationScope.ServiceProvider
         .GetRequiredService<OrderDbContext>()
         .Database.MigrateAsync();
+}
+
+// Configured delivery options and the carrier that the table does not have yet (specs/098) - never overwriting what
+// an administrator changed. After the migrations above, which may be what created the table.
+await using (var seedScope = app.Services.CreateAsyncScope())
+{
+    await Ecommerce.Order.Infrastructure.Shipping.DeliverySeed.RunAsync(
+        seedScope.ServiceProvider.GetRequiredService<OrderDbContext>(),
+        seedScope.ServiceProvider.GetRequiredService<Ecommerce.Order.Infrastructure.Shipping.ConfiguredShippingOptions>(),
+        app.Configuration);
 }
 
 // Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not

@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `e5b0a8f`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `c7ba543`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**160 endpoints** across 7 services.
+**164 endpoints** across 7 services.
 
 ## Identity (43)
 
@@ -122,12 +122,16 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 
-## Order (39)
+## Order (43)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
 | `GET` | `/api/orders` | signed in | The caller's own orders, newest first. Neither this nor accepts a user id — see . |
 | `POST` | `/api/orders` | signed in | Check out the caller's cart to one of their addresses (feature 011). |
+| `GET` | `/api/orders/delivery` | Admin | Staff: every delivery option, offered or not, and the carrier (#196, specs/098). |
+| `GET` | `/api/orders/delivery/carrier` | anyone | The carrier's name and tracking template - public, so every page can link a tracking reference (specs/098). |
+| `PUT` | `/api/orders/delivery/carrier` | Admin | Staff: the carrier's name and tracking address template ({reference} where the reference goes). |
+| `PUT` | `/api/orders/delivery/options/{code}` | Admin | Staff: create an option under a new code or change one. The code never changes. |
 | `GET` | `/api/orders/fulfilment` | Admin | Staff: every customer's orders in one fulfilment status - Paid, Preparing or Shipped. |
 | `GET` | `/api/orders/fulfilment/{id}` | Admin | Staff: any order's detail, so they can see what to pack and where it goes (specs/038). The one read of an order that is not scoped to its owner - the role is the permission. |
 | `POST` | `/api/orders/fulfilment/{id}/cancel` | Admin | Staff: cancel any paid order until its first parcel has shipped (specs/039). |

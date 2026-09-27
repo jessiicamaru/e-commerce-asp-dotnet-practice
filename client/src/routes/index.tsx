@@ -23,6 +23,7 @@ import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { AdminLayout } from '@/layouts/admin-layout'
 import { AdminOrderPage } from '@/pages/admin-order'
+import { AdminDeliveryPage } from '@/pages/admin-delivery'
 import { AdminCategoriesPage } from '@/pages/admin-categories'
 import { AdminOrderSearchPage } from '@/pages/admin-order-search'
 import { AdminReturnsPage } from '@/pages/admin-returns'
@@ -187,6 +188,14 @@ export function AppRoutes() {
               element={
                 <RequireRole role={['Admin']}>
                   <AdminCategoriesPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="delivery"
+              element={
+                <RequireRole role={['Admin']}>
+                  <AdminDeliveryPage />
                 </RequireRole>
               }
             />
