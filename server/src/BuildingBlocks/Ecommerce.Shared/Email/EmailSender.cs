@@ -47,6 +47,9 @@ public static class EmailTemplate
     /// <summary>The reader's account was banned (specs/083). Data: <c>reason</c>.</summary>
     public const string AccountBanned = "AccountBanned";
 
+    /// <summary>The reader's payout account was set or changed (specs/106). Data: <c>bank</c>, <c>last4</c> - never the whole number.</summary>
+    public const string PayoutAccountChanged = "PayoutAccountChanged";
+
     /// <summary>
     /// The language to ask for when the sender does not know the reader's (specs/083): Identity writes the email in
     /// the language the person last used the shop in, or the default.

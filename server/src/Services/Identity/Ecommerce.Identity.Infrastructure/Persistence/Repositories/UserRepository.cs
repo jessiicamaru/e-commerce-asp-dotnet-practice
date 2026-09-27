@@ -137,6 +137,15 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
         await _context.SellerProfiles.AddAsync(profile, cancellationToken);
     }
 
+    public Task<SellerPayoutAccount?> GetPayoutAccountAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
+        _context.SellerPayoutAccounts.FirstOrDefaultAsync(a => a.SellerId == sellerId, cancellationToken);
+
+    public async Task AddPayoutAccountAsync(SellerPayoutAccount account, CancellationToken cancellationToken = default) =>
+        await _context.SellerPayoutAccounts.AddAsync(account, cancellationToken);
+
+    public Task<List<SellerPayoutAccount>> GetPayoutAccountsAsync(IReadOnlyCollection<Guid> sellerIds, CancellationToken cancellationToken = default) =>
+        _context.SellerPayoutAccounts.AsNoTracking().Where(a => sellerIds.Contains(a.SellerId)).ToListAsync(cancellationToken);
+
     public Task<SellerProfile?> GetSellerProfileAsync(Guid userId, CancellationToken cancellationToken = default) =>
         _context.SellerProfiles.FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
 

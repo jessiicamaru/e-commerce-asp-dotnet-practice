@@ -181,6 +181,18 @@ public static class EmailTemplates
             + "Your account has been banned and can no longer sign in.\n"
             + "Reason: {reason}\n\n"
             + "- e-commerce"),
+        [(EmailTemplate.PayoutAccountChanged, "vi")] = (
+            "Tài khoản nhận tiền của bạn vừa được thay đổi",
+            "Xin chào {name},\n\n"
+            + "Tài khoản nhận tiền của gian hàng vừa được đặt thành: {bank}, số tài khoản kết thúc bằng {last4}.\n\n"
+            + "Nếu không phải bạn thực hiện, hãy đổi mật khẩu ngay và liên hệ cửa hàng trước kỳ chi trả tới.\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.PayoutAccountChanged, "en")] = (
+            "Your payout account was changed",
+            "Hi {name},\n\n"
+            + "Your shop's payout account was just set to: {bank}, account ending {last4}.\n\n"
+            + "If this was not you, change your password now and contact the shop before the next payout.\n\n"
+            + "- e-commerce"),
     };
 
     /// <summary>
@@ -199,6 +211,7 @@ public static class EmailTemplates
         EmailTemplate.ReturnAccepted, EmailTemplate.ReturnRefused, EmailTemplate.ReturnRefunded,
         EmailTemplate.SavedBackInStock,
         EmailTemplate.PasswordReset, EmailTemplate.EmailConfirmation, EmailTemplate.AccountLocked, EmailTemplate.AccountBanned,
+        EmailTemplate.PayoutAccountChanged,
     ];
 
     /// <summary>The languages an email is written in - the shop's (specs/021).</summary>
@@ -229,6 +242,7 @@ public static class EmailTemplates
         [EmailTemplate.SavedBackInStock] = ["name", "product", "link"],
         [EmailTemplate.AccountLocked] = ["name", "until", "reason"],
         [EmailTemplate.AccountBanned] = ["name", "reason"],
+        [EmailTemplate.PayoutAccountChanged] = ["name", "bank", "last4"],
     };
 
     /// <summary>
@@ -248,6 +262,7 @@ public static class EmailTemplates
         [EmailTemplate.SavedBackInStock] = [],
         [EmailTemplate.AccountLocked] = [],
         [EmailTemplate.AccountBanned] = [],
+        [EmailTemplate.PayoutAccountChanged] = [],
     };
 
     /// <summary>The built-in words of a template in a language, as HTML - null when there are none.</summary>
@@ -297,6 +312,7 @@ public static class EmailTemplates
         EmailTemplate.SavedBackInStock => new Dictionary<string, string> { ["productId"] = "01a0dd2b-0000-7000-8000-000000000000", ["product"] = "Fujifilm X-T5" },
         EmailTemplate.AccountLocked => new Dictionary<string, string> { ["until"] = "2031-01-15T03:30:00.0000000Z", ["reason"] = "Repeated spam in questions." },
         EmailTemplate.AccountBanned => new Dictionary<string, string> { ["reason"] = "Fraud." },
+        EmailTemplate.PayoutAccountChanged => new Dictionary<string, string> { ["bank"] = "Vietcombank", ["last4"] = "4321" },
         _ => new Dictionary<string, string> { ["token"] = "sample-token" },
     };
 
@@ -414,6 +430,10 @@ public static class EmailTemplates
 
             case EmailTemplate.AccountBanned:
                 return new() { ["name"] = name, ["reason"] = data.GetValueOrDefault("reason") ?? string.Empty };
+
+            case EmailTemplate.PayoutAccountChanged
+                when data.TryGetValue("bank", out var bank) && data.TryGetValue("last4", out var last4):
+                return new() { ["name"] = name, ["bank"] = bank, ["last4"] = last4 };
 
             default:
                 return null;

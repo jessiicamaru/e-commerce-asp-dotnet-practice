@@ -12,6 +12,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<DeliveryAddress> DeliveryAddresses => Set<DeliveryAddress>();
     public DbSet<SellerProfile> SellerProfiles => Set<SellerProfile>();
+    public DbSet<SellerPayoutAccount> SellerPayoutAccounts => Set<SellerPayoutAccount>();
     public DbSet<ShopApplication> ShopApplications => Set<ShopApplication>();
     public DbSet<OutgoingEmail> OutgoingEmails => Set<OutgoingEmail>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();

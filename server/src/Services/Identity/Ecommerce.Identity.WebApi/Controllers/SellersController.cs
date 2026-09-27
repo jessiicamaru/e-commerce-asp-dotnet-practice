@@ -32,6 +32,20 @@ public class SellersController : ApiControllerBase
         return Ok(await Mediator.Send(command));
     }
 
+    /// <summary>Where the caller's payouts go, the number masked (specs/106). 404 until they give one.</summary>
+    [HttpGet("me/payout-account")]
+    public async Task<IActionResult> GetPayoutAccount()
+    {
+        return Ok(await Mediator.Send(new GetMyPayoutAccountQuery()));
+    }
+
+    /// <summary>Sets the caller's payout account; audited masked, and the seller is emailed (specs/106).</summary>
+    [HttpPut("me/payout-account")]
+    public async Task<IActionResult> SetPayoutAccount([FromBody] SetMyPayoutAccountCommand command)
+    {
+        return Ok(await Mediator.Send(command));
+    }
+
     /// <summary>The caller's shop described for its page, or cleared (specs/099). At most 500 characters.</summary>
     [HttpPut("me/description")]
     public async Task<IActionResult> Describe([FromBody] DescribeShopCommand command)

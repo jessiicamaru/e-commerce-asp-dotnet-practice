@@ -266,6 +266,8 @@ app.MapControllers();
 
 // Only reachable on the HTTP/2 endpoint above.
 app.MapGrpcService<AddressReadingService>();
+// Where a seller's payouts go, for Order recording one - Admin tokens only (specs/106).
+app.MapGrpcService<PayoutAccountsService>();
 app.MapGrpcHealthChecksService().AllowAnonymous();
 app.MapGrpcReflectionService().AllowAnonymous();
 
