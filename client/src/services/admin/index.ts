@@ -1,7 +1,7 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
 import type { Order, OrderPage, ParcelReturn, Payout, ReturnPage } from '@/services/order/types'
-import type { PayoutDue, QueueState } from './types'
+import type { PayoutDue, QueueState, StaffOrderPage, StaffOrderQuery } from './types'
 
 /**
  * What staff do after a sale (specs/038): work the shop's own parcels and settle what sellers are owed.
@@ -12,6 +12,16 @@ export class Admin {
   /** Every customer's orders whose SHOP parcel is in this state, oldest first - a queue. */
   static async fulfilment(status: QueueState, page: number, pageSize: number): Promise<OrderPage> {
     const { data } = await http.get<OrderPage>(`/orders/fulfilment?status=${status}&page=${page}&pageSize=${pageSize}`)
+    return data
+  }
+
+  /** Any order, newest first, by the start of its id, its customer or its status (specs/096). */
+  static async findOrders(query: StaffOrderQuery): Promise<StaffOrderPage> {
+    const params = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize) })
+    if (query.status) params.set('status', query.status)
+    if (query.search) params.set('search', query.search)
+    if (query.customerId) params.set('customerId', query.customerId)
+    const { data } = await http.get<StaffOrderPage>(`/orders/staff?${params}`)
     return data
   }
 

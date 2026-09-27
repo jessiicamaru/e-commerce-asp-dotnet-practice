@@ -169,6 +169,61 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         return (orders, totalCount);
     }
 
+    public async Task<(List<Application.Orders.Queries.GetOrdersForStaff.StaffOrderSummaryResponse> Orders, int TotalCount)> SearchForStaffAsync(
+        OrderStatus? status,
+        string? idPrefix,
+        Guid? customerId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Orders.AsNoTracking();
+
+        if (status is { } s)
+        {
+            // Completed is how a paid order was written before feature 011; every read reports it as Paid.
+            var also = s == OrderStatus.Paid ? OrderStatus.Completed : s;
+            query = query.Where(x => x.Status == s || x.Status == also);
+        }
+
+        if (customerId is { } customer)
+        {
+            query = query.Where(x => x.UserId == customer);
+        }
+
+        if (idPrefix is not null)
+        {
+            // The id as PostgreSQL writes it - lower-case, hyphenated - against the prefix the caller quoted.
+            var pattern = idPrefix + "%";
+            query = query.Where(x => EF.Functions.Like(x.Id.ToString(), pattern));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var rows = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new
+            {
+                x.Id,
+                x.UserId,
+                x.TotalAmount,
+                x.Status,
+                x.FailureReason,
+                ItemCount = x.Items.Count,
+                x.CreatedAt,
+                x.Currency,
+                ShipmentCount = x.Shipments.Count,
+                ShipmentsShipped = x.Shipments.Count(sh => sh.Status == ShipmentStatus.Shipped)
+            })
+            .ToListAsync(cancellationToken);
+
+        return (rows.Select(x => new Application.Orders.Queries.GetOrdersForStaff.StaffOrderSummaryResponse(
+            x.Id, x.UserId, x.TotalAmount, OrderMapping.Describe(x.Status), x.FailureReason, x.ItemCount, x.CreatedAt,
+            x.Currency ?? string.Empty, x.ShipmentCount, x.ShipmentsShipped)).ToList(), totalCount);
+    }
+
     public async Task<bool> ExistsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return await _context.Orders.AnyAsync(x => x.Id == orderId, cancellationToken);

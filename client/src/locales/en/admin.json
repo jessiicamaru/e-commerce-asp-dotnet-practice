@@ -16,7 +16,8 @@
     "questions": "Questions",
     "emails": "Emails",
     "emailDelivery": "Email delivery",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "findOrder": "Find an order"
   },
   "queue": {
     "title": "Orders to ship",
@@ -449,5 +450,25 @@
     "retry": "Send again",
     "retried": "Back in the queue - it goes out within a minute.",
     "linkExpired": "A link that expires - the person asks for a new one."
+  },
+  "findOrder": {
+    "title": "Find an order",
+    "subtitle": "By the start of its id, or by the customer's email - in any status.",
+    "search": "Order id or email",
+    "placeholder": "01a0dd2b or mai@example.com",
+    "find": "Find",
+    "all": "All",
+    "none": "No order matches.",
+    "nobody": "Nobody has the address {{email}}.",
+    "someone": "A customer",
+    "loadFailed": "The orders could not be loaded.",
+    "state": {
+      "Submitted": "Settling",
+      "Paid": "Paid",
+      "Preparing": "Preparing",
+      "Shipped": "Shipped",
+      "Failed": "Failed",
+      "Cancelled": "Cancelled"
+    }
   }
 }

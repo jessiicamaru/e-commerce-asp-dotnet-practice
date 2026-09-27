@@ -1,13 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
 import { Admin } from '@/services/admin'
-import type { QueueState } from '@/services/admin/types'
+import type { QueueState, StaffOrderQuery } from '@/services/admin/types'
 
 /** One state's queue, a page at a time. Keeps the previous page on screen while the next loads. */
 export function useFulfilmentQueue(status: QueueState, page: number, pageSize: number) {
   return useQuery({
     queryKey: queryKeys.adminQueue(status, page),
     queryFn: () => Admin.fulfilment(status, page, pageSize),
+    placeholderData: (previous) => previous,
+  })
+}
+
+/** The staff order search (specs/096). `enabled` is false while an email is still being turned into a person. */
+export function useStaffOrderSearch(query: StaffOrderQuery, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.staffOrders(query),
+    queryFn: () => Admin.findOrders(query),
+    enabled,
     placeholderData: (previous) => previous,
   })
 }

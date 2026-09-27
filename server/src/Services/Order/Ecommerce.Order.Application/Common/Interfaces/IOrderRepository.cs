@@ -66,6 +66,18 @@ public interface IOrderRepository
         int pageSize,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Staff search (#194, specs/096): any order, newest first, narrowed by status (Paid includes Completed), by a
+    /// lower-case id prefix and by customer - each optional.
+    /// </summary>
+    Task<(List<Orders.Queries.GetOrdersForStaff.StaffOrderSummaryResponse> Orders, int TotalCount)> SearchForStaffAsync(
+        OrderStatus? status,
+        string? idPrefix,
+        Guid? customerId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
     /// <summary>A page of every customer's orders in one status, oldest first - staff work a queue.</summary>
     Task<(List<OrderSummaryResponse> Orders, int TotalCount)> GetPageByStatusAsync(
         OrderStatus status,

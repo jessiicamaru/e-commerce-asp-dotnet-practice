@@ -16,7 +16,8 @@
     "questions": "Hỏi đáp",
     "emails": "Email",
     "emailDelivery": "Tình trạng gửi email",
-    "notifications": "Thông báo"
+    "notifications": "Thông báo",
+    "findOrder": "Tìm đơn hàng"
   },
   "queue": {
     "title": "Đơn cần giao",
@@ -449,5 +450,25 @@
     "retry": "Gửi lại",
     "retried": "Đã đưa lại vào hàng đợi - sẽ gửi trong vòng một phút.",
     "linkExpired": "Liên kết có hạn dùng - người nhận hãy yêu cầu liên kết mới."
+  },
+  "findOrder": {
+    "title": "Tìm đơn hàng",
+    "subtitle": "Theo phần đầu mã đơn, hoặc email của khách - ở mọi trạng thái.",
+    "search": "Mã đơn hoặc email",
+    "placeholder": "01a0dd2b hoặc mai@example.com",
+    "find": "Tìm",
+    "all": "Tất cả",
+    "none": "Không có đơn nào khớp.",
+    "nobody": "Không ai dùng địa chỉ {{email}}.",
+    "someone": "Một khách hàng",
+    "loadFailed": "Không tải được danh sách đơn.",
+    "state": {
+      "Submitted": "Đang xử lý",
+      "Paid": "Đã thanh toán",
+      "Preparing": "Đang chuẩn bị",
+      "Shipped": "Đã gửi",
+      "Failed": "Thất bại",
+      "Cancelled": "Đã huỷ"
+    }
   }
 }
