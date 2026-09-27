@@ -151,6 +151,44 @@ public class PayoutTests
         Assert.Null(detail.Payout);
     }
 
+    // ------------------------------------------------------------------ specs/106: where it goes
+
+    /// <summary>No payout account, nowhere to pay (#213): refused, and nothing claimed - the money stays due.</summary>
+    [Fact]
+    public async Task A_seller_with_no_payout_account_cannot_be_paid_and_nothing_is_claimed()
+    {
+        var alice = Guid.CreateVersion7();
+        var order = await PaidCheckoutAsync((alice, 1));
+        await ShipAsync(order, alice);
+        var due = Assert.Single(await BalanceAsync(alice));
+        _fixture.PayoutAccounts.Without.Add(alice);
+        try
+        {
+            var refused = await Assert.ThrowsAsync<ConflictException>(() => AsAdmin(() => SendAsync(new RecordPayoutCommand(alice, "VND"))));
+            Assert.Equal(Payouts.NoAccount, refused.Message);
+            Assert.Equal(due, Assert.Single(await BalanceAsync(alice)));
+        }
+        finally
+        {
+            _fixture.PayoutAccounts.Without.Remove(alice);
+        }
+    }
+
+    /// <summary>A payout records where it went - the bank, the holder and the last four only (specs/106 research D2).</summary>
+    [Fact]
+    public async Task A_payout_freezes_where_it_went()
+    {
+        var alice = Guid.CreateVersion7();
+        var order = await PaidCheckoutAsync((alice, 1));
+        await ShipAsync(order, alice);
+
+        var payout = await AsAdmin(() => SendAsync(new RecordPayoutCommand(alice, "VND")));
+
+        Assert.Equal(("Vietcombank", "SELLER " + alice.ToString("N")[..4], "4321"), (payout.PaidToBank, payout.PaidToHolder, payout.PaidToAccountLast4));
+        var mine = await AsSeller(alice, () => SendAsync(new GetMyPayoutsQuery(1, 12)));
+        Assert.Equal("4321", Assert.Single(mine.Items).PaidToAccountLast4);
+    }
+
     // ------------------------------------------------------------------ US2: balance and history
 
     [Fact]

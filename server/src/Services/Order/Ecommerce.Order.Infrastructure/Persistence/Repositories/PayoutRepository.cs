@@ -114,7 +114,7 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => new PayoutResponse(p.Id, p.SellerId, p.Currency, p.Amount, p.PartCount, p.CreatedAt))
+            .Select(p => new PayoutResponse(p.Id, p.SellerId, p.Currency, p.Amount, p.PartCount, p.CreatedAt, p.PaidToBank, p.PaidToHolder, p.PaidToAccountLast4))
             .ToListAsync(cancellationToken);
 
         return (items, total);
@@ -167,6 +167,7 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
         string currency,
         Guid recordedBy,
         DateTime at,
+        PayoutDestination destination,
         CancellationToken cancellationToken = default,
         Func<PayoutResponse, CancellationToken, Task>? stage = null)
     {
@@ -177,7 +178,7 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
         {
             _context.ChangeTracker.Clear();
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            var payout = await ClaimAsync(payoutId, sellerId, currency, recordedBy, at, cancellationToken);
+            var payout = await ClaimAsync(payoutId, sellerId, currency, recordedBy, at, destination, cancellationToken);
 
             if (payout is not null && stage is not null)
             {
@@ -191,7 +192,8 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
     }
 
     private async Task<PayoutResponse?> ClaimAsync(
-        Guid payoutId, Guid sellerId, string currency, Guid recordedBy, DateTime at, CancellationToken cancellationToken)
+        Guid payoutId, Guid sellerId, string currency, Guid recordedBy, DateTime at, PayoutDestination destination,
+        CancellationToken cancellationToken)
     {
         var statuses = Sales.Earning.Select(s => s.ToString()).ToArray();
         var shipped = ShipmentStatus.Shipped.ToString();
@@ -227,8 +229,10 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
                    AND o."Status" = ANY ({statuses})
              RETURNING s."GoodsTotal" - s."Commission" + s."ShippingShare" AS owed
             )
-            INSERT INTO payouts ("Id", "SellerId", "Currency", "Amount", "PartCount", "RecordedBy", "CreatedAt")
-            SELECT {payoutId}, {sellerId}, {currency}, sum(owed), count(*), {recordedBy}, {at}
+            INSERT INTO payouts ("Id", "SellerId", "Currency", "Amount", "PartCount", "RecordedBy", "CreatedAt",
+                                 "PaidToBank", "PaidToHolder", "PaidToAccountLast4")
+            SELECT {payoutId}, {sellerId}, {currency}, sum(owed), count(*), {recordedBy}, {at},
+                   {destination.Bank}, {destination.Holder}, {destination.Last4}
               FROM claimed
             HAVING count(*) > 0
             """, cancellationToken);
@@ -241,7 +245,7 @@ public class PayoutRepository(OrderDbContext context, IOptions<ReturnOptions> re
         return await _context.Payouts
             .AsNoTracking()
             .Where(p => p.Id == payoutId)
-            .Select(p => new PayoutResponse(p.Id, p.SellerId, p.Currency, p.Amount, p.PartCount, p.CreatedAt))
+            .Select(p => new PayoutResponse(p.Id, p.SellerId, p.Currency, p.Amount, p.PartCount, p.CreatedAt, p.PaidToBank, p.PaidToHolder, p.PaidToAccountLast4))
             .SingleAsync(cancellationToken);
     }
 }

@@ -14,6 +14,9 @@ public class PayoutConfiguration : IEntityTypeConfiguration<Payout>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+        builder.Property(x => x.PaidToBank).HasMaxLength(100);
+        builder.Property(x => x.PaidToHolder).HasMaxLength(100);
+        builder.Property(x => x.PaidToAccountLast4).HasMaxLength(4);
         builder.Property(x => x.Amount).HasPrecision(18, 2);
 
         // A seller's history, newest first.
