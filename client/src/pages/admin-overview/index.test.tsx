@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { Insights } from '@/services/insights'
 import { Moderation } from '@/services/moderation'
+import { OutgoingEmails } from '@/services/outgoing-email'
 import { ShopApplications } from '@/services/shop-applications'
 import { renderAsAdmin } from '@/test/render'
 import { AdminOverviewPage } from '.'
@@ -40,6 +41,7 @@ beforeEach(async () => {
   vi.spyOn(Insights, 'userStats').mockResolvedValue({ total: 20, customers: 18, sellers: 3, moderators: 1, admins: 1, locked: 1, banned: 1 })
   vi.spyOn(Moderation, 'products').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 4, totalCount: 4, hasPreviousPage: false, hasNextPage: true })
   vi.spyOn(ShopApplications, 'list').mockResolvedValue({ items: [], page: 1, pageSize: 1, totalCount: 2 })
+  vi.spyOn(OutgoingEmails, 'list').mockResolvedValue({ items: [], page: 1, pageSize: 1, totalCount: 5 } as never)
 })
 
 describe('AdminOverviewPage (specs/047)', () => {
@@ -109,3 +111,15 @@ describe('AdminOverviewPage (specs/047)', () => {
     expect(new Date(secondFrom).getTime()).toBeGreaterThan(new Date(firstFrom).getTime())
   })
 })
+
+describe('AdminOverviewPage failed emails (specs/115)', () => {
+  it('shows how many emails failed for good, from the email log, linking to it', async () => {
+    renderAsAdmin(<AdminOverviewPage />, '/admin/overview')
+
+    const card = await screen.findByRole('link', { name: /Emails not delivered/ })
+    await waitFor(() => expect(card).toHaveTextContent('5'))
+    expect(card).toHaveAttribute('href', '/admin/email-delivery')
+    expect(OutgoingEmails.list).toHaveBeenCalledWith('Failed', '', 1, 1)
+  })
+})
+

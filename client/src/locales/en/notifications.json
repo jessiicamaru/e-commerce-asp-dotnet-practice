@@ -51,6 +51,7 @@
     "PartCancelled": "Part of order {{order}} from {{shop}} was cancelled: {{reason}}. You will be refunded for it.",
     "TrackingCorrected": "The tracking reference of your parcel from {{shop}} in order {{order}} was corrected: {{tracking}}",
     "ShopClosed": "Staff closed your shop: {{reason}}",
-    "ShopReopened": "Staff reopened your shop - your products are back on sale."
+    "ShopReopened": "Staff reopened your shop - your products are back on sale.",
+    "EmailsFailed": "{{failed}} emails could not be delivered after every attempt. Open the email log to retry them."
   }
 }

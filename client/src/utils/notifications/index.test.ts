@@ -34,6 +34,13 @@ describe('describeNotification (specs/042)', () => {
     expect(describeNotification(t('vi'), n('StockRunningLow', { product: 'X-T5', left: '4' }))).toBe('“X-T5” sắp hết hàng: còn 4.')
   })
 
+  /** specs/115: administrators are told how many emails failed for good, in their language. */
+  it('says how many emails could not be delivered', () => {
+    expect(describeNotification(t('en'), n('EmailsFailed', { failed: '3' })))
+      .toBe('3 emails could not be delivered after every attempt. Open the email log to retry them.')
+    expect(describeNotification(t('vi'), n('EmailsFailed', { failed: '3' }))).toBe('3 email không gửi được sau mọi lần thử. Mở nhật ký email để gửi lại.')
+  })
+
   it('says who cancelled in words, not the stored code', () => {
     expect(describeNotification(t('en'), n('OrderCancelled', { by: 'Customer' }))).toContain('cancelled by you')
     expect(describeNotification(t('vi'), n('OrderCancelled', { by: 'Staff' }))).toContain('bởi cửa hàng')
@@ -123,6 +130,7 @@ const samples: Record<string, { value: string; shows: string | null }> = {
   rating: { value: '4', shows: '4' },
   until: { value: '2026-10-01T07:30:00Z', shows: '2026' },   // formatted in the reader's language (specs/059)
   left: { value: '3', shows: '3' },   // units of a variant still on sale (specs/102)
+  failed: { value: '7', shows: '7' },   // emails that failed for good, for administrators (specs/115)
 }
 
 describe('every kind a service can send (specs/048)', () => {

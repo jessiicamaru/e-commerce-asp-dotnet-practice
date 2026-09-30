@@ -8,6 +8,7 @@ import { RevenuePanel } from '@/components/insights/revenue-panel'
 import { PageTitle } from '@/components/seller/page-title'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { useInsights } from '@/hooks/insights'
+import { useOutgoingEmails } from '@/hooks/outgoing-email'
 import { useReviewQueue } from '@/hooks/moderation'
 import { useShopApplications } from '@/hooks/shop-applications'
 import type { Period } from '@/services/insights/types'
@@ -33,6 +34,8 @@ export function AdminOverviewPage() {
   const data = useInsights(from, to, currency)
   const products = useReviewQueue('Pending', 1, 1)
   const shops = useShopApplications('Pending', 1, 1)
+  // How many emails failed for good (specs/115) - the email log's own total, one definition.
+  const failedEmails = useOutgoingEmails('Failed', '', 1, 1)
   const stats = data.stats.data
   const emails = new Map((data.people.data ?? []).map((p) => [p.id, p.email]))
 
@@ -42,13 +45,14 @@ export function AdminOverviewPage() {
 
       <PeriodPicker period={period} onChange={setPeriod} />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-7">
         <Stat label={t('overview.people.customers')} value={stats?.customers} />
         <Stat label={t('overview.people.sellers')} value={stats?.sellers} />
         <Stat label={t('overview.people.moderators')} value={stats?.moderators} />
         <Stat label={t('overview.people.stopped')} value={stats ? stats.locked + stats.banned : undefined} />
         <Stat label={t('overview.waiting.products')} value={products.data?.totalCount} to="/admin/products" />
         <Stat label={t('overview.waiting.shops')} value={shops.data?.totalCount} to="/admin/shops" />
+        <Stat label={t('overview.waiting.failedEmails')} value={failedEmails.data?.totalCount} to="/admin/email-delivery" />
       </div>
 
       <Panel title={t('overview.revenue')}>

@@ -377,7 +377,8 @@
     },
     "waiting": {
       "products": "Sản phẩm chờ duyệt",
-      "shops": "Gian hàng chờ duyệt"
+      "shops": "Gian hàng chờ duyệt",
+      "failedEmails": "Email không gửi được"
     },
     "revenue": "Doanh thu",
     "orders_one": "{{count}} đơn",
