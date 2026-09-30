@@ -46,7 +46,6 @@ The first audit's #193-#200 are done (see below). A second audit on 2026-09-27, 
 
 | Issue | Title |
 | :-- | :-- |
-| [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217) | A person cannot delete their account or download their data - **the download is done** (specs/111, #231); deleting is specs/112 |
 | [#219](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/219) | A voucher cannot be edited |
 | [#220](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/220) | A shopper cannot see which vouchers they could use |
 | [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound |
@@ -83,6 +82,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#215](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/215) | A seller has no list of the returns of their parcels | [#228](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/228) (specs/108) |
 | [#216](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/216) | The catalogue cannot be filtered by price or by what is in stock | [#229](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/229) (specs/109) |
 | [#218](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/218) | Staff accounts sign in with a password alone | [#230](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/230) (specs/110) |
+| [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217) | A person cannot delete their account or download their data | [#231](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/231) (specs/111), [#232](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/232) (specs/112) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |

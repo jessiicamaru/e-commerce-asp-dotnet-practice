@@ -43,6 +43,20 @@ public class ForbiddenProblemTests
         Assert.Equal("the-trace", body.GetProperty("traceId").GetString());
     }
 
+    /// <summary>specs/112: a 409 carries facts the same way - a deletion refused, with each reason as a list.</summary>
+    [Fact]
+    public async Task A_conflict_carries_its_facts_and_a_list_stays_a_list()
+    {
+        var body = await HandleAsync(new ConflictException("Business is open.",
+            new Dictionary<string, object?> { ["code"] = "AccountHasOpenBusiness", ["reasons"] = new[] { "OpenOrders", "UnpaidEarnings" }, ["traceId"] = "forged" }));
+
+        Assert.Equal(409, body.GetProperty("status").GetInt32());
+        Assert.Equal("Business is open.", body.GetProperty("detail").GetString());
+        Assert.Equal("AccountHasOpenBusiness", body.GetProperty("code").GetString());
+        Assert.Equal(["OpenOrders", "UnpaidEarnings"], body.GetProperty("reasons").EnumerateArray().Select(r => r.GetString()));
+        Assert.Equal("the-trace", body.GetProperty("traceId").GetString());
+    }
+
     /// <summary>specs/062: a 429 says how long to wait, in the header and the body, in whole seconds rounded up.</summary>
     [Fact]
     public async Task Too_many_requests_says_how_long_to_wait()

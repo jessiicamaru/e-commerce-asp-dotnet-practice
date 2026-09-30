@@ -20,6 +20,11 @@ public static class PaymentPersonalData
     /// </summary>
     public static readonly PersonalDataInventory Inventory = new()
     {
+        Kept = new Dictionary<string, string>
+        {
+            ["payments"] = "The shop's books: kept for accounting, without your name, email, phone or address.",
+            ["refunds"] = "The shop's books: kept for accounting, without your name, email, phone or address.",
+        },
         Service = "payment",
         Exported = new Dictionary<string, string> { ["payments"] = "payments", ["refunds"] = "refunds" },
     };

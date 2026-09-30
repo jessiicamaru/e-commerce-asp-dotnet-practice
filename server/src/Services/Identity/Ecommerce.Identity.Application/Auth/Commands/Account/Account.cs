@@ -82,7 +82,9 @@ public class AccountHandlers(
 
     public async Task<AccountProfile> Handle(GetMeQuery request, CancellationToken cancellationToken)
     {
-        var user = await _users.GetByIdAsync(CallerId(), cancellationToken) ?? throw new NotFoundException("User not found.");
+        var user = await _users.GetByIdAsync(CallerId(), cancellationToken);
+        // A deleted account (specs/112) has no profile, even to a token the revocation has not reached yet.
+        if (user is null || user.DeletedAt is not null) throw new NotFoundException("User not found.");
         return new AccountProfile(user.Email, user.FirstName, user.LastName, user.PhoneNumber, user.EmailConfirmed);
     }
 

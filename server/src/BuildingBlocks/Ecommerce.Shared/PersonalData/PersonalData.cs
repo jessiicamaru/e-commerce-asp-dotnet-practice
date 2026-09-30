@@ -38,6 +38,15 @@ public class PersonalDataInventory
 
     public IReadOnlyCollection<string> NotPersonal { get; init; } = [];
 
+    /// <summary>
+    /// The sections a deletion keeps (specs/112), each with why the shop keeps it - the books, or other people's use -
+    /// always without the person's name, email, phone or address. Every other section is erased.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Kept { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>The sections a deletion empties: every exported section not <see cref="Kept"/>.</summary>
+    public IReadOnlyCollection<string> Erased => Sections.Except(Kept.Keys).ToList();
+
     /// <summary>The sections an export of this service must have.</summary>
     public IReadOnlyCollection<string> Sections => Exported.Values.Distinct().Order().ToList();
 
@@ -59,6 +68,10 @@ public class PersonalDataInventory
             .Select(t => $"{Service}: table '{t}' is declared but the model has no such table"));
         problems.AddRange(Withheld.Where(w => string.IsNullOrWhiteSpace(w.Reason))
             .Select(w => $"{Service}: withheld table '{w.Table}' gives the person no reason"));
+        problems.AddRange(Kept.Keys.Except(Sections).Order()
+            .Select(s => $"{Service}: kept section '{s}' is not a section of the export"));
+        problems.AddRange(Kept.Where(k => string.IsNullOrWhiteSpace(k.Value))
+            .Select(k => $"{Service}: kept section '{k.Key}' gives no reason for keeping it"));
         return problems;
     }
 

@@ -10,6 +10,8 @@ using Ecommerce.Order.Application;
 using Ecommerce.Order.Infrastructure;
 using Ecommerce.Order.Infrastructure.Persistence;
 using Ecommerce.Order.WebApi.Consumers;
+using Ecommerce.Order.WebApi.Grpc;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Ecommerce.Shared.Authentication;
 using Ecommerce.Shared.Middlewares;
 using MassTransit;
@@ -77,8 +79,53 @@ var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
 builder.Configuration["ConnectionStrings:DefaultConnection"] =
     $"Host={dbHost};Database={dbName};Username={dbUser};Password={dbPassword};Port={dbPort}";
 
+// TWO endpoints since specs/112, when Order began serving gRPC (AccountStanding, asked by Identity): HTTP/1.1 for REST,
+// HTTP/2 for gRPC, declared TOGETHER. Calling ListenAnyIP at all REPLACES ASPNETCORE_URLS rather than adding to it
+// (feature 009, on Catalog), so the HTTP port is declared here too - derived from ASPNETCORE_URLS in a container,
+// the pinned 5059 under start-dev - and the app.Run(url) fallback is gone: it would be a third opinion about where to
+// listen. One plaintext port cannot serve both protocols (telling them apart needs ALPN, part of TLS).
+var listenUrlsAtStartup = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+var inContainer = !string.IsNullOrWhiteSpace(listenUrlsAtStartup);
+
+var httpPort = PortFrom(listenUrlsAtStartup) ?? 5059;
+var grpcPort = int.TryParse(Environment.GetEnvironmentVariable("ORDER_GRPC_PORT"), out var parsedGrpc)
+    ? parsedGrpc
+    : 5159;
+
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    if (inContainer)
+    {
+        kestrel.ListenAnyIP(httpPort, e => e.Protocols = HttpProtocols.Http1);
+        kestrel.ListenAnyIP(grpcPort, e => e.Protocols = HttpProtocols.Http2);
+    }
+    else
+    {
+        kestrel.ListenLocalhost(httpPort, e => e.Protocols = HttpProtocols.Http1);
+        kestrel.ListenLocalhost(grpcPort, e => e.Protocols = HttpProtocols.Http2);
+    }
+});
+
+static int? PortFrom(string? urls)
+{
+    if (string.IsNullOrWhiteSpace(urls))
+    {
+        return null;
+    }
+
+    var first = urls.Split(';', StringSplitOptions.RemoveEmptyEntries)[0];
+    var lastColon = first.LastIndexOf(':');
+
+    return lastColon >= 0 && int.TryParse(first[(lastColon + 1)..].TrimEnd('/'), out var port)
+        ? port
+        : null;
+}
+
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddGrpc();
+builder.Services.AddGrpcHealthChecks();
+builder.Services.AddGrpcReflection();
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -111,6 +158,7 @@ builder.Services.AddMassTransit(x =>
     // then stopped taking part, which is why every order row read Submitted however checkout ended.
     x.AddConsumer<OrderCompletedConsumer>();
     x.AddConsumer<OrderFailedConsumer>();
+    x.AddConsumer<EraseAccountFromOrdersConsumer>();
 
     // Queue names are derived from consumer CLASS names, and Inventory already has a class called
     // OrderCompletedConsumer. Without this prefix both services bind to a queue named
@@ -192,6 +240,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Reachable only on the HTTP/2 endpoint. The container health check keeps probing REST /health.
+app.MapGrpcService<AccountStandingService>();
+app.MapGrpcHealthChecksService().AllowAnonymous();
+app.MapGrpcReflectionService().AllowAnonymous();
+
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>
@@ -236,18 +289,6 @@ await using (var seedScope = app.Services.CreateAsyncScope())
         app.Configuration);
 }
 
-// Honour ASPNETCORE_URLS when the environment sets it - a container must bind 0.0.0.0, not
-// localhost, or nothing outside it can connect however the ports are published. Falling back to
-// the pinned address rather than dropping the argument keeps start-dev.sh working: with no
-// argument every service would default to the same port and collide.
-var listenUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-
-if (string.IsNullOrWhiteSpace(listenUrls))
-{
-    app.Run("http://localhost:5059");
-}
-else
-{
-    app.Run();
-}
+// Where to listen is decided once, by the Kestrel endpoints above.
+app.Run();
 

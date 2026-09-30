@@ -67,6 +67,57 @@ public class MyDataTests(ActivityTestFixture fixture) : IDisposable
         Assert.DoesNotContain("lan-data", json);
     }
 
+    /// <summary>
+    /// specs/112: notices go; the audit entries stay, without the person's email - as an actor or in a summary - and
+    /// without the snapshots of their own details. Nobody else's entries move.
+    /// </summary>
+    [Fact]
+    public async Task A_deleted_account_leaves_the_record_of_what_happened_without_the_person()
+    {
+        var mai = Guid.CreateVersion7();
+        var lan = Guid.CreateVersion7();
+        var moderator = Guid.CreateVersion7();
+        const string maiEmail = "mai.erased@example.test";
+        await SeedAsync(db =>
+        {
+            db.Notifications.Add(Notice(mai, "mai-notice"));
+            db.Notifications.Add(Notice(lan, "lan-notice"));
+            db.AuditEntries.Add(Entry(actor: mai, about: null, $"{maiEmail} changed their details", before: "{\"FirstName\":\"Mai\"}", actorEmail: maiEmail));
+            db.AuditEntries.Add(Entry(actor: moderator, about: mai, $"Locked {maiEmail} for 3 days", before: null, actorEmail: "mod@example.test"));
+            db.AuditEntries.Add(Entry(actor: lan, about: null, "lan@example.test changed their details", before: "{\"FirstName\":\"Lan\"}", actorEmail: "lan@example.test"));
+            return db.SaveChangesAsync();
+        });
+
+        await using (var scope = _fixture.NewScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+            await sender.Send(new EraseAccountCommand(mai, maiEmail));
+            await sender.Send(new EraseAccountCommand(mai, maiEmail));   // a redelivery changes nothing
+        }
+
+        _fixture.CurrentUser.Id = mai;
+        await using var read = _fixture.NewScope();
+        var export = await read.ServiceProvider.GetRequiredService<ISender>().Send(new GetMyDataQuery());
+        foreach (var section in ActivityPersonalData.Inventory.Erased)
+            Assert.Empty(export.Sections[section]);
+        Assert.Equal(2, export.Sections["activity"].Count);
+
+        var db = read.ServiceProvider.GetRequiredService<ActivityDbContext>();
+        var entries = await db.AuditEntries.AsNoTracking().Where(e => e.ActorId == mai || e.AboutUserId == mai).ToListAsync();
+        Assert.All(entries, e => Assert.DoesNotContain(maiEmail, e.Summary));
+        Assert.Contains(entries, e => e.Summary == "Locked a deleted account for 3 days");
+        var own = Assert.Single(entries, e => e.ActorId == mai);
+        Assert.Null(own.ActorEmail);
+        Assert.Null(own.Before);
+        Assert.Equal("[]", own.Changes);
+        Assert.Equal("mod@example.test", Assert.Single(entries, e => e.ActorId == moderator).ActorEmail);   // staff stay named in the record
+
+        var lanEntry = await db.AuditEntries.AsNoTracking().SingleAsync(e => e.ActorId == lan);
+        Assert.Equal("lan@example.test", lanEntry.ActorEmail);
+        Assert.NotNull(lanEntry.Before);
+        Assert.True(await db.Notifications.AnyAsync(n => n.RecipientId == lan));
+    }
+
     private static Notification Notice(Guid recipient, string marker) => new()
     {
         Id = Guid.CreateVersion7(), RecipientId = recipient, Kind = "OrderPaid", Data = $"{{\"order\":\"{marker}\"}}", CreatedAt = DateTime.UtcNow,

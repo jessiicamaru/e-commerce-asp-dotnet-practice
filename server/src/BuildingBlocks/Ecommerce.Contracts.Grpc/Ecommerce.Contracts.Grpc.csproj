@@ -34,6 +34,7 @@
     <Protobuf Include="Protos\address_reading.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\catalog_ownership.proto" GrpcServices="Both" />
     <Protobuf Include="Protos\payout_accounts.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos\account_standing.proto" GrpcServices="Both" />
   </ItemGroup>
 
 </Project>

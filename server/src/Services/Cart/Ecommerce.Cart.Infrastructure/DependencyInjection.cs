@@ -23,6 +23,7 @@ public static class DependencyInjection
                     errorCodesToAdd: null)));
 
         services.AddScoped<Ecommerce.Cart.Application.MyData.IPersonalDataReader, PersonalDataReader>();
+        services.AddScoped<Ecommerce.Cart.Application.MyData.IAccountErasure, AccountErasure>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICheckoutOutcomeRepository, CheckoutOutcomeRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

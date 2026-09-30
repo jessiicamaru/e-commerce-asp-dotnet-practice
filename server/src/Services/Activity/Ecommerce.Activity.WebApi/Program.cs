@@ -83,6 +83,7 @@ builder.Services.AddMassTransit(x =>
 
     x.AddConsumer<RecordAuditEntryConsumer>();
     x.AddConsumer<RecordNotificationConsumer>();
+    x.AddConsumer<EraseAccountFromActivityConsumer>();
 
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
         cfg.UseEntityFrameworkOutbox<ActivityDbContext>(context));

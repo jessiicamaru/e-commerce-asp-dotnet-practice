@@ -42,6 +42,38 @@ public class MyDataTests(CartTestFixture fixture)
         Assert.DoesNotContain(lanVariant.ToString(), json);
     }
 
+    /// <summary>specs/112: the cart and the checkout outcomes go, and nobody else's.</summary>
+    [Fact]
+    public async Task A_deleted_account_leaves_no_cart_behind()
+    {
+        var (mai, _) = await PersonWithACartAsync();
+        var (lan, lanVariant) = await PersonWithACartAsync();
+        await using (var seed = _fixture.For(mai))
+        await using (var scope = seed.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<CartDbContext>();
+            db.CheckoutOutcomes.Add(new CheckoutOutcome { OrderId = Guid.CreateVersion7(), UserId = mai, UpdatedAt = DateTime.UtcNow });
+            db.CheckoutOutcomes.Add(new CheckoutOutcome { OrderId = Guid.CreateVersion7(), UserId = lan, UpdatedAt = DateTime.UtcNow });
+            await db.SaveChangesAsync();
+        }
+
+        await using var provider = _fixture.For(mai);
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+            await sender.Send(new EraseAccountCommand(mai, "mai@example.test"));
+            await sender.Send(new EraseAccountCommand(mai, "mai@example.test"));   // a redelivery changes nothing
+            var export = await sender.Send(new GetMyDataQuery());
+            foreach (var section in CartPersonalData.Inventory.Erased)
+                Assert.Empty(export.Sections[section]);
+
+            var db = scope.ServiceProvider.GetRequiredService<CartDbContext>();
+            Assert.False(await db.CheckoutOutcomes.AnyAsync(o => o.UserId == mai));
+            Assert.True(await db.CheckoutOutcomes.AnyAsync(o => o.UserId == lan));
+            Assert.True(await db.CartLines.AnyAsync(l => l.VariantId == lanVariant));
+        }
+    }
+
     private async Task<(Guid User, Guid Variant)> PersonWithACartAsync()
     {
         var user = Guid.CreateVersion7();

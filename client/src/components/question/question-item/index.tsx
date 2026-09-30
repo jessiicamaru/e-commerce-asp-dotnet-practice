@@ -28,7 +28,7 @@ export function QuestionItem({
       <div className="grid gap-1">
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
           <MessageCircleQuestionIcon className="size-4" />
-          <span className="text-foreground font-medium">{question.askerName}</span>
+          <span className="text-foreground font-medium">{question.askerName || t('common:formerCustomer')}</span>
           <span>{date(question.createdAt)}</span>
           {showProduct && question.productName && (
             <Link to={`/products/${question.productId}`} className="hover:text-foreground hover:underline">

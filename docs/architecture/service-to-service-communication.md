@@ -22,19 +22,21 @@ generated list of methods is [reference/grpc.md](../reference/grpc.md).
 | `AddressReading` | Identity | Order | `GetMyAddress` - an address id, the customer's token forwarded | feature 011 |
 | `CatalogOwnership` | Catalog | Inventory | `GetVariantOwners` - who a variant belongs to | specs/031 |
 | `PayoutAccounts` | Identity | Order | `GetPayoutAccount` - a seller id, the **administrator's** token forwarded | specs/106 |
+| `AccountStanding` | Order | Identity | `GetMyStanding` - empty request, the person's token forwarded | specs/112 |
 
 `CatalogPricing` also still serves `GetPrices` and `DescribeProducts`, the product-level methods from
 before variants existed. Nothing in the current code calls them; they stay so that an older Order or
 Cart image keeps working against a newer Catalog during a rollback.
 
-| Port | Identity | Catalog | Cart |
-| :-- | :-- | :-- | :-- |
-| gRPC under `start-dev` (host) | `5156` | `5157` | `5162` |
-| gRPC inside a container | `8081` | `8081` | `8081` |
-| gRPC published by compose on the host | `6056` | `6057` | `6062` |
+| Port | Identity | Catalog | Cart | Order |
+| :-- | :-- | :-- | :-- | :-- |
+| gRPC under `start-dev` (host) | `5156` | `5157` | `5162` | `5159` |
+| gRPC inside a container | `8081` | `8081` | `8081` | `8081` |
+| gRPC published by compose on the host | `6056` | `6057` | `6062` | `6059` |
 
 Callers find the address in `Catalog:GrpcAddress` / `CATALOG_GRPC_ADDRESS`, `Cart:GrpcAddress` /
-`CART_GRPC_ADDRESS` and `Identity:GrpcAddress` / `IDENTITY_GRPC_ADDRESS`, defaulting to the
+`CART_GRPC_ADDRESS`, `Identity:GrpcAddress` / `IDENTITY_GRPC_ADDRESS` and (Identity's one client) `Order:GrpcAddress` /
+`ORDER_GRPC_ADDRESS`, defaulting to the
 `start-dev` ports. Order's three clients and Inventory's make up to three attempts, each with a
 5-second deadline, on `Unavailable` or `DeadlineExceeded` (Inventory's also on `Internal`), and then
 throw `DependencyUnavailableException`, which the shared exception handler answers with **503**.
@@ -48,6 +50,7 @@ What each edge costs when its callee is down:
 | Catalog | nobody can check out; a seller cannot set stock; carts render with prices marked unavailable |
 | Cart | nobody can check out |
 | Identity | nobody can check out (and nobody can sign in) |
+| Order | nobody can delete their account (and nobody can buy) |
 
 The rest of this document is the history of how the system got here, in order.
 
@@ -365,6 +368,23 @@ so a customer's token forwarded by mistake is refused rather than answered.
   wait, unlike a checkout.
 
 Design and research in [specs/106-payout-accounts](../../specs/106-payout-accounts/).
+
+## Specs/112: Identity asks Order before an account goes
+
+Deleting an account asks Order what is still open - `AccountStanding.GetMyStanding`, Order's first gRPC service, on a
+second Kestrel port like Identity, Catalog and Cart. It is Identity's first call to another service.
+
+- **Empty request, the person's token forwarded** - Cart's reason: a field naming the person would let anything on the
+  network ask about anybody.
+- **Asked live, never from a copy.** Whether an account may go is a permission (specs/031's rule): a read model seconds
+  behind would let an account be deleted with an order still on its way.
+- **Before the transaction**, like the payout's: no row lock waits on Order.
+- **The window, accepted**: an order placed during the one round trip is an open order on a deleted account. The
+  deletion revokes every session in the same transaction, so nothing can follow it, and the order is kept for the
+  books like any other.
+- **The cost, accepted**: Order unreachable is a 503 - an account is never deleted without the check.
+
+Design and research in [specs/112-account-deletion](../../specs/112-account-deletion/).
 
 ---
 

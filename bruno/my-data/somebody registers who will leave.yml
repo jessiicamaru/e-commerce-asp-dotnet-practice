@@ -1,0 +1,45 @@
+info:
+  name: somebody registers who will leave
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "{{leaverEmail}}",
+        "password": "Leaving-Passw0rd!",
+        "firstName": "Bruno",
+        "lastName": "Leaver"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // A fresh person each run: the account is deleted below, and its email registers again at the end.
+        bru.setVar("leaverEmail", "bruno-leaver+" + Date.now() + "@example.test");
+    - type: after-response
+      code: |-
+        if (res.status === 200 && res.body.token) {
+          bru.setVar("leaverToken", res.body.token);
+        }
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/112 (#217). Its own person, not the customer the rest of the collection uses.

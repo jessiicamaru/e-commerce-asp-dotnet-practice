@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth/useAuth'
 import { useChangePassword, useMe, useUpdateMe } from '@/hooks/me'
 import type { AccountProfile } from '@/services/auth/types'
 import { tooManyAttempts } from '@/utils/shared'
+import { DeleteAccountCard } from './delete-account'
 import { MyDataCard } from './my-data'
 
 /** Your account (specs/064): your details and your password, each changed by you and nobody else. */
@@ -42,6 +43,7 @@ export function AccountPage() {
       <DetailsForm />
       <PasswordForm />
       <MyDataCard />
+      <DeleteAccountCard />
     </section>
   )
 }

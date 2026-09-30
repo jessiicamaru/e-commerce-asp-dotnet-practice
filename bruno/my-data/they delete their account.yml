@@ -1,0 +1,34 @@
+info:
+  name: they delete their account
+  type: http
+  seq: 10
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/auth/me"
+  body:
+    type: json
+    data: |-
+      {
+        "password": "Leaving-Passw0rd!"
+      }
+  auth:
+    type: bearer
+    token: "{{leaverToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 204", function() {
+          expect(res.status).to.equal(204);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Nothing open: a new customer with only an address. Identity asked Order first (specs/112 research D2).

@@ -73,6 +73,9 @@ public class IdentityTestFixture : IAsyncLifetime
     /// <summary>What the dispatcher would have sent - and a switch to make the "mail server" refuse.</summary>
     public FakeEmailTransport Mail { get; } = new();
 
+    /// <summary>What Order answers about an account's open business (specs/112) - set per test, empty by default.</summary>
+    public TestAccountStanding Standing { get; } = new();
+
     /// <summary>A provider whose caller is <paramref name="userId"/>.</summary>
     public ServiceProvider For(Guid userId, params string[] roles)
     {
@@ -96,6 +99,8 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
         services.AddScoped<Ecommerce.Application.Auth.TwoFactor.ITwoFactorRepository, TwoFactorRepository>();
         services.AddScoped<Ecommerce.Application.MyData.IPersonalDataReader, PersonalDataReader>();
+        services.AddScoped<Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountErasure, AccountErasure>();
+        services.AddSingleton<Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountStanding>(Standing);
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
         {
             Secret = "identity-tests-signing-key-of-at-least-32-bytes",
@@ -262,5 +267,33 @@ public sealed class FakeEmailTransport : IEmailTransport
 
         lock (_sent) _sent.Add((to, subject, text, html));
         return Task.CompletedTask;
+    }
+}
+
+/// <summary>Order's answer to "what keeps this account open" (specs/112), without Order: blockers, or unreachable.</summary>
+public sealed class TestAccountStanding : Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountStanding
+{
+    public List<string> Blockers { get; } = [];
+
+    public bool Unreachable { get; set; }
+
+    public int Asked { get; private set; }
+
+    public void Reset()
+    {
+        Blockers.Clear();
+        Unreachable = false;
+        Asked = 0;
+    }
+
+    public Task<IReadOnlyList<string>> GetMyBlockersAsync(CancellationToken cancellationToken = default)
+    {
+        Asked++;
+        if (Unreachable)
+        {
+            throw new Ecommerce.Shared.Exceptions.DependencyUnavailableException("Order is down.");
+        }
+
+        return Task.FromResult<IReadOnlyList<string>>(Blockers.ToList());
     }
 }

@@ -1,0 +1,26 @@
+info:
+  name: their details are gone
+  type: http
+  seq: 11
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/auth/me"
+  auth:
+    type: bearer
+    token: "{{leaverToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // 401 once the revocation has reached Identity (seconds, specs/065); 404 before it - the row holds nothing.
+        test("401 or 404 - never the old details", function() {
+          expect([401, 404]).to.include(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

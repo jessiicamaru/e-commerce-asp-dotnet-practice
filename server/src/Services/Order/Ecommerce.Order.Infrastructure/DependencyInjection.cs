@@ -36,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
         services.AddScoped<Ecommerce.Order.Application.MyData.IPersonalDataReader, PersonalDataReader>();
+        services.AddScoped<AccountDeletionRepository>();
+        services.AddScoped<Ecommerce.Order.Application.MyData.IAccountStandingReader>(sp => sp.GetRequiredService<AccountDeletionRepository>());
+        services.AddScoped<Ecommerce.Order.Application.MyData.IAccountErasure>(sp => sp.GetRequiredService<AccountDeletionRepository>());
 
         // Returns (specs/066): the window is also the hold on a seller's money, so a bad value refuses to start.
         services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();

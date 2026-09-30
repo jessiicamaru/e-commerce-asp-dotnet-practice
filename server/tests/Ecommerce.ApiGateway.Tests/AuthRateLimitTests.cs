@@ -78,6 +78,26 @@ public class AuthRateLimitTests
         Assert.Equal(HttpStatusCode.TooManyRequests, (await PostAsync(client, "/api/auth/login", "10.0.0.1")).StatusCode);
     }
 
+    /// <summary>
+    /// specs/112: deleting an account checks a password, so it shares the sign-in allowance - reading or changing one's
+    /// details at the same address does not.
+    /// </summary>
+    [Fact]
+    public async Task Deleting_an_account_shares_the_sign_in_allowance_and_reading_details_does_not()
+    {
+        using var gateway = Gateway(("RateLimits:sign-in:PermitLimit", "2"));
+        var client = gateway.CreateClient();
+
+        Assert.Equal(HttpStatusCode.BadGateway, (await SendAsync(client, HttpMethod.Delete, "/api/auth/me", "10.0.0.1")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadGateway, (await PostAsync(client, "/api/auth/login", "10.0.0.1")).StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await SendAsync(client, HttpMethod.Delete, "/api/auth/me", "10.0.0.1")).StatusCode);
+
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.Equal(HttpStatusCode.BadGateway, (await SendAsync(client, HttpMethod.Get, "/api/auth/me", "10.0.0.1")).StatusCode);
+        }
+    }
+
     [Fact]
     public async Task Refreshing_has_its_own_allowance()
     {

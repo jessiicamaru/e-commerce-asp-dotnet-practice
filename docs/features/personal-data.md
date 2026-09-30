@@ -1,8 +1,8 @@
 # Personal data
 
-What the shop holds about a person, and how they get a copy of it. Part of
+What the shop holds about a person, how they get a copy of it, and how they delete it.
 [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217): the download is
-[specs/111](../../specs/111-my-data-export/); deleting an account is specs/112.
+[specs/111](../../specs/111-my-data-export/), deleting an account [specs/112](../../specs/112-account-deletion/).
 
 ## What a person can do
 
@@ -71,6 +71,40 @@ Inventory holds no person's id, and the orchestrator's saga state holds the buye
 - **A refund names nobody** - it is the person's through the payment it gives back.
 - **Payment is still a stub**: every payment and refund says `provider: "Stub"`, and the export keeps saying it.
 
+## Deleting an account
+
+On **Your account**, **Delete my account** says what goes and what the shop keeps, asks for the password, and asks
+once more. `DELETE /api/auth/me` with `{ password }`:
+
+1. **Staff are refused** - 409 `StaffAccount`. The first administrator is seeded and the bootstrap reopens when none is
+   left; a moderator's decisions are in the audit log under their id, so the role is revoked first.
+2. **The password**, checked like changing it: a wrong one is 400 on `Password` and counts toward the sign-in pause.
+3. **Order is asked** what is open (`AccountStanding`, gRPC, the person's token forwarded, never cached): `OpenOrders`
+   (settling, or paid with a parcel neither delivered nor cancelled), `OpenReturns` (requested, accepted, escalated or
+   sent back - as buyer or seller), `OpenSales` and `UnpaidEarnings` (a seller's). Any - 409
+   `AccountHasOpenBusiness` with `reasons`, which the page words. Order down - 503.
+4. **One transaction in Identity**: the user row is emptied (email `deleted-<id>@deleted.invalid` - reserved, never
+   deliverable - so the address can register again; no name, phone, password anyone knows, two-factor or roles;
+   `DeletedAt` set), every other row it holds about them is deleted, and `AccountDeleted` (id, the old email, when) and
+   `AccessTokensRevoked` are published with an audit entry that names no email.
+
+Each service then erases on `AccountDeleted` - consumers named for what they do, since a consumer's class is its queue:
+
+| Service | Erased | Kept (the inventory's `Kept`, with the reason) |
+| :-- | :-- | :-- |
+| Identity | addresses, seller profile, payout account, shop applications, emails, sessions, tokens, codes, the sign-in counter | the empty user row |
+| Catalog | saved products, review rights, reports filed | reviews and questions, without the name ("a former customer"); a seller's shop, **closed** "The account was deleted.", and its products, off the shelf |
+| Order | the delivery copy's name, street, city, postal code and phone (the country stays - the tax depends on it); a return's reason | orders, parcels, returns, voucher uses; a seller's vouchers (disabled) and payouts (without the holder's name) - the books |
+| Cart | the cart and checkout outcomes | nothing |
+| Payment | nothing - it consumes nothing | payments and refunds: ids and amounts |
+| Activity | notifications | the audit entries, without the person's email as actor or in summaries, and without their profile's snapshots |
+
+⚠️ **Every exported section is either erased or declared `Kept`** in `<Service>PersonalData.Inventory`. Each service's
+deletion test seeds a row in every section, erases, reads the export and asserts every section not kept is empty and
+the person's name, street and phone are gone - so a new table is declared once and both the download and the deletion
+see it. Deletion is immediate and final; there is no confirmation email, because the address goes in the same
+transaction.
+
 ## Tests
 
 `MyDataTests` in Identity, Catalog, Order, Cart, Payment and Activity: the inventory matches the model; two people,
@@ -79,6 +113,13 @@ also holds `PersonalDataInventory.Problems` to each way a declaration can be wro
 ask all six, save one file, and mark and name a service that failed. Bruno's `my-data` folder asks each service as the
 customer, and `security-checks` holds the six 401s.
 
+Deletion (specs/112): `AccountDeletionTests` in Identity (the row, the rows, the messages, the old password, the email
+registering again, a wrong password, staff, open business, Order down), `AccountStandingTests` in Order (each blocker,
+for its person only), and an erasure test beside each service's `MyDataTests`. `ForbiddenProblemTests` holds a 409's
+facts; the gateway test puts the deletion under the sign-in allowance. Bruno's `my-data` folder deletes an account of
+its own and registers its email again.
+
 ## History
 
 - specs/111 (#217, part 1): the download.
+- specs/112 (#217, part 2): deleting an account.

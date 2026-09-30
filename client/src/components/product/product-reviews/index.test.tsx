@@ -36,6 +36,16 @@ describe('ProductReviews (specs/046)', () => {
     expect(screen.getByRole('img', { name: 'Rated 4.5 out of 5' })).toBeInTheDocument()
   })
 
+  /** specs/112: a deleted account's review stays, its name taken away - it is signed by nobody in particular. */
+  it('signs a review whose author deleted their account as a former customer', async () => {
+    vi.spyOn(Reviews, 'forProduct').mockResolvedValue(page(review({ authorName: '' })))
+    vi.spyOn(Reviews, 'mine').mockResolvedValue({ eligible: false, review: null })
+    renderAsSeller(<ProductReviews product={camera} />)
+
+    expect(await screen.findByText('Sharp and quiet')).toBeInTheDocument()
+    expect(screen.getByText('A former customer')).toBeInTheDocument()
+  })
+
   /** Who may write is the server's call; somebody who did not receive it is told so, and offered no form. */
   it('offers no form to somebody who has not received it', async () => {
     vi.spyOn(Reviews, 'forProduct').mockResolvedValue(page())
