@@ -217,4 +217,64 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
             return (DisableOutcome.Disabled, (Voucher?)voucher);
         });
     }
+
+    public Task<Voucher?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
+        _context.Vouchers.AsNoTracking()
+            .Include(v => v.Conditions).Include(v => v.Targets).Include(v => v.Amounts)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
+
+    public async Task<(EditOutcome Outcome, VoucherSummary? Voucher)> TryEditAsync(
+        Guid id, Guid? ownerSellerId, VoucherEdit edit, DateTime at, Func<VoucherSummary, CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            _context.ChangeTracker.Clear();   // a retried attempt must not save the audit entry of the failed one
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // The guard is what a checkout's claim ("UsedCount" < "TotalLimit") serialises against on this row: a
+            // lower limit is written only while it still covers the uses made (research D2).
+            var total = edit.TotalLimit;
+            var moved = await _context.Vouchers
+                .Where(v => v.Id == id && v.SellerId == ownerSellerId && v.Status == VoucherStatus.Active
+                    && (total == null || v.UsedCount <= total))
+                .ExecuteUpdateAsync(x => x
+                    .SetProperty(v => v.Name, edit.Name)
+                    .SetProperty(v => v.EndsAt, edit.EndsAt)
+                    .SetProperty(v => v.TotalLimit, edit.TotalLimit)
+                    .SetProperty(v => v.PerCustomerLimit, edit.PerCustomerLimit)
+                    .SetProperty(v => v.UpdatedAt, at), cancellationToken);
+
+            if (moved == 0)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                var now = await GetAsync(id, cancellationToken);
+                var outcome = now is null || now.SellerId != ownerSellerId ? EditOutcome.NotFound
+                    : now.Status != VoucherStatus.Active ? EditOutcome.Disabled
+                    : EditOutcome.BelowUses;
+                return (outcome, (VoucherSummary?)null);
+            }
+
+            foreach (var (currency, minimum) in edit.MinSubtotals)
+            {
+                await _context.Set<VoucherAmount>().Where(a => a.VoucherId == id && a.Currency == currency)
+                    .ExecuteUpdateAsync(x => x.SetProperty(a => a.MinSubtotal, minimum), cancellationToken);
+            }
+
+            if (edit.MinQuantity is { } quantity)
+            {
+                await _context.Set<VoucherCondition>().Where(c => c.VoucherId == id && c.Type == VoucherConditionType.MinQuantity)
+                    .ExecuteUpdateAsync(x => x.SetProperty(c => c.Value, quantity), cancellationToken);
+            }
+
+            var after = VoucherRules.Summary((await GetAsync(id, cancellationToken))!);
+            await stage(after, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return (EditOutcome.Edited, (VoucherSummary?)after);
+        });
+    }
 }
