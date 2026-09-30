@@ -163,6 +163,7 @@ public class OrderTestFixture : IAsyncLifetime
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
+        services.AddScoped<Ecommerce.Order.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();
         services.AddScoped<Ecommerce.Order.Application.Vouchers.IVoucherRepository, VoucherRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Order.Application.Returns.ReturnOptions()));

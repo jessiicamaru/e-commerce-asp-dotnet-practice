@@ -29,6 +29,26 @@ public class MyDataTests(IdentityTestFixture fixture)
         Assert.Empty(IdentityPersonalData.Inventory.Problems(model.GetEntityTypes().Select(e => e.GetTableName()!)));
     }
 
+    /// <summary>The check every service's inventory test relies on - pure, so it lives with the first service to use it.</summary>
+    [Fact]
+    public void The_inventory_check_names_each_way_a_declaration_can_be_wrong()
+    {
+        var inventory = new Ecommerce.Shared.PersonalData.PersonalDataInventory
+        {
+            Service = "test",
+            Exported = new Dictionary<string, string> { ["people"] = "people", ["gone"] = "gone" },
+            Withheld = [new("tokens", " "), new("people", "twice")],
+        };
+
+        var problems = inventory.Problems(["people", "tokens", "new_table", "OutboxMessage", "InboxState", "OutboxState"]);
+
+        Assert.Equal(4, problems.Count);
+        Assert.Contains(problems, p => p.Contains("'new_table' is not declared"));
+        Assert.Contains(problems, p => p.Contains("'people' is declared more than once"));
+        Assert.Contains(problems, p => p.Contains("'gone' is declared but the model has no such table"));
+        Assert.Contains(problems, p => p.Contains("'tokens' gives the person no reason"));
+    }
+
     [Fact]
     public async Task A_person_gets_their_own_rows_in_every_section_and_nobody_else_s()
     {

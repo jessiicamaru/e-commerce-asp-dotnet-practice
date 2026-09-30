@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<Ecommerce.Order.Application.Insights.IOrderInsights, OrderInsights>();
         services.AddScoped<IPayoutRepository, PayoutRepository>();
+        services.AddScoped<Ecommerce.Order.Application.MyData.IPersonalDataReader, PersonalDataReader>();
 
         // Returns (specs/066): the window is also the hold on a seller's money, so a bad value refuses to start.
         services.AddScoped<Ecommerce.Order.Application.Returns.IReturnRepository, ReturnRepository>();

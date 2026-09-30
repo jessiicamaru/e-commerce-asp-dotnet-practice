@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton<IPaymentGateway, StubPaymentGateway>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<Ecommerce.Payment.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         return services;
