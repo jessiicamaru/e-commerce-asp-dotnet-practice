@@ -14,7 +14,7 @@ function open(path: string, signedIn = false) {
   const value = {
     user: signedIn ? { id: 'u1', email: 'lan@demo.test', firstName: 'Lan', lastName: 'P', roles: ['Customer'], emailConfirmed: false } : null,
     restoring: false, isSeller: false, isAdmin: false, isStaff: false,
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession,
+    signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession,
   } as AuthState
 
   render(

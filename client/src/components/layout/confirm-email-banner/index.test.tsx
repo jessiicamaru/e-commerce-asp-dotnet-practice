@@ -12,7 +12,7 @@ import { ConfirmEmailBanner } from '.'
 function renderFor(user: AuthState['user']) {
   const value = {
     user, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
+    signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
   return render(
     <AuthContext.Provider value={value}>

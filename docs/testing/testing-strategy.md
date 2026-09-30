@@ -85,7 +85,7 @@ the first render in a file can take longer than a second.
 ## Browser end to end
 
 `npm run e2e` in `client/`, against a running compose stack (`docker compose -f docker-compose.yml -f
-docker-compose.app.yml up -d` in `server/`), with `ADMIN_EMAIL` and `ADMIN_PASSWORD` set (specs/080, #117).
+docker-compose.app.yml up -d` in `server/`), with `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `ADMIN_TOTP_SECRET` set (specs/080, #117; the last since specs/110).
 Playwright clicks through the storefront container on `:8088`, and **nothing is mocked**. It is the one check that
 sees a page and the API it calls drift apart.
 
@@ -134,7 +134,8 @@ request. It runs top to bottom, carrying tokens and ids from one request to the 
 cd bruno
 export ADMIN_EMAIL=...          # on its own line: a one-line prefix sends an empty string
 export ADMIN_PASSWORD=...
-npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD"
+export ADMIN_TOTP_SECRET=...    # the administrator signs in with a code computed from it (specs/110)
+npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD" --env-var "adminTotpSecret=$ADMIN_TOTP_SECRET"
 ```
 
 Adding or changing an endpoint means adding a Bruno request in the same change.

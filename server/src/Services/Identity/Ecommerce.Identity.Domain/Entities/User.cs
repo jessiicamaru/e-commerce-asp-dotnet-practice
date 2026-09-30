@@ -48,6 +48,20 @@ public class User
 
     public bool IsBanned => BannedAt is not null;
 
+    /// <summary>
+    /// The authenticator's secret (#218, specs/110), sealed with AES-GCM - never stored in the clear, never returned
+    /// after setup. Set while setting up; kept once confirmed.
+    /// </summary>
+    public string? TwoFactorSecret { get; set; }
+
+    /// <summary>When two-factor sign-in was turned on. Null with a secret: a setup not yet confirmed.</summary>
+    public DateTime? TwoFactorEnabledAt { get; set; }
+
+    /// <summary>The 30-second window of the last code accepted - a code at or before it is refused (replay).</summary>
+    public long? TwoFactorLastStep { get; set; }
+
+    public bool TwoFactorEnabled => TwoFactorEnabledAt is not null;
+
     public ICollection<Role> Roles { get; set; } = new List<Role>();
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();

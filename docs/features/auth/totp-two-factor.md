@@ -6,7 +6,7 @@ in. The algorithm is the one in [RFC 6238](https://www.rfc-editor.org/rfc/rfc623
 
 - how it works, with a worked example you can reproduce;
 - the traps an implementation has to avoid;
-- how this project uses it. That part is filled in by specs/110 (#218), which makes it compulsory for staff.
+- how this project uses it: compulsory for staff since specs/110 (#218) - section 7.
 
 ---
 
@@ -152,4 +152,44 @@ not enough.
 
 ## 7. How this project uses it
 
-To be written with specs/110 (#218): who must enrol, the endpoints, the tables, the sign-in flow and the tests.
+Built in [specs/110](../../../specs/110-staff-two-factor/) (#218).
+
+**Who.** Staff (Admin and Moderator) must use it; anybody else may. The rule is enforced where tokens are signed: an
+access token carries `Admin` or `Moderator` **only for a session verified with a code**
+(`SessionRoles.Of`, `refresh_tokens.TwoFactorVerified`). Every service already authorizes from the token's roles, so
+an unverified staff session is refused by every staff endpoint in every service, with no change outside Identity. A
+staff member without it signs in with `twoFactor: "SetupRequired"`, holding their other roles, and the storefront sends
+them to `/account/two-factor`.
+
+**Signing in.**
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant I as Identity
+    B->>I: POST /api/auth/login {email, password}
+    I-->>B: {twoFactor: "Required", challenge} - no token, no cookie
+    B->>I: POST /api/auth/login/two-factor {challenge, code | recoveryCode}
+    I-->>B: the session (refresh cookie, TwoFactorVerified), staff roles in the token
+```
+
+The challenge is a random token stored only as its SHA-256 (`two_factor_challenges`). It lives 5 minutes, dies after 5
+wrong codes and is claimed once. Wrong codes count toward the email's sign-in pause (specs/062), and ⚠️ for an account
+with 2FA the right password does **not** clear that count, only the code does; otherwise knowing the password would
+restart the count before every batch of guesses.
+
+**Where each piece is.**
+
+| Piece | Where |
+| :-- | :-- |
+| The algorithm | `Application/Auth/TwoFactor/Totp.cs`, pinned to RFC 6238's vectors in `TotpTests` |
+| The secret at rest | `users.TwoFactorSecret`, AES-GCM under `TWO_FACTOR_KEY` (`TwoFactorSecretProtector`); Identity refuses to start without a 32-byte key |
+| Replay | `users.TwoFactorLastStep`, written by one guarded `UPDATE ... WHERE "TwoFactorLastStep" < @step` |
+| Recovery codes | `two_factor_recovery_codes`, ten, SHA-256 only, spent by a guarded `UPDATE` |
+| The page | `/account/two-factor`: the QR code is drawn in the browser (`qrcode`), so the secret never goes to an image service |
+| Losing the phone | a recovery code; else an administrator's reset (`DELETE /api/users/{id}/two-factor`, never one's own), which ends every session and emails the owner (`TwoFactorReset`) |
+
+**Development and CI.** `ADMIN_TOTP_SECRET` (base32) enrols the seeded administrator with a known secret, so
+`verify-auth.sh`, `verify-saga.sh`, the seed scripts, Bruno and Playwright compute its codes. It is for development and
+CI only. Because a code works once, two sign-ins within one 30-second window collide, and each of those tools waits
+for the next window when that happens.

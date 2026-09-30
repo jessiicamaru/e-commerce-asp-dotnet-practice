@@ -15,11 +15,40 @@ export interface User {
    * The server decides what an unconfirmed account may do; a missing value (an older Identity) reads true.
    */
   emailConfirmed: boolean
+  /** Staff without two-factor sign-in: their staff pages wait until they set it up (specs/110). */
+  twoFactorSetupRequired?: boolean
 }
 
 export interface AuthResponse extends User {
   /** Short-lived, kept in memory only. The refresh token is an HttpOnly cookie this never sees. */
   token: string
+  /**
+   * `'Required'`: the right password, and now the code - no session yet, `token` is empty and `challenge` is what the
+   * second step exchanges. `'SetupRequired'`: staff without two-factor sign-in, signed in WITHOUT their staff roles until
+   * they set it up (specs/110). For drawing; the server decides.
+   */
+  twoFactor?: TwoFactorState | null
+  challenge?: string | null
+}
+
+export type TwoFactorState = 'Required' | 'SetupRequired'
+
+/** The second step: the code from the authenticator app, or one recovery code. */
+export type SecondFactor = { code: string } | { recoveryCode: string }
+
+/** The signed-in person's own two-factor sign-in (specs/110). */
+export interface TwoFactorStatus {
+  enabled: boolean
+  enabledAt: string | null
+  recoveryCodesLeft: number
+  /** Staff: it cannot be turned off. */
+  required: boolean
+}
+
+/** Shown ONCE: the secret as base32, for typing, and the `otpauth://` URI the QR code draws. */
+export interface TwoFactorSetup {
+  secret: string
+  uri: string
 }
 
 /** The signed-in person's own details (specs/064). The email is shown, not changed, here. */

@@ -1,7 +1,7 @@
 info:
   name: an unknown placeholder is refused by name
   type: http
-  seq: 22
+  seq: 26
 
 http:
   method: PUT

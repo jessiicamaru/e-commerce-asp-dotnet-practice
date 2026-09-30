@@ -255,7 +255,12 @@
       "by": "by {{who}} ({{role}})",
       "more_one": "and {{count}} earlier decision",
       "more_other": "and {{count}} earlier decisions"
-    }
+    },
+    "resetTwoFactor": "Reset two-factor sign-in",
+    "resetTwoFactorTitle": "Reset two-factor sign-in for {{email}}?",
+    "resetTwoFactorBody": "For a lost phone with no recovery code left. Every session of theirs ends, they are emailed at once, and they set up an authenticator again at their next sign-in.",
+    "resetTwoFactorConfirm": "Reset",
+    "twoFactorReset": "Two-factor sign-in reset for {{email}}."
   },
   "roles": {
     "Admin": "Administrator",
@@ -454,7 +459,8 @@
       "AccountBanned": "Account banned",
       "PasswordReset": "Password reset",
       "EmailConfirmation": "Confirm email",
-      "PayoutAccountChanged": "Payout account changed"
+      "PayoutAccountChanged": "Payout account changed",
+      "TwoFactorReset": "Two-factor sign-in reset"
     },
     "language": {
       "vi": "Tiếng Việt",

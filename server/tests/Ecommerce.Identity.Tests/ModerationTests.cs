@@ -35,12 +35,16 @@ public class ModerationTests(IdentityTestFixture fixture)
         var granted = await SendAsync(Admin, new GrantRoleCommand(id, RoleNames.Moderator), RoleNames.Admin);
         Assert.Contains(RoleNames.Moderator, granted.Roles);
 
+        // Since specs/110 a staff role waits for a second factor: the next refresh says to set it up, and carries no
+        // Moderator until then (TwoFactorTests covers the role arriving once it is set up).
         var refreshed = await SendAsync(Guid.Empty, new RefreshTokenCommand(session.RefreshToken));
-        Assert.Contains(RoleNames.Moderator, refreshed.Roles);
+        Assert.DoesNotContain(RoleNames.Moderator, refreshed.Roles);
+        Assert.Equal("SetupRequired", refreshed.TwoFactor);
 
         await SendAsync(Admin, new RevokeRoleCommand(id, RoleNames.Moderator), RoleNames.Admin);
         var again = await SendAsync(Guid.Empty, new RefreshTokenCommand(refreshed.RefreshToken));
         Assert.DoesNotContain(RoleNames.Moderator, again.Roles);
+        Assert.Null(again.TwoFactor);
     }
 
     [Fact]

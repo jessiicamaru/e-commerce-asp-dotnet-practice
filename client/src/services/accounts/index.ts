@@ -50,4 +50,9 @@ export class Accounts {
     const { data } = await http.post<Account>(`/users/${id}/unban`)
     return data
   }
+
+  /** Resets another person's two-factor sign-in (specs/110): Admin, never oneself; their sessions end, they are emailed. */
+  static async resetTwoFactor(id: string): Promise<void> {
+    await http.delete(`/users/${id}/two-factor`)
+  }
 }

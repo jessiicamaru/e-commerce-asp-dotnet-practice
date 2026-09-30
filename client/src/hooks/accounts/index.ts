@@ -43,5 +43,6 @@ export function useAccountActions() {
     unlock: useMutation({ mutationFn: (id: string) => Accounts.unlock(id), onSuccess: refresh }),
     ban: useMutation({ mutationFn: ({ id, reason }: { id: string; reason: string }) => Accounts.ban(id, reason), onSuccess: refresh }),
     liftBan: useMutation({ mutationFn: (id: string) => Accounts.liftBan(id), onSuccess: refresh }),
+    resetTwoFactor: useMutation({ mutationFn: (id: string) => Accounts.resetTwoFactor(id), onSuccess: refresh }),
   }
 }

@@ -67,6 +67,9 @@ public class IdentityTestFixture : IAsyncLifetime
         await db.SaveChangesAsync();
     }
 
+    /// <summary>The AES key two-factor secrets are encrypted with in these tests: 32 bytes, base64.</summary>
+    public const string TwoFactorTestKey = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+
     /// <summary>What the dispatcher would have sent - and a switch to make the "mail server" refuse.</summary>
     public FakeEmailTransport Mail { get; } = new();
 
@@ -88,6 +91,10 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddScoped<IShopApplicationRepository, ShopApplicationRepository>();
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        // Two-factor sign-in (specs/110): a fixed test key - the real one comes from TWO_FACTOR_KEY.
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Application.Auth.TwoFactor.TwoFactorOptions { Key = TwoFactorTestKey }));
+        services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
+        services.AddScoped<Ecommerce.Application.Auth.TwoFactor.ITwoFactorRepository, TwoFactorRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
         {
             Secret = "identity-tests-signing-key-of-at-least-32-bytes",

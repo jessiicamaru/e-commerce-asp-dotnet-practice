@@ -1,7 +1,7 @@
 info:
   name: a moderator cannot reword notices is 403
   type: http
-  seq: 28
+  seq: 32
 
 http:
   method: PUT

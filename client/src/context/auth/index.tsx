@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useQueryClient } from '@tanstack/react-query'
 import { configureAuth } from '@/config/axios'
 import { Auth } from '@/services/auth'
-import type { AuthResponse, SignUpInput, User } from '@/services/auth/types'
+import type { AuthResponse, SecondFactor, SignUpInput, User } from '@/services/auth/types'
 import { AuthContext } from './useAuth'
 import type { AuthState } from './types'
 
@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastName: response.lastName,
       roles: response.roles ?? [],
       emailConfirmed: response.emailConfirmed ?? true,
+      twoFactorSetupRequired: response.twoFactor === 'SetupRequired',
     })
   }, [])
 
@@ -69,8 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isStaff: user?.roles.some((role) => role === 'Admin' || role === 'Moderator') ?? false,
       refreshSession: refresh,
       async signIn(email, password) {
-        accept(await Auth.signIn(email, password))
+        const response = await Auth.signIn(email, password)
+        // The right password, and now the code (specs/110): nothing is accepted - there is no session yet.
+        if (response.twoFactor === 'Required' && response.challenge) {
+          return { challenge: response.challenge }
+        }
+        accept(response)
         // Whoever was signed in before, their cart and orders are not this person's.
+        await queryClient.invalidateQueries()
+        return { setupRequired: response.twoFactor === 'SetupRequired' }
+      },
+      async completeSignIn(challenge: string, answer: SecondFactor) {
+        accept(await Auth.signInTwoFactor(challenge, answer))
         await queryClient.invalidateQueries()
       },
       async signUp(input: SignUpInput) {

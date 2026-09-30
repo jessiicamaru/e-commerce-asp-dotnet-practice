@@ -66,10 +66,11 @@ public class AuthRateLimitTests
     [Fact]
     public async Task Sign_in_registration_and_reset_share_one_allowance()
     {
-        using var gateway = Gateway(("RateLimits:sign-in:PermitLimit", "4"));
+        // The second step of signing in (specs/110) shares it too: a code is guessed like a password is.
+        using var gateway = Gateway(("RateLimits:sign-in:PermitLimit", "5"));
         var client = gateway.CreateClient();
 
-        foreach (var path in new[] { "/api/auth/login", "/api/auth/register", "/api/auth/register-seller", "/api/auth/reset-password" })
+        foreach (var path in new[] { "/api/auth/login", "/api/auth/login/two-factor", "/api/auth/register", "/api/auth/register-seller", "/api/auth/reset-password" })
         {
             Assert.Equal(HttpStatusCode.BadGateway, (await PostAsync(client, path, "10.0.0.1")).StatusCode);
         }

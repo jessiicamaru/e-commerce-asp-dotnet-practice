@@ -1,7 +1,7 @@
 info:
   name: the storefront reads the new words
   type: http
-  seq: 32
+  seq: 36
 
 http:
   method: GET

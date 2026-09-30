@@ -25,3 +25,33 @@ export function useChangePassword() {
       Auth.changePassword(currentPassword, newPassword),
   })
 }
+
+/** The signed-in person's own two-factor sign-in (specs/110). */
+export function useMyTwoFactor() {
+  return useQuery({ queryKey: queryKeys.myTwoFactor(), queryFn: () => Auth.twoFactor() })
+}
+
+/**
+ * Setting up, confirming, new recovery codes and turning off. Confirming renews the session afterwards: the one that
+ * confirmed is now verified, and only a renewed token carries staff roles.
+ */
+export function useTwoFactorMoves(renewSession: () => Promise<boolean>) {
+  const queryClient = useQueryClient()
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.myTwoFactor() })
+
+  return {
+    setUp: useMutation({ mutationFn: () => Auth.setUpTwoFactor() }),
+    confirm: useMutation({
+      mutationFn: (code: string) => Auth.confirmTwoFactor(code),
+      onSuccess: async () => {
+        await renewSession()
+        await refresh()
+      },
+    }),
+    newCodes: useMutation({ mutationFn: (code: string) => Auth.newRecoveryCodes(code), onSuccess: refresh }),
+    turnOff: useMutation({
+      mutationFn: ({ password, code }: { password: string; code: string }) => Auth.turnOffTwoFactor(password, code),
+      onSuccess: refresh,
+    }),
+  }
+}

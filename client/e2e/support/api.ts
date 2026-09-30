@@ -1,4 +1,5 @@
 import { expect, type APIRequestContext } from '@playwright/test'
+import { freshCode } from './totp'
 
 /**
  * The data the browser flows start from, made through the same API a person's clicks reach (specs/080) - never by
@@ -14,6 +15,9 @@ export interface Person {
   id: string
   email: string
   token: string
+  /** Staff only (specs/110): the authenticator secret this run enrolled them with, and the last window a code used. */
+  totpSecret?: string
+  lastStep?: number
 }
 
 export interface Listed {
@@ -21,6 +25,9 @@ export interface Listed {
   variantId: string
   name: string
 }
+
+/** Signed in once per run - one worker, serial flows - and reused (specs/110). */
+let adminToken: string | undefined
 
 function required(name: string): string {
   const value = process.env[name]
@@ -40,8 +47,27 @@ export class Api {
     return (await response.json()).token
   }
 
+  /**
+   * The administrator's token, signed in once per run with a code from ADMIN_TOTP_SECRET (specs/110) and reused: a
+   * code works once, and an access token outlives the whole run.
+   */
   async admin(): Promise<string> {
-    return this.login(required('ADMIN_EMAIL'), required('ADMIN_PASSWORD'))
+    adminToken ??= await this.signInWithCode(required('ADMIN_EMAIL'), required('ADMIN_PASSWORD'), required('ADMIN_TOTP_SECRET'))
+    return adminToken
+  }
+
+  /** Both steps of signing in (specs/110): the password for a challenge, then the code for the session. */
+  async signInWithCode(email: string, password: string, secret: string, person?: Person): Promise<string> {
+    const first = await this.request.post('/api/auth/login', { data: { email, password } })
+    expect(first.status(), `sign in as ${email}`).toBe(200)
+    const { challenge } = await first.json()
+    expect(challenge, `${email} is asked for a code`).toBeTruthy()
+
+    const { code, step } = await freshCode(secret, person?.lastStep)
+    const second = await this.request.post('/api/auth/login/two-factor', { data: { challenge, code } })
+    expect(second.status(), `the code for ${email}`).toBe(200)
+    if (person) person.lastStep = step
+    return (await second.json()).token
   }
 
   async customer(firstName: string): Promise<Person> {
@@ -74,11 +100,30 @@ export class Api {
     return { id: first.id, email, token: await this.login(email) }
   }
 
+  /**
+   * A moderator, enrolled in two-factor sign-in as staff must be (specs/110): granted the role, set up with an
+   * authenticator secret this run keeps, confirmed with a code, then signed in with the next one.
+   */
   async moderator(firstName: string): Promise<Person> {
-    const person = await this.customer(firstName)
+    const person: Person = await this.customer(firstName)
     const granted = await this.request.put(`/api/users/${person.id}/roles/Moderator`, { headers: this.bearer(await this.admin()) })
     expect(granted.ok(), 'grant Moderator').toBe(true)
-    return { ...person, token: await this.login(person.email) }
+
+    // Signed in without a second factor, a moderator is told to set it up - and holds no Moderator yet.
+    const unverified = await this.request.post('/api/auth/login', { data: { email: person.email, password: PASSWORD } })
+    const session = await unverified.json()
+    expect(session.twoFactor, 'a new moderator must set up two-factor sign-in').toBe('SetupRequired')
+
+    const setup = await this.request.post('/api/auth/me/two-factor/setup', { headers: this.bearer(session.token) })
+    expect(setup.status(), 'start two-factor setup').toBe(200)
+    person.totpSecret = (await setup.json()).secret as string
+    const { code, step } = await freshCode(person.totpSecret, undefined)
+    const confirmed = await this.request.post('/api/auth/me/two-factor/confirm', { data: { code }, headers: this.bearer(session.token) })
+    expect(confirmed.status(), 'confirm two-factor setup').toBe(200)
+    person.lastStep = step
+
+    person.token = await this.signInWithCode(person.email, PASSWORD, person.totpSecret, person)
+    return person
   }
 
   /** The link in the confirmation email, read from Mailpit - a real address is confirmed the same way. */

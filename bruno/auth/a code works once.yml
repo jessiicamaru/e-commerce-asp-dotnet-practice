@@ -1,0 +1,45 @@
+info:
+  name: a code works once
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login/two-factor"
+  body:
+    type: json
+    data: |-
+      {
+        "challenge": "{{adminChallengeAgain}}",
+        "code": "{{adminCode}}"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // A fresh challenge from the password, then the SAME code the previous request used.
+        const axios = require("axios");
+        const first = await axios.post(bru.interpolate("{{baseUrl}}/api/auth/login"),
+          { email: bru.getEnvVar("adminEmail"), password: bru.getEnvVar("adminPassword") });
+        bru.setVar("adminChallengeAgain", first.data.challenge);
+    - type: tests
+      code: |-
+        test("status 400 - a code seen once is refused the second time", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("on the code, not the challenge", function() {
+          expect(Object.keys(res.body.errors)).to.include("Code");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/110 research D5: the last used window is stored, and a code at or before it is refused - so a code seen over a
+  shoulder or captured by a fake page cannot be used again.

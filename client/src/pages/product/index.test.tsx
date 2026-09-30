@@ -32,7 +32,7 @@ function renderPage() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const auth = {
     user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, refreshSession: async () => true,
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {},
+    signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
 
   return render(

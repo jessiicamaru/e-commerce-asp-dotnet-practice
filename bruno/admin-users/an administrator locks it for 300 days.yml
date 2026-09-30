@@ -1,7 +1,7 @@
 info:
   name: an administrator locks it for 300 days
   type: http
-  seq: 18
+  seq: 22
 
 http:
   method: POST

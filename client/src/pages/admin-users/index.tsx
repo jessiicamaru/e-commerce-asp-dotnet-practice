@@ -7,6 +7,16 @@ import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -50,7 +60,8 @@ export function AdminUsersPage() {
 
   const accounts = useAccounts(search, page, PAGE_SIZE)
   const act = useAccountActions()
-  const failed = [act.grant, act.revoke, act.lock, act.unlock, act.ban, act.liftBan].find((m) => m.isError)?.error
+  const failed = [act.grant, act.revoke, act.lock, act.unlock, act.ban, act.liftBan, act.resetTwoFactor].find((m) => m.isError)?.error
+  const [resetting, setResetting] = useState<Account | null>(null)
 
   const go = (next: { search?: string; page?: number }) => {
     const merged = new URLSearchParams()
@@ -184,6 +195,9 @@ export function AdminUsersPage() {
                                 {t('users.lock')}
                               </DropdownMenuItem>
                             )}
+                            {isAdmin && a.twoFactorEnabled && a.id !== user?.id && (
+                              <DropdownMenuItem onClick={() => setResetting(a)}>{t('users.resetTwoFactor')}</DropdownMenuItem>
+                            )}
                             {isAdmin &&
                               (a.bannedAt ? (
                                 <DropdownMenuItem onClick={() => act.liftBan.mutate(a.id, { onSuccess: done('users.banLifted', a) })}>
@@ -212,6 +226,29 @@ export function AdminUsersPage() {
       )}
 
       <HistoryDialog account={reading} onClose={() => setReading(null)} />
+
+      <AlertDialog open={resetting !== null} onOpenChange={(open) => !open && setResetting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('users.resetTwoFactorTitle', { email: resetting?.email ?? '' })}</AlertDialogTitle>
+            <AlertDialogDescription>{t('users.resetTwoFactorBody')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('action.cancel', { ns: 'common' })}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                const account = resetting
+                if (account) {
+                  act.resetTwoFactor.mutateAsync(account.id).then(() => toast.success(t('users.twoFactorReset', { email: account.email })), () => {})
+                }
+              }}
+            >
+              {t('users.resetTwoFactorConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <StopDialog
         stopping={stopping}

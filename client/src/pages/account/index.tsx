@@ -33,6 +33,9 @@ export function AccountPage() {
           <Link to="/orders" className="underline">
             {t('account.orders')}
           </Link>
+          <Link to="/account/two-factor" className="underline">
+            {t('account.twoFactor')}
+          </Link>
         </p>
       </div>
       <DetailsForm />

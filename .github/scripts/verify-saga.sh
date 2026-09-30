@@ -2,7 +2,7 @@
 #
 # Verifies the checkout saga end to end, against running services.
 #
-#   ADMIN_EMAIL=... ADMIN_PASSWORD=... .github/scripts/verify-saga.sh
+#   ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... .github/scripts/verify-saga.sh
 #
 # Places a real order over HTTP with a real signed customer token, follows it to
 # a terminal state, and asserts that the stock actually moved. Every service's
@@ -48,6 +48,7 @@ SAGA_E2E_SCENARIO="${SAGA_E2E_SCENARIO:-}"
 
 : "${ADMIN_EMAIL:?ADMIN_EMAIL is required}"
 : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
+: "${ADMIN_TOTP_SECRET:?ADMIN_TOTP_SECRET is required - staff sign in with a code (specs/110); see server/.env.example}"
 
 # How many units this run orders. Small, and smaller than what it puts on the
 # shelf, so the order can never fail for lack of stock - a failure here must
@@ -212,11 +213,44 @@ fi
 
 # ---------------------------------------------------------------- setup
 
+# The current six-digit code for a base32 TOTP secret (RFC 6238; specs/110). OFFSET moves it by whole windows.
+totp() {
+  SECRET="$1" OFFSET="${2:-0}" "$PYTHON" -c '
+import base64, hmac, hashlib, os, struct, time
+secret = os.environ["SECRET"].replace(" ", "").upper()
+key = base64.b32decode(secret + "=" * (-len(secret) % 8))
+step = int(time.time()) // 30 + int(os.environ["OFFSET"])
+h = hmac.new(key, struct.pack(">Q", step), hashlib.sha1).digest()
+o = h[-1] & 15
+print(str((struct.unpack(">I", h[o:o + 4])[0] & 0x7FFFFFFF) % 10**6).zfill(6))
+'
+}
+
+# Signs the administrator in, both steps (specs/110), and prints the access token. A code works once: when this
+# window's was already used - another script a moment ago - it waits for the next window and asks again.
+admin_sign_in() {
+  local first challenge answer token attempt
+  for attempt in 1 2; do
+    first=$(curl -fsS -X POST "$IDENTITY_URL/api/auth/login" -H 'Content-Type: application/json' \
+      -d "$(json_object email "$ADMIN_EMAIL" password "$ADMIN_PASSWORD")") || return 1
+    challenge=$(printf '%s' "$first" | json_field challenge)
+    [ -n "$challenge" ] || return 1
+    answer=$(curl -sS -X POST "$IDENTITY_URL/api/auth/login/two-factor" -H 'Content-Type: application/json' \
+      -d "$(json_object challenge "$challenge" code "$(totp "$ADMIN_TOTP_SECRET")")")
+    token=$(printf '%s' "$answer" | json_field token 2>/dev/null || true)
+    if [ -n "$token" ]; then
+      printf '%s' "$token"
+      return 0
+    fi
+    sleep $(( 31 - $(date +%s) % 30 ))
+  done
+  return 1
+}
+
 RUN_ID="$(date +%s)$$"
 
-ADMIN_TOKEN="$(post_json "$IDENTITY_URL/api/auth/login" \
-  "$(json_object email "$ADMIN_EMAIL" password "$ADMIN_PASSWORD")" | json_field token)"
-[ -n "$ADMIN_TOKEN" ] || fail "The administrator could not sign in. Check ADMIN_EMAIL and ADMIN_PASSWORD against what Identity seeded."
+ADMIN_TOKEN="$(admin_sign_in)" || true
+[ -n "$ADMIN_TOKEN" ] || fail "The administrator could not sign in. Check ADMIN_EMAIL, ADMIN_PASSWORD and ADMIN_TOTP_SECRET against what Identity seeded."
 pass "administrator signed in"
 
 CATEGORY_ID="$(post_json "$CATALOG_URL/api/categories" \

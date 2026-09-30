@@ -18,3 +18,6 @@ variables:
   - secret: true
     name: adminPassword
     description: ADMIN_PASSWORD from server/.env. Fill in inside Bruno - never commit it.
+  - secret: true
+    name: adminTotpSecret
+    description: ADMIN_TOTP_SECRET from server/.env (specs/110) - the administrator signs in with a code computed from it. Never commit it.

@@ -1,5 +1,5 @@
 info:
-  name: the moderator signs in holding the role
+  name: the moderator signs in without the role until two-factor
   type: http
   seq: 5
 
@@ -22,8 +22,9 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
-        test("roles include Moderator", function() {
-          expect(res.body.roles).to.include("Moderator");
+        test("told to set up two-factor sign-in, and holding no Moderator until then", function() {
+          expect(res.body.twoFactor).to.equal("SetupRequired");
+          expect(res.body.roles).to.not.include("Moderator");
         });
         if (res.status === 200) bru.setVar("modToken", res.body.token);
 
@@ -34,4 +35,5 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  The grant, read back from the account on the next sign-in.
+  The grant, read back from the account on the next sign-in - and, since specs/110, withheld from the session until
+  the moderator sets up two-factor sign-in.

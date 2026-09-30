@@ -80,6 +80,20 @@ if (!string.IsNullOrEmpty(envAdminPassword))
     builder.Configuration["AdminUser:Password"] = envAdminPassword;
 }
 
+// Two-factor sign-in (#218, specs/110): the key TOTP secrets are encrypted with - required, no default - and, for
+// development and CI only, the seeded administrator's authenticator secret, so scripts can compute its codes.
+var envTwoFactorKey = Environment.GetEnvironmentVariable("TWO_FACTOR_KEY");
+if (!string.IsNullOrEmpty(envTwoFactorKey))
+{
+    builder.Configuration["TwoFactor:Key"] = envTwoFactorKey;
+}
+
+var envAdminTotpSecret = Environment.GetEnvironmentVariable("ADMIN_TOTP_SECRET");
+if (!string.IsNullOrEmpty(envAdminTotpSecret))
+{
+    builder.Configuration["AdminUser:TotpSecret"] = envAdminTotpSecret;
+}
+
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
 var dbName = Environment.GetEnvironmentVariable("IDENTITY_DB_NAME") ?? "ecommerce_identity_db";

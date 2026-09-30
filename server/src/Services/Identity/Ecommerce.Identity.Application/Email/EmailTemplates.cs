@@ -193,6 +193,20 @@ public static class EmailTemplates
             + "Your shop's payout account was just set to: {bank}, account ending {last4}.\n\n"
             + "If this was not you, change your password now and contact the shop before the next payout.\n\n"
             + "- e-commerce"),
+        [(EmailTemplate.TwoFactorReset, "vi")] = (
+            "Xác thực hai bước của bạn vừa được đặt lại",
+            "Xin chào {name},\n\n"
+            + "Một quản trị viên vừa đặt lại xác thực hai bước cho tài khoản của bạn, và mọi phiên đăng nhập đã kết thúc.\n"
+            + "Lần đăng nhập tới, bạn sẽ thiết lập lại ứng dụng xác thực: {link}\n\n"
+            + "Nếu bạn không yêu cầu việc này, hãy đổi mật khẩu ngay và báo cho cửa hàng.\n\n"
+            + "- e-commerce"),
+        [(EmailTemplate.TwoFactorReset, "en")] = (
+            "Your two-factor sign-in was reset",
+            "Hi {name},\n\n"
+            + "An administrator has just reset two-factor sign-in on your account, and every session has ended.\n"
+            + "You will set up your authenticator app again the next time you sign in: {link}\n\n"
+            + "If you did not ask for this, change your password now and tell the shop.\n\n"
+            + "- e-commerce"),
     };
 
     /// <summary>
@@ -211,7 +225,7 @@ public static class EmailTemplates
         EmailTemplate.ReturnAccepted, EmailTemplate.ReturnRefused, EmailTemplate.ReturnRefunded,
         EmailTemplate.SavedBackInStock,
         EmailTemplate.PasswordReset, EmailTemplate.EmailConfirmation, EmailTemplate.AccountLocked, EmailTemplate.AccountBanned,
-        EmailTemplate.PayoutAccountChanged,
+        EmailTemplate.PayoutAccountChanged, EmailTemplate.TwoFactorReset,
     ];
 
     /// <summary>The languages an email is written in - the shop's (specs/021).</summary>
@@ -243,6 +257,7 @@ public static class EmailTemplates
         [EmailTemplate.AccountLocked] = ["name", "until", "reason"],
         [EmailTemplate.AccountBanned] = ["name", "reason"],
         [EmailTemplate.PayoutAccountChanged] = ["name", "bank", "last4"],
+        [EmailTemplate.TwoFactorReset] = ["name", "link"],
     };
 
     /// <summary>
@@ -263,6 +278,7 @@ public static class EmailTemplates
         [EmailTemplate.AccountLocked] = [],
         [EmailTemplate.AccountBanned] = [],
         [EmailTemplate.PayoutAccountChanged] = [],
+        [EmailTemplate.TwoFactorReset] = [],
     };
 
     /// <summary>The built-in words of a template in a language, as HTML - null when there are none.</summary>
@@ -313,6 +329,7 @@ public static class EmailTemplates
         EmailTemplate.AccountLocked => new Dictionary<string, string> { ["until"] = "2031-01-15T03:30:00.0000000Z", ["reason"] = "Repeated spam in questions." },
         EmailTemplate.AccountBanned => new Dictionary<string, string> { ["reason"] = "Fraud." },
         EmailTemplate.PayoutAccountChanged => new Dictionary<string, string> { ["bank"] = "Vietcombank", ["last4"] = "4321" },
+        EmailTemplate.TwoFactorReset => new Dictionary<string, string>(),
         _ => new Dictionary<string, string> { ["token"] = "sample-token" },
     };
 
@@ -434,6 +451,9 @@ public static class EmailTemplates
             case EmailTemplate.PayoutAccountChanged
                 when data.TryGetValue("bank", out var bank) && data.TryGetValue("last4", out var last4):
                 return new() { ["name"] = name, ["bank"] = bank, ["last4"] = last4 };
+
+            case EmailTemplate.TwoFactorReset:
+                return new() { ["name"] = name, ["link"] = $"{storefrontUrl.TrimEnd('/')}/sign-in" };
 
             default:
                 return null;

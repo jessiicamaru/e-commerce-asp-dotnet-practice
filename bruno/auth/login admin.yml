@@ -19,7 +19,9 @@ runtime:
   scripts:
     - type: after-response
       code: |-
-        if (res.status === 200) bru.setVar("adminToken", res.body.token);
+        // The first step only (specs/110): the administrator has two-factor sign-in, so the right password answers a
+        // challenge and no token. The next request exchanges it with the code.
+        if (res.status === 200) bru.setVar("adminChallenge", res.body.challenge);
     - type: tests
       code: |-
         // Said FIRST, because this one failing takes 53 other requests down with it and none of
@@ -38,6 +40,11 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
+        test("the right password alone issues no token - only a challenge for the code", function() {
+          expect(res.body.twoFactor).to.equal("Required");
+          expect(res.body.token).to.equal("");
+          expect(res.body.challenge).to.be.a("string").and.not.equal("");
+        });
 
 settings:
   encodeUrl: true
@@ -46,6 +53,6 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Needs `adminEmail` / `adminPassword` in the environment - the values of `ADMIN_EMAIL` /
+  The first of two steps since specs/110. Needs `adminEmail` / `adminPassword` in the environment - the values of `ADMIN_EMAIL` /
   `ADMIN_PASSWORD` in `server/.env`, seeded at Identity startup. They are marked secret, so Bruno
   stores them encrypted and does not write them into this file.

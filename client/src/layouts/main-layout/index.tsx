@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { ConfirmEmailBanner } from '@/components/layout/confirm-email-banner'
+import { TwoFactorBanner } from '@/components/layout/two-factor-banner'
 import { TopBar } from '@/components/layout/top-bar'
 import { Toaster } from '@/components/ui/sonner'
 import { useNotificationWording } from '@/hooks/notification-wording'
@@ -19,6 +20,7 @@ export function MainLayout() {
       <TopBar />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <ConfirmEmailBanner />
+        <TwoFactorBanner />
         <Outlet />
       </main>
       <Toaster />

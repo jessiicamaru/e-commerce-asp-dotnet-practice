@@ -2,6 +2,7 @@ using Ecommerce.Application.Email;
 using Ecommerce.Application.Common;
 using Ecommerce.Application.Auth.Common;
 using Ecommerce.Application.Auth.SignInThrottling;
+using Ecommerce.Application.Auth.TwoFactor;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Application.Common.Constants;
 using Ecommerce.Domain.Entities;
@@ -13,8 +14,9 @@ using Microsoft.Extensions.Options;
 namespace Ecommerce.Application.Auth.Commands.Login;
 
 public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator,
-    IAuditTrail audit, ISignInThrottle throttle, IOptions<SignInOptions> signInOptions) : IRequestHandler<LoginCommand, AuthResponse>
+    IAuditTrail audit, ISignInThrottle throttle, IOptions<SignInOptions> signInOptions, ITwoFactorRepository twoFactor) : IRequestHandler<LoginCommand, AuthResponse>
 {
+    private readonly ITwoFactorRepository _twoFactor = twoFactor;
     private readonly IAuditTrail _audit = audit;
     private readonly ISignInThrottle _throttle = throttle;
     private readonly SignInOptions _signIn = signInOptions.Value;
@@ -65,9 +67,6 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
-        // The right password: the count of wrong ones starts again (specs/062).
-        await _throttle.ClearAsync(emailKey, cancellationToken);
-
         // Stopped by staff (specs/043). Only now, after the right password: before it, a locked account
         // and a wrong password must look the same (#28). After it, the person is who they say they are
         // and is owed the reason.
@@ -94,7 +93,37 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
                 });
         }
 
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        // The language they are using the shop in, for the emails that cannot know it (specs/083).
+        if (EmailTemplates.Supported(request.Language) is { } spoken)
+        {
+            user.Language = spoken;
+        }
+
+        // Two-factor sign-in is on (#218, specs/110): the right password earns a challenge and nothing else - no access
+        // token, no refresh token. The count of wrong attempts is NOT cleared here: somebody who has the password could
+        // otherwise restart it before every batch of guessed codes. It is cleared after the code.
+        if (user.TwoFactorEnabled)
+        {
+            var challenge = TwoFactorCodes.NewChallenge();
+            await _twoFactor.AddChallengeAsync(new TwoFactorChallenge
+            {
+                Id = Guid.CreateVersion7(),
+                UserId = user.Id,
+                TokenHash = TwoFactorCodes.Hash(challenge),
+                ExpiresAt = now.Add(TwoFactorChallenge.Lifetime),
+            }, cancellationToken);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            // Nothing about the person beyond what they typed: the session - and their name - come with the code.
+            return new AuthResponse(user.Id, user.Email, string.Empty, string.Empty, string.Empty, string.Empty, [],
+                user.EmailConfirmed, TwoFactor: SessionRoles.Required, Challenge: challenge);
+        }
+
+        // The right password, and no second factor to come: the count of wrong ones starts again (specs/062).
+        await _throttle.ClearAsync(emailKey, cancellationToken);
+
+        // Without a second factor the session holds no staff roles (specs/110): a staff member is told to set it up.
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, twoFactorVerified: false);
         var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
 
         user.RefreshTokens.Add(new RefreshToken
@@ -103,12 +132,6 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             UserId = user.Id,
             ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
         });
-
-        // The language they are using the shop in, for the emails that cannot know it (specs/083).
-        if (EmailTemplates.Supported(request.Language) is { } language)
-        {
-            user.Language = language;
-        }
 
         await _audit.RecordAsync(
             AuditCategory.Security, "SignedIn", "User", user.Id.ToString(), $"{user.Email} signed in",
@@ -122,8 +145,9 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             user.LastName,
             accessToken,
             refreshTokenString,
-            user.Roles.Select(role => role.Name).ToList(),
-            user.EmailConfirmed
+            SessionRoles.Of(user, twoFactorVerified: false),
+            user.EmailConfirmed,
+            TwoFactor: SessionRoles.State(user)
         );
     }
 }

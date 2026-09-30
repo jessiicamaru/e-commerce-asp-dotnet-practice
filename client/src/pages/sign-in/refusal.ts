@@ -34,3 +34,19 @@ export function describeSignInFailure(t: TFunction<'auth'>, language: string, ca
 
   return t('signIn.failed')
 }
+
+/**
+ * What the second step says when a code is refused (specs/110). A wrong or already-used code: type another. A challenge
+ * that died - five minutes, or five wrong codes - means starting again from the password, which `restart` says.
+ */
+export function describeCodeFailure(t: TFunction<'auth'>, caught: unknown): { message: string; restart: boolean } {
+  const error = ApiError.from(caught)
+
+  const wait = tooManyAttempts(t as TFunction, caught)
+  if (wait) return { message: wait, restart: true }
+
+  if (error.status === 400 && 'Challenge' in error.fieldErrors) return { message: t('twoFactorStep.again'), restart: true }
+  if (error.status === 400) return { message: t('twoFactorStep.wrong'), restart: false }
+
+  return { message: t('signIn.failed'), restart: false }
+}

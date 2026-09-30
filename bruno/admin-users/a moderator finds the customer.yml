@@ -1,7 +1,7 @@
 info:
   name: a moderator finds the customer
   type: http
-  seq: 6
+  seq: 10
 
 http:
   method: GET

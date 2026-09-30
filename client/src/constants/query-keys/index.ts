@@ -20,6 +20,7 @@ export const queryKeys = {
   cart: () => ['cart'] as const,
   addresses: () => ['addresses'] as const,
   me: () => ['me'] as const,
+  myTwoFactor: () => ['me', 'two-factor'] as const,
   shippingOptions: () => ['shipping-options'] as const,
   carrier: () => ['carrier'] as const,
   deliverySettings: () => ['delivery-settings'] as const,

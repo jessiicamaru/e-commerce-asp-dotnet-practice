@@ -1,5 +1,5 @@
 import { http } from '@/config/axios'
-import type { AccountProfile, AuthResponse, ProfileInput, SignUpInput } from './types'
+import type { AccountProfile, AuthResponse, ProfileInput, SecondFactor, SignUpInput, TwoFactorSetup, TwoFactorStatus } from './types'
 
 /**
  * Identity's session endpoints. Anonymous on purpose: none of them may carry the access token or
@@ -9,6 +9,37 @@ export class Auth {
   static async signIn(email: string, password: string): Promise<AuthResponse> {
     const { data } = await http.post<AuthResponse>('/auth/login', { email, password }, { anonymous: true })
     return data
+  }
+
+  /** The second step of signing in (specs/110): the challenge from the first, and a code or a recovery code. */
+  static async signInTwoFactor(challenge: string, answer: SecondFactor): Promise<AuthResponse> {
+    const { data } = await http.post<AuthResponse>('/auth/login/two-factor', { challenge, ...answer }, { anonymous: true })
+    return data
+  }
+
+  static async twoFactor(): Promise<TwoFactorStatus> {
+    const { data } = await http.get<TwoFactorStatus>('/auth/me/two-factor')
+    return data
+  }
+
+  static async setUpTwoFactor(): Promise<TwoFactorSetup> {
+    const { data } = await http.post<TwoFactorSetup>('/auth/me/two-factor/setup')
+    return data
+  }
+
+  /** Confirms setup with a code; answers the recovery codes - the only time they are shown. */
+  static async confirmTwoFactor(code: string): Promise<string[]> {
+    const { data } = await http.post<{ recoveryCodes: string[] }>('/auth/me/two-factor/confirm', { code })
+    return data.recoveryCodes
+  }
+
+  static async newRecoveryCodes(code: string): Promise<string[]> {
+    const { data } = await http.post<{ recoveryCodes: string[] }>('/auth/me/two-factor/recovery-codes', { code })
+    return data.recoveryCodes
+  }
+
+  static async turnOffTwoFactor(password: string, code: string): Promise<void> {
+    await http.delete('/auth/me/two-factor', { data: { password, code } })
   }
 
   static async signUp(input: SignUpInput): Promise<AuthResponse> {

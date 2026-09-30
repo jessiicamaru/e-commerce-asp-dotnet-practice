@@ -1,8 +1,8 @@
 """Put the photographs in seed/images/ onto the products that match them by SKU.
 
     cd server
-    ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-images.py          # says what it would do
-    ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-images.py --yes    # does it
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-images.py          # says what it would do
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-images.py --yes    # does it
 
 `seed/images/` is **gitignored on purpose**. This repository is public and a product
 photograph belongs to whoever took it; the files are staged there and uploaded to the
@@ -26,6 +26,8 @@ import urllib.error
 import urllib.request
 import uuid
 import json
+
+from two_factor import finish_sign_in
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -89,7 +91,16 @@ def main() -> int:
     if status != 200:
         print(f"{RED}Could not sign in ({status}): {detail(body)}{OFF}")
         return 1
-    token = json.loads(body)["token"]
+
+    # Staff sign in with a code too (specs/110), computed from ADMIN_TOTP_SECRET.
+    def exchange(challenge, code):
+        answered, answer = call("POST", "/auth/login/two-factor", {"challenge": challenge, "code": code})
+        return json.loads(answer) if answered == 200 else None
+
+    token = finish_sign_in(json.loads(body), exchange)
+    if not token:
+        print(f"{RED}Could not sign in with a code. Is ADMIN_TOTP_SECRET set, as in server/.env?{OFF}")
+        return 1
 
     status, body = call("GET", "/products?pageSize=200")
     if status != 200:

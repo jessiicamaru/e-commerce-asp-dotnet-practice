@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Ecommerce.Application.Auth.TwoFactor;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Entities;
 using Ecommerce.Shared.Authentication;
@@ -19,7 +20,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _jwtSettings = jwtOptions.Value;
     }
 
-    public string GenerateAccessToken(User user)
+    public string GenerateAccessToken(User user, bool twoFactorVerified = false)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
@@ -33,9 +34,18 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        foreach (var role in user.Roles)
+        // Staff roles only from a session verified with a second factor (#218, specs/110): every service authorizes from
+        // these, so leaving them out is what refuses an unverified staff session everywhere.
+        foreach (var role in SessionRoles.Of(user, twoFactorVerified))
         {
-            claims.Add(new(ClaimTypes.Role, role.Name));
+            claims.Add(new(ClaimTypes.Role, role));
+        }
+
+        // How the session was established (RFC 8176): informational - the roles above are what decides.
+        claims.Add(new("amr", "pwd"));
+        if (twoFactorVerified)
+        {
+            claims.Add(new("amr", "otp"));
         }
 
         var tokenDescriptor = new SecurityTokenDescriptor

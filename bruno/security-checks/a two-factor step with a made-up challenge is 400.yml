@@ -1,0 +1,37 @@
+info:
+  name: a two-factor step with a made-up challenge is 400
+  type: http
+  seq: 77
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login/two-factor"
+  body:
+    type: json
+    data: |-
+      {
+        "challenge": "made-up",
+        "code": "123456"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("on the challenge - sign in again", function() {
+          expect(Object.keys(res.body.errors)).to.include("Challenge");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/110: a challenge is only what a right password handed out, for five minutes.

@@ -1,4 +1,6 @@
-import type { SignUpInput, User } from '@/services/auth/types'
+import type { SecondFactor, SignUpInput, User } from '@/services/auth/types'
+
+export type SignInStep = { challenge: string } | { setupRequired: boolean }
 
 export interface AuthState {
   user: User | null
@@ -24,7 +26,12 @@ export interface AuthState {
    * an approval, reach this tab without signing out. False when the session could not be renewed.
    */
   refreshSession(): Promise<boolean>
-  signIn(email: string, password: string): Promise<void>
+  /**
+   * The first step. With two-factor sign-in on it answers `{ challenge }` and signs nobody in - `completeSignIn` does,
+   * with the code (specs/110); otherwise it signs in and says whether staff must set two-factor sign-in up.
+   */
+  signIn(email: string, password: string): Promise<SignInStep>
+  completeSignIn(challenge: string, answer: SecondFactor): Promise<void>
   signUp(input: SignUpInput): Promise<void>
   signOut(): Promise<void>
 }

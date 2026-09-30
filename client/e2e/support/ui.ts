@@ -1,16 +1,27 @@
 import { expect, type Locator, type Page } from '@playwright/test'
-import { PASSWORD } from './api'
+import { PASSWORD, type Person } from './api'
+import { freshCode } from './totp'
 
 /**
  * Signs in through the sign-in page, as a person does - in English, whatever the machine's own language, so the
  * words the flows look for are the same on every machine and in CI.
  */
-export async function signIn(page: Page, email: string): Promise<void> {
+export async function signIn(page: Page, who: string | Person): Promise<void> {
+  const person = typeof who === 'string' ? undefined : who
   await page.addInitScript(() => localStorage.setItem('language', 'en'))
   await page.goto('/sign-in')
-  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Email').fill(person?.email ?? (who as string))
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
+
+  // Staff sign in with a code too (specs/110): typed from the authenticator secret the run enrolled them with.
+  if (person?.totpSecret) {
+    const { code, step } = await freshCode(person.totpSecret, person.lastStep)
+    await page.getByLabel('Code').fill(code)
+    await page.getByRole('button', { name: 'Verify' }).click()
+    person.lastStep = step
+  }
+
   await expect(page).not.toHaveURL(/\/sign-in/)
 }
 

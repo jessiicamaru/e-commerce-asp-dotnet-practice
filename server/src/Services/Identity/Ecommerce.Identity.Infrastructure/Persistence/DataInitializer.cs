@@ -16,8 +16,10 @@ public class DataInitializer(
     ApplicationDbContext context,
     IPasswordHasher passwordHasher,
     IConfiguration configuration,
-    ILogger<DataInitializer> logger)
+    ILogger<DataInitializer> logger,
+    ITwoFactorSecretProtector protector)
 {
+    private readonly ITwoFactorSecretProtector _protector = protector;
     private readonly ApplicationDbContext _context = context;
     private readonly IPasswordHasher _passwordHasher = passwordHasher;
     private readonly IConfiguration _configuration = configuration;
@@ -29,6 +31,40 @@ public class DataInitializer(
     {
         await SeedRolesAsync(cancellationToken);
         await SeedAdministratorAsync(cancellationToken);
+        await SeedAdministratorTwoFactorAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// DEVELOPMENT AND CI ONLY (specs/110 research D9): with <c>ADMIN_TOTP_SECRET</c> set, the configured administrator's
+    /// authenticator uses that known secret, so the scripts, Bruno and Playwright can compute its codes. Staff two-factor
+    /// stays compulsory; only the secret is known. Never set it in production - the administrator enrols at first sign-in.
+    /// </summary>
+    private async Task SeedAdministratorTwoFactorAsync(CancellationToken cancellationToken)
+    {
+        var configured = _configuration["AdminUser:TotpSecret"];
+        var email = _configuration["AdminUser:Email"];
+        if (string.IsNullOrWhiteSpace(configured) || string.IsNullOrWhiteSpace(email))
+            return;
+
+        var secret = Ecommerce.Application.Auth.TwoFactor.Base32.Decode(configured);
+        if (secret is not { Length: >= 10 })
+        {
+            _logger.LogError("ADMIN_TOTP_SECRET is not base32 of at least 10 bytes; the administrator's second factor was not seeded.");
+            return;
+        }
+
+        var key = EmailKey.For(email);
+        var admin = await _context.Users.FirstOrDefaultAsync(
+            u => u.Email.ToLower() == key && u.Roles.Any(r => r.Name == RoleNames.Admin), cancellationToken);
+        if (admin is null || admin.TwoFactorEnabled)
+            return;
+
+        admin.TwoFactorSecret = _protector.Protect(secret);
+        admin.TwoFactorEnabledAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+        _logger.LogWarning(
+            "The administrator {Email} was given the authenticator secret in ADMIN_TOTP_SECRET. That is for development and CI only.",
+            email);
     }
 
     private async Task SeedRolesAsync(CancellationToken cancellationToken)

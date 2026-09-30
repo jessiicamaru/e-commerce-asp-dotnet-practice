@@ -1,10 +1,10 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `b92ad5c`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `027bc98`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
-## Identity - `ecommerce_identity_db` (13 tables)
+## Identity - `ecommerce_identity_db` (15 tables)
 
 ### `delivery_addresses`
 
@@ -97,6 +97,7 @@ Entity `RefreshToken`.
 | `ReplacedByToken` | text | yes |
 | `RevokedAt` | timestamp with time zone | yes |
 | `Token` | character varying(500) |  |
+| `TwoFactorVerified` | boolean |  |
 | `UserId` | uuid |  |
 
 ### `roles`
@@ -161,6 +162,31 @@ Entity `SignInThrottle`.
 | `Failures` | integer |  |
 | `WindowStartedAt` | timestamp with time zone |  |
 
+### `two_factor_challenges`
+
+Entity `TwoFactorChallenge`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `ExpiresAt` | timestamp with time zone |  |
+| `FailedAttempts` | integer |  |
+| `TokenHash` | character(64) |  |
+| `UsedAt` | timestamp with time zone | yes |
+| `UserId` | uuid |  |
+
+### `two_factor_recovery_codes`
+
+Entity `TwoFactorRecoveryCode`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `CodeHash` | character(64) |  |
+| `CreatedAt` | timestamp with time zone |  |
+| `UsedAt` | timestamp with time zone | yes |
+| `UserId` | uuid |  |
+
 ### `user_roles`
 
 Entity `user_roles`.
@@ -190,6 +216,9 @@ Entity `User`.
 | `LockedUntil` | timestamp with time zone | yes |
 | `PasswordHash` | character varying(255) |  |
 | `PhoneNumber` | character varying(20) | yes |
+| `TwoFactorEnabledAt` | timestamp with time zone | yes |
+| `TwoFactorLastStep` | bigint | yes |
+| `TwoFactorSecret` | character varying(200) | yes |
 | `UpdatedAt` | timestamp with time zone |  |
 
 ## Catalog - `ecommerce_catalog_db` (16 tables)

@@ -1,7 +1,7 @@
 info:
   name: a moderator cannot grant roles
   type: http
-  seq: 7
+  seq: 11
 
 http:
   method: PUT

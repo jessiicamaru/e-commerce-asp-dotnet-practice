@@ -50,6 +50,9 @@ public static class EmailTemplate
     /// <summary>The reader's payout account was set or changed (specs/106). Data: <c>bank</c>, <c>last4</c> - never the whole number.</summary>
     public const string PayoutAccountChanged = "PayoutAccountChanged";
 
+    /// <summary>An administrator reset the reader's two-factor sign-in (specs/110). No data; the link is the sign-in page.</summary>
+    public const string TwoFactorReset = "TwoFactorReset";
+
     /// <summary>
     /// The language to ask for when the sender does not know the reader's (specs/083): Identity writes the email in
     /// the language the person last used the shop in, or the default.

@@ -5,6 +5,7 @@ import { RequireRole } from '@/components/auth/require-role'
 import { MainLayout } from '@/layouts/main-layout'
 import { SellerLayout } from '@/layouts/seller-layout'
 import { AccountPage } from '@/pages/account'
+import { AccountTwoFactorPage } from '@/pages/account-two-factor'
 import { AddressesPage } from '@/pages/addresses'
 import { CartPage } from '@/pages/cart'
 import { CatalogPage } from '@/pages/catalog'
@@ -79,6 +80,14 @@ export function AppRoutes() {
             element={
               <RequireAuth>
                 <AccountPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/account/two-factor"
+            element={
+              <RequireAuth>
+                <AccountTwoFactorPage />
               </RequireAuth>
             }
           />

@@ -273,6 +273,11 @@ namespace Ecommerce.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<bool>("TwoFactorVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -434,6 +439,66 @@ namespace Ecommerce.Infrastructure.Migrations
                     b.ToTable("sign_in_throttles", (string)null);
                 });
 
+            modelBuilder.Entity("Ecommerce.Domain.Entities.TwoFactorChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("two_factor_challenges", (string)null);
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Entities.TwoFactorRecoveryCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CodeHash");
+
+                    b.ToTable("two_factor_recovery_codes", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -492,6 +557,16 @@ namespace Ecommerce.Infrastructure.Migrations
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("TwoFactorEnabledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("TwoFactorLastStep")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TwoFactorSecret")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -735,6 +810,24 @@ namespace Ecommerce.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Ecommerce.Domain.Entities.ShopApplication", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Entities.TwoFactorChallenge", b =>
+                {
+                    b.HasOne("Ecommerce.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Ecommerce.Domain.Entities.TwoFactorRecoveryCode", b =>
                 {
                     b.HasOne("Ecommerce.Domain.Entities.User", null)
                         .WithMany()

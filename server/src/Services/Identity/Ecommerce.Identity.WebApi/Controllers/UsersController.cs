@@ -77,6 +77,18 @@ public class UsersController : ApiControllerBase
         return Ok(await Mediator.Send(new LiftBanCommand(id)));
     }
 
+    /// <summary>
+    /// Resets another person's two-factor sign-in - a lost phone and no recovery code (specs/110). Administrators only,
+    /// never oneself; the person's sessions end and they are emailed.
+    /// </summary>
+    [Authorize(Roles = RoleNames.Admin)]
+    [HttpDelete("{id:guid}/two-factor")]
+    public async Task<IActionResult> ResetTwoFactor(Guid id)
+    {
+        await Mediator.Send(new Ecommerce.Application.Auth.TwoFactor.ResetTwoFactorCommand(id));
+        return NoContent();
+    }
+
     public record LockBody(int Days, string Reason);
 
     public record BanBody(string Reason);
