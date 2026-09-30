@@ -84,7 +84,7 @@ function ReviewItem({ review, language }: { review: Review; language: string }) 
     <li className="bg-card ring-border/60 grid gap-1.5 rounded-3xl p-4 ring-1">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <StarRating value={review.rating} label={t('reviews.starsOf', { count: review.rating })} />
-        <span className="font-medium">{review.authorName}</span>
+        <span className="font-medium">{review.authorName || t('common:formerCustomer')}</span>
         <span className="text-muted-foreground text-xs">
           {new Date(review.createdAt).toLocaleDateString(language)}
           {review.edited && ` · ${t('reviews.edited')}`}

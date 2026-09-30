@@ -65,6 +65,8 @@ services:
       ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
       # Feature 011: the address book, served to Order over gRPC on a second port (h2c).
       IDENTITY_GRPC_PORT: "8081"
+      # specs/112: Identity's one call out - what keeps an account open, asked of Order before deleting it.
+      ORDER_GRPC_ADDRESS: http://order:8081
       # Email (specs/060): to the Mailpit container, never a real inbox. Links in emails open the storefront.
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
@@ -163,8 +165,11 @@ services:
       CART_GRPC_ADDRESS: http://cart:8081
       # The third (feature 011): the delivery address, from Identity - same token forwarding.
       IDENTITY_GRPC_ADDRESS: http://identity:8081
+      # specs/112: Order serves gRPC too now - AccountStanding, asked by Identity - on its own port (h2c).
+      ORDER_GRPC_PORT: "8081"
     ports:
       - "5059:8080"
+      - "6059:8081"
     depends_on:
       postgres-order:
         condition: service_healthy

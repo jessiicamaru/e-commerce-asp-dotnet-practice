@@ -11,6 +11,8 @@ export interface ProblemDetails {
   /** ISO 8601, UTC. */
   until?: string
   reason?: string
+  /** What keeps an account open, beside a 409 refusing its deletion (specs/112). */
+  reasons?: string[]
   /** Seconds to wait before trying again, beside `Retry-After` on a 429 (specs/062). */
   retryAfter?: number
 }

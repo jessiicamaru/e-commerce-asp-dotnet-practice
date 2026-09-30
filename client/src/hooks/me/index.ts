@@ -21,6 +21,11 @@ export function useUpdateMe() {
   })
 }
 
+/** Deletes the signed-in person's account (specs/112). The caller signs out afterwards. */
+export function useDeleteMe() {
+  return useMutation({ mutationFn: (password: string) => Auth.deleteMe(password) })
+}
+
 /** Changes the signed-in person's password. Every other session ends; this one stays. */
 export function useChangePassword() {
   return useMutation({

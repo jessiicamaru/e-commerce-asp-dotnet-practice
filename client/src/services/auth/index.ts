@@ -17,6 +17,11 @@ export class Auth {
     return data
   }
 
+  /** Deletes the caller's own account for good (specs/112), proven by the password. */
+  static async deleteMe(password: string): Promise<void> {
+    await http.delete('/auth/me', { data: { password } })
+  }
+
   static async twoFactor(): Promise<TwoFactorStatus> {
     const { data } = await http.get<TwoFactorStatus>('/auth/me/two-factor')
     return data

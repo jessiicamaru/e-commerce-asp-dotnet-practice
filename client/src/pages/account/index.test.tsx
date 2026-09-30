@@ -150,4 +150,66 @@ describe('AccountPage (specs/064)', () => {
       expect(contents.services.identity.service).toBe('identity')
     })
   })
+
+  describe('delete my account (specs/112)', () => {
+    const confirmAndDelete = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.type(await screen.findByLabelText(label('deletePassword')), 'Passw0rd!23')
+      await user.click(screen.getByRole('button', { name: label('deleteStart') }))
+      await user.click(await screen.findByRole('button', { name: label('deleteConfirm') }))
+    }
+
+    it('asks for confirmation first, then deletes with my password and says so', async () => {
+      const remove = vi.spyOn(Auth, 'deleteMe').mockResolvedValue()
+      const done = vi.spyOn(toast, 'success').mockReturnValue('t')
+      const user = userEvent.setup()
+      renderAsCustomer(<AccountPage />, '/account')
+
+      await user.type(await screen.findByLabelText(label('deletePassword')), 'Passw0rd!23')
+      await user.click(screen.getByRole('button', { name: label('deleteStart') }))
+      expect(remove).not.toHaveBeenCalled()
+      await user.click(await screen.findByRole('button', { name: label('deleteConfirm') }))
+
+      await waitFor(() => expect(done).toHaveBeenCalledWith(label('deleted')))
+      expect(remove).toHaveBeenCalledWith('Passw0rd!23')
+    })
+
+    it('keeping the account sends nothing', async () => {
+      const remove = vi.spyOn(Auth, 'deleteMe').mockResolvedValue()
+      const user = userEvent.setup()
+      renderAsCustomer(<AccountPage />, '/account')
+
+      await user.type(await screen.findByLabelText(label('deletePassword')), 'Passw0rd!23')
+      await user.click(screen.getByRole('button', { name: label('deleteStart') }))
+      await user.click(await screen.findByRole('button', { name: label('deleteCancel') }))
+
+      expect(remove).not.toHaveBeenCalled()
+    })
+
+    it('lists what keeps the account open, in my language', async () => {
+      vi.spyOn(Auth, 'deleteMe').mockRejectedValue(
+        refusal(409, 'Business is open.', { code: 'AccountHasOpenBusiness', reasons: ['OpenOrders', 'OpenReturns'] }),
+      )
+      const user = userEvent.setup()
+      renderAsCustomer(<AccountPage />, '/account')
+
+      await confirmAndDelete(user)
+
+      const alert = await screen.findByRole('alert')
+      expect(alert).toHaveTextContent(label('deleteBlockers.OpenOrders'))
+      expect(alert).toHaveTextContent(label('deleteBlockers.OpenReturns'))
+    })
+
+    it('shows a wrong password on its field', async () => {
+      vi.spyOn(Auth, 'deleteMe').mockRejectedValue(
+        refusal(400, 'One or more validation errors occurred.', { errors: { Password: ['Your current password is not correct.'] } }),
+      )
+      const user = userEvent.setup()
+      renderAsCustomer(<AccountPage />, '/account')
+
+      await confirmAndDelete(user)
+
+      expect(await screen.findByText('Your current password is not correct.')).toBeInTheDocument()
+      expect(screen.getByLabelText(label('deletePassword'))).toHaveAttribute('aria-invalid', 'true')
+    })
+  })
 })

@@ -84,7 +84,7 @@ export function AdminReviewsPage() {
                   <div className="grid gap-1 text-sm">
                     <span className="flex flex-wrap items-center gap-2">
                       <StarRating value={r.rating} label={String(r.rating)} />
-                      <span className="font-medium">{r.authorName}</span>
+                      <span className="font-medium">{r.authorName || t('common:formerCustomer')}</span>
                       <span className="text-muted-foreground text-xs">{new Date(r.createdAt).toLocaleString(i18n.language)}</span>
                     </span>
                     <Link to={`/products/${r.productId}`} className="text-muted-foreground hover:text-foreground text-xs hover:underline">
