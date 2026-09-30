@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IProductViewRepository, ProductViewRepository>();
         services.AddScoped<ISavedProductRepository, SavedProductRepository>();
+        services.AddScoped<Ecommerce.Catalog.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddScoped<IProductQuestionRepository, ProductQuestionRepository>();
         services.AddScoped<IContentReportRepository, ContentReportRepository>();
 

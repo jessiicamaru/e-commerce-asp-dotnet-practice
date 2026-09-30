@@ -80,6 +80,10 @@ public class AuthController : ApiControllerBase
         return Ok(result with { RefreshToken = "" });
     }
 
+    /// <summary>Everything Identity holds about the caller, and what it withholds and why (#217, specs/111).</summary>
+    [HttpGet("me/data")]
+    public async Task<IActionResult> MyData() => Ok(await Mediator.Send(new Ecommerce.Application.MyData.GetMyDataQuery()));
+
     /// <summary>The caller's own second factor (specs/110).</summary>
     [HttpGet("me/two-factor")]
     public async Task<IActionResult> MyTwoFactor() => Ok(await Mediator.Send(new GetMyTwoFactorQuery()));

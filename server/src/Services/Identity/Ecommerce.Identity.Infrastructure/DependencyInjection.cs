@@ -42,6 +42,7 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
         services.AddScoped<ITwoFactorRepository, TwoFactorRepository>();
+        services.AddScoped<Ecommerce.Application.MyData.IPersonalDataReader, PersonalDataReader>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
