@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Ecommerce.Application.Common.Interfaces;
 using Ecommerce.Domain.Entities;
+using Ecommerce.Shared.Notifications;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -33,8 +34,15 @@ public class DispatchEmailsCommandHandler(
     EmailComposer composer,
     IUnitOfWork unitOfWork,
     IOptions<EmailOptions> options,
-    ILogger<DispatchEmailsCommandHandler> logger) : IRequestHandler<DispatchEmailsCommand, int>
+    ILogger<DispatchEmailsCommandHandler> logger,
+    INotifier notifier) : IRequestHandler<DispatchEmailsCommand, int>
 {
+    /// <summary>
+    /// At most one "emails failed" notice an hour (specs/115 research D1) - the longest retry interval, so an outage is
+    /// reported about as often as it is retried. The next notice counts everything since.
+    /// </summary>
+    public static readonly TimeSpan AlertQuietPeriod = TimeSpan.FromHours(1);
+
     public static readonly TimeSpan FirstRetry = TimeSpan.FromMinutes(1);
     public static readonly TimeSpan LongestRetry = TimeSpan.FromHours(1);
 
@@ -45,6 +53,7 @@ public class DispatchEmailsCommandHandler(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly EmailOptions _options = options.Value;
     private readonly ILogger<DispatchEmailsCommandHandler> _logger = logger;
+    private readonly INotifier _notifier = notifier;
 
     public async Task<int> Handle(DispatchEmailsCommand request, CancellationToken cancellationToken)
     {
@@ -62,6 +71,22 @@ public class DispatchEmailsCommandHandler(
             }
 
             await _emails.SaveChangesAsync(ct);
+
+            // Nobody else learns an email failed for good (#222): the administrators are told, in this transaction, so
+            // the mark and the notices commit together - never marked and untold, never told twice.
+            var failed = await _emails.ClaimUncountedFailuresAsync(request.Now, AlertQuietPeriod, ct);
+            if (failed > 0)
+            {
+                foreach (var administrator in await _users.GetIdsInRoleAsync("Admin", ct))
+                {
+                    await _notifier.NotifyAsync(administrator, NotificationKind.EmailsFailed,
+                        new Dictionary<string, string> { ["failed"] = failed.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+                        "/admin/email-delivery", ct);
+                }
+
+                await _emails.SaveChangesAsync(ct);
+                _logger.LogWarning("{Failed} email(s) failed for good; the administrators were told.", failed);
+            }
         }, cancellationToken);
 
         return sent;

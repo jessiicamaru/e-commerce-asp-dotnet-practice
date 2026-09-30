@@ -39,6 +39,9 @@ public static class NotificationKind
     // A sale took one of a seller's variants below its low-stock line (specs/102)
     public const string StockRunningLow = "StockRunningLow";
 
+    // Administrators: emails the mail server would not take, however often it was asked (specs/115)
+    public const string EmailsFailed = "EmailsFailed";
+
     // What became of something a shopper reported (specs/101) - never who decided
     public const string ReportActioned = "ReportActioned";
     public const string ReportDismissed = "ReportDismissed";
