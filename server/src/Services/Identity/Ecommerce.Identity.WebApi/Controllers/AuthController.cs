@@ -6,6 +6,7 @@ using Ecommerce.Application.Auth.Commands.PasswordReset;
 using Ecommerce.Application.Auth.Commands.Register;
 using Ecommerce.Application.Auth.Commands.RegisterSeller;
 using Ecommerce.Application.Auth.Commands.Refresh;
+using Ecommerce.Application.Auth.TwoFactor;
 using Ecommerce.Application.Common.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -50,16 +51,63 @@ public class AuthController : ApiControllerBase
         return Ok(result with { RefreshToken = "" });
     }
 
+    /// <summary>
+    /// The first step (specs/110): with two-factor sign-in on, the right password answers a challenge and sets no
+    /// cookie - there is no session until the code.
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
         var result = await Mediator.Send(command with { Language = RequestLanguage() });
 
-        SetRefreshTokenCookie(result.RefreshToken);
+        if (!string.IsNullOrEmpty(result.RefreshToken))
+        {
+            SetRefreshTokenCookie(result.RefreshToken);
+        }
 
         // Hide refresh token from HTTP response body
         return Ok(result with { RefreshToken = "" });
+    }
+
+    /// <summary>The second step: the challenge and a code (or a recovery code) for the session (specs/110).</summary>
+    [AllowAnonymous]
+    [HttpPost("login/two-factor")]
+    public async Task<IActionResult> LoginTwoFactor([FromBody] LoginTwoFactorCommand command)
+    {
+        var result = await Mediator.Send(command);
+        SetRefreshTokenCookie(result.RefreshToken);
+        return Ok(result with { RefreshToken = "" });
+    }
+
+    /// <summary>The caller's own second factor (specs/110).</summary>
+    [HttpGet("me/two-factor")]
+    public async Task<IActionResult> MyTwoFactor() => Ok(await Mediator.Send(new GetMyTwoFactorQuery()));
+
+    /// <summary>A new secret, shown once, as base32 and as the URI the QR code draws. 409 when already on.</summary>
+    [HttpPost("me/two-factor/setup")]
+    public async Task<IActionResult> StartTwoFactorSetup() => Ok(await Mediator.Send(new StartTwoFactorSetupCommand()));
+
+    /// <summary>
+    /// Confirms setup with a code; answers the recovery codes, once. This browser's session - named by its HttpOnly
+    /// cookie, never the body - becomes verified, and every other session ends.
+    /// </summary>
+    [HttpPost("me/two-factor/confirm")]
+    public async Task<IActionResult> ConfirmTwoFactor([FromBody] ConfirmTwoFactorCommand command)
+    {
+        Request.Cookies.TryGetValue("refreshToken", out var thisSession);
+        return Ok(await Mediator.Send(command with { KeepRefreshToken = string.IsNullOrEmpty(thisSession) ? null : thisSession }));
+    }
+
+    [HttpPost("me/two-factor/recovery-codes")]
+    public async Task<IActionResult> NewRecoveryCodes([FromBody] NewRecoveryCodesCommand command) => Ok(await Mediator.Send(command));
+
+    /// <summary>Turns it off, with the password and a code. 403 for staff, who keep it.</summary>
+    [HttpDelete("me/two-factor")]
+    public async Task<IActionResult> DisableTwoFactor([FromBody] DisableTwoFactorCommand command)
+    {
+        await Mediator.Send(command);
+        return NoContent();
     }
 
     /// <summary>

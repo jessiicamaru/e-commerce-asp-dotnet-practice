@@ -10,6 +10,8 @@ using Ecommerce.Domain.Entities;
 using Ecommerce.Application.Common.Constants;
 using Ecommerce.Shared.Audit;
 
+using Ecommerce.Application.Auth.TwoFactor;
+
 namespace Ecommerce.Application.Auth.Commands.Refresh;
 
 /// <summary>
@@ -102,11 +104,20 @@ public class RefreshTokenCommandHandler(
             throw new UnauthorizedAccessException(NotValid);
         }
 
+        // Two-factor sign-in is on, and this session was never verified with a code (#218, specs/110): it predates
+        // turning it on, which ended every other session - so this one should not exist. Sign in again, with the code.
+        if (user.TwoFactorEnabled && !presented.TwoFactorVerified)
+        {
+            throw new UnauthorizedAccessException(NotValid);
+        }
+
         var replacement = new RefreshToken
         {
             Token = _jwtTokenGenerator.GenerateRefreshToken(),
             UserId = user.Id,
-            ExpiresAt = now.AddDays(JwtConstants.TokenDurationDay)
+            ExpiresAt = now.AddDays(JwtConstants.TokenDurationDay),
+            // ⚠️ Carried across the rotation: a verified session stays verified, an unverified one stays without staff roles.
+            TwoFactorVerified = presented.TwoFactorVerified,
         };
 
         if (!await _userRepository.TryRotateRefreshTokenAsync(request.RefreshToken, replacement, now, cancellationToken))
@@ -126,10 +137,11 @@ public class RefreshTokenCommandHandler(
             user.Email,
             user.FirstName,
             user.LastName,
-            _jwtTokenGenerator.GenerateAccessToken(user),
+            _jwtTokenGenerator.GenerateAccessToken(user, replacement.TwoFactorVerified),
             replacement.Token,
-            user.Roles.Select(role => role.Name).ToList(),
-            user.EmailConfirmed
+            SessionRoles.Of(user, replacement.TwoFactorVerified),
+            user.EmailConfirmed,
+            TwoFactor: SessionRoles.State(user)
         );
     }
 }

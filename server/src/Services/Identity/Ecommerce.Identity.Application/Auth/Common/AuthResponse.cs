@@ -16,6 +16,11 @@ namespace Ecommerce.Application.Auth.Common;
 /// already put in the token. Order is not guaranteed - ask with Contains, never by position.
 /// </para>
 /// </param>
+/// <param name="TwoFactor">
+/// Null, <c>"Required"</c> - the right password, and now the code: nothing was issued yet, and <paramref name="Challenge"/>
+/// is what the second step exchanges - or <c>"SetupRequired"</c>: staff without two-factor sign-in, holding a session
+/// without their staff roles until they set it up (#218, specs/110). For drawing; the server decides on its own.
+/// </param>
 /// <param name="EmailConfirmed">
 /// Whether the address was confirmed by its link (specs/063) - for drawing the "confirm your email" banner,
 /// like <paramref name="Roles"/>. The server decides what an unconfirmed account may do on its own.
@@ -28,5 +33,7 @@ public record AuthResponse(
     string Token,
     string RefreshToken,
     IReadOnlyList<string> Roles,
-    bool EmailConfirmed
+    bool EmailConfirmed,
+    string? TwoFactor = null,
+    string? Challenge = null
 );

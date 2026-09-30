@@ -40,6 +40,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.LockReason).HasMaxLength(500);
         builder.Property(u => u.BanReason).HasMaxLength(500);
         builder.Property(u => u.Language).HasMaxLength(8);
+        // base64(nonce 12 + secret 20 + tag 16) is 64 characters; room for a longer secret.
+        builder.Property(u => u.TwoFactorSecret).HasMaxLength(200);
 
         builder.HasMany(u => u.Roles)
             .WithMany(r => r.Users)

@@ -19,6 +19,9 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.HasIndex(rt => rt.Token)
             .IsUnique();
 
+        // False for every session from before specs/110: none was verified with a code.
+        builder.Property(rt => rt.TwoFactorVerified).IsRequired().HasDefaultValue(false);
+
         builder.HasOne(rt => rt.User)
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(rt => rt.UserId)

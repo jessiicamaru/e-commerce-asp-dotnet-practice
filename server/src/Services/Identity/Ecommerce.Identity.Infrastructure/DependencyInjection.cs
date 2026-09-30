@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Ecommerce.Application.Auth.TwoFactor;
 using Ecommerce.Application.Email;
 using Ecommerce.Infrastructure.Email;
 using Ecommerce.Infrastructure.Security;
@@ -40,6 +41,7 @@ public static class DependencyInjection
             .Validate(o => !o.Problems().Any(), "TwoFactor settings are invalid: TWO_FACTOR_KEY must be 32 random bytes in base64.")
             .ValidateOnStart();
         services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
+        services.AddScoped<ITwoFactorRepository, TwoFactorRepository>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();

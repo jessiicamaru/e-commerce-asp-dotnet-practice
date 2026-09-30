@@ -92,8 +92,9 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
         // Two-factor sign-in (specs/110): a fixed test key - the real one comes from TWO_FACTOR_KEY.
-        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new TwoFactorOptions { Key = TwoFactorTestKey }));
+        services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Application.Auth.TwoFactor.TwoFactorOptions { Key = TwoFactorTestKey }));
         services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
+        services.AddScoped<Ecommerce.Application.Auth.TwoFactor.ITwoFactorRepository, TwoFactorRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
         {
             Secret = "identity-tests-signing-key-of-at-least-32-bytes",
