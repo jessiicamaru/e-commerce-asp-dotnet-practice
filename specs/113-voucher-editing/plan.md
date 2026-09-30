@@ -32,7 +32,7 @@ page gets "Edit".
 | **IV. Identity Comes From the Token** | **Pass.** The owner is the token's; no seller id in the request. |
 | **V. Evidence Over Assumption** | **Planned.** Tests against PostgreSQL including a race of an edit and claims, mutations, Bruno. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): unchanged - see `tasks.md`.
 
 ## Project Structure
 
