@@ -32,7 +32,7 @@ several instances, settings refused at startup when out of range.
 | **IV. Identity Comes From the Token** | **Not applicable.** A background sweep acting as the system. |
 | **V. Evidence Over Assumption** | **Planned.** Tests against PostgreSQL including two sweeps at once, mutations, a run in the stack. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): unchanged - see `tasks.md`.
 
 ## Project Structure
 

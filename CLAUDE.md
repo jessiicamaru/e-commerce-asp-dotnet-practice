@@ -760,6 +760,9 @@ words are the defaults; `email_template_versions` is append-only (reset and rest
 (`AllowListHtmlSanitizer`, Ganss.Xss) **on save AND on every send**, and values are escaped as they are filled in;
 a placeholder the email cannot fill is a 400 naming it, and the reset/confirmation emails cannot lose `{link}`.
 `IEmailTransport.SendAsync(to, subject, text, html)` sends `multipart/alternative`. Admin only, not Moderator.
+**Activity forgets on a schedule** (specs/116, #221): `RetentionSweeper` deletes read notices 90 days after reading
+(`Retention:ReadNotificationDays`) - never unread ones - and audit entries **only** when `Retention:AuditYears` is set,
+each batch recording `System` / `AuditTrimmed` in its own transaction; settings out of range stop Activity at start.
 **Administrators are told an email failed for good** (specs/115, #222): after each sweep one guarded statement marks
 the uncounted failures (`outgoing_emails.FailureAlertedAt`, cleared by a retry) - none within an hour of the last - and
 each Admin gets one `EmailsFailed` digest, in the sweep's transaction.

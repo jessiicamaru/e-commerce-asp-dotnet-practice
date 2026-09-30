@@ -42,11 +42,9 @@ Gaps a shopper, a seller or the shop's staff would notice. Found on 2026-09-27 i
 (administrator, moderator, seller) and delivery. Delivery assumes **one carrier** - decided with the user; a courier
 role and several carriers are left out.
 
-The first audit's #193-#200 are done (see below). A second audit on 2026-09-27, checked against the code, found these - in the order they will be worked:
+The first audit's #193-#200 are done, and so is the second's #217-#222 (2026-10-01, see below).
 
-| Issue | Title |
-| :-- | :-- |
-| [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound |
+Nothing open.
 
 
 ## Priority 3 - technical debt
@@ -83,6 +81,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#219](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/219) | A voucher cannot be edited | [#233](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/233) (specs/113) |
 | [#220](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/220) | A shopper cannot see which vouchers they could use | [#234](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/234) (specs/114) |
 | [#222](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/222) | Nobody is told when an email fails for good | [#235](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/235) (specs/115) |
+| [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound | [#236](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/236) (specs/116) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |
@@ -133,4 +132,4 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 ## Suggested order
 
 The defects are done, email exists (#102), a password can be reset (#103), guessing is limited (#105), addresses are confirmed (#106) a person manages their own account (#104) and a stop reaches a signed-in session in seconds (#112). Priority 1 is done, and returns (#107) and seller insights (#111). Vouchers (#108) are done, and so are saved products (#109), product questions (#110), editable emails and notices (#150) and object storage (#114);
-and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27. Next, filed 2026-09-27 from the design-record rebuild: #180 and #183 first (security, both done), then #181, #182, #185, #184 and #186 - all done. Next, from the 2026-09-27 audit: #193 (a defect, done), then #194, #195, #196, #197, #198, #199 and #200 - all done.
+and the storefront is tested in a browser (#117). Filed 2026-09-26 from the features' known limits: #166, then #167 and #168. Those are done, and so are #172, #174, #173 and #175, filed 2026-09-27. Next, filed 2026-09-27 from the design-record rebuild: #180 and #183 first (security, both done), then #181, #182, #185, #184 and #186 - all done. Next, from the 2026-09-27 audit: #193 (a defect, done), then #194, #195, #196, #197, #198, #199 and #200 - all done. From the second 2026-09-27 audit: #217 (download, then delete), #219, #220, #222 and #221 - all done by 2026-10-01.
