@@ -1,7 +1,7 @@
 info:
   name: the locked customer cannot sign in
   type: http
-  seq: 10
+  seq: 14
 
 http:
   method: POST

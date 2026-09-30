@@ -1,7 +1,7 @@
 info:
   name: register an account for a long lock
   type: http
-  seq: 17
+  seq: 21
 
 http:
   method: POST

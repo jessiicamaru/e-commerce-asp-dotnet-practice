@@ -41,12 +41,13 @@ public record TwoFactorSetup(string Secret, string Uri);
 /// Confirms setup with a code from the app, proving it saved the right secret. <paramref name="KeepRefreshToken"/> is
 /// the session doing it - from the HttpOnly cookie, never the body - which becomes verified; every other session ends.
 /// </summary>
-public record ConfirmTwoFactorCommand(string Code, string? KeepRefreshToken = null) : IRequest<RecoveryCodes>;
+public record ConfirmTwoFactorCommand(string Code, string? KeepRefreshToken = null) : IRequest<RecoveryCodesResponse>;
 
 /// <summary>A fresh set of recovery codes, which needs a current code; the old set stops working.</summary>
-public record NewRecoveryCodesCommand(string Code) : IRequest<RecoveryCodes>;
+public record NewRecoveryCodesCommand(string Code) : IRequest<RecoveryCodesResponse>;
 
-public record RecoveryCodes(IReadOnlyList<string> Codes);
+/// <summary>The ten recovery codes, shown once - named as the contract says: <c>recoveryCodes</c>.</summary>
+public record RecoveryCodesResponse(IReadOnlyList<string> RecoveryCodes);
 
 /// <summary>Turns it off - the owner, with their password and a code. Refused to staff, who must keep it.</summary>
 public record DisableTwoFactorCommand(string Password, string Code) : IRequest;
@@ -134,8 +135,8 @@ public class TwoFactorHandlers(
     IRequestHandler<LoginTwoFactorCommand, AuthResponse>,
     IRequestHandler<GetMyTwoFactorQuery, TwoFactorStatus>,
     IRequestHandler<StartTwoFactorSetupCommand, TwoFactorSetup>,
-    IRequestHandler<ConfirmTwoFactorCommand, RecoveryCodes>,
-    IRequestHandler<NewRecoveryCodesCommand, RecoveryCodes>,
+    IRequestHandler<ConfirmTwoFactorCommand, RecoveryCodesResponse>,
+    IRequestHandler<NewRecoveryCodesCommand, RecoveryCodesResponse>,
     IRequestHandler<DisableTwoFactorCommand>,
     IRequestHandler<ResetTwoFactorCommand>
 {
@@ -248,7 +249,7 @@ public class TwoFactorHandlers(
         return new TwoFactorSetup(Base32.Encode(secret), Totp.KeyUri(_settings.Issuer, user.Email, secret));
     }
 
-    public async Task<RecoveryCodes> Handle(ConfirmTwoFactorCommand request, CancellationToken cancellationToken)
+    public async Task<RecoveryCodesResponse> Handle(ConfirmTwoFactorCommand request, CancellationToken cancellationToken)
     {
         var user = await MeAsync(cancellationToken);
         if (user.TwoFactorEnabled || user.TwoFactorSecret is null)
@@ -268,10 +269,10 @@ public class TwoFactorHandlers(
 
         // This session proved the second factor by confirming it; every other one never did, and ends.
         await _twoFactor.VerifySessionAndEndOthersAsync(user.Id, request.KeepRefreshToken, now, cancellationToken);
-        return new RecoveryCodes(codes);
+        return new RecoveryCodesResponse(codes);
     }
 
-    public async Task<RecoveryCodes> Handle(NewRecoveryCodesCommand request, CancellationToken cancellationToken)
+    public async Task<RecoveryCodesResponse> Handle(NewRecoveryCodesCommand request, CancellationToken cancellationToken)
     {
         var user = await MeAsync(cancellationToken);
         if (!user.TwoFactorEnabled)
@@ -286,7 +287,7 @@ public class TwoFactorHandlers(
         await _audit.RecordAsync(AuditCategory.Security, "TwoFactorRecoveryCodesRenewed", "User", user.Id.ToString(),
             $"{user.Email} made new recovery codes", actor: AuditActors.Of(user), cancellationToken: cancellationToken);
         await _users.SaveChangesAsync(cancellationToken);
-        return new RecoveryCodes(codes);
+        return new RecoveryCodesResponse(codes);
     }
 
     public async Task Handle(DisableTwoFactorCommand request, CancellationToken cancellationToken)

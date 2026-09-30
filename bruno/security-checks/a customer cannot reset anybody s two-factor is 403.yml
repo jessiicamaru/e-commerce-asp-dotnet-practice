@@ -1,20 +1,14 @@
 info:
-  name: a moderator cannot ban
+  name: a customer cannot reset anybody s two-factor is 403
   type: http
-  seq: 15
+  seq: 76
 
 http:
-  method: POST
-  url: "{{baseUrl}}/api/users/{{customerId}}/ban"
-  body:
-    type: json
-    data: |-
-      {
-        "reason": "Not for a moderator"
-      }
+  method: DELETE
+  url: "{{baseUrl}}/api/users/00000000-0000-0000-0000-000000000001/two-factor"
   auth:
     type: bearer
-    token: "{{modToken}}"
+    token: "{{customerToken}}"
 
 runtime:
   scripts:
@@ -31,4 +25,4 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Only an administrator bans (specs/043).
+  specs/110: resetting another person's second factor is an administrator's alone.

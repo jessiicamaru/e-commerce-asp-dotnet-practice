@@ -1,7 +1,7 @@
 info:
   name: a moderator locks the customer
   type: http
-  seq: 9
+  seq: 13
 
 http:
   method: POST

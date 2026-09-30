@@ -1,7 +1,7 @@
 info:
   name: the customer signs in again
   type: http
-  seq: 14
+  seq: 18
 
 http:
   method: POST

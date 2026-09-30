@@ -1,0 +1,33 @@
+info:
+  name: the moderator sets up two-factor
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/me/two-factor/setup"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a secret, once, and the URI the QR code draws", function() {
+          expect(res.body.secret).to.match(/^[A-Z2-7]{32}$/);
+          expect(res.body.uri).to.match(/^otpauth:\/\/totp\//);
+        });
+        if (res.status === 200) bru.setVar("modTotpSecret", res.body.secret);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/110: the secret is returned this once; the server keeps it sealed with TWO_FACTOR_KEY.

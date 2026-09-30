@@ -1,0 +1,62 @@
+info:
+  name: the moderator confirms with a code
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/me/two-factor/confirm"
+  body:
+    type: json
+    data: |-
+      {
+        "code": "{{modCode}}"
+      }
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The current code for a base32 TOTP secret (RFC 6238; specs/110) - what the authenticator app would show.
+        // crypto-js and plain byte arrays: the CLI's safe-mode sandbox has no Node crypto and no Buffer.
+        function totp(base32, offset) {
+          const CryptoJS = require("crypto-js");
+          const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+          let bits = "";
+          for (const c of base32.replace(/[\s=-]/g, "").toUpperCase()) bits += alphabet.indexOf(c).toString(2).padStart(5, "0");
+          const key = bits.match(/.{8}/g).map(b => parseInt(b, 2));
+          const step = Math.floor(Date.now() / 30000) + (offset || 0);
+          const counter = [0, 0, 0, 0, (step >>> 24) & 255, (step >>> 16) & 255, (step >>> 8) & 255, step & 255];
+          const words = bytes => {
+            const out = [];
+            for (let i = 0; i < bytes.length; i++) out[i >>> 2] = (out[i >>> 2] || 0) | (bytes[i] << (24 - (i % 4) * 8));
+            return CryptoJS.lib.WordArray.create(out, bytes.length);
+          };
+          const hash = CryptoJS.HmacSHA1(words(counter), words(key));
+          const h = [];
+          for (let i = 0; i < hash.sigBytes; i++) h.push((hash.words[i >>> 2] >>> (24 - (i % 4) * 8)) & 255);
+          const o = h[19] & 15;
+          const n = ((h[o] & 127) * 16777216) + (h[o + 1] << 16) + (h[o + 2] << 8) + h[o + 3];
+          return String(n % 1000000).padStart(6, "0");
+        }
+        bru.setVar("modCode", totp(bru.getVar("modTotpSecret"), 0));
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("ten recovery codes, shown once", function() {
+          expect(res.body.recoveryCodes).to.have.length(10);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/110: a code from the app proves it saved the right secret; only then is two-factor sign-in on.

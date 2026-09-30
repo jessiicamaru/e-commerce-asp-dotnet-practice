@@ -1,7 +1,7 @@
 info:
   name: my details
   type: http
-  seq: 8
+  seq: 10
 
 http:
   method: GET

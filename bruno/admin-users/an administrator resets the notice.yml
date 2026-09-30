@@ -1,7 +1,7 @@
 info:
   name: an administrator resets the notice
   type: http
-  seq: 33
+  seq: 37
 
 http:
   method: POST

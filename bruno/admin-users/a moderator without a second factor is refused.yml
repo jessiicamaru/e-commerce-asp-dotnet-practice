@@ -1,0 +1,29 @@
+info:
+  name: a moderator without a second factor is refused
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/review?status=Pending"
+  auth:
+    type: bearer
+    token: "{{modToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403 - the staff role is not in an unverified session, so Catalog refuses it", function() {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/110 SC-001: another service than Identity refuses a staff member who has not set up two-factor sign-in - nothing
+  changed in Catalog; the token simply carries no Moderator.

@@ -48,8 +48,8 @@ public class TwoFactorTests(IdentityTestFixture fixture)
 
         var codes = await SendAsync(id, new ConfirmTwoFactorCommand(CodeFor(setup.Secret)));
 
-        Assert.Equal(10, codes.Codes.Count);
-        Assert.All(codes.Codes, c => Assert.Matches("^[A-Z2-7]{5}-[A-Z2-7]{5}$", c));
+        Assert.Equal(10, codes.RecoveryCodes.Count);
+        Assert.All(codes.RecoveryCodes, c => Assert.Matches("^[A-Z2-7]{5}-[A-Z2-7]{5}$", c));
         var status = await SendAsync(id, new GetMyTwoFactorQuery());
         Assert.True(status.Enabled);
         Assert.Equal(10, status.RecoveryCodesLeft);
@@ -58,7 +58,7 @@ public class TwoFactorTests(IdentityTestFixture fixture)
         // The secret is kept sealed, never in the clear, and no recovery code is stored as typed.
         var (secretStored, hashes) = await StoredAsync(id);
         Assert.DoesNotContain(setup.Secret, secretStored);
-        Assert.DoesNotContain(hashes, h => codes.Codes.Any(c => h.Contains(c.Replace("-", ""))));
+        Assert.DoesNotContain(hashes, h => codes.RecoveryCodes.Any(c => h.Contains(c.Replace("-", ""))));
     }
 
     [Fact]
@@ -283,12 +283,12 @@ public class TwoFactorTests(IdentityTestFixture fixture)
         await Assert.ThrowsAsync<ValidationException>(() =>
             SendAsync(id, new NewRecoveryCodesCommand(CodeFor(secret, stepsAway: -5))));
         var fresh = await SendAsync(id, new NewRecoveryCodesCommand(CodeFor(secret)));
-        Assert.Equal(10, fresh.Codes.Count);
+        Assert.Equal(10, fresh.RecoveryCodes.Count);
 
         var first = await SendAsync(Guid.Empty, new LoginCommand(email, Password));
         await Assert.ThrowsAsync<ValidationException>(() =>
             SendAsync(Guid.Empty, new LoginTwoFactorCommand(first.Challenge!, null, old[0])));
-        await SendAsync(Guid.Empty, new LoginTwoFactorCommand(first.Challenge!, null, fresh.Codes[0]));
+        await SendAsync(Guid.Empty, new LoginTwoFactorCommand(first.Challenge!, null, fresh.RecoveryCodes[0]));
     }
 
     [Fact]
@@ -377,7 +377,7 @@ public class TwoFactorTests(IdentityTestFixture fixture)
         var setup = await SendAsync(id, new StartTwoFactorSetupCommand());
         var codes = await SendAsync(id, new ConfirmTwoFactorCommand(CodeFor(setup.Secret)));
         await ForgetLastStepAsync(email);
-        return (id, email, setup.Secret, codes.Codes);
+        return (id, email, setup.Secret, codes.RecoveryCodes);
     }
 
     private Task ForgetLastStepAsync(string email) =>

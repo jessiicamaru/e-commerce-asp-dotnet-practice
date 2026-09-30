@@ -125,7 +125,8 @@ else:
 # Credentials assigned by an ENV or ARG instruction in the build itself.
 history = open(f"{work}/history.txt", encoding="utf-8", errors="replace").read()
 for name in ("JWT_SECRET", "DB_PASSWORD", "ADMIN_PASSWORD",
-             "PGADMIN_PASSWORD", "RABBITMQ_PASS", "RABBITMQ_PASSWORD"):
+             "PGADMIN_PASSWORD", "RABBITMQ_PASS", "RABBITMQ_PASSWORD",
+             "TWO_FACTOR_KEY", "ADMIN_TOTP_SECRET"):
     if re.search(rf"{name}=[^\s\"']", history):
         failures.append(f"{name} is assigned a value in the build history of {image}")
 

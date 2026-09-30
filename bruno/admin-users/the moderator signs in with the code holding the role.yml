@@ -1,0 +1,68 @@
+info:
+  name: the moderator signs in with the code holding the role
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/login/two-factor"
+  body:
+    type: json
+    data: |-
+      {
+        "challenge": "{{modChallenge}}",
+        "code": "{{modCode}}"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The current code for a base32 TOTP secret (RFC 6238; specs/110) - what the authenticator app would show.
+        // crypto-js and plain byte arrays: the CLI's safe-mode sandbox has no Node crypto and no Buffer.
+        function totp(base32, offset) {
+          const CryptoJS = require("crypto-js");
+          const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+          let bits = "";
+          for (const c of base32.replace(/[\s=-]/g, "").toUpperCase()) bits += alphabet.indexOf(c).toString(2).padStart(5, "0");
+          const key = bits.match(/.{8}/g).map(b => parseInt(b, 2));
+          const step = Math.floor(Date.now() / 30000) + (offset || 0);
+          const counter = [0, 0, 0, 0, (step >>> 24) & 255, (step >>> 16) & 255, (step >>> 8) & 255, step & 255];
+          const words = bytes => {
+            const out = [];
+            for (let i = 0; i < bytes.length; i++) out[i >>> 2] = (out[i >>> 2] || 0) | (bytes[i] << (24 - (i % 4) * 8));
+            return CryptoJS.lib.WordArray.create(out, bytes.length);
+          };
+          const hash = CryptoJS.HmacSHA1(words(counter), words(key));
+          const h = [];
+          for (let i = 0; i < hash.sigBytes; i++) h.push((hash.words[i >>> 2] >>> (24 - (i % 4) * 8)) & 255);
+          const o = h[19] & 15;
+          const n = ((h[o] & 127) * 16777216) + (h[o + 1] << 16) + (h[o + 2] << 8) + h[o + 3];
+          return String(n % 1000000).padStart(6, "0");
+        }
+        const axios = require("axios");
+        const first = await axios.post(bru.interpolate("{{baseUrl}}/api/auth/login"),
+          { email: bru.getVar("modEmail"), password: bru.getEnvVar("customerPassword") });
+        bru.setVar("modChallenge", first.data.challenge);
+        // The window after the one confirming used: a code works once.
+        bru.setVar("modCode", totp(bru.getVar("modTotpSecret"), 1));
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("roles include Moderator, now that the session was verified with a code", function() {
+          expect(res.body.roles).to.include("Moderator");
+        });
+        if (res.status === 200) bru.setVar("modToken", res.body.token);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/110: the two steps, and a session that carries the staff role.

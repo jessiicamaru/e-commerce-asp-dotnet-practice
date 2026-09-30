@@ -690,6 +690,10 @@ jobs:
       JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
       ADMIN_EMAIL: admin@ci.local
       ADMIN_PASSWORD: ci-admin-password
+      # Two-factor sign-in (specs/110): the key TOTP secrets are sealed with, and the administrator's known secret,
+      # so the scripts compute its codes - staff 2FA stays compulsory in CI, only the secret is known.
+      TWO_FACTOR_KEY: Y2ktb25seS10d28tZmFjdG9yLWtleS0zMi1ieXRlcyE=
+      ADMIN_TOTP_SECRET: MNUS233ONR4S25DPORYC243FMNZGK5BB
       RABBITMQ_HOST: localhost
       RABBITMQ_USER: ci
       RABBITMQ_PASS: ci-password
@@ -950,6 +954,10 @@ jobs:
       JWT_SECRET: ci-only-jwt-secret-at-least-32-bytes-long
       ADMIN_EMAIL: admin@ci.local
       ADMIN_PASSWORD: ci-admin-password
+      # Two-factor sign-in (specs/110): the key TOTP secrets are sealed with, and the administrator's known secret,
+      # so the scripts compute its codes - staff 2FA stays compulsory in CI, only the secret is known.
+      TWO_FACTOR_KEY: Y2ktb25seS10d28tZmFjdG9yLWtleS0zMi1ieXRlcyE=
+      ADMIN_TOTP_SECRET: MNUS233ONR4S25DPORYC243FMNZGK5BB
       RABBITMQ_HOST: localhost
       RABBITMQ_USER: ci
       RABBITMQ_PASS: ci-password
@@ -1159,6 +1167,8 @@ jobs:
           RABBITMQ_PASS=ci-password
           ADMIN_EMAIL=admin@ci.local
           ADMIN_PASSWORD=ci-admin-password
+          TWO_FACTOR_KEY=Y2ktb25seS10d28tZmFjdG9yLWtleS0zMi1ieXRlcyE=
+          ADMIN_TOTP_SECRET=MNUS233ONR4S25DPORYC243FMNZGK5BB
           SEQ_ADMIN_PASSWORD=ci-seq-password
           PAYMENT_OUTCOME=Approve
           INVENTORY_RESERVATION_TTL_MINUTES=15
@@ -1193,6 +1203,7 @@ jobs:
           E2E_MAILPIT_URL: http://localhost:8025
           ADMIN_EMAIL: admin@ci.local
           ADMIN_PASSWORD: ci-admin-password
+          ADMIN_TOTP_SECRET: MNUS233ONR4S25DPORYC243FMNZGK5BB
         run: npx playwright test
 
       # A failure is read in the trace viewer (npx playwright show-trace <trace.zip>), with the services' own logs.

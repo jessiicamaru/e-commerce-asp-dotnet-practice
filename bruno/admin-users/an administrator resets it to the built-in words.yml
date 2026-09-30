@@ -1,7 +1,7 @@
 info:
   name: an administrator resets it to the built-in words
   type: http
-  seq: 26
+  seq: 30
 
 http:
   method: POST

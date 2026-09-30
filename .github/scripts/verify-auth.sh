@@ -2,7 +2,7 @@
 #
 # Verifies the authentication and authorization boundary against running services.
 #
-#   ADMIN_EMAIL=... ADMIN_PASSWORD=... .github/scripts/verify-auth.sh
+#   ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... .github/scripts/verify-auth.sh
 #
 # Requires the Identity and Catalog services to be up already. The Order service
 # is optional: if it is not listening, the order ownership checks report that they
@@ -32,6 +32,7 @@ CART_URL="${CART_URL:-http://localhost:5062}"
 
 : "${ADMIN_EMAIL:?ADMIN_EMAIL is required}"
 : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
+: "${ADMIN_TOTP_SECRET:?ADMIN_TOTP_SECRET is required - staff sign in with a code (specs/110); see server/.env.example}"
 
 fail() {
   # ::error:: is picked up by GitHub Actions and ignored elsewhere.
@@ -71,18 +72,54 @@ print(json.dumps(dict(zip(pairs[::2], pairs[1::2]))))
 
 status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 
+# The current six-digit code for a base32 TOTP secret (RFC 6238; specs/110). OFFSET moves it by whole windows.
+totp() {
+  SECRET="$1" OFFSET="${2:-0}" "$PYTHON" -c '
+import base64, hmac, hashlib, os, struct, time
+secret = os.environ["SECRET"].replace(" ", "").upper()
+key = base64.b32decode(secret + "=" * (-len(secret) % 8))
+step = int(time.time()) // 30 + int(os.environ["OFFSET"])
+h = hmac.new(key, struct.pack(">Q", step), hashlib.sha1).digest()
+o = h[-1] & 15
+print(str((struct.unpack(">I", h[o:o + 4])[0] & 0x7FFFFFFF) % 10**6).zfill(6))
+'
+}
+
+# Signs the administrator in, both steps (specs/110), and prints the access token. A code works once: when this
+# window's was already used - another script a moment ago - it waits for the next window and asks again.
+admin_sign_in() {
+  local first challenge answer token attempt
+  for attempt in 1 2; do
+    first=$(curl -fsS -X POST "$IDENTITY_URL/api/auth/login" -H 'Content-Type: application/json' \
+      -d "$(json_object email "$ADMIN_EMAIL" password "$ADMIN_PASSWORD")") || return 1
+    challenge=$(printf '%s' "$first" | json_field challenge)
+    [ -n "$challenge" ] || return 1
+    answer=$(curl -sS -X POST "$IDENTITY_URL/api/auth/login/two-factor" -H 'Content-Type: application/json' \
+      -d "$(json_object challenge "$challenge" code "$(totp "$ADMIN_TOTP_SECRET")")")
+    token=$(printf '%s' "$answer" | json_field token 2>/dev/null || true)
+    if [ -n "$token" ]; then
+      printf '%s' "$token"
+      return 0
+    fi
+    sleep $(( 31 - $(date +%s) % 30 ))
+  done
+  return 1
+}
+
 echo "Identity: $IDENTITY_URL"
 echo "Catalog:  $CATALOG_URL"
 echo
 
-# 1. The bootstrap administrator was seeded and can log in.
-admin_token=$(
-  curl -fsS -X POST "$IDENTITY_URL/api/auth/login" \
-    -H 'Content-Type: application/json' \
-    -d "$(json_object email "$ADMIN_EMAIL" password "$ADMIN_PASSWORD")" | json_field token
-)
-[ -n "$admin_token" ] || fail "The seeded administrator could not log in."
-pass "seeded administrator logs in"
+# 1. The bootstrap administrator was seeded and signs in - in two steps (specs/110): the right password alone issues
+#    no token, only a challenge, and the code from the authenticator exchanges it for the session.
+first_step=$(curl -fsS -X POST "$IDENTITY_URL/api/auth/login" -H 'Content-Type: application/json' \
+  -d "$(json_object email "$ADMIN_EMAIL" password "$ADMIN_PASSWORD")")
+[ -z "$(printf '%s' "$first_step" | json_field token)" ] || fail "The right password alone issued an access token; staff need a code too."
+[ "$(printf '%s' "$first_step" | json_field twoFactor)" = "Required" ] || fail "The administrator's first step did not ask for a code."
+pass "the right password alone issues no token, only a challenge"
+
+admin_token=$(admin_sign_in) || fail "The seeded administrator could not sign in with a code. Check ADMIN_TOTP_SECRET against what Identity seeded."
+pass "seeded administrator signs in with a code"
 
 admin_role=$(jwt_claim "$admin_token" role)
 [ "$admin_role" = "Admin" ] || fail "Expected the admin token to carry role=Admin, got '$admin_role'."
@@ -122,6 +159,23 @@ allowed=$(status -X POST "$CATALOG_URL/api/categories" -H 'Content-Type: applica
 { [ "$allowed" != "401" ] && [ "$allowed" != "403" ]; } \
   || fail "Admin write was blocked with $allowed; the role claim is not being read correctly."
 pass "admin write passes authorization (got $allowed)"
+
+# 4b. A staff role without a second factor opens nothing - in another service, too (specs/110 SC-001). A new account
+#     is made a moderator; signed in with its password only, its session carries no Moderator role, so Catalog's
+#     review queue refuses it.
+mod_email="moderator-$(date +%s)-$RANDOM@ci.local"
+mod_id=$(curl -fsS -X POST "$IDENTITY_URL/api/auth/register" -H 'Content-Type: application/json' \
+  -d "$(json_object email "$mod_email" password 'Passw0rd!23' firstName CI lastName Moderator)" | json_field id)
+granted=$(status -X PUT "$IDENTITY_URL/api/users/$mod_id/roles/Moderator" -H "Authorization: Bearer $admin_token")
+[ "$granted" = "200" ] || fail "Granting Moderator answered $granted."
+mod_session=$(curl -fsS -X POST "$IDENTITY_URL/api/auth/login" -H 'Content-Type: application/json' \
+  -d "$(json_object email "$mod_email" password 'Passw0rd!23')")
+[ "$(printf '%s' "$mod_session" | json_field twoFactor)" = "SetupRequired" ] || fail "A moderator without two-factor sign-in was not told to set it up."
+mod_token=$(printf '%s' "$mod_session" | json_field token)
+[ "$(jwt_claim "$mod_token" role)" != "Moderator" ] || fail "A moderator's session without a second factor carried role=Moderator."
+queue=$(status "$CATALOG_URL/api/products/review?status=Pending" -H "Authorization: Bearer $mod_token")
+[ "$queue" = "403" ] || fail "Catalog's review queue answered $queue to a moderator without a second factor; it must be 403."
+pass "a moderator without a second factor is refused by another service (403)"
 
 # 5. Public reads stay public.
 public=$(status "$CATALOG_URL/api/products")

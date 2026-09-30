@@ -1,7 +1,7 @@
 info:
   name: a moderator cannot unlock their own account
   type: http
-  seq: 12
+  seq: 16
 
 http:
   method: POST
