@@ -39,6 +39,13 @@ public interface IOutgoingEmailRepository
     /// </summary>
     Task<bool> TryRetryAsync(Guid id, DateTime now, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Marks every failed email no notice has counted yet as counted now, and says how many - unless a notice went out
+    /// less than <paramref name="quiet"/> ago, in which case it marks nothing and answers 0 (specs/115 research D2). One
+    /// statement: two sweeps at once count each failure once. Runs in the caller's transaction.
+    /// </summary>
+    Task<int> ClaimUncountedFailuresAsync(DateTime now, TimeSpan quiet, CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

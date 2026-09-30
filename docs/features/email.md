@@ -178,6 +178,12 @@ on **Failed**, then Waiting (`Pending`) and Sent, and a search narrows the list 
    - It is audited as `System` / `EmailRetried`, with the attempts and the error it had.
 3. **A reset or confirmation link is never sent again** (`canRetry: false`, and 409). The link expires after 30
    minutes or 24 hours, so sending it later helps nobody. The person asks for a new one.
+4. **Administrators are told** (specs/115, #222). After each sweep, in its transaction, one guarded statement marks
+   every failed email no notice has counted (`outgoing_emails.FailureAlertedAt`) - unless a notice went out less than
+   an hour ago - and each administrator gets one in-app `EmailsFailed` notice with the count, linking here. A digest,
+   because an outage fails every queued email over a few hours; an hour, because that is the longest retry interval.
+   Each failure is in exactly one notice - two instances sweeping at once meet on the rows - and a retry clears the
+   mark, so a second failure is counted again. The notice is never an email. The Overview shows the failed count too.
 
 ## Data
 
@@ -249,7 +255,8 @@ It was verified end to end against Mailpit (specs/060):
 - **No unsubscribe and no bounce handling.** A real provider would add both.
 - **Images cannot be used** (no logo): the allow-list leaves them out, because a remote image in an email is also
   a read receipt.
-- **Nobody is alerted when an email fails.** An administrator sees it by opening `/admin/email-delivery` (specs/087).
+- **The failure alert is in-app only** (specs/115): an administrator not signed in learns at their next visit - the
+  bell, and the Overview's count.
 
 ## History
 
@@ -261,3 +268,4 @@ It was verified end to end against Mailpit (specs/060):
 | [077-email-templates](../../specs/077-email-templates/) | #161 | Administrators edit every email: versions, sanitised HTML, placeholders checked, preview and test, multipart sending (#150, the email half). |
 | [083-more-emails](../../specs/083-more-emails/) | #171 | Eight more emails: parcel shipped, order cancelled, return accepted, refused and refunded, back in stock, account locked and banned. The reader's language is learnt from use (`users.Language`) (#167). |
 | [087-email-delivery](../../specs/087-email-delivery/) | #179 | `/admin/email-delivery`: the emails in each state with their reason, and a failed one sent again (#175). |
+| [115-email-failure-alert](../../specs/115-email-failure-alert/) | #235 | Administrators get one digest notice an hour when emails fail for good; the Overview counts them (#222). |

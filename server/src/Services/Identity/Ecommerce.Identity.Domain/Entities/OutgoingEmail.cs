@@ -27,6 +27,12 @@ public class OutgoingEmail
 
     public DateTime? SentAt { get; set; }
 
+    /// <summary>
+    /// When a notice to the administrators counted this failure (specs/115). Null on a failed email means nobody has
+    /// been told yet; a retry clears it, so a second failure is counted again.
+    /// </summary>
+    public DateTime? FailureAlertedAt { get; set; }
+
     /// <summary>Why the last attempt failed - kept, so an email that gave up says why.</summary>
     public string? LastError { get; set; }
 

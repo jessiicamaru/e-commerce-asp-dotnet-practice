@@ -34,6 +34,9 @@ public interface IUserRepository
     /// <summary>One user with their roles, tracked - for staff acting on them (specs/043).</summary>
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>The ids of everybody holding <paramref name="role"/> (specs/115: who is told an email failed).</summary>
+    Task<List<Guid>> GetIdsInRoleAsync(string role, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Users whose email or name contains <paramref name="search"/> (case- and accent-blind on email via
     /// its lower-case form), newest first, with their roles (specs/043).

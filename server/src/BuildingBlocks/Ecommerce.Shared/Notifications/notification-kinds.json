@@ -13,7 +13,8 @@
     "rating": ["rating"],
     "count": ["rating"],
     "until": ["until"],
-    "left": ["left"]
+    "left": ["left"],
+    "failed": ["failed"]
   },
   "kinds": {
     "OrderPaid": { "required": ["orderId", "total", "currency"] },
@@ -51,6 +52,7 @@
     "StockRunningLow": { "required": ["product", "left"] },
     "PartCancelled": { "required": ["orderId", "reason"], "optional": ["shop"] },
     "TrackingCorrected": { "required": ["orderId", "tracking"], "optional": ["shop"] },
+    "EmailsFailed": { "required": ["failed"] },
     "ShopClosed": { "required": ["reason"] },
     "ShopReopened": { "required": [] }
   }

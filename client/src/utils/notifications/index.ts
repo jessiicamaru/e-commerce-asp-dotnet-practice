@@ -35,6 +35,8 @@ export function describeNotification(t: TFunction<'notifications'>, n: AppNotifi
     until: d.until ? new Date(d.until).toLocaleString(language) : '',
     // How many of a variant are left to sell (specs/102) - "0" is a real value, not a hole.
     left: d.left ?? '',
+    // How many emails failed for good since administrators were last told (specs/115).
+    failed: d.failed ?? '',
   })
   const key = `kind.${n.kind}`
   const options = { defaultValue: '', ...(d.rating && Number.isFinite(rating) ? { count: rating } : {}) }
@@ -47,7 +49,7 @@ export function describeNotification(t: TFunction<'notifications'>, n: AppNotifi
 }
 
 /** The placeholders `describeNotification` fills - held against notification-kinds.json by its test (specs/078). */
-export const FILLED_PLACEHOLDERS = ['order', 'total', 'amount', 'tracking', 'shop', 'by', 'product', 'reason', 'rating', 'until', 'count', 'left']
+export const FILLED_PLACEHOLDERS = ['order', 'total', 'amount', 'tracking', 'shop', 'by', 'product', 'reason', 'rating', 'until', 'count', 'left', 'failed']
 
 /** The five characters HTML gives meaning to, escaped - and nothing else, so "é" stays "é". */
 export function escapeHtml(value: string): string {

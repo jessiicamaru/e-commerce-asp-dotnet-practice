@@ -377,7 +377,8 @@
     },
     "waiting": {
       "products": "Products to review",
-      "shops": "Shops to review"
+      "shops": "Shops to review",
+      "failedEmails": "Emails not delivered"
     },
     "revenue": "Revenue",
     "orders_one": "{{count}} order",

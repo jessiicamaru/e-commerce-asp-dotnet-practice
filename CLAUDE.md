@@ -760,6 +760,9 @@ words are the defaults; `email_template_versions` is append-only (reset and rest
 (`AllowListHtmlSanitizer`, Ganss.Xss) **on save AND on every send**, and values are escaped as they are filled in;
 a placeholder the email cannot fill is a 400 naming it, and the reset/confirmation emails cannot lose `{link}`.
 `IEmailTransport.SendAsync(to, subject, text, html)` sends `multipart/alternative`. Admin only, not Moderator.
+**Administrators are told an email failed for good** (specs/115, #222): after each sweep one guarded statement marks
+the uncounted failures (`outgoing_emails.FailureAlertedAt`, cleared by a retry) - none within an hour of the last - and
+each Admin gets one `EmailsFailed` digest, in the sweep's transaction.
 **What became of each email** (specs/087, #175): `/admin/email-delivery`, `GET /api/emails` (Admin) - never an email's data -
 and `POST /api/emails/{id}/retry`, one guarded `UPDATE ... WHERE "Status" = 'Failed'`. ⚠️ A reset or confirmation email is
 never retried (`canRetry: false`, 409): its link has expired.

@@ -64,7 +64,17 @@ public class OutgoingEmailRepository(ApplicationDbContext context) : IOutgoingEm
                 .SetProperty(e => e.Status, OutgoingEmailStatus.Pending)
                 .SetProperty(e => e.Attempts, 0)
                 .SetProperty(e => e.NextAttemptAt, now)
-                .SetProperty(e => e.LastError, (string?)null), cancellationToken) == 1;
+                .SetProperty(e => e.LastError, (string?)null)
+                .SetProperty(e => e.FailureAlertedAt, (DateTime?)null), cancellationToken) == 1;
+
+    public Task<int> ClaimUncountedFailuresAsync(DateTime now, TimeSpan quiet, CancellationToken cancellationToken = default)
+    {
+        var since = now - quiet;
+        return _context.OutgoingEmails
+            .Where(e => e.Status == OutgoingEmailStatus.Failed && e.FailureAlertedAt == null
+                && !_context.OutgoingEmails.Any(told => told.FailureAlertedAt > since))
+            .ExecuteUpdateAsync(set => set.SetProperty(e => e.FailureAlertedAt, now), cancellationToken);
+    }
 
     /// <summary>A left join: an email whose recipient is gone still shows, with no address.</summary>
     private IQueryable<EmailWithRecipient> WithRecipient(IQueryable<OutgoingEmail> emails) =>

@@ -82,6 +82,9 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
             .Where(t => t.UserId == userId && t.RevokedAt == null && (keep == null || t.Token != keep))
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedAt, now), cancellationToken);
 
+    public Task<List<Guid>> GetIdsInRoleAsync(string role, CancellationToken cancellationToken = default) =>
+        _context.Users.AsNoTracking().Where(u => u.Roles.Any(r => r.Name == role)).Select(u => u.Id).ToListAsync(cancellationToken);
+
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
