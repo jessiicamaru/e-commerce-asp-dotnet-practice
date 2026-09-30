@@ -10,8 +10,8 @@
 Deleted by the sweeper: `notifications` rows with `"ReadAt" < now - ReadNotificationDays`; `audit_entries` rows with
 `"OccurredAt" < now - AuditYears` when that is set.
 
-Written by the sweeper: one `audit_entries` row (through `AuditEntryRecorded`, the service's own outbox) per trim that
-deleted audit entries: category `System`, action `AuditTrimmed`, subject `AuditLog`, summary with the cutoff and count.
+Written by the sweeper: one `audit_entries` row (through `AuditEntryRecorded`, the service's own outbox) per batch that
+deleted audit entries, in that batch's transaction: category `System`, action `AuditTrimmed`, subject `AuditLog`, summary with the cutoff and count.
 
 ## Configuration
 

@@ -31,6 +31,9 @@ public class ActivityTestFixture : IAsyncLifetime
     /// <summary>Whose inbox a request reads - settable per test (specs/042).</summary>
     public TestUser CurrentUser { get; } = new();
 
+    /// <summary>Retention as each test sets it (specs/116).</summary>
+    public Ecommerce.Activity.Application.Retention.RetentionOptions Retention { get; } = new();
+
     public async Task InitializeAsync()
     {
         var password = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
@@ -53,6 +56,8 @@ public class ActivityTestFixture : IAsyncLifetime
         services.AddScoped<Ecommerce.Activity.Application.MyData.IAccountErasure, Ecommerce.Activity.Infrastructure.Persistence.Repositories.AccountErasure>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<Ecommerce.Activity.Application.Retention.IRetentionRepository, Ecommerce.Activity.Infrastructure.Persistence.Repositories.RetentionRepository>();
+        services.AddSingleton(Retention);
         services.AddScoped<INotificationWordingStore, NotificationWordingStore>();
         services.AddSingleton<INoticeSanitizer, NoticeSanitizer>();
         // Rewording is audited through the outbox (specs/078); in memory here, and the tests read what was published.

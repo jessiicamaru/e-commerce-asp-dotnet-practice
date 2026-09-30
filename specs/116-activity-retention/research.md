@@ -14,7 +14,9 @@ idle customer keeps years of them.
 ## D2 - The audit log: kept for ever unless an operator says, and never silently shortened
 
 **Decision**: `Retention:AuditYears` is empty by default - nothing is deleted. When set (at least 1), entries older than
-that many years go, and the sweep records one `System` / `AuditTrimmed` entry with the cutoff and the count.
+that many years go, and every batch that deletes some records a `System` / `AuditTrimmed` entry with the cutoff and
+its count, in the batch's own transaction - an entry for the whole sweep could not commit with deletes spread over many
+transactions, and a crash between them would trim the log without saying so.
 
 **Rationale**: the audit log is the security record staff decisions are judged by (specs/041, 100); deleting it must be a
 deliberate operator decision, and the log must say it was trimmed - otherwise a missing year looks like a quiet one.

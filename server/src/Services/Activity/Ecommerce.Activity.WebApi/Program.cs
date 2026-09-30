@@ -1,4 +1,5 @@
 using Ecommerce.Activity.Application;
+using Ecommerce.Activity.Application.Retention;
 using Ecommerce.Activity.Infrastructure;
 using Ecommerce.Activity.Infrastructure.Persistence;
 using Ecommerce.Activity.WebApi.Consumers;
@@ -65,6 +66,22 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Retention (specs/116, #221): how long read notices and - only when set - audit entries are kept. A setting out of
+// range stops the service here, naming it, rather than at the first sweep (specs/103).
+var retention = builder.Configuration.GetSection(RetentionOptions.Section).Get<RetentionOptions>() ?? new RetentionOptions();
+if (retention.Problems() is { Count: > 0 } retentionProblems)
+{
+    throw new InvalidOperationException("Activity cannot start: " + string.Join(" ", retentionProblems));
+}
+
+builder.Services.AddSingleton(retention);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddHostedService(sp => new RetentionSweeper(
+    sp.GetRequiredService<IServiceScopeFactory>(),
+    sp.GetRequiredService<TimeProvider>(),
+    TimeSpan.FromMinutes(retention.IntervalMinutes),
+    sp.GetRequiredService<ILogger<RetentionSweeper>>()));
 
 // A reworded notice is audited like any other change (specs/078) - published through this service's own outbox
 // and kept by its own consumer, the way every other service's entries arrive.

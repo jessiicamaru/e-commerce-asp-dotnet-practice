@@ -38,8 +38,8 @@ says it was shortened, when, and by how much. There is no archive.
 **Acceptance Scenarios**:
 
 1. **Given** no audit retention set, **Then** no audit entry is ever deleted.
-2. **Given** a retention of 5 years, **Then** entries older than 5 years are deleted and one `System` / `AuditTrimmed`
-   entry records the cutoff and the count; newer entries stay.
+2. **Given** a retention of 5 years, **Then** entries older than 5 years are deleted and a `System` / `AuditTrimmed`
+   entry records the cutoff and the count - one per batch, in that batch's transaction; newer entries stay.
 3. **Given** a retention set below 1 year, or read notices kept less than 1 day, **Then** Activity refuses to start and
    says which setting is wrong.
 
@@ -56,7 +56,8 @@ says it was shortened, when, and by how much. There is no archive.
 
 - **FR-001**: `Retention:ReadNotificationDays` (default 90, at least 1): read notices whose `ReadAt` is older are deleted.
 - **FR-002**: `Retention:AuditYears` (default none - keep for ever; when set, at least 1): audit entries whose
-  `OccurredAt` is older are deleted, and one `AuditTrimmed` entry is recorded with the cutoff and the count.
+  `OccurredAt` is older are deleted, each batch with an `AuditTrimmed` entry recording the cutoff and its count, in the
+  same transaction.
 - **FR-003**: A sweeper in Activity, every `Retention:IntervalMinutes` (60), deletes in batches of `Retention:BatchSize`
   (1000) until a batch comes back short; safe on several instances.
 - **FR-004**: Activity refuses to start with a setting out of range, naming it.
