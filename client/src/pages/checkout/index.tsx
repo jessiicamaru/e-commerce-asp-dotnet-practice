@@ -132,7 +132,12 @@ export function CheckoutPage() {
             {quote.data && (
               <>
                 <OrderLines items={quote.data.items} currency={quote.data.currency} />
-                <VoucherBox choice={where} codes={voucherCodes} onChange={setVoucherCodes} />
+                <VoucherBox
+                  choice={where}
+                  codes={voucherCodes}
+                  onChange={setVoucherCodes}
+                  sellerIds={[...new Set(quote.data.items.flatMap((line) => (line.sellerId ? [line.sellerId] : [])))]}
+                />
                 <OrderTotals totals={quote.data} shippingName={quote.data.shippingOption.name} />
               </>
             )}

@@ -78,5 +78,17 @@
   "save": "Save",
   "saving": "Saving…",
   "edited": "Voucher saved.",
-  "editFailed": "The voucher could not be saved."
+  "editFailed": "The voucher could not be saved.",
+  "public": {
+    "title": "Vouchers you can use",
+    "titleCheckout": "Vouchers for this order",
+    "use": "Use",
+    "copy": "Copy the code {{code}}",
+    "copyShort": "Copy code",
+    "copied": "Copied {{code}}.",
+    "shown": "Shown to shoppers",
+    "codeOnly": "Code only",
+    "show": "Show it to shoppers",
+    "showHint": "Listed on the shop page, product pages and at checkout while it can be used. Otherwise only people you give the code to can use it."
+  }
 }

@@ -253,7 +253,8 @@ public class SubmitOrderCommandHandler(
             x.Sku,
             x.OptionSummary,
             x.SellerName,
-            x.ShopDiscount + x.PlatformDiscount
+            x.ShopDiscount + x.PlatformDiscount,
+            x.SellerId
         )).ToList();
 
         return new OrderResponse(

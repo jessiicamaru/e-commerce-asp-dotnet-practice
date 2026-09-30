@@ -2,6 +2,7 @@ import type { ProductQuery } from '@/services/product/types'
 import type { CheckoutChoice } from '@/services/order/types'
 import type { QueueState, StaffOrderQuery } from '@/services/admin/types'
 import type { AuditFilter } from '@/services/audit/types'
+import type { PublicVoucherScope } from '@/services/voucher/types'
 
 /**
  * Every TanStack Query key in one place, so a mutation can invalidate what it affects without
@@ -40,6 +41,7 @@ export const queryKeys = {
   payoutAccounts: (sellerIds: string[]) => ['payout-accounts', sellerIds] as const,
   adminReturns: (status: string, page: number) => ['admin-returns', status, page] as const,
   myVouchers: (page: number) => ['vouchers', 'mine', page] as const,
+  publicVouchers: (scope: PublicVoucherScope | null) => ['vouchers', 'public', scope] as const,
   savedIds: () => ['saved', 'ids'] as const,
   savedProducts: (page: number) => ['saved', 'list', page] as const,
   productQuestions: (productId: string, page: number) => ['questions', 'product', productId, page] as const,

@@ -26,7 +26,8 @@ public record EditVoucherCommand(
     int? TotalLimit,
     int? PerCustomerLimit,
     List<VoucherMinSubtotalRequest>? MinSubtotals,
-    int? MinQuantity) : IRequest<VoucherSummary>
+    int? MinQuantity,
+    bool? IsPublic = null) : IRequest<VoucherSummary>
 {
     /// <summary>From the route, never the body.</summary>
     [JsonIgnore]
@@ -35,7 +36,8 @@ public record EditVoucherCommand(
 
 /// <summary>What an edit writes, once checked.</summary>
 public record VoucherEdit(
-    string Name, DateTime? EndsAt, int? TotalLimit, int? PerCustomerLimit, IReadOnlyDictionary<string, decimal?> MinSubtotals, int? MinQuantity);
+    string Name, DateTime? EndsAt, int? TotalLimit, int? PerCustomerLimit, IReadOnlyDictionary<string, decimal?> MinSubtotals, int? MinQuantity,
+    bool? IsPublic = null);
 
 public enum EditOutcome { NotFound, Disabled, BelowUses, Edited }
 
@@ -126,7 +128,8 @@ public class EditVoucherCommandHandler(IVoucherRepository vouchers, ICurrentUser
         var edit = new VoucherEdit(
             request.Name!.Trim(), endsAt, request.TotalLimit, request.PerCustomerLimit,
             (request.MinSubtotals ?? []).ToDictionary(r => r.Currency!.ToUpperInvariant(), r => r.MinSubtotal),
-            request.MinQuantity);
+            request.MinQuantity,
+            request.IsPublic);
         var before = VoucherRules.Summary(current);
 
         var (outcome, edited) = await _vouchers.TryEditAsync(request.Id, owner, edit, DateTime.UtcNow,

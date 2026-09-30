@@ -1,7 +1,7 @@
 info:
   name: a seller cannot cancel a part that is not theirs
   type: http
-  seq: 97
+  seq: 99
 
 http:
   method: POST

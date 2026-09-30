@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `ac097d00`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `1b77000e`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**200 endpoints** across 7 services.
+**201 endpoints** across 7 services.
 
 ## Identity (56)
 
@@ -147,7 +147,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
 | `GET` | `/api/cart/my-data` | signed in |  |
 
-## Order (50)
+## Order (51)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -199,6 +199,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/return/sent` | signed in | The accepted parcel is on its way back, with its tracking reference. |
 | `POST` | `/api/vouchers` | Admin, Seller |  |
 | `GET` | `/api/vouchers/mine` | Admin, Seller | The caller's vouchers: the platform's for an administrator, their own for a seller. |
+| `GET` | `/api/vouchers/public` | anyone | The public vouchers a shopper could use (specs/114) - anonymous, in the request's currency, without limits or counts. platform and/or sellerId say whose; productId (+ variantId) narrows to one product. |
 | `PUT` | `/api/vouchers/{id}` | Admin, Seller | Corrects an active voucher's name, end, limits and minimums (specs/113) - never what it takes off. Not yours is a 404; disabled, or a total below the uses made, is a 409. |
 | `POST` | `/api/vouchers/{id}/disable` | Admin, Seller | Stops it being used. Not yours is a 404; already disabled is a 409. |
 

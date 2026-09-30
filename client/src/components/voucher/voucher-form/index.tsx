@@ -40,6 +40,7 @@ export function VoucherForm({ platform }: { platform: boolean }) {
   const [perCustomerLimit, setPerCustomerLimit] = useState('')
   const [newCustomer, setNewCustomer] = useState(false)
   const [firstInShop, setFirstInShop] = useState(false)
+  const [isPublic, setIsPublic] = useState(false)
   const [minQuantity, setMinQuantity] = useState('')
   const [products, setProducts] = useState<Map<string, string>>(new Map())
   const benefits: Benefit[] = platform ? ['Percent', 'FixedAmount', 'FreeShipping'] : ['Percent', 'FixedAmount']
@@ -66,7 +67,7 @@ export function VoucherForm({ platform }: { platform: boolean }) {
             event.preventDefault()
             const voucher = toNewVoucher({
               platform, code, name, benefit, percent, rows, startsAt, endsAt, totalLimit, perCustomerLimit,
-              newCustomer, firstInShop, minQuantity, products: [...products.keys()],
+              newCustomer, firstInShop, minQuantity, products: [...products.keys()], isPublic,
             })
             create.mutate(voucher, {
               onSuccess: (made) => {
@@ -170,6 +171,13 @@ export function VoucherForm({ platform }: { platform: boolean }) {
               <ProductPicker mine={!platform} chosen={products} onChange={setProducts} />
             </fieldset>
           )}
+
+          <label className="grid gap-0.5 text-sm">
+            <span className="flex items-center gap-2">
+              <Checkbox checked={isPublic} onCheckedChange={setIsPublic} /> {t('public.show')}
+            </span>
+            <span className="text-muted-foreground pl-6 text-xs">{t('public.showHint')}</span>
+          </label>
 
           <ServerError error={create.error} fallback={t('form.failed')} />
           <DialogFooter>

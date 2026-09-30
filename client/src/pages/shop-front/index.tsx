@@ -5,6 +5,7 @@ import { PauseCircleIcon, StoreIcon } from 'lucide-react'
 import { ProductCard } from '@/components/product/product-card'
 import { CloseShop } from '@/components/admin/close-shop'
 import { Pager } from '@/components/shared/pager'
+import { PublicVouchers } from '@/components/voucher/public-vouchers'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { PAGE_SIZE } from '@/constants/shared'
 import { queryKeys } from '@/constants/query-keys'
@@ -50,6 +51,8 @@ export function ShopFrontPage() {
           {isStaff && <CloseShop sellerId={shop.data.sellerId} shopName={shop.data.shopName} />}
         </header>
       )}
+
+      {shop.data && !shop.data.paused && <PublicVouchers scope={{ sellerIds: [shop.data.sellerId] }} />}
 
       {products.isError ? (
         <ErrorMessage>{t('shop.productsFailed')}</ErrorMessage>

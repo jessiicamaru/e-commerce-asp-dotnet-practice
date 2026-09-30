@@ -7,6 +7,7 @@ import { ApiError } from '@/config/axios'
 import { Product } from '@/services/product'
 import type { Product as ProductModel } from '@/services/product/types'
 import { Shops } from '@/services/shops'
+import { Voucher } from '@/services/voucher'
 import { renderAsCustomer, renderAsModerator, renderSignedOut } from '@/test/render'
 import { ShopFrontPage } from '.'
 
@@ -111,5 +112,20 @@ describe('ShopFrontPage, paused and closed (specs/107)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Mai Lens' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Close shop' })).not.toBeInTheDocument()
+  })
+})
+
+describe('ShopFrontPage vouchers (specs/114)', () => {
+  it("lists the shop's public vouchers, asking for that shop only", async () => {
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
+    vi.spyOn(Product, 'list').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
+    const asked = vi.spyOn(Voucher, 'public').mockResolvedValue([{
+      code: 'MAI10', name: 'Mai ten', isPlatform: false, sellerId: 's1', benefit: 'FixedAmount', percent: null, currency: 'VND',
+      fixedValue: 50_000, maxDiscount: null, minSubtotal: null, endsAt: null, conditions: [], targeted: false,
+    }])
+    renderShop()
+
+    expect(await screen.findByText('MAI10')).toBeInTheDocument()
+    expect(asked).toHaveBeenCalledWith({ sellerIds: ['s1'] })
   })
 })

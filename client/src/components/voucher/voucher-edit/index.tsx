@@ -4,6 +4,7 @@ import { PencilIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { ServerError } from '@/components/shared/server-error'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogClose,
@@ -95,6 +96,9 @@ export function VoucherEdit({ voucher }: { voucher: VoucherSummary }) {
               <Input id="edit-quantity" type="number" min={1} max={1000} value={fields.minQuantity} onChange={(e) => set({ minQuantity: e.target.value })} />
             </Field>
           )}
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={fields.isPublic} onCheckedChange={(checked) => set({ isPublic: checked })} /> {t('public.show')}
+          </label>
           <ServerError error={edit.error} fallback={t('editFailed')} />
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>{t('action.cancel', { ns: 'common' })}</DialogClose>

@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TicketPercentIcon, XIcon } from 'lucide-react'
 import { ServerError } from '@/components/shared/server-error'
+import { PublicVouchers } from '@/components/voucher/public-vouchers'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,20 +22,23 @@ export function VoucherBox({
   choice,
   codes,
   onChange,
+  sellerIds = [],
 }: {
   /** Where and how - what the code is tried against. Null until both are chosen. */
   choice: Omit<CheckoutChoice, 'voucherCodes'> | null
   codes: string[]
   onChange: (codes: string[]) => void
+  /** The shops in the cart (specs/114): their public vouchers and the platform's are offered to use. */
+  sellerIds?: string[]
 }) {
   const { t } = useTranslation('checkout')
   const id = useId()
   const [text, setText] = useState('')
   const tryVoucher = useTryVoucher()
-  const code = text.trim().toUpperCase()
+  const typed = text.trim().toUpperCase()
   const full = codes.length >= MAX_VOUCHER_CODES
 
-  function apply() {
+  function apply(code: string) {
     if (!choice || !code) return
     if (codes.includes(code)) {
       setText('')
@@ -61,7 +65,7 @@ export function VoucherBox({
         className="flex gap-2"
         onSubmit={(event) => {
           event.preventDefault()
-          apply()
+          apply(typed)
         }}
       >
         <Input
@@ -76,11 +80,20 @@ export function VoucherBox({
             if (tryVoucher.isError) tryVoucher.reset()
           }}
         />
-        <Button type="submit" variant="outline" className="h-10 rounded-xl" disabled={!choice || !code || full || tryVoucher.isPending}>
+        <Button type="submit" variant="outline" className="h-10 rounded-xl" disabled={!choice || !typed || full || tryVoucher.isPending}>
           {t('voucher.apply')}
         </Button>
       </form>
       <ServerError error={tryVoucher.error} fallback={t('voucher.failed')} />
+      {!full && choice && (
+        // Using one is trying its code, exactly as typing it would be: the server's answer decides (specs/070 D1).
+        <PublicVouchers
+          scope={{ platform: true, sellerIds }}
+          title={t('public.titleCheckout', { ns: 'vouchers' })}
+          usedCodes={codes}
+          onUse={(offered) => apply(offered)}
+        />
+      )}
       {codes.length > 0 && (
         <ul className="flex flex-wrap gap-1.5" aria-label={t('voucher.applied')}>
           {codes.map((c) => (

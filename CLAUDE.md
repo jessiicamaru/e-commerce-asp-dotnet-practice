@@ -604,7 +604,10 @@ is on the discounted price; lines freeze `ShopDiscount` / `PlatformDiscount`, th
 and free delivery. Uses are claimed by guarded statements **inside the order's own transaction**
 (`ClaimAndSaveAsync`) and given back once by a failed or cancelled order. **Terms are corrected, never the amount**
 (specs/113, #219): `PUT /api/vouchers/{id}` - name, end, limits, minimums - by its owner (a seller their own, Admin the
-platform's), the total limit written by one guarded `UPDATE ... "UsedCount" <= @total` the claim serialises against. ⚠️ Any transaction this service opens
+platform's), the total limit written by one guarded `UPDATE ... "UsedCount" <= @total` the claim serialises against. **Shown
+or code only** (specs/114, #220): `vouchers.IsPublic` (false unless the owner ticks it); anonymous `GET
+/api/vouchers/public` lists the live, public, priced ones for the platform and named shops (and one product) on the shop
+page, product pages and checkout - ⚠️ never with a limit or a count. ⚠️ Any transaction this service opens
 by hand runs inside `CreateExecutionStrategy().ExecuteAsync` - production retries (`EnableRetryOnFailure`), and a
 transaction outside a strategy throws; the Order test fixture now retries too, after both voucher transactions
 passed every test and answered 500 in the container.

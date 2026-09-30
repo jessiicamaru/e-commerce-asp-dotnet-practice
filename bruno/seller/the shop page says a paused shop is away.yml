@@ -1,7 +1,7 @@
 info:
   name: the shop page says a paused shop is away
   type: http
-  seq: 100
+  seq: 102
 
 http:
   method: GET

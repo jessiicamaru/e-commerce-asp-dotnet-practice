@@ -1,7 +1,7 @@
 info:
   name: clearing the line puts it back on the default
   type: http
-  seq: 95
+  seq: 97
 
 http:
   method: PUT

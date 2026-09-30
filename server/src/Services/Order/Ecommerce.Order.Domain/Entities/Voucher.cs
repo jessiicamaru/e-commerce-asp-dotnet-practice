@@ -36,6 +36,12 @@ public class Voucher
 
     public VoucherStatus Status { get; set; } = VoucherStatus.Active;
 
+    /// <summary>
+    /// Shown to shoppers on the shop page, the product page and at checkout (specs/114), or code only. Private unless its
+    /// owner chooses - every voucher from before stays as it was made.
+    /// </summary>
+    public bool IsPublic { get; set; }
+
     /// <summary>How many orders may use it in all; null for no limit.</summary>
     public int? TotalLimit { get; set; }
 

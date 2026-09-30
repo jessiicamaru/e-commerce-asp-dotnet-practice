@@ -1,7 +1,7 @@
 info:
   name: the seller reopens their shop
   type: http
-  seq: 102
+  seq: 104
 
 http:
   method: POST

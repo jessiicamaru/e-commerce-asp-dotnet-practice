@@ -1,0 +1,27 @@
+info:
+  name: public vouchers of nobody is 400
+  type: http
+  seq: 85
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/vouchers/public"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Ask for the platform, a shop, or both (specs/114).

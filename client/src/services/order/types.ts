@@ -21,6 +21,8 @@ export interface OrderLine {
   taxAmount: number | null
   /** The shop that sold it, frozen at purchase (specs/036). Null: the shop's own, or not recorded. */
   sellerName?: string | null
+  /** Which shop - the quote says so since specs/114, so checkout can show that shop's vouchers. Null: the shop's own. */
+  sellerId?: string | null
   /** What vouchers took off this line (specs/069), frozen at purchase; 0 or absent when none. */
   discount?: number
 }

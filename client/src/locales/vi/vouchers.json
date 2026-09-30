@@ -78,5 +78,17 @@
   "save": "Lưu",
   "saving": "Đang lưu…",
   "edited": "Đã lưu mã giảm giá.",
-  "editFailed": "Không lưu được mã giảm giá."
+  "editFailed": "Không lưu được mã giảm giá.",
+  "public": {
+    "title": "Mã giảm giá bạn có thể dùng",
+    "titleCheckout": "Mã giảm giá cho đơn này",
+    "use": "Dùng",
+    "copy": "Sao chép mã {{code}}",
+    "copyShort": "Sao chép mã",
+    "copied": "Đã sao chép {{code}}.",
+    "shown": "Hiển thị cho khách",
+    "codeOnly": "Chỉ dùng bằng mã",
+    "show": "Hiển thị cho khách hàng",
+    "showHint": "Được liệt kê trên trang cửa hàng, trang sản phẩm và khi thanh toán trong lúc còn dùng được. Nếu không, chỉ người bạn đưa mã mới dùng được."
+  }
 }

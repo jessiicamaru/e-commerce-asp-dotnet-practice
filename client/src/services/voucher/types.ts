@@ -41,6 +41,8 @@ export interface VoucherSummary {
   conditions: VoucherCondition[]
   targets: VoucherTarget[]
   createdAt: string
+  /** Shown to shoppers (specs/114), or code only. */
+  isPublic?: boolean
 }
 
 export interface VoucherPage {
@@ -66,6 +68,8 @@ export interface NewVoucher {
   amounts: VoucherAmount[]
   conditions: VoucherCondition[]
   targets: VoucherTarget[]
+  /** Shown to shoppers (specs/114); code only when false. */
+  isPublic: boolean
 }
 
 /**
@@ -79,4 +83,31 @@ export interface VoucherEdit {
   perCustomerLimit: number | null
   minSubtotals: { currency: string; minSubtotal: number | null }[]
   minQuantity: number | null
+  /** Shown to shoppers or code only (specs/114). */
+  isPublic: boolean
+}
+
+/** Whose public vouchers to list (specs/114): the platform's and/or shops', optionally for one product. */
+export interface PublicVoucherScope {
+  platform?: boolean
+  sellerIds?: string[]
+  productId?: string
+  variantIds?: string[]
+}
+
+/** A voucher as a shopper sees it listed: what it gives in the currency being browsed in - never a count (specs/114). */
+export interface PublicVoucher {
+  code: string
+  name: string
+  isPlatform: boolean
+  sellerId: string | null
+  benefit: Benefit | string
+  percent: number | null
+  currency: string
+  fixedValue: number | null
+  maxDiscount: number | null
+  minSubtotal: number | null
+  endsAt: string | null
+  conditions: VoucherCondition[]
+  targeted: boolean
 }

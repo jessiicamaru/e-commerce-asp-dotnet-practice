@@ -3,7 +3,7 @@ import { queryKeys } from '@/constants/query-keys'
 import { Order } from '@/services/order'
 import type { CheckoutChoice } from '@/services/order/types'
 import { Voucher } from '@/services/voucher'
-import type { NewVoucher, VoucherEdit } from '@/services/voucher/types'
+import type { NewVoucher, PublicVoucherScope, VoucherEdit } from '@/services/voucher/types'
 
 /** The caller's vouchers, a page at a time. */
 export function useMyVouchers(page: number, pageSize: number) {
@@ -11,6 +11,15 @@ export function useMyVouchers(page: number, pageSize: number) {
     queryKey: queryKeys.myVouchers(page),
     queryFn: () => Voucher.mine(page, pageSize),
     placeholderData: (previous) => previous,
+  })
+}
+
+/** The public vouchers a page could show (specs/114); nothing is asked while the scope is unknown. */
+export function usePublicVouchers(scope: PublicVoucherScope | null) {
+  return useQuery({
+    queryKey: queryKeys.publicVouchers(scope),
+    queryFn: () => Voucher.public(scope!),
+    enabled: scope !== null && (scope.platform === true || (scope.sellerIds?.length ?? 0) > 0),
   })
 }
 

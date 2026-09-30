@@ -46,7 +46,6 @@ The first audit's #193-#200 are done (see below). A second audit on 2026-09-27, 
 
 | Issue | Title |
 | :-- | :-- |
-| [#220](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/220) | A shopper cannot see which vouchers they could use |
 | [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound |
 | [#222](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/222) | Nobody is told when an email fails for good |
 
@@ -83,6 +82,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#218](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/218) | Staff accounts sign in with a password alone | [#230](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/230) (specs/110) |
 | [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217) | A person cannot delete their account or download their data | [#231](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/231) (specs/111), [#232](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/232) (specs/112) |
 | [#219](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/219) | A voucher cannot be edited | [#233](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/233) (specs/113) |
+| [#220](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/220) | A shopper cannot see which vouchers they could use | [#234](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/234) (specs/114) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |

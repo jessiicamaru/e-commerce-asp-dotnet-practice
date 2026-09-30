@@ -1,7 +1,7 @@
 info:
   name: a moderator takes the product down
   type: http
-  seq: 85
+  seq: 87
 
 http:
   method: POST

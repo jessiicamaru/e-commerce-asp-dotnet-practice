@@ -76,7 +76,10 @@ function VoucherRow({ voucher, onDisable, busy }: { voucher: VoucherSummary; onD
           <span className="font-mono font-semibold">{voucher.code}</span>
           <span className="text-muted-foreground text-sm">{voucher.name}</span>
         </span>
-        <Badge variant={active ? 'default' : 'outline'}>{t(`status.${voucher.status}`, { defaultValue: voucher.status })}</Badge>
+        <span className="flex gap-1.5">
+          <Badge variant="outline">{t(voucher.isPublic ? 'public.shown' : 'public.codeOnly')}</Badge>
+          <Badge variant={active ? 'default' : 'outline'}>{t(`status.${voucher.status}`, { defaultValue: voucher.status })}</Badge>
+        </span>
       </div>
       <ul className="grid gap-0.5 text-sm">
         {describeBenefit(t, voucher).map((line) => (

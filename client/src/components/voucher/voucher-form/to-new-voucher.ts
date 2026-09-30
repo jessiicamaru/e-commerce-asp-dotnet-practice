@@ -31,6 +31,7 @@ export function toNewVoucher(form: {
   firstInShop: boolean
   minQuantity: string
   products: string[]
+  isPublic: boolean
 }): NewVoucher {
   const conditions: VoucherCondition[] = []
   if (form.platform && form.newCustomer) conditions.push({ type: 'NewCustomer', value: null })
@@ -54,5 +55,6 @@ export function toNewVoucher(form: {
     })),
     conditions,
     targets: form.benefit === 'FreeShipping' ? [] : form.products.map((id) => ({ type: 'Product', id })),
+    isPublic: form.isPublic,
   }
 }
