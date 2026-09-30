@@ -22,6 +22,7 @@ public static class DependencyInjection
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorCodesToAdd: null)));
 
+        services.AddScoped<Ecommerce.Cart.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICheckoutOutcomeRepository, CheckoutOutcomeRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

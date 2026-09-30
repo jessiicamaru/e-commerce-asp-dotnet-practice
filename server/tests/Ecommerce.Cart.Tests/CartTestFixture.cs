@@ -51,6 +51,7 @@ public class CartTestFixture : IAsyncLifetime
         services.AddLogging();
         services.AddApplication();
         services.AddDbContext<CartDbContext>(o => o.UseNpgsql(_connectionString));
+        services.AddScoped<Ecommerce.Cart.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICheckoutOutcomeRepository, CheckoutOutcomeRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();

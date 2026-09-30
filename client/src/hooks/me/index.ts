@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
 import { Auth } from '@/services/auth'
 import type { ProfileInput } from '@/services/auth/types'
+import { MyData } from '@/services/my-data'
+import { MY_DATA_SERVICES, type MyDataService, type ServiceExport } from '@/services/my-data/types'
+import { composeMyData } from '@/utils/account'
 
 /** The signed-in person's own details (specs/064). */
 export function useMe() {
@@ -54,4 +57,21 @@ export function useTwoFactorMoves(renewSession: () => Promise<boolean>) {
       onSuccess: refresh,
     }),
   }
+}
+
+/**
+ * Everything the shop holds about the signed-in person (specs/111): the six services asked at once, and one file
+ * composed from whatever answered - a service that did not is marked in the file and named in the answer.
+ */
+export function useDownloadMyData() {
+  return useMutation({
+    mutationFn: async (person: { id: string; email: string }) => {
+      const settled = await Promise.allSettled(MY_DATA_SERVICES.map((service) => MyData.of(service)))
+      const answers = Object.fromEntries(MY_DATA_SERVICES.map((service, i) => [service, settled[i]])) as Record<
+        MyDataService,
+        PromiseSettledResult<ServiceExport>
+      >
+      return composeMyData(person, answers, new Date())
+    },
+  })
 }

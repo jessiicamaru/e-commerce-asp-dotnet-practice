@@ -95,6 +95,7 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Application.Auth.TwoFactor.TwoFactorOptions { Key = TwoFactorTestKey }));
         services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
         services.AddScoped<Ecommerce.Application.Auth.TwoFactor.ITwoFactorRepository, TwoFactorRepository>();
+        services.AddScoped<Ecommerce.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
         {
             Secret = "identity-tests-signing-key-of-at-least-32-bytes",

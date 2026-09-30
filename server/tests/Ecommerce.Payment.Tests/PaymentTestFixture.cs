@@ -37,6 +37,9 @@ public class PaymentTestFixture : IAsyncLifetime
     /// </summary>
     public string ConnectionString => _connectionString;
 
+    /// <summary>Who is asking, for the one read that needs a caller (specs/111); null - the system - otherwise.</summary>
+    public TestCaller Caller { get; } = new();
+
     public ITestHarness Harness => Services.GetRequiredService<ITestHarness>();
 
     public async Task InitializeAsync()
@@ -97,11 +100,13 @@ public class PaymentTestFixture : IAsyncLifetime
         services.Configure<PaymentOutcomeOptions>(configuration.GetSection(PaymentOutcomeOptions.SectionName));
         services.AddSingleton<IPaymentGateway, StubPaymentGateway>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<Ecommerce.Payment.Application.MyData.IPersonalDataReader, Ecommerce.Payment.Infrastructure.Persistence.PersonalDataReader>();
         services.AddScoped<IPaymentRepository, PaymentRepository>();
 
         services.AddMassTransitTestHarness();
 
         services.AddAuditTrail("payment");
+        services.AddSingleton<Ecommerce.Shared.Authentication.ICurrentUser>(Caller);
 
         return services.BuildServiceProvider(true);
     }
@@ -125,3 +130,11 @@ public class PaymentTestFixture : IAsyncLifetime
 
 [CollectionDefinition(nameof(PaymentTestCollection))]
 public class PaymentTestCollection : ICollectionFixture<PaymentTestFixture>;
+
+public class TestCaller : Ecommerce.Shared.Authentication.ICurrentUser
+{
+    public Guid? Id { get; set; }
+    public string? Email => null;
+    public bool IsAuthenticated => Id is not null;
+    public bool IsInRole(string role) => false;
+}

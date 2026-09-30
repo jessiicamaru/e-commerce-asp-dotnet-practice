@@ -1,0 +1,36 @@
+info:
+  name: cart exports my cart
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/cart/my-data"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answers for cart, with every section", function() {
+          expect(res.body.service).to.equal("cart");
+          expect(res.body.sections).to.have.all.keys("cart");
+          expect(res.body.withheld).to.be.an("array");
+        });
+        test("names checkout_outcomes as withheld", function() {
+          expect(res.body.withheld.map(function (w) { return w.table; })).to.include("checkout_outcomes");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/111 (#217). The caller's own, from the token - there is no id in the address to ask about anybody else.

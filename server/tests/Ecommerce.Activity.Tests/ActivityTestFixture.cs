@@ -49,6 +49,7 @@ public class ActivityTestFixture : IAsyncLifetime
         services.AddLogging();
         services.AddApplication();
         services.AddDbContext<ActivityDbContext>(o => o.UseNpgsql(ConnectionString));
+        services.AddScoped<Ecommerce.Activity.Application.MyData.IPersonalDataReader, Ecommerce.Activity.Infrastructure.Persistence.Repositories.PersonalDataReader>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<INotificationWordingStore, NotificationWordingStore>();
