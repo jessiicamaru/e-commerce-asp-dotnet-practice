@@ -1,11 +1,17 @@
 info:
-  name: disabling it again is 409
+  name: editing a disabled voucher is 409
   type: http
-  seq: 70
+  seq: 71
 
 http:
-  method: POST
-  url: "{{baseUrl}}/api/vouchers/{{sellerVoucherId}}/disable"
+  method: PUT
+  url: "{{baseUrl}}/api/vouchers/{{sellerVoucherId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Too late"
+      }
   auth:
     type: bearer
     token: "{{sellerToken}}"
@@ -25,4 +31,4 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  One guarded statement from Active to Disabled: a second call moves nothing.
+  A disabled voucher stays disabled and is not edited (specs/113).

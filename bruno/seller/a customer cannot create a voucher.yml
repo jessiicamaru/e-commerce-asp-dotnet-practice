@@ -1,7 +1,7 @@
 info:
   name: a customer cannot create a voucher
   type: http
-  seq: 68
+  seq: 72
 
 http:
   method: POST

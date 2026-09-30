@@ -1,7 +1,7 @@
 info:
   name: staff close the shop with a reason
   type: http
-  seq: 100
+  seq: 104
 
 http:
   method: POST

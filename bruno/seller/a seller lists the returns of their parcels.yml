@@ -1,7 +1,7 @@
 info:
   name: a seller lists the returns of their parcels
   type: http
-  seq: 107
+  seq: 111
 
 http:
   method: GET

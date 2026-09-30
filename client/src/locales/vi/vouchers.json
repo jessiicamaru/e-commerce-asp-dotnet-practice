@@ -71,5 +71,12 @@
     "noProducts": "Không tìm thấy sản phẩm.",
     "create": "Tạo mã",
     "failed": "Không tạo được mã."
-  }
+  },
+  "edit": "Sửa",
+  "editTitle": "Sửa {{code}}",
+  "editBody": "Đổi tên, thời điểm kết thúc, số lần được dùng và giá trị tối thiểu của đơn. Mức giảm không bao giờ thay đổi - hãy tắt mã này và tạo mã khác nếu cần.",
+  "save": "Lưu",
+  "saving": "Đang lưu…",
+  "edited": "Đã lưu mã giảm giá.",
+  "editFailed": "Không lưu được mã giảm giá."
 }

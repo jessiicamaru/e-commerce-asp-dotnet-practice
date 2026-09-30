@@ -1,7 +1,7 @@
 info:
   name: staff list the closed shops
   type: http
-  seq: 104
+  seq: 108
 
 http:
   method: GET

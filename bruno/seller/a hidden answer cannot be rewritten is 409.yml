@@ -1,7 +1,7 @@
 info:
   name: a hidden answer cannot be rewritten is 409
   type: http
-  seq: 78
+  seq: 82
 
 http:
   method: PUT

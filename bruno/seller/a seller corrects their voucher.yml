@@ -1,0 +1,45 @@
+info:
+  name: a seller corrects their voucher
+  type: http
+  seq: 66
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/vouchers/{{sellerVoucherId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno shop voucher, corrected",
+        "endsAt": "2099-12-31T17:00:00Z",
+        "totalLimit": 50,
+        "perCustomerLimit": 1,
+        "minSubtotals": [{ "currency": "VND", "minSubtotal": 100000 }]
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the new terms, the same code and the same amount", function() {
+          expect(res.body.name).to.equal("Bruno shop voucher, corrected");
+          expect(res.body.totalLimit).to.equal(50);
+          expect(res.body.code).to.equal(bru.getVar("sellerVoucherCode"));
+          expect(res.body.amounts[0].fixedValue).to.equal(50000);
+          expect(res.body.amounts[0].minSubtotal).to.equal(100000);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/113 (#219). Name, end, limits and minimums; what it takes off has no field and cannot change.

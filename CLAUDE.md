@@ -602,7 +602,9 @@ Shop vouchers first, on their own lines, then the platform's; one per shop, one 
 is on the discounted price; lines freeze `ShopDiscount` / `PlatformDiscount`, the order `voucher_redemptions`. ⚠️
 **A seller pays for their own voucher** - `GoodsTotal` is their goods less it - and the shop for the platform's
 and free delivery. Uses are claimed by guarded statements **inside the order's own transaction**
-(`ClaimAndSaveAsync`) and given back once by a failed or cancelled order. ⚠️ Any transaction this service opens
+(`ClaimAndSaveAsync`) and given back once by a failed or cancelled order. **Terms are corrected, never the amount**
+(specs/113, #219): `PUT /api/vouchers/{id}` - name, end, limits, minimums - by its owner (a seller their own, Admin the
+platform's), the total limit written by one guarded `UPDATE ... "UsedCount" <= @total` the claim serialises against. ⚠️ Any transaction this service opens
 by hand runs inside `CreateExecutionStrategy().ExecuteAsync` - production retries (`EnableRetryOnFailure`), and a
 transaction outside a strategy throws; the Order test fixture now retries too, after both voucher transactions
 passed every test and answered 500 in the container.

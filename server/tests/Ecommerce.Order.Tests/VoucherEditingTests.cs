@@ -76,6 +76,15 @@ public class VoucherEditingTests
 
         var now = await ReadAsync(id);
         Assert.Equal(("Test voucher", 5), (now.Name, now.TotalLimit));
+        // The statement guards it on its own too (research D2) - what a checkout racing the edit meets.
+        await using (var scope = _fixture.NewScope())
+        {
+            var (outcome, _) = await scope.ServiceProvider.GetRequiredService<IVoucherRepository>().TryEditAsync(
+                id, null, new VoucherEdit("Lower", null, 2, null, new Dictionary<string, decimal?>(), null), DateTime.UtcNow, (_, _) => Task.CompletedTask);
+            Assert.Equal(EditOutcome.BelowUses, outcome);
+        }
+
+        Assert.Equal(5, (await ReadAsync(id)).TotalLimit);
         var fits = await As(admin, "Admin", () => SendAsync(Edit(id, "Lower", null, totalLimit: 3)));
         Assert.Equal(3, fits.TotalLimit);
     }
@@ -118,6 +127,20 @@ public class VoucherEditingTests
         await As(admin, "Admin", () => SendAsync(new DisableVoucherCommand(id)));
 
         await Assert.ThrowsAsync<ConflictException>(() => As(admin, "Admin", () => SendAsync(Edit(id, "X", null))));
+    }
+
+    /// <summary>Research D4: an end in the past is what disabling is for; an end before the start is no voucher at all.</summary>
+    [Fact]
+    public async Task An_end_in_the_past_or_before_the_start_is_400()
+    {
+        var admin = Guid.CreateVersion7();
+        var (id, _) = await VoucherAsync(admin, "Admin", fixedValue: 1_000m, startsAt: DateTime.UtcNow.AddDays(-10));
+        var (later, _) = await VoucherAsync(admin, "Admin", fixedValue: 1_000m, startsAt: DateTime.UtcNow.AddDays(10));
+
+        // After the start, but already over.
+        await Assert.ThrowsAsync<ValidationException>(() => As(admin, "Admin", () => SendAsync(Edit(id, "X", DateTime.UtcNow.AddDays(-1)))));
+        await Assert.ThrowsAsync<ValidationException>(() => As(admin, "Admin", () => SendAsync(Edit(later, "X", DateTime.UtcNow.AddDays(5)))));
+        Assert.Null((await ReadAsync(id)).EndsAt);
     }
 
     [Fact]
@@ -209,11 +232,11 @@ public class VoucherEditingTests
 
     private async Task<(Guid Id, string Code)> VoucherAsync(
         Guid creator, string role, DateTime? endsAt = null, int? totalLimit = null, decimal? fixedValue = null, decimal? minSubtotal = null,
-        List<VoucherConditionRequest>? conditions = null)
+        List<VoucherConditionRequest>? conditions = null, DateTime? startsAt = null)
     {
         var code = $"E{Guid.NewGuid():N}"[..16].ToUpperInvariant();
         var created = await As(creator, role, () => SendAsync(new CreateVoucherCommand(code, "Test voucher", "FixedAmount", null,
-            DateTime.UtcNow.AddMinutes(-1), endsAt, totalLimit, null, [new VoucherAmountRequest("VND", fixedValue, null, minSubtotal)], conditions, null)));
+            startsAt ?? DateTime.UtcNow.AddMinutes(-1), endsAt, totalLimit, null, [new VoucherAmountRequest("VND", fixedValue, null, minSubtotal)], conditions, null)));
         return (created.Id, code);
     }
 

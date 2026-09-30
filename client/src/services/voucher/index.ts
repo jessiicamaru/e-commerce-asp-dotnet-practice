@@ -1,6 +1,6 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
-import type { NewVoucher, VoucherPage, VoucherSummary } from './types'
+import type { NewVoucher, VoucherEdit, VoucherPage, VoucherSummary } from './types'
 
 /**
  * Vouchers (specs/069, 070): an administrator's are the platform's, a seller's their shop's. Nothing here names
@@ -19,6 +19,12 @@ export class Voucher {
   }
 
   /** From now on, not usable. Orders that used it keep it. */
+  /** Corrects an active voucher's name, end, limits and minimums (specs/113). */
+  static async edit(id: string, edit: VoucherEdit): Promise<VoucherSummary> {
+    const { data } = await http.put<VoucherSummary>(`/vouchers/${id}`, edit)
+    return data
+  }
+
   static async disable(id: string): Promise<VoucherSummary> {
     const { data } = await http.post<VoucherSummary>(`/vouchers/${id}/disable`)
     return data

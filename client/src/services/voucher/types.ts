@@ -67,3 +67,16 @@ export interface NewVoucher {
   conditions: VoucherCondition[]
   targets: VoucherTarget[]
 }
+
+/**
+ * What correcting a voucher sends (specs/113): each term that may change, as its new value. Nothing about what it takes
+ * off, its code, targets or start - those never change, so there is no field for them.
+ */
+export interface VoucherEdit {
+  name: string
+  endsAt: string | null
+  totalLimit: number | null
+  perCustomerLimit: number | null
+  minSubtotals: { currency: string; minSubtotal: number | null }[]
+  minQuantity: number | null
+}

@@ -1,7 +1,7 @@
 info:
   name: a customer cannot close a shop is 403
   type: http
-  seq: 99
+  seq: 103
 
 http:
   method: POST

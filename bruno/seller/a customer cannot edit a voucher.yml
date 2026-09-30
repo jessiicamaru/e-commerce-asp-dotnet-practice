@@ -1,11 +1,17 @@
 info:
-  name: a customer cannot read the staff questions is 403
+  name: a customer cannot edit a voucher
   type: http
-  seq: 83
+  seq: 68
 
 http:
-  method: GET
-  url: "{{baseUrl}}/api/questions?hidden=true"
+  method: PUT
+  url: "{{baseUrl}}/api/vouchers/{{sellerVoucherId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Mine now"
+      }
   auth:
     type: bearer
     token: "{{customerToken}}"
@@ -25,4 +31,4 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  The moderators' view carries the reasons; it is Staff only.
+  Administrators and sellers manage vouchers (specs/113).
