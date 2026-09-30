@@ -166,6 +166,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [109](../../specs/109-catalogue-filters/) | Catalogue filters | #229 | #216: the catalogue filters by a range of the "from" price in the currency being browsed in, and by what is in stock - both indexed, both in the address |
 | [110](../../specs/110-staff-two-factor/) | Staff two-factor sign-in | #230 | #218: staff sign in with a code from an authenticator app (TOTP); staff roles only in a verified session, so every service refuses an unverified one; recovery codes and an administrator's reset |
 | [111](../../specs/111-my-data-export/) | Download my data | #231 | #217 (part 1): a person downloads one file of everything the six services hold about them, with what is withheld and why; every table of every model declared exported, withheld or not personal, and a test per service holds the list to the model |
+| [112](../../specs/112-account-deletion/) | Delete my account | #232 | #217 (part 2, closes it): a person deletes their account with their password - refused for staff and while business is open (asked of Order live, its first gRPC service); Identity empties the row and deletes the rest, and each service erases or anonymises what it holds on `AccountDeleted`, keeping the books without a name, email, phone or address |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

@@ -186,7 +186,7 @@ so.
 | Identity | 5056 (REST) + **6056 (gRPC)** | 5435 / `ecommerce_identity_db` | Signs tokens, seeds roles + first admin; **owns customers' delivery addresses** and serves `AddressReading` to Order; **owns sellers** and publishes their shop names through its own outbox (specs/027); **shop applications** wait for staff (specs/044); **sends every email** - `outgoing_emails`, a dispatcher over SMTP (specs/060) |
 | Catalog | 5057 (REST) + **6057 (gRPC)** | 5433 / `ecommerce_catalog_db` | products/categories + outbox; consumes stock availability from Inventory; **serves `CatalogPricing` over h2c**; **product images in an S3 bucket every instance shares** (SeaweedFS in compose, specs/079) |
 | Orchestrator (Saga) | 5058 | 5436 / `ecommerce_saga_db` | MassTransit state machine, no controllers |
-| Order | 5059 | 5434 / `ecommerce_order_db` | Checkout + outbox; settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
+| Order | 5059 (REST) + **6059 (gRPC)** | 5434 / `ecommerce_order_db` | Checkout + outbox; **serves `AccountStanding` to Identity** (specs/112); settles to `Paid` on the saga's outcome; delivery options; Admin fulfilment (`Preparing` → `Shipped`); owner-scoped reads; **a seller's own sales** (specs/034); **fulfilment per seller** - each ships their own part (specs/035); **what the shop owes each seller** - commission, delivery shares, payouts (specs/037) |
 | Inventory | 5060 | 5437 / `ecommerce_inventory_db` | Stock + reservations; consumers + expiry sweeper; **asks Catalog over gRPC who owns a variant** before letting a seller stock it (specs/031); **puts a cancelled order's units back** (specs/039) |
 | Payment | 5061 | 5438 / `ecommerce_payment_db` | **Stub gateway — approves without moving money**; records a refund for a cancelled order, moving none either (specs/039) |
 | Activity | 5063 | 5440 / `ecommerce_activity_db` | **The audit log** (specs/041): keeps `AuditEntryRecorded` from every service, one row per entry id, with a field-level diff; Admin-only reads at `/api/audit`; **everyone's in-app notifications** (specs/042) at `/api/notifications` |
@@ -204,7 +204,7 @@ with **no saga instance at Warning** — the thing the 2026-09-21 stall hid for 
 admin password (`SEQ_ADMIN_PASSWORD`) is required by compose, and Seq forces a change at the first
 login. Guide: [docs/guides/observability.md](docs/guides/observability.md).
 
-Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` — except Identity, Catalog and Cart, which serve gRPC too and therefore declare **both** Kestrel endpoints (REST on `50XX`; gRPC on `5156`/`5157`/`5162` when run with `start-dev`, published by compose as `6056`/`6057`/`6062`, `8080`/`8081` inside a container) and have no `app.Run(url)`. Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
+Ports are hardcoded in each `Program.cs` via `app.Run("http://localhost:50XX")` — except Identity, Catalog, Cart and (since specs/112) Order, which serve gRPC too and therefore declare **both** Kestrel endpoints (REST on `50XX`; gRPC on `5156`/`5157`/`5162`/`5159` when run with `start-dev`, published by compose as `6056`/`6057`/`6062`/`6059`, `8080`/`8081` inside a container) and have no `app.Run(url)`. Adding a service means adding a route **and** a cluster to the gateway's `ReverseProxy` config; health routes there rewrite `/api/<svc>/health` → `/health`.
 
 ## Architecture
 
@@ -649,6 +649,14 @@ a reason the person reads, or not personal - a new table fails that service's `M
 account deletion (specs/112) reads the same list. Readers select fields by name, never entities: no password hash, TOTP
 secret, email data, full account number, staff identity or audit snapshot. A seller's sales are not in it - each is
 another person's order. [docs/features/personal-data.md](docs/features/personal-data.md).
+**And deletes the account** (specs/112): `DELETE /api/auth/me` with the password - staff 409 `StaffAccount`; Identity
+asks **Order over gRPC** (`AccountStanding`, Order's first gRPC service, port 5159/6059/8081, the token forwarded,
+never cached) and any of `OpenOrders`/`OpenReturns`/`OpenSales`/`UnpaidEarnings` is 409 `AccountHasOpenBusiness` with
+`reasons` (a `ConflictException` carries facts now, like a 403). Then one transaction empties the row
+(`deleted-<id>@deleted.invalid`, `users.DeletedAt`), deletes the rest and publishes `AccountDeleted` +
+`AccessTokensRevoked`; Catalog, Order, Cart and Activity erase on it (`EraseAccountFrom*Consumer`). ⚠️ Each inventory
+declares its **`Kept`** sections (the books, other shoppers' use); every other section must be empty after the erasure,
+and a test per service reads the export to check - a new table needs its erasure too.
 
 **A lock is decided with the person's history in view** (specs/100, #198): `GET /api/audit/people/{id}` (Staff) -
 Moderation entries whose `AboutUserId` is that person, the category fixed in code, reasons without snapshots. ⚠️ An

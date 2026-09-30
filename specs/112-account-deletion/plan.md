@@ -34,7 +34,12 @@ erased). The storefront's account page gets "Delete my account".
 | **IV. Identity Comes From the Token** | **Pass.** No id in the request; Order's standing is answered from the forwarded token with an empty request message. |
 | **V. Evidence Over Assumption** | **Planned.** Tests per service against PostgreSQL (the export after erasure is the evidence), a test per blocker, mutations, Bruno against containers, the storefront's page test. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): unchanged. I - the one new edge is as designed, asked before the
+transaction, 503 when Order is down; each service erases its own rows. II - the gRPC client sits behind
+`IAccountStanding` in Identity's Application layer, erasures behind `IAccountErasure` in each. III - Identity's staging
+and save are one transaction; every consumer joins MassTransit's transaction when one is open, else opens its own under
+the retry strategy, and every erasure is idempotent (a redelivery is tested in each service). IV - no id in the request,
+the standing from the forwarded token. V - see the evidence in `tasks.md`.
 
 ## Project Structure
 
@@ -62,7 +67,7 @@ server/tests/*/AccountDeletionTests.cs
 server/src/ApiGateway/…/appsettings.json (auth-me-delete-route)
 server/docker-compose.app.yml, start-dev.*, .github/workflows/ci.yml (Order's gRPC port)
 client/src/pages/account/delete-account.tsx
-bruno/account-deletion/, bruno/security-checks/
+bruno/my-data/ (the deletion requests after the export ones), bruno/security-checks/
 ```
 
 ## Complexity Tracking

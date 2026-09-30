@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `1732c6b2`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `5394d1b1`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**198 endpoints** across 7 services.
+**199 endpoints** across 7 services.
 
-## Identity (55)
+## Identity (56)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -21,6 +21,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/auth/login` | anyone | The first step (specs/110): with two-factor sign-in on, the right password answers a challenge and sets no cookie - there is no session until the code. |
 | `POST` | `/api/auth/login/two-factor` | anyone | The second step: the challenge and a code (or a recovery code) for the session (specs/110). |
 | `POST` | `/api/auth/logout` | anyone | Ends the session: the refresh token is deleted server-side and the cookie is cleared. Anonymous on purpose - an expired access token must not stop someone signing out. Always 204. |
+| `DELETE` | `/api/auth/me` | signed in | Deletes the caller's own account (specs/112, #217): 204, and this browser's session cookie goes with it. 400 on a wrong password, 409 for staff or while business is open (code, reasons), 503 when Order cannot say. |
 | `GET` | `/api/auth/me` | signed in | The caller's own details (specs/064) - from the token, never from the request. |
 | `PUT` | `/api/auth/me` | signed in | Changes the caller's own name and phone (specs/064). The email is not changed here. |
 | `GET` | `/api/auth/me/data` | signed in | Everything Identity holds about the caller, and what it withholds and why (#217, specs/111). |

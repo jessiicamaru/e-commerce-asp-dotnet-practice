@@ -16,7 +16,7 @@ Expected:
 - Each of Identity, Catalog, Order, Cart, Payment and Activity: after the erasure, erased sections are empty and the
   export holds none of the planted personal values.
 
-## Scenario 2 - Through the gateway (Bruno `account-deletion/`)
+## Scenario 2 - Through the gateway (Bruno `my-data/`, after the export requests)
 
 A new customer registers, adds an address, then:
 - `DELETE /api/auth/me` with a wrong password: 400.

@@ -1,6 +1,6 @@
 # Gateway routes
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `1732c6b2`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `5394d1b1`. Do not edit by hand - change the code and run the script again.
 
 What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno talk only to the gateway. A new endpoint under a new path prefix needs a route here, or it is a 404 that looks like a missing feature. Container destinations are overridden by command-line arguments in `docker-compose.app.yml`; the addresses below are the local-development ones.
 
@@ -31,6 +31,7 @@ What the YARP gateway on `:5000` forwards, and where. The storefront and Bruno t
 | `auth-forgot-password-route` | `/api/auth/forgot-password` | `identity-cluster` | http://localhost:5056/ |  | `email` |
 | `auth-login-route` | `/api/auth/login` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `auth-login-two-factor-route` | `/api/auth/login/two-factor` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
+| `auth-delete-account-route` | `/api/auth/me` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `auth-change-password-route` | `/api/auth/me/password` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |
 | `auth-refresh-route` | `/api/auth/refresh` | `identity-cluster` | http://localhost:5056/ |  | `session` |
 | `auth-register-route` | `/api/auth/register` | `identity-cluster` | http://localhost:5056/ |  | `sign-in` |

@@ -1,0 +1,38 @@
+info:
+  name: they save an address
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/addresses"
+  body:
+    type: json
+    data: |-
+      {
+        "recipientName": "Bruno Leaver",
+        "line1": "1 Trang Tien",
+        "line2": null,
+        "city": "Ha Noi",
+        "region": null,
+        "postalCode": "100000",
+        "country": "VN",
+        "phone": "+84 912 000 111"
+      }
+  auth:
+    type: bearer
+    token: "{{leaverToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 201", function() {
+          expect(res.status).to.equal(201);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -81,6 +81,8 @@ public class AccountDeletionTests : IDisposable
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => SendAsync(Guid.Empty, new LoginCommand(mai.Email, Password)));
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() => SendAsync(Guid.Empty, new RefreshTokenCommand(mai.RefreshToken)));
+        // A token the revocation has not reached yet still finds no profile.
+        await Assert.ThrowsAsync<NotFoundException>(() => SendAsync(mai.Id, new Ecommerce.Application.Auth.Commands.Account.GetMeQuery()));
         var again = await SendAsync(Guid.Empty, new RegisterCommand(mai.Email, Password, "Mai", "Again"));
         Assert.NotEqual(mai.Id, again.Id);
         Assert.Empty(await DbAsync(db => db.DeliveryAddresses.Where(a => a.UserId == again.Id).ToListAsync()));
