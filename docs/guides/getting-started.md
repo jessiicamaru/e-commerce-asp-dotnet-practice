@@ -51,6 +51,12 @@ Then fill it in. Three entries are worth care:
 - **`DB_PASSWORD`** — used by the database containers *and* by the services connecting to them.
 - **`ADMIN_EMAIL` / `ADMIN_PASSWORD`** — the first administrator, seeded by Identity at startup while
   no admin exists yet. Self-registration only ever grants `Customer`.
+- **`TWO_FACTOR_KEY`** (required) — 32 random bytes, base64, encrypting every authenticator secret:
+  `python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"`. Identity will not start without it.
+- **`ADMIN_TOTP_SECRET`** (development only) — staff sign in with a code from an authenticator app (specs/110). This
+  seeds the administrator's with a known base32 secret, so the scripts, Bruno and the browser tests compute its codes:
+  `python -c "import os,base64;print(base64.b32encode(os.urandom(20)).decode())"`. Leave it unset in production; add
+  the same secret to an authenticator app to sign in by hand.
 
 `server/.env` is gitignored, and `server/.dockerignore` keeps it out of images. Neither protects the
 other — Docker does not read `.gitignore`.
@@ -144,10 +150,14 @@ The fastest proof that everything is wired up. Everything goes through the gatew
 the storefront does.
 
 ```bash
-# 1. Log in as the seeded administrator
-TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+# 1. Log in as the seeded administrator: the password for a challenge, then the code (specs/110)
+CHALLENGE=$(curl -s -X POST http://localhost:5000/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"<ADMIN_EMAIL>","password":"<ADMIN_PASSWORD>"}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['challenge'])")
+TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login/two-factor \
+  -H 'Content-Type: application/json' \
+  -d "{\"challenge\":\"$CHALLENGE\",\"code\":\"<the code from your authenticator app>\"}" \
   | python -c "import sys,json; print(json.load(sys.stdin)['token'])")
 
 # 2. Create a category, then a product (no stockQuantity - Catalog does not own stock)
@@ -223,11 +233,11 @@ cd server
 
 # Categories and real cameras: variants, VND and USD prices, Vietnamese and English text, stock.
 # Idempotent by SKU; it never deletes.
-ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-catalogue.py
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py
 
 # Photographs, from seed/images/ - one file per product, named after its SKU (SONY-A7M4.jpg).
 # Without --yes it only says what it would do.
-ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-images.py --yes
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-images.py --yes
 ```
 
 `seed/images/` is **gitignored on purpose**: this repository is public and a photograph belongs to
@@ -248,7 +258,7 @@ remove none. `seed/clean-test-debris.py` deletes every product whose SKU is **no
 (dry run without `--yes`):
 
 ```bash
-ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py --yes
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py --yes
 ```
 
 ⚠️ Keep-list, not delete-list: it also deletes products that a seller or a demo dataset added. Use it

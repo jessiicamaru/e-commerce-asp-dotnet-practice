@@ -61,14 +61,14 @@ dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/   # single s
 
 ```bash
 cd server
-ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-catalogue.py
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py
 ```
 
 and cleaned out when the test scripts have filled it with debris:
 
 ```bash
-ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py        # says what it would do
-ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py --yes  # does it
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py        # says what it would do
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py --yes  # does it
 ```
 
 `verify-saga.sh`, `verify-auth.sh` and Bruno each create a real product on every run, and **since specs/073
@@ -122,7 +122,7 @@ passing quietly:
 
 ```bash
 cd server
-ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-auth.sh
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... ../.github/scripts/verify-auth.sh
 ```
 
 There is also an **end-to-end check of the checkout saga**,
@@ -134,7 +134,7 @@ passing quietly, unless `SAGA_E2E_REQUIRE_ALL=1` (which CI sets) makes a skip fa
 
 ```bash
 cd server
-ADMIN_EMAIL=... ADMIN_PASSWORD=... ../.github/scripts/verify-saga.sh
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... ../.github/scripts/verify-saga.sh
 ```
 
 It asserts on `QuantityOnHand` **and** `QuantityReserved`, never on the derived `QuantityAvailable`
@@ -156,8 +156,8 @@ and every request has tests. It runs headless too:
 
 ```bash
 cd bruno
-export ADMIN_EMAIL=... ADMIN_PASSWORD=...     # separately: see below
-npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD"
+export ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=...     # separately: see below
+npx @usebruno/cli run --env local --env-var "adminEmail=$ADMIN_EMAIL" --env-var "adminPassword=$ADMIN_PASSWORD" --env-var "adminTotpSecret=$ADMIN_TOTP_SECRET"
 ```
 
 ⚠️ **`ADMIN_EMAIL=... npx ... "$ADMIN_EMAIL"` on one line sends an EMPTY string.** A prefix
@@ -658,6 +658,16 @@ banned applicant's shop is not approved (409). This read model decides, knowingl
 `products.SellerSuspended` now means "the shop is not open" and is written only by `ApplyShopStateAsync` from all three
 reasons - a lifted ban never reopens a paused shop - and by approval (a product approved while paused stays off). A
 seller never reopens what staff closed (`"ClosedAt" IS NULL` guards their moves).
+**Staff sign in with a second factor** (specs/110, #218): TOTP from an authenticator app (how it works:
+[docs/features/auth/totp-two-factor.md](docs/features/auth/totp-two-factor.md)). ⚠️ `Admin`/`Moderator` are written into
+a token **only for a session verified with a code** (`SessionRoles.Of`, `refresh_tokens.TwoFactorVerified`), so every
+service refuses an unverified staff session with no change of its own; staff without it are told `SetupRequired`. The
+right password for a 2FA account answers only a challenge (hashed, 5 minutes, 5 tries); a code works once (a guarded
+`TwoFactorLastStep`), and the password alone never clears the email pause. `TWO_FACTOR_KEY` (AES-GCM for the secrets) is
+required at startup. ⚠️ `ADMIN_TOTP_SECRET` seeds the administrator's secret **for development and CI only**, and every
+tool that signs in as staff - the verify scripts, the seed scripts, Bruno (`adminTotpSecret`, computed with crypto-js,
+since the CLI sandbox has no Node crypto) and Playwright - computes the code, waiting for the next 30-second window when
+this one's was just used.
 Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
 depend on the target's row, so they live in `ModerationRules`, not in an attribute. **Unlocking obeys the
 same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody unlocks themselves, only an
@@ -720,7 +730,7 @@ their review was hidden (specs/059).
 Identity, the one service that knows addresses, keeps it in `outgoing_emails` (idempotent on the email id)
 and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
 server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
-error after 12 attempts. The first email is the order confirmation, in the order's own language. **Since specs/083 (#167) eleven, twelve with specs/106's `PayoutAccountChanged`**: a parcel shipped, an order cancelled, a return accepted/refused/refunded (the order's language), back in stock and an account locked/banned - asked for with `EmailTemplate.ReadersLanguage` (empty), which Identity fills from `users.Language`, learnt from `Accept-Language` at sign-up, sign-in and every renewal. ⚠️ A new email is a constant in `EmailTemplate`, words + placeholders + sample data in `EmailTemplates`, and a label in the storefront's `admin.json` - `AccountEmailTests` and the admin-emails test fail on a missing piece.
+error after 12 attempts. The first email is the order confirmation, in the order's own language. **Since specs/083 (#167) eleven, thirteen with specs/106's `PayoutAccountChanged` and specs/110's `TwoFactorReset`**: a parcel shipped, an order cancelled, a return accepted/refused/refunded (the order's language), back in stock and an account locked/banned - asked for with `EmailTemplate.ReadersLanguage` (empty), which Identity fills from `users.Language`, learnt from `Accept-Language` at sign-up, sign-in and every renewal. ⚠️ A new email is a constant in `EmailTemplate`, words + placeholders + sample data in `EmailTemplates`, and a label in the storefront's `admin.json` - `AccountEmailTests` and the admin-emails test fail on a missing piece.
 **An administrator edits the emails** (specs/077, #150): `/admin/emails`, a TipTap editor (lazy-loaded). The code's
 words are the defaults; `email_template_versions` is append-only (reset and restore add versions), unique on
 (template, language, version) with the editor's `expectedVersion` - stale is 409. ⚠️ HTML is allow-list sanitised

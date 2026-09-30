@@ -226,6 +226,13 @@ nobody, because Activity never knew their authors.
 15. **The staff order read is Admin-only and is the one read not scoped to an owner.**
     `GET /api/orders/fulfilment/{id}` (`GetOrderForStaffQuery`) must never sit behind any other route
     (specs/038).
+16. **Staff sign in with a second factor** (specs/110, #218). `Admin` and `Moderator` are written into an access token
+    only for a session verified with a code from an authenticator app, so an unverified staff session is refused
+    everywhere; staff without it are told `SetupRequired`. A role granted later, such as Moderator, needs enrolment too.
+    Staff cannot turn it off. Only an administrator resets somebody else's, never their own, which ends the person's
+    sessions and emails them. *Why:* an administrator can ban, cancel, pay out and read full bank account numbers
+    (specs/106); one leaked password should not be enough. How it works:
+    [two-factor sign-in](auth/totp-two-factor.md).
 
 ## Data
 
@@ -252,6 +259,7 @@ Full list in [api.md](../reference/api.md).
 | `POST` | `/api/users/{id}/unban` | Admin |
 | `PUT` | `/api/users/{id}/roles/{role}` | Admin |
 | `DELETE` | `/api/users/{id}/roles/{role}` | Admin |
+| `DELETE` | `/api/users/{id}/two-factor` | Admin - never oneself (specs/110) |
 | `GET` | `/api/users/lookup`, `/api/users/stats` | Admin |
 | `GET` | `/api/shop-applications`, `POST .../{id}/approve`, `POST .../{id}/reject` | Admin, Moderator |
 | `GET` | `/api/products/review`, `POST /api/products/{id}/approve`, `/reject`, `/take-down` | Admin, Moderator |
@@ -336,3 +344,4 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | [065-revoke-access-tokens](../../specs/065-revoke-access-tokens/) | [#148](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/148) | A lock, a ban or a role revoked stops the access tokens already issued within seconds, in every service (#112). |
 | [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | A person's moderation history in the lock dialog and from the users page; `AboutUserId` on audit entries; `GET /api/audit/people/{userId}` (#198). |
 | [101-content-reports](../../specs/101-content-reports/) | [#208](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/208) | Shoppers report reviews, questions and products; `content_reports`; `/admin/reports`; hide and take-down close the reports (#199). |
+| [110-staff-two-factor](../../specs/110-staff-two-factor/) | #230 | Staff sign in with a second factor (TOTP); staff roles only in a verified session; recovery codes; an administrator's reset (#218). |

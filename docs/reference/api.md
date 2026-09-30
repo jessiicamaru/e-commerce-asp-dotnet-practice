@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `b92ad5c`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `027bc98`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**185 endpoints** across 7 services.
+**192 endpoints** across 7 services.
 
-## Identity (47)
+## Identity (54)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -18,11 +18,17 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/addresses/{id}/default` | signed in |  |
 | `POST` | `/api/auth/confirm-email` | anyone | Uses the link sent to confirm an address (specs/063). Anonymous - it may be opened anywhere. 204, or 400. |
 | `POST` | `/api/auth/forgot-password` | anyone | Asks for a link to choose a new password (specs/061). Always 202, whether or not the address has an account (#28). The email is written in the language the request comes in. |
-| `POST` | `/api/auth/login` | anyone |  |
+| `POST` | `/api/auth/login` | anyone | The first step (specs/110): with two-factor sign-in on, the right password answers a challenge and sets no cookie - there is no session until the code. |
+| `POST` | `/api/auth/login/two-factor` | anyone | The second step: the challenge and a code (or a recovery code) for the session (specs/110). |
 | `POST` | `/api/auth/logout` | anyone | Ends the session: the refresh token is deleted server-side and the cookie is cleared. Anonymous on purpose - an expired access token must not stop someone signing out. Always 204. |
 | `GET` | `/api/auth/me` | signed in | The caller's own details (specs/064) - from the token, never from the request. |
 | `PUT` | `/api/auth/me` | signed in | Changes the caller's own name and phone (specs/064). The email is not changed here. |
 | `PUT` | `/api/auth/me/password` | signed in | Changes the caller's own password (specs/064): 204, or 400 when the current one is wrong. Every other session ends; this browser's - named by its HttpOnly cookie, never by the body - stays. |
+| `DELETE` | `/api/auth/me/two-factor` | signed in | Turns it off, with the password and a code. 403 for staff, who keep it. |
+| `GET` | `/api/auth/me/two-factor` | signed in | The caller's own second factor (specs/110). |
+| `POST` | `/api/auth/me/two-factor/confirm` | signed in | Confirms setup with a code; answers the recovery codes, once. This browser's session - named by its HttpOnly cookie, never the body - becomes verified, and every other session ends. |
+| `POST` | `/api/auth/me/two-factor/recovery-codes` | signed in |  |
+| `POST` | `/api/auth/me/two-factor/setup` | signed in | A new secret, shown once, as base32 and as the URI the QR code draws. 409 when already on. |
 | `POST` | `/api/auth/refresh` | anyone |  |
 | `POST` | `/api/auth/register` | anyone |  |
 | `POST` | `/api/auth/register-seller` | anyone | Registers somebody who sells, with the name their shop trades under (specs/027). |
@@ -55,6 +61,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/lock` | Admin, Moderator |  |
 | `DELETE` | `/api/users/{id}/roles/{role}` | Admin |  |
 | `PUT` | `/api/users/{id}/roles/{role}` | Admin |  |
+| `DELETE` | `/api/users/{id}/two-factor` | Admin | Resets another person's two-factor sign-in - a lost phone and no recovery code (specs/110). Administrators only, never oneself; the person's sessions end and they are emailed. |
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 

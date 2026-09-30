@@ -18,6 +18,7 @@ it. In development every email lands in **Mailpit**, and nothing leaves the mach
 | Return refunded (`ReturnRefunded`) | the buyer | the returned parcel is received | the order's |
 | Available again (`SavedBackInStock`) | each shopper who saved the product | it can be bought again - back in stock, a variant reactivated, or approved while in stock (specs/075, 091) | the reader's |
 | Account locked / banned (`AccountLocked`, `AccountBanned`) | the person | staff lock or ban them (specs/043) | the reader's |
+| Two-factor sign-in reset (`TwoFactorReset`) | the person | an administrator resets their second factor (specs/110) | the reader's |
 | Payout account changed (`PayoutAccountChanged`) | the seller | they give or change where their payouts go (specs/106) - the bank and the last four digits, never the number | the reader's |
 
 "The reader's" language is the one the person last used the shop in (rule 5).
@@ -143,6 +144,7 @@ reach every customer's inbox, and two of them carry the link that resets a passw
      | `AccountLocked` | `{name}`, `{until}` (UTC, and it says so), `{reason}` |
      | `AccountBanned` | `{name}`, `{reason}` |
      | `PayoutAccountChanged` | `{name}`, `{bank}`, `{last4}` |
+     | `TwoFactorReset` | `{name}`, `{link}` (the sign-in page) |
 
 6. **Per language.** A language without an edit uses **its own** built-in words, never the other language's
    edit.

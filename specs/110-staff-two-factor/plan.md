@@ -74,9 +74,9 @@ The scripts, Bruno and Playwright compute the administrator's codes from `ADMIN_
 | **II. Clean Architecture Layering** | **Pass.** `ITotp` and `ITwoFactorSecretProtector` are in Application, and their implementations in Infrastructure. |
 | **III. Atomic Writes and Idempotent Messaging** | **Pass.** The replay step, the challenge claim and a recovery code are each spent by one guarded `UPDATE`. The session is written with its audit entry in one save. The reset's `AccessTokensRevoked` and email are staged before the save. |
 | **IV. Identity Comes From the Token** | **Pass.** Every "me" route reads the caller from the token. The second step identifies the account by the challenge, not by an id in the body. |
-| **V. Evidence Over Assumption** | **Planned.** The RFC vectors, guarded-write tests against PostgreSQL, mutations, Bruno through the gateway, the CI scripts and Playwright. Recorded in `tasks.md`. |
+| **V. Evidence Over Assumption** | **Pass.** The RFC vectors, guarded-write and race tests against PostgreSQL, 17 server and 11 client mutations each killed, Bruno 356/356, both CI scripts and Playwright through rebuilt containers - which found a field named differently from its contract. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): still a pass. No service but Identity changed (I); the TOTP arithmetic and interfaces sit in Application, the SQL and AES-GCM in Infrastructure (II); every spend is one guarded statement, and the reset's revocation and email are staged before its save (III); the caller comes from the token or the challenge, never a body id (IV); evidence in `tasks.md` (V).
 
 ## Project Structure
 
