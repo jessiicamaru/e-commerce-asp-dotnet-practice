@@ -2,7 +2,7 @@
 """Fills the catalogue with real cameras, through the API, as an administrator would.
 
     cd server
-    ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/seed-catalogue.py
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py
 
 Why through the gateway rather than SQL: every row this writes goes down the same path a person
 uses, so seeding exercises validation, the outbox, the availability announcements and the price
@@ -26,6 +26,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+
+from two_factor import finish_sign_in
 
 # The catalogue is in Vietnamese and a Windows console defaults to a codepage that cannot encode it,
 # so printing a product name crashed the script outright. Say UTF-8 rather than hope for it.
@@ -124,10 +126,12 @@ def sign_in():
         die("Set ADMIN_EMAIL and ADMIN_PASSWORD (they are in server/.env).")
 
     answer = call("POST", "/api/auth/login", {"email": email, "password": password})
-    token = (answer or {}).get("token") or (answer or {}).get("accessToken")
+    # Staff sign in with a code too (specs/110), computed from ADMIN_TOTP_SECRET.
+    token = finish_sign_in(answer, lambda challenge, code: call(
+        "POST", "/api/auth/login/two-factor", {"challenge": challenge, "code": code}, tolerate=(400,)))
 
     if not token:
-        die("The administrator could not sign in.")
+        die("The administrator could not sign in. Is ADMIN_TOTP_SECRET set, as in server/.env?")
 
     return token
 

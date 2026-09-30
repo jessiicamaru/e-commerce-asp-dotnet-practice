@@ -2,8 +2,8 @@
 """Removes from the catalogue everything that is not a seeded camera.
 
     cd server
-    ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py          # says what it would do
-    ADMIN_EMAIL=... ADMIN_PASSWORD=... python seed/clean-test-debris.py --yes    # does it
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py          # says what it would do
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py --yes    # does it
 
 `verify-saga.sh`, `verify-auth.sh` and the Bruno collection each create a real product every time
 they run, and none of them clean up - so a catalogue somebody has been testing against fills with
@@ -25,6 +25,8 @@ import json
 import os
 import sys
 import urllib.error
+
+from two_factor import finish_sign_in
 import urllib.request
 
 # The catalogue is in Vietnamese and a Windows console defaults to a codepage that cannot encode it,
@@ -79,10 +81,12 @@ def main():
         sys.exit("Set ADMIN_EMAIL and ADMIN_PASSWORD (they are in server/.env).")
 
     answer = call("POST", "/api/auth/login", {"email": email, "password": password}) or {}
-    token = answer.get("token") or answer.get("accessToken")
+    # Staff sign in with a code too (specs/110), computed from ADMIN_TOTP_SECRET.
+    token = finish_sign_in(answer, lambda challenge, code: call(
+        "POST", "/api/auth/login/two-factor", {"challenge": challenge, "code": code}))
 
     if not token:
-        sys.exit("The administrator could not sign in.")
+        sys.exit("The administrator could not sign in. Is ADMIN_TOTP_SECRET set, as in server/.env?")
 
     doomed = []
     page = 1
