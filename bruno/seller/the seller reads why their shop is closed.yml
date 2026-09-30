@@ -1,7 +1,7 @@
 info:
   name: the seller reads why their shop is closed
   type: http
-  seq: 103
+  seq: 107
 
 http:
   method: GET

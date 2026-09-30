@@ -3,7 +3,7 @@ import { queryKeys } from '@/constants/query-keys'
 import { Order } from '@/services/order'
 import type { CheckoutChoice } from '@/services/order/types'
 import { Voucher } from '@/services/voucher'
-import type { NewVoucher } from '@/services/voucher/types'
+import type { NewVoucher, VoucherEdit } from '@/services/voucher/types'
 
 /** The caller's vouchers, a page at a time. */
 export function useMyVouchers(page: number, pageSize: number) {
@@ -19,6 +19,15 @@ export function useCreateVoucher() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (voucher: NewVoucher) => Voucher.create(voucher),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vouchers'] }),
+  })
+}
+
+/** Corrects a voucher's terms (specs/113), then re-reads the list. */
+export function useEditVoucher() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, edit }: { id: string; edit: VoucherEdit }) => Voucher.edit(id, edit),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vouchers'] }),
   })
 }

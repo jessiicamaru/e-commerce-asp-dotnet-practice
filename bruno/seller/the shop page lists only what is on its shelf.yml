@@ -1,7 +1,7 @@
 info:
   name: the shop page lists only what is on its shelf
   type: http
-  seq: 88
+  seq: 92
 
 http:
   method: GET

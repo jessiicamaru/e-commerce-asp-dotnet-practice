@@ -1,7 +1,7 @@
 info:
   name: staff reopen the shop
   type: http
-  seq: 105
+  seq: 109
 
 http:
   method: POST

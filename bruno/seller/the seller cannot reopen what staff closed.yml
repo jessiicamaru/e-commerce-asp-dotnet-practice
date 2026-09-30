@@ -1,7 +1,7 @@
 info:
   name: the seller cannot reopen what staff closed
   type: http
-  seq: 102
+  seq: 106
 
 http:
   method: POST

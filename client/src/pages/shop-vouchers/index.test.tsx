@@ -115,4 +115,50 @@ describe('AdminVouchersPage (specs/070)', () => {
     expect(create.mock.calls[0][0]).toMatchObject({ benefit: 'FreeShipping', percent: null, conditions: [{ type: 'NewCustomer', value: null }], targets: [] })
     expect(Product.mine).not.toHaveBeenCalled()
   })
+
+  describe('editing (specs/113)', () => {
+    it('opens with the terms as they are and sends the corrected ones', async () => {
+      vi.spyOn(Voucher, 'mine').mockResolvedValue(page([sale]))
+      const edit = vi.spyOn(Voucher, 'edit').mockResolvedValue({ ...sale, totalLimit: 200 })
+      const user = userEvent.setup()
+      renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
+
+      await user.click(await screen.findByRole('button', { name: /Edit/ }))
+      const dialog = await screen.findByRole('dialog')
+      const total = within(dialog).getByLabelText('Uses in all')
+      expect(total).toHaveValue(100)
+      expect(within(dialog).getByLabelText('Orders from (VND)')).toHaveValue(500_000)
+      expect(within(dialog).queryByLabelText('At least this many items')).not.toBeInTheDocument()
+      await user.clear(total)
+      await user.type(total, '200')
+      await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(edit).toHaveBeenCalled())
+      expect(edit.mock.calls[0]).toEqual(['v-1', {
+        name: 'Mai ten', endsAt: null, totalLimit: 200, perCustomerLimit: 1,
+        minSubtotals: [{ currency: 'VND', minSubtotal: 500_000 }], minQuantity: null,
+      }])
+    })
+
+    it("shows the server's refusal and keeps the dialog open", async () => {
+      vi.spyOn(Voucher, 'mine').mockResolvedValue(page([sale]))
+      vi.spyOn(Voucher, 'edit').mockRejectedValue(refusal(409, 'The total limit cannot be lower than the uses already made.'))
+      const user = userEvent.setup()
+      renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
+
+      await user.click(await screen.findByRole('button', { name: /Edit/ }))
+      const dialog = await screen.findByRole('dialog')
+      await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+
+      expect(await within(dialog).findByText('The total limit cannot be lower than the uses already made.')).toBeInTheDocument()
+    })
+
+    it('offers no edit on a disabled voucher', async () => {
+      vi.spyOn(Voucher, 'mine').mockResolvedValue(page([{ ...sale, status: 'Disabled' }]))
+      renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
+
+      expect(await screen.findByText('MAI10')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
+    })
+  })
 })

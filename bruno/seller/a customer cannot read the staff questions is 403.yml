@@ -1,7 +1,7 @@
 info:
   name: a customer cannot read the staff questions is 403
   type: http
-  seq: 79
+  seq: 83
 
 http:
   method: GET

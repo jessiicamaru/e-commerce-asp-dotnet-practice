@@ -74,4 +74,17 @@ public interface IVoucherRepository
     /// <param name="stage">Stages the audit entry, inside the same transaction, only when this call disabled it.</param>
     Task<(DisableOutcome Outcome, Voucher? Voucher)> TryDisableAsync(
         Guid id, Guid? ownerSellerId, bool staff, DateTime at, Func<Voucher, CancellationToken, Task> stage, CancellationToken cancellationToken = default);
+
+    /// <summary>One voucher with its amounts, conditions and targets, or null.</summary>
+    Task<Voucher?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Corrects an active voucher's terms (specs/113) with ONE guarded statement - active, the owner's
+    /// (<paramref name="ownerSellerId"/> null: the platform's), and a total limit still covering the uses made - then
+    /// its minimums, then <paramref name="stage"/> (the audit entry, given the voucher as it now is), in one
+    /// transaction. On zero rows nothing is written and the outcome says why.
+    /// </summary>
+    Task<(EditOutcome Outcome, VoucherSummary? Voucher)> TryEditAsync(
+        Guid id, Guid? ownerSellerId, VoucherEdit edit, DateTime at, Func<VoucherSummary, CancellationToken, Task> stage,
+        CancellationToken cancellationToken = default);
 }

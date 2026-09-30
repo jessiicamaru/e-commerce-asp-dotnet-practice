@@ -1,7 +1,7 @@
 info:
   name: pausing a paused shop is 409
   type: http
-  seq: 97
+  seq: 101
 
 http:
   method: POST

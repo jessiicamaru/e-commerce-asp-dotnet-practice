@@ -6,6 +6,7 @@ import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
+import { VoucherEdit } from '@/components/voucher/voucher-edit'
 import { VoucherForm } from '@/components/voucher/voucher-form'
 import {
   AlertDialog,
@@ -88,23 +89,26 @@ function VoucherRow({ voucher, onDisable, busy }: { voucher: VoucherSummary; onD
         {voucher.endsAt ? ` ${t('until', { at: day(voucher.endsAt) })}` : ''}
       </p>
       {active && (
-        <AlertDialog>
-          <AlertDialogTrigger render={<Button variant="outline" size="sm" className="text-destructive justify-self-start rounded-full" disabled={busy} />}>
-            <BanIcon /> {t('disable')}
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t('disableTitle', { code: voucher.code })}</AlertDialogTitle>
-              <AlertDialogDescription>{t('disableBody')}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t('action.cancel', { ns: 'common' })}</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={onDisable}>
-                {t('disable')}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex flex-wrap gap-2">
+          <VoucherEdit voucher={voucher} />
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button variant="outline" size="sm" className="text-destructive rounded-full" disabled={busy} />}>
+              <BanIcon /> {t('disable')}
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t('disableTitle', { code: voucher.code })}</AlertDialogTitle>
+                <AlertDialogDescription>{t('disableBody')}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t('action.cancel', { ns: 'common' })}</AlertDialogCancel>
+                <AlertDialogAction variant="destructive" onClick={onDisable}>
+                  {t('disable')}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       )}
     </li>
   )

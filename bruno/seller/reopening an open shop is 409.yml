@@ -1,7 +1,7 @@
 info:
   name: reopening an open shop is 409
   type: http
-  seq: 106
+  seq: 110
 
 http:
   method: POST

@@ -1,7 +1,7 @@
 info:
   name: a seller disables their voucher
   type: http
-  seq: 66
+  seq: 69
 
 http:
   method: POST

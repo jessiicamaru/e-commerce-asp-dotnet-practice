@@ -1,7 +1,7 @@
 info:
   name: the seller describes their shop
   type: http
-  seq: 86
+  seq: 90
 
 http:
   method: PUT

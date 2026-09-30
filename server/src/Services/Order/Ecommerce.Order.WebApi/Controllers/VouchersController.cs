@@ -22,6 +22,14 @@ public class VouchersController : ApiControllerBase
     public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 12) =>
         Ok(await Mediator.Send(new GetMyVouchersQuery(page, pageSize)));
 
+    /// <summary>
+    /// Corrects an active voucher's name, end, limits and minimums (specs/113) - never what it takes off. Not yours is a
+    /// 404; disabled, or a total below the uses made, is a 409.
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Edit(Guid id, [FromBody] EditVoucherCommand command) =>
+        Ok(await Mediator.Send(command with { Id = id }));
+
     /// <summary>Stops it being used. Not yours is a 404; already disabled is a 409.</summary>
     [HttpPost("{id:guid}/disable")]
     public async Task<IActionResult> Disable(Guid id) =>

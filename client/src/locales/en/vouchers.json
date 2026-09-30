@@ -71,5 +71,12 @@
     "noProducts": "No products found.",
     "create": "Create voucher",
     "failed": "The voucher could not be created."
-  }
+  },
+  "edit": "Edit",
+  "editTitle": "Edit {{code}}",
+  "editBody": "Change its name, when it ends, how often it can be used and the least an order must come to. What it takes off never changes - disable it and make another for that.",
+  "save": "Save",
+  "saving": "Saving…",
+  "edited": "Voucher saved.",
+  "editFailed": "The voucher could not be saved."
 }
