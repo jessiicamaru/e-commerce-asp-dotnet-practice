@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor } from '@testing-library/react'
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Auth } from '@/services/auth'
 import type { AuthResponse } from '@/services/auth/types'
@@ -9,9 +10,14 @@ import { AuthProvider } from '.'
 
 let auth: AuthState
 
-function Probe() {
-  auth = useAuth()
-  return <p data-testid="who">{auth.user ? `${auth.user.email} ${auth.user.roles.join(',')} ${auth.user.twoFactorSetupRequired}` : 'nobody'}</p>
+/** Shows who is signed in, and hands the test the context to call - after render, as an effect. */
+function Probe({ expose }: { expose: (value: AuthState) => void }) {
+  const value = useAuth()
+  useEffect(() => {
+    expose(value)
+  })
+  const { user } = value
+  return <p data-testid="who">{user ? `${user.email} ${user.roles.join(',')} ${user.twoFactorSetupRequired}` : 'nobody'}</p>
 }
 
 function renderProvider() {
@@ -19,7 +25,7 @@ function renderProvider() {
   return render(
     <QueryClientProvider client={client}>
       <AuthProvider>
-        <Probe />
+        <Probe expose={(value) => (auth = value)} />
       </AuthProvider>
     </QueryClientProvider>,
   )

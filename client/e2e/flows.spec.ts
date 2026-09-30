@@ -44,7 +44,7 @@ test.describe.serial('the storefront, end to end', () => {
   })
 
   test('a moderator approves a product waiting for review', async ({ page }) => {
-    await signIn(page, moderator.email)
+    await signIn(page, moderator)
     await page.goto('/admin/products')
 
     const card = await findOnPages(page, page.getByRole('article').filter({ hasText: waiting.name }))
