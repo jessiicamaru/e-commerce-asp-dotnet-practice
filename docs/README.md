@@ -50,7 +50,7 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 
 | Area | Document |
 | :-- | :-- |
-| Accounts, sign-in, tokens | [JWT setup](features/auth/jwt-setup.md), [token storage & refresh](features/auth/security-best-practices.md), [database schema](features/auth/db-design.md), [CQRS guide](features/auth/cqrs-guide.md) |
+| Accounts, sign-in, tokens | [JWT setup](features/auth/jwt-setup.md), [token storage & refresh](features/auth/security-best-practices.md), [database schema](features/auth/db-design.md), [CQRS guide](features/auth/cqrs-guide.md), [two-factor sign-in (TOTP)](features/auth/totp-two-factor.md) |
 | The catalogue: products, variants, images, languages, currencies, review before sale, views | [Catalog](features/catalog.md) |
 | Cart, checkout, pricing and totals, the saga, settlement | [Shopping and checkout](features/shopping-and-checkout.md) |
 | Parcels per seller, shipping, cancellation, delivery confirmation | [Fulfilment and delivery](features/fulfilment-and-delivery.md) |
