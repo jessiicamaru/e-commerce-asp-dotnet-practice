@@ -16,6 +16,7 @@ import { Price } from '@/components/shared/price'
 import { StarRating } from '@/components/product/star-rating'
 import { ProductQuestions } from '@/components/product/product-questions'
 import { ProductReviews } from '@/components/product/product-reviews'
+import { PublicVouchers } from '@/components/voucher/public-vouchers'
 
 export function ProductPage() {
   const { t } = useTranslation('catalog')
@@ -130,6 +131,15 @@ export function ProductPage() {
             variantId={variant?.id}
             available={variant ? stock.byVariant[variant.id]?.quantityAvailable : undefined}
             disabledReason={variant ? undefined : t('product.chooseFirst')}
+          />
+
+          <PublicVouchers
+            scope={{
+              platform: true,
+              sellerIds: product.sellerId ? [product.sellerId] : [],
+              productId: product.id,
+              variantIds: sellable.map((v) => v.id),
+            }}
           />
 
           {product.description && (

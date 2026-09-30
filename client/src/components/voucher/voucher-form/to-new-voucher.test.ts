@@ -5,7 +5,7 @@ const base = {
   platform: false, code: ' shop-10 ', name: ' Ten off ', benefit: 'Percent' as const, percent: '10',
   rows: [{ currency: 'VND', fixedValue: '50000', maxDiscount: '100000', minSubtotal: '' }],
   startsAt: '', endsAt: '', totalLimit: '', perCustomerLimit: '1',
-  newCustomer: true, firstInShop: true, minQuantity: '', products: ['p1'],
+  newCustomer: true, firstInShop: true, minQuantity: '', products: ['p1'], isPublic: true,
 }
 
 describe('toNewVoucher (specs/070)', () => {
@@ -17,6 +17,7 @@ describe('toNewVoucher (specs/070)', () => {
       // Research D2: "new customers" is the platform's - a shop never sends it, even if the box was ticked.
       conditions: [{ type: 'FirstOrderInShop', value: null }],
       targets: [{ type: 'Product', id: 'p1' }],
+      isPublic: true,   // specs/114: shown to shoppers when ticked
     })
   })
 

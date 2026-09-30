@@ -5,6 +5,7 @@ import i18n from '@/config/i18n'
 import { Address } from '@/services/address'
 import type { Address as AddressModel } from '@/services/address/types'
 import { Order } from '@/services/order'
+import { Voucher } from '@/services/voucher'
 import type { Order as OrderModel, Quote } from '@/services/order/types'
 import { refusal } from '@/test/refusal'
 import { renderAsSeller } from '@/test/render'
@@ -114,5 +115,31 @@ describe('CheckoutPage vouchers (specs/070)', () => {
 
     await waitFor(() => expect(screen.queryByText('Voucher SALE10')).not.toBeInTheDocument())
     expect(quoted).toHaveBeenLastCalledWith({ addressId: 'a-new', shippingOption: 'standard', voucherCodes: [] })
+  })
+})
+
+describe('CheckoutPage public vouchers (specs/114)', () => {
+  it("offers the platform's and the cart's shops' vouchers, and Use tries the code like typing it", async () => {
+    vi.spyOn(Address, 'list').mockResolvedValue([saved])
+    const line = {
+      productId: 'p', productName: 'Ricoh GR III', variantId: 'v', sku: null, optionSummary: null, sellerId: 's1',
+      quantity: 1, unitPrice: 1_000_000, totalPrice: 1_000_000, taxAmount: 100_000, discount: 0,
+    }
+    const base: Quote = {
+      items: [line], shippingAddress: saved, shippingOption: { code: 'standard', name: 'Standard' }, currency: 'VND',
+      subtotal: 1_000_000, shippingPrice: 30_000, taxTotal: 103_000, discountTotal: 0, taxRate: 0.1, totalAmount: 1_133_000, vouchers: [],
+    }
+    const quoted = vi.spyOn(Order, 'quote').mockResolvedValue(base)
+    const asked = vi.spyOn(Voucher, 'public').mockResolvedValue([{
+      code: 'MAI10', name: 'Mai ten', isPlatform: false, sellerId: 's1', benefit: 'FixedAmount', percent: null, currency: 'VND',
+      fixedValue: 50_000, maxDiscount: null, minSubtotal: null, endsAt: null, conditions: [], targeted: false,
+    }])
+    const user = userEvent.setup()
+    renderAsSeller(<CheckoutPage />, '/checkout')
+
+    await user.click(await screen.findByRole('button', { name: 'Use' }))
+
+    expect(asked).toHaveBeenCalledWith({ platform: true, sellerIds: ['s1'] })
+    await waitFor(() => expect(quoted).toHaveBeenCalledWith({ addressId: 'a-new', shippingOption: 'standard', voucherCodes: ['MAI10'] }))
   })
 })

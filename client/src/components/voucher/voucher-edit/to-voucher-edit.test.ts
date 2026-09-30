@@ -9,7 +9,7 @@ const voucher: VoucherSummary = {
     { currency: 'USD', fixedValue: null, maxDiscount: 5, minSubtotal: null },
     { currency: 'VND', fixedValue: null, maxDiscount: 100_000, minSubtotal: 500_000 },
   ],
-  conditions: [{ type: 'MinQuantity', value: 2 }], targets: [], createdAt: '',
+  conditions: [{ type: 'MinQuantity', value: 2 }], targets: [], createdAt: '', isPublic: true,
 }
 
 describe('editFields and toVoucherEdit (specs/113)', () => {
@@ -18,7 +18,7 @@ describe('editFields and toVoucherEdit (specs/113)', () => {
 
     expect(fields).toEqual({
       name: 'Mai ten', endsAt: toLocalInput('2026-10-31T16:59:00Z'), totalLimit: '100', perCustomerLimit: '',
-      minSubtotals: { USD: '', VND: '500000' }, minQuantity: '2',
+      minSubtotals: { USD: '', VND: '500000' }, minQuantity: '2', isPublic: true,
     })
   })
 
@@ -27,7 +27,7 @@ describe('editFields and toVoucherEdit (specs/113)', () => {
 
     expect(toVoucherEdit(fields, voucher)).toEqual({
       name: 'Autumn', endsAt: new Date(fields.endsAt).toISOString(), totalLimit: null, perCustomerLimit: null,
-      minSubtotals: [{ currency: 'USD', minSubtotal: 20 }, { currency: 'VND', minSubtotal: null }], minQuantity: 3,
+      minSubtotals: [{ currency: 'USD', minSubtotal: 20 }, { currency: 'VND', minSubtotal: null }], minQuantity: 3, isPublic: true,
     })
   })
 

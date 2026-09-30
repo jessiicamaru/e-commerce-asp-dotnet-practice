@@ -8,6 +8,7 @@ export interface EditFields {
   perCustomerLimit: string
   minSubtotals: Record<string, string>
   minQuantity: string
+  isPublic: boolean
 }
 
 const text = (value: number | null) => (value === null ? '' : String(value))
@@ -30,6 +31,7 @@ export function editFields(voucher: VoucherSummary): EditFields {
     perCustomerLimit: text(voucher.perCustomerLimit),
     minSubtotals: Object.fromEntries(voucher.amounts.map((a) => [a.currency, text(a.minSubtotal)])),
     minQuantity: text(voucher.conditions.find((c) => c.type === 'MinQuantity')?.value ?? null),
+    isPublic: voucher.isPublic ?? false,
   }
 }
 
@@ -46,5 +48,6 @@ export function toVoucherEdit(fields: EditFields, voucher: VoucherSummary): Vouc
     perCustomerLimit: number(fields.perCustomerLimit),
     minSubtotals: voucher.amounts.map((a) => ({ currency: a.currency, minSubtotal: number(fields.minSubtotals[a.currency] ?? '') })),
     minQuantity: hasMinQuantity ? number(fields.minQuantity) : null,
+    isPublic: fields.isPublic,
   }
 }

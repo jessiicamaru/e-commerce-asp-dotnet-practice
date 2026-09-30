@@ -136,7 +136,7 @@ describe('AdminVouchersPage (specs/070)', () => {
       await waitFor(() => expect(edit).toHaveBeenCalled())
       expect(edit.mock.calls[0]).toEqual(['v-1', {
         name: 'Mai ten', endsAt: null, totalLimit: 200, perCustomerLimit: 1,
-        minSubtotals: [{ currency: 'VND', minSubtotal: 500_000 }], minQuantity: null,
+        minSubtotals: [{ currency: 'VND', minSubtotal: 500_000 }], minQuantity: null, isPublic: false,
       }])
     })
 
