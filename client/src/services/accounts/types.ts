@@ -11,6 +11,8 @@ export interface Account {
   lockReason: string | null
   bannedAt: string | null
   banReason: string | null
+  /** Whether there is a second factor to reset (specs/110). */
+  twoFactorEnabled?: boolean
 }
 
 export interface AccountPage {

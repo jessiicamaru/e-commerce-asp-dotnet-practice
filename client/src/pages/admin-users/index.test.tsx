@@ -247,3 +247,39 @@ describe("A person's history (specs/100)", () => {
     await waitFor(() => expect(read).toHaveBeenLastCalledWith('u-lan', 2, 10))
   })
 })
+
+describe('AdminUsersPage, resetting two-factor sign-in (specs/110)', () => {
+  it('lets an administrator reset it for somebody who has it on, after saying what that does', async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(person({ roles: ['Customer', 'Moderator'], twoFactorEnabled: true })))
+    const reset = vi.spyOn(Accounts, 'resetTwoFactor').mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage(renderAsAdmin)
+
+    const menu = await openActions(user, 'lan@example.test')
+    await user.click(within(menu).getByRole('menuitem', { name: 'Reset two-factor sign-in' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(dialog).toHaveTextContent('they are emailed at once')
+    expect(reset).not.toHaveBeenCalled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Reset' }))
+    await waitFor(() => expect(reset).toHaveBeenCalledWith('u-lan'))
+  })
+
+  it('offers nothing to reset when it is off, and nothing to a moderator', async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(person({ twoFactorEnabled: false }), person({ id: 'u-minh', email: 'minh@example.test', twoFactorEnabled: true })))
+    const user = userEvent.setup()
+    renderPage(renderAsAdmin)
+
+    const menu = await openActions(user, 'lan@example.test')
+    expect(within(menu).queryByRole('menuitem', { name: 'Reset two-factor sign-in' })).not.toBeInTheDocument()
+  })
+
+  it('offers a moderator no reset at all', async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(person({ twoFactorEnabled: true })))
+    const user = userEvent.setup()
+    renderPage(renderAsModerator)
+
+    const menu = await openActions(user, 'lan@example.test')
+    expect(within(menu).queryByRole('menuitem', { name: 'Reset two-factor sign-in' })).not.toBeInTheDocument()
+  })
+})

@@ -24,7 +24,8 @@ public record UserAdminResponse(
     DateTime? LockedUntil,
     string? LockReason,
     DateTime? BannedAt,
-    string? BanReason)
+    string? BanReason,
+    bool TwoFactorEnabled = false)
 {
     public static UserAdminResponse From(User user, DateTime now) => new(
         user.Id, user.Email, user.FirstName, user.LastName,
@@ -33,7 +34,9 @@ public record UserAdminResponse(
         // A lock that has run out is no lock: shown as nothing rather than as a date in the past.
         user.IsLocked(now) ? user.LockedUntil : null,
         user.IsLocked(now) ? user.LockReason : null,
-        user.BannedAt, user.BanReason);
+        user.BannedAt, user.BanReason,
+        // Whether an administrator has anything to reset (specs/110) - never the secret.
+        user.TwoFactorEnabled);
 }
 
 public record UserAdminPage(List<UserAdminResponse> Items, int Page, int PageSize, int TotalCount);

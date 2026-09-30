@@ -20,7 +20,7 @@ function renderWithRoles(roles: string[], children: ReactNode, path: string, ema
     isSeller: roles.includes('Seller'),
     isAdmin: roles.includes('Admin'),
     isStaff: roles.includes('Admin') || roles.includes('Moderator'),
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
+    signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 
   return render(
@@ -66,7 +66,7 @@ export function renderSignedOut(children: ReactNode, path = '/') {
     isSeller: false,
     isAdmin: false,
     isStaff: false,
-    signIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => false,
+    signIn: async () => ({ setupRequired: false }), signUp: async () => {}, signOut: async () => {}, refreshSession: async () => false,
   } as unknown as AuthState
 
   return render(

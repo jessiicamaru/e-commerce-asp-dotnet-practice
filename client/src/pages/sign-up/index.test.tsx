@@ -12,7 +12,7 @@ import { SignUpPage } from '.'
 async function signUpAnswered(signUp: AuthState['signUp']) {
   const value = {
     user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
-    signIn: async () => {}, signUp, signOut: async () => {}, refreshSession: async () => true,
+    signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 
   render(

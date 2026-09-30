@@ -13,7 +13,7 @@ async function signInAnswered(answer: unknown) {
   const value = {
     user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
     signIn: async () => { throw answer },
-    signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
+    completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 
   render(

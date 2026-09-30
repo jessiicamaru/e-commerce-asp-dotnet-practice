@@ -255,7 +255,12 @@
       "by": "bởi {{who}} ({{role}})",
       "more_one": "và {{count}} quyết định trước đó",
       "more_other": "và {{count}} quyết định trước đó"
-    }
+    },
+    "resetTwoFactor": "Đặt lại xác thực hai bước",
+    "resetTwoFactorTitle": "Đặt lại xác thực hai bước cho {{email}}?",
+    "resetTwoFactorBody": "Dành cho trường hợp mất điện thoại và hết mã khôi phục. Mọi phiên đăng nhập của họ sẽ kết thúc, họ nhận email ngay, và phải thiết lập lại ứng dụng xác thực ở lần đăng nhập tới.",
+    "resetTwoFactorConfirm": "Đặt lại",
+    "twoFactorReset": "Đã đặt lại xác thực hai bước cho {{email}}."
   },
   "roles": {
     "Admin": "Quản trị viên",
@@ -454,7 +459,8 @@
       "AccountBanned": "Tài khoản bị cấm",
       "PasswordReset": "Đặt lại mật khẩu",
       "EmailConfirmation": "Xác nhận email",
-      "PayoutAccountChanged": "Đổi tài khoản nhận tiền"
+      "PayoutAccountChanged": "Đổi tài khoản nhận tiền",
+      "TwoFactorReset": "Đặt lại xác thực hai bước"
     },
     "language": {
       "vi": "Tiếng Việt",
