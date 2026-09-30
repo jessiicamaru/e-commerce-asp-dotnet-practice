@@ -1,7 +1,7 @@
 info:
   name: its reviews are a 404 to a stranger
   type: http
-  seq: 86
+  seq: 88
 
 http:
   method: GET

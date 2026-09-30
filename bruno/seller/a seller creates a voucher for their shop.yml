@@ -15,7 +15,8 @@ http:
         "benefit": "FixedAmount",
         "amounts": [{ "currency": "VND", "fixedValue": 50000 }],
         "targets": [{ "type": "Product", "id": "{{sellerProductId}}" }],
-        "conditions": [{ "type": "FirstOrderInShop" }]
+        "conditions": [{ "type": "FirstOrderInShop" }],
+        "isPublic": true
       }
   auth:
     type: bearer

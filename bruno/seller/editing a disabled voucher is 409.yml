@@ -1,7 +1,7 @@
 info:
   name: editing a disabled voucher is 409
   type: http
-  seq: 71
+  seq: 73
 
 http:
   method: PUT

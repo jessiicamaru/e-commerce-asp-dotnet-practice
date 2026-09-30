@@ -1,7 +1,7 @@
 info:
   name: the stock read carries the line
   type: http
-  seq: 94
+  seq: 96
 
 http:
   method: GET

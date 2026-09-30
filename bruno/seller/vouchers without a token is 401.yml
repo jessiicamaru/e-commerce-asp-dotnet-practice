@@ -1,7 +1,7 @@
 info:
   name: vouchers without a token is 401
   type: http
-  seq: 73
+  seq: 75
 
 http:
   method: GET

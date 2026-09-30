@@ -1,0 +1,29 @@
+info:
+  name: once code only it is not listed
+  type: http
+  seq: 68
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/vouchers/public?sellerId={{sellerId}}"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200, and the voucher is gone", function() {
+          expect(res.status).to.equal(200);
+          var codes = res.body.map(function (v) { return v.code; });
+          expect(codes).to.not.include(bru.getVar("sellerVoucherCode"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The correction above made it code only (specs/114).

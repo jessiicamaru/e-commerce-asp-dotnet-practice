@@ -1,7 +1,7 @@
 info:
   name: an administrator answering for a seller is 404
   type: http
-  seq: 78
+  seq: 80
 
 http:
   method: PUT

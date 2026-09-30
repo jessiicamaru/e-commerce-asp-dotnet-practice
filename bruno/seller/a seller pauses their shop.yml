@@ -1,7 +1,7 @@
 info:
   name: a seller pauses their shop
   type: http
-  seq: 99
+  seq: 101
 
 http:
   method: POST

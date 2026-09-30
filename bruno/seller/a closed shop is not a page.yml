@@ -1,7 +1,7 @@
 info:
   name: a closed shop is not a page
   type: http
-  seq: 105
+  seq: 107
 
 http:
   method: GET

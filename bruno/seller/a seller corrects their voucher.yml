@@ -1,7 +1,7 @@
 info:
   name: a seller corrects their voucher
   type: http
-  seq: 66
+  seq: 67
 
 http:
   method: PUT
@@ -14,7 +14,8 @@ http:
         "endsAt": "2099-12-31T17:00:00Z",
         "totalLimit": 50,
         "perCustomerLimit": 1,
-        "minSubtotals": [{ "currency": "VND", "minSubtotal": 100000 }]
+        "minSubtotals": [{ "currency": "VND", "minSubtotal": 100000 }],
+        "isPublic": false
       }
   auth:
     type: bearer
@@ -33,6 +34,9 @@ runtime:
           expect(res.body.code).to.equal(bru.getVar("sellerVoucherCode"));
           expect(res.body.amounts[0].fixedValue).to.equal(50000);
           expect(res.body.amounts[0].minSubtotal).to.equal(100000);
+        });
+        test("and now code only (specs/114)", function() {
+          expect(res.body.isPublic).to.equal(false);
         });
 
 settings:

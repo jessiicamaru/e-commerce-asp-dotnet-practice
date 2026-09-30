@@ -1,7 +1,7 @@
 info:
   name: its questions are a 404 to a stranger
   type: http
-  seq: 87
+  seq: 89
 
 http:
   method: GET
