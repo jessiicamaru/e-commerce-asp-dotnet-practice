@@ -19,5 +19,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         // An inbox is read newest first; the bell counts the unread.
         builder.HasIndex(x => new { x.RecipientId, x.CreatedAt });
         builder.HasIndex(x => x.RecipientId).HasFilter("\"ReadAt\" IS NULL").HasDatabaseName("IX_notifications_unread");
+        // What the retention sweep reads (specs/116): read notices by when they were read.
+        builder.HasIndex(x => x.ReadAt).HasFilter("\"ReadAt\" IS NOT NULL").HasDatabaseName("IX_notifications_ReadAt");
     }
 }

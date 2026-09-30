@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<Ecommerce.Activity.Application.MyData.IAccountErasure, AccountErasure>();
         services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<Ecommerce.Activity.Application.Retention.IRetentionRepository, RetentionRepository>();
         services.AddScoped<INotificationWordingStore, NotificationWordingStore>();
         services.AddSingleton<INoticeSanitizer, NoticeSanitizer>();
 

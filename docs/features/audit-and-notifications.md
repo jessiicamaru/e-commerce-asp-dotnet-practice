@@ -285,6 +285,25 @@ words** can now be an administrator's edit as well as the bundle.
 7. **Audited** through Activity's own outbox (`AddAuditTrail("activity")`), as `NotificationWordingSaved`,
    `NotificationWordingReset` or `NotificationWordingRestored`, with the before and the after.
 
+## Retention
+
+Since specs/116 (#221) Activity removes what nobody needs, on a schedule - `RetentionSweeper`, every
+`Retention:IntervalMinutes` (60) and once at start:
+
+| What | Kept | Setting |
+| :-- | :-- | :-- |
+| A **read** notice | 90 days after it was read | `Retention:ReadNotificationDays` (at least 1) |
+| An **unread** notice | for ever - somebody has not seen it | - |
+| An audit entry | **for ever by default** | `Retention:AuditYears` - unset, or at least 1 |
+
+- ⚠️ **The audit log is never trimmed silently.** When an operator sets `AuditYears`, every batch that deletes entries
+  records a `System` / `AuditTrimmed` entry with the cutoff and its count, in the batch's own transaction - a missing
+  year must not look like a quiet one. There is no archive: the database backup is one.
+- Batches of `Retention:BatchSize` (1000), each a short statement over an index (`IX_notifications_ReadAt`, partial;
+  `IX_audit_entries_OccurredAt`), repeated until one comes back short. Two instances at once meet on the rows and the
+  second deletes nothing.
+- A setting out of range stops Activity at start, naming it (specs/103's rule).
+
 ## Data
 
 Activity database - see [data-model.md](../reference/data-model.md#activity---ecommerce_activity_db-3-tables).
@@ -385,7 +404,8 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 - **Cart records nothing** in the audit log: a cart is a customer's scratch pad, and what they bought is recorded by Order.
 - **A product sent back to review by the seller's own edit tells nobody**: the seller made the edit, and
   the product page shows its status.
-- **No retention or archiving.** Both tables grow without bound; exporting is out of scope (specs/041).
+- **No archive** (specs/116): trimmed audit entries are gone from the database, and the trim itself is recorded; a
+  longer history is the backups'.
 - **No push or SMS.** A buyer's paid order, shipped parcel, cancellation and return steps, a saver's product
   back in stock, and a locked or banned account are also emails (specs/060, 083 - [email](email.md)); the
   sellers' notices are in the app only. No notification preferences.
@@ -411,4 +431,5 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | `PartCancelled` notice and audit action (#211). |
 | [105-correct-tracking](../../specs/105-correct-tracking/) | [#225](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/225) | `TrackingCorrected` notice and audit action (#212). |
 | [115-email-failure-alert](../../specs/115-email-failure-alert/) | #235 | `EmailsFailed` and the `failed` placeholder (#222). |
+| [116-activity-retention](../../specs/116-activity-retention/) | #236 | Retention: read notices after 90 days, audit entries only when configured, each trim recorded as `AuditTrimmed` (#221). |
 | [107-shop-closure](../../specs/107-shop-closure/) | #227 | `ShopPaused`/`ShopResumed`/`ShopClosed`/`ShopReopened` audit actions; `ShopClosed`, `ShopReopened` notices (#214). |
