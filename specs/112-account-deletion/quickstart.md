@@ -20,7 +20,7 @@ Expected:
 
 A new customer registers, adds an address, then:
 - `DELETE /api/auth/me` with a wrong password: 400.
-- With the right one: 204. Their token then answers 401; signing in with the old email and password answers 400.
+- With the right one: 204. Their token then answers 401; signing in with the old email and password answers 401, as a wrong password does.
 - Registering the same email again: 201.
 Without a token: 401 (`security-checks`).
 

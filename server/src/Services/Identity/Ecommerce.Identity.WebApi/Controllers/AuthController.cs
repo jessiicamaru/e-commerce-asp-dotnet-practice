@@ -1,6 +1,7 @@
 using Ecommerce.Application.Auth.Commands.Account;
 using Ecommerce.Application.Auth.Commands.EmailConfirmation;
 using Ecommerce.Application.Auth.Commands.Login;
+using Ecommerce.Application.Auth.Commands.DeleteAccount;
 using Ecommerce.Application.Auth.Commands.Logout;
 using Ecommerce.Application.Auth.Commands.PasswordReset;
 using Ecommerce.Application.Auth.Commands.Register;
@@ -172,6 +173,23 @@ public class AuthController : ApiControllerBase
     {
         Request.Cookies.TryGetValue("refreshToken", out var thisSession);
         await Mediator.Send(command with { KeepRefreshToken = string.IsNullOrEmpty(thisSession) ? null : thisSession });
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Deletes the caller's own account (specs/112, #217): 204, and this browser's session cookie goes with it. 400 on a
+    /// wrong password, 409 for staff or while business is open (<c>code</c>, <c>reasons</c>), 503 when Order cannot say.
+    /// </summary>
+    [HttpDelete("me")]
+    public async Task<IActionResult> DeleteMe([FromBody] DeleteAccountCommand command)
+    {
+        await Mediator.Send(command);
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax
+        });
         return NoContent();
     }
 

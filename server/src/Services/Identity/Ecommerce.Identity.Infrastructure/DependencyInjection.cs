@@ -43,6 +43,16 @@ public static class DependencyInjection
         services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
         services.AddScoped<ITwoFactorRepository, TwoFactorRepository>();
         services.AddScoped<Ecommerce.Application.MyData.IPersonalDataReader, PersonalDataReader>();
+        services.AddScoped<Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountErasure, AccountErasure>();
+
+        // Identity's first call out (specs/112): what keeps an account open, asked of Order over h2c on its gRPC port -
+        // order:8081 in a container, localhost:5159 under start-dev.
+        var orderGrpc = configuration["Order:GrpcAddress"]
+            ?? Environment.GetEnvironmentVariable("ORDER_GRPC_ADDRESS")
+            ?? "http://localhost:5159";
+        services.AddGrpcClient<Ecommerce.Contracts.Grpc.AccountStanding.AccountStandingClient>(o => o.Address = new Uri(orderGrpc));
+        services.AddHttpContextAccessor();
+        services.AddScoped<Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountStanding, Ecommerce.Infrastructure.Order.GrpcAccountStanding>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();

@@ -44,6 +44,12 @@ public class User
     /// </summary>
     public string? Language { get; set; }
 
+    /// <summary>
+    /// When the person deleted the account (specs/112): the row stays, emptied, so what other services keep for the
+    /// books still points at an id; nothing personal is left in it. Final - there is no way back.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
     public bool IsLocked(DateTime now) => LockedUntil is { } until && until > now;
 
     public bool IsBanned => BannedAt is not null;
