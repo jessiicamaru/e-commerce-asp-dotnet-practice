@@ -71,6 +71,48 @@ public class MyDataTests(CatalogTestFixture fixture) : IDisposable
         Assert.DoesNotContain(Moderator.ToString(), json);
     }
 
+    /// <summary>
+    /// specs/112: saved products, review rights and reports go; reviews and questions stay without the name; a seller's
+    /// shop closes and its products leave the shelf - and nobody else's rows move.
+    /// </summary>
+    [Fact]
+    public async Task A_deleted_account_is_taken_out_of_the_catalogue()
+    {
+        var (mai, maiProduct) = await PersonWithEverythingAsync("Mai");
+        var (lan, lanProduct) = await PersonWithEverythingAsync("Lan");
+        await DbAsync(db => db.Products.Where(p => p.Id == maiProduct || p.Id == lanProduct)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.ReviewStatus, ProductReviewStatus.Approved)));
+
+        var deletedAt = DateTime.UtcNow;
+        await SendAsync(new EraseAccountCommand(mai, deletedAt));
+        await SendAsync(new EraseAccountCommand(mai, deletedAt.AddMinutes(1)));   // a redelivery changes nothing
+        As(mai, "Customer");
+        var export = await SendAsync(new GetMyDataQuery());
+
+        foreach (var section in CatalogPersonalData.Inventory.Erased)
+            Assert.Empty(export.Sections[section]);
+        foreach (var section in CatalogPersonalData.Inventory.Kept.Keys)
+            Assert.NotEmpty(export.Sections[section]);
+        var json = JsonSerializer.Serialize(export);
+        Assert.DoesNotContain("\"AuthorName\":\"Mai\"", json);
+        Assert.DoesNotContain("\"AskerName\":\"Mai\"", json);
+        Assert.Contains("Mai reviews", json);   // the words stay for other shoppers, without the name
+
+        await using var scope = _fixture.NewScope();
+        var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        var shop = await db.Sellers.AsNoTracking().SingleAsync(s => s.SellerId == mai);
+        Assert.Equal(deletedAt, shop.ClosedAt!.Value, TimeSpan.FromMilliseconds(1));
+        Assert.Equal("The account was deleted.", shop.ClosedReason);
+        Assert.True((await db.Products.AsNoTracking().SingleAsync(p => p.Id == maiProduct)).SellerSuspended);
+
+        As(lan, "Customer");
+        var lanJson = JsonSerializer.Serialize(await SendAsync(new GetMyDataQuery()));
+        Assert.Contains("\"AuthorName\":\"Lan\"", lanJson);
+        Assert.Contains("Lan reports", lanJson);
+        Assert.Null((await db.Sellers.AsNoTracking().SingleAsync(s => s.SellerId == lan)).ClosedAt);
+        Assert.False((await db.Products.AsNoTracking().SingleAsync(p => p.Id == lanProduct)).SellerSuspended);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static readonly Guid Moderator = Guid.CreateVersion7();
@@ -132,5 +174,11 @@ public class MyDataTests(CatalogTestFixture fixture) : IDisposable
     {
         await using var scope = _fixture.NewScope();
         return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
+
+    private async Task SendAsync(IRequest request)
+    {
+        await using var scope = _fixture.NewScope();
+        await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
     }
 }

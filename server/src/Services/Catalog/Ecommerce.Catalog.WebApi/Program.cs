@@ -211,6 +211,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<ReviewEligibilityConsumer>();
     // A sale took a variant below its line: tell its seller (specs/102).
     x.AddConsumer<StockRanLowConsumer>();
+    x.AddConsumer<EraseAccountFromCatalogConsumer>();
 
     // Queue names are derived from consumer CLASS names, and two services naming a consumer the
     // same thing bind to one queue and COMPETE for it — each message reaches one of them instead of

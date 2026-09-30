@@ -52,6 +52,17 @@ public class MyDataTests(PaymentTestFixture fixture) : IDisposable
         Assert.DoesNotContain(lanOrder.ToString(), json);
     }
 
+    /// <summary>
+    /// specs/112: Payment consumes no deletion - it keeps its rows for the books - which is only right while every
+    /// section is declared kept and none of them carries anything but ids, amounts and the provider.
+    /// </summary>
+    [Fact]
+    public void A_deleted_account_leaves_payments_as_they_are_because_they_hold_nothing_personal()
+    {
+        Assert.Empty(PaymentPersonalData.Inventory.Erased);
+        Assert.Equal(["payments", "refunds"], PaymentPersonalData.Inventory.Kept.Keys.Order());
+    }
+
     private async Task<(Guid User, Guid Order)> PaidAndRefundedAsync()
     {
         var user = Guid.CreateVersion7();

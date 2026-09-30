@@ -105,6 +105,21 @@ public class SellerRepository(CatalogDbContext context) : ISellerRepository
     /// The one statement that writes <c>products.SellerSuspended</c> (#214, specs/107): from all three reasons on the
     /// <c>sellers</c> row - banned, paused, closed - so no change of one of them can reopen a shop another keeps shut.
     /// </summary>
+    public async Task CloseForDeletedAccountAsync(Guid sellerId, DateTime at, CancellationToken cancellationToken = default)
+    {
+        await _context.Sellers.Where(s => s.SellerId == sellerId && s.ClosedAt == null)
+            .ExecuteUpdateAsync(x => x
+                .SetProperty(s => s.ClosedAt, at)
+                .SetProperty(s => s.ClosedReason, AccountDeletedReason)
+                .SetProperty(s => s.ClosedBy, (Guid?)null), cancellationToken);
+        await _context.Sellers.Where(s => s.SellerId == sellerId)
+            .ExecuteUpdateAsync(x => x.SetProperty(s => s.Description, (string?)null), cancellationToken);
+        await ApplyShopStateAsync(sellerId, cancellationToken);
+    }
+
+    /// <summary>Why a shop closed with its owner's account (specs/112) - what staff read on the closed list.</summary>
+    public const string AccountDeletedReason = "The account was deleted.";
+
     private Task<int> ApplyShopStateAsync(Guid sellerId, CancellationToken cancellationToken) =>
         _context.Database.ExecuteSqlInterpolatedAsync($"""
             UPDATE products SET "SellerSuspended" = COALESCE((

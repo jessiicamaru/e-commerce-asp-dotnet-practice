@@ -45,6 +45,12 @@ public interface ISellerRepository
 
     Task<Seller?> GetAsync(Guid sellerId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The seller's account was deleted (specs/112): the shop closes as a closure by staff would - unless it already is
+    /// - its description goes, and its products leave the shelf. Runs inside the caller's transaction; idempotent.
+    /// </summary>
+    Task CloseForDeletedAccountAsync(Guid sellerId, DateTime at, CancellationToken cancellationToken = default);
+
     /// <summary>The names for these sellers, for building a page of products in one query.</summary>
     Task<Dictionary<Guid, string>> GetNamesAsync(IEnumerable<Guid> sellerIds, CancellationToken cancellationToken = default);
 }
