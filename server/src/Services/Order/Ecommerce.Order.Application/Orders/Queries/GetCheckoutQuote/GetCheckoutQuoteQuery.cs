@@ -56,7 +56,8 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
                 string.IsNullOrEmpty(l.Sku) ? null : l.Sku,
                 string.IsNullOrEmpty(l.OptionSummary) ? null : l.OptionSummary,
                 l.SellerName,
-                l.Discount)).ToList(),
+                l.Discount,
+                l.SellerId)).ToList(),
             new ShippingAddressResponse(a.RecipientName, a.Line1, a.Line2, a.City, a.Region, a.PostalCode, a.Country, a.Phone),
             new ShippingOptionResponse(
                 priced.Shipping.Code, priced.Shipping.Name, priced.DeliveryPrice, priced.Currency),

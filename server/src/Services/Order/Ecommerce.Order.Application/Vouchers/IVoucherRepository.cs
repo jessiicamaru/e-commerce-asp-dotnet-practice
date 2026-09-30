@@ -19,7 +19,8 @@ public record VoucherSummary(
     List<VoucherAmountResponse> Amounts,
     List<VoucherConditionResponse> Conditions,
     List<VoucherTargetResponse> Targets,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool IsPublic = false);
 
 public record VoucherAmountResponse(string Currency, decimal? FixedValue, decimal? MaxDiscount, decimal? MinSubtotal);
 
@@ -74,6 +75,12 @@ public interface IVoucherRepository
     /// <param name="stage">Stages the audit entry, inside the same transaction, only when this call disabled it.</param>
     Task<(DisableOutcome Outcome, Voucher? Voucher)> TryDisableAsync(
         Guid id, Guid? ownerSellerId, bool staff, DateTime at, Func<Voucher, CancellationToken, Task> stage, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The live public vouchers in <paramref name="scope"/> (specs/114): active, started, not ended, not used up, priced
+    /// in the scope's currency; ending soonest first, at most <see cref="PublicVouchers.Limit"/>.
+    /// </summary>
+    Task<List<PublicVoucherResponse>> GetPublicAsync(PublicVoucherScope scope, DateTime now, CancellationToken cancellationToken = default);
 
     /// <summary>One voucher with its amounts, conditions and targets, or null.</summary>
     Task<Voucher?> GetAsync(Guid id, CancellationToken cancellationToken = default);

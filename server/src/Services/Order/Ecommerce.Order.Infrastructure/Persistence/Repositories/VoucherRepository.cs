@@ -218,6 +218,44 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
         });
     }
 
+    public async Task<List<PublicVoucherResponse>> GetPublicAsync(PublicVoucherScope scope, DateTime now, CancellationToken cancellationToken = default)
+    {
+        var sellers = scope.SellerIds.ToList();
+        var variants = scope.VariantIds.ToList();
+        var currency = scope.Currency;
+        var product = scope.ProductId;
+
+        var rows = await _context.Vouchers.AsNoTracking()
+            .Where(v => v.IsPublic
+                && v.Status == VoucherStatus.Active
+                && v.StartsAt <= now
+                && (v.EndsAt == null || v.EndsAt > now)
+                && (v.TotalLimit == null || v.UsedCount < v.TotalLimit)
+                // No row in the currency, not usable in it - even a percentage (specs/069).
+                && v.Amounts.Any(a => a.Currency == currency)
+                && ((scope.Platform && v.SellerId == null) || (v.SellerId != null && sellers.Contains(v.SellerId.Value)))
+                && (product == null
+                    || !v.Targets.Any()
+                    || v.Targets.Any(t => (t.Type == VoucherTargetType.Product && t.TargetId == product)
+                        || (t.Type == VoucherTargetType.Variant && variants.Contains(t.TargetId)))))
+            // Ending soonest first - what is about to go is worth seeing now - open-ended last, then newest.
+            .OrderBy(v => v.EndsAt == null).ThenBy(v => v.EndsAt).ThenByDescending(v => v.CreatedAt)
+            .Take(PublicVouchers.Limit)
+            .Select(v => new
+            {
+                v.Code, v.Name, v.SellerId, v.Benefit, v.Percent, v.EndsAt,
+                Amount = v.Amounts.First(a => a.Currency == currency),
+                Conditions = v.Conditions.OrderBy(c => c.Type).Select(c => new { c.Type, c.Value }).ToList(),
+                Targeted = v.Targets.Any(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(r => new PublicVoucherResponse(
+            r.Code, r.Name, r.SellerId is null, r.SellerId, r.Benefit.ToString(), r.Percent, r.Amount.Currency,
+            r.Amount.FixedValue, r.Amount.MaxDiscount, r.Amount.MinSubtotal, r.EndsAt,
+            r.Conditions.Select(c => new VoucherConditionResponse(c.Type.ToString(), c.Value)).ToList(), r.Targeted)).ToList();
+    }
+
     public Task<Voucher?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
         _context.Vouchers.AsNoTracking()
             .Include(v => v.Conditions).Include(v => v.Targets).Include(v => v.Amounts)
@@ -246,6 +284,7 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
                     .SetProperty(v => v.EndsAt, edit.EndsAt)
                     .SetProperty(v => v.TotalLimit, edit.TotalLimit)
                     .SetProperty(v => v.PerCustomerLimit, edit.PerCustomerLimit)
+                    .SetProperty(v => v.IsPublic, v => edit.IsPublic ?? v.IsPublic)
                     .SetProperty(v => v.UpdatedAt, at), cancellationToken);
 
             if (moved == 0)

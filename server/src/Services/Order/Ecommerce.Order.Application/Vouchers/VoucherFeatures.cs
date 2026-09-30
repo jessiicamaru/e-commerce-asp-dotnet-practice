@@ -33,7 +33,8 @@ public record CreateVoucherCommand(
     int? PerCustomerLimit,
     List<VoucherAmountRequest>? Amounts,
     List<VoucherConditionRequest>? Conditions,
-    List<VoucherTargetRequest>? Targets) : IRequest<VoucherSummary>;
+    List<VoucherTargetRequest>? Targets,
+    bool IsPublic = false) : IRequest<VoucherSummary>;
 
 /// <summary>The caller's vouchers: the platform's for an administrator, their own for a seller. Newest first.</summary>
 public record GetMyVouchersQuery(int Page = 1, int PageSize = 12) : IRequest<PagedResponse<VoucherSummary>>;
@@ -57,7 +58,8 @@ public static class VoucherRules
         v.Amounts.OrderBy(a => a.Currency).Select(a => new VoucherAmountResponse(a.Currency, a.FixedValue, a.MaxDiscount, a.MinSubtotal)).ToList(),
         v.Conditions.OrderBy(c => c.Type).Select(c => new VoucherConditionResponse(c.Type.ToString(), c.Value)).ToList(),
         v.Targets.Select(t => new VoucherTargetResponse(t.Type.ToString(), t.TargetId)).ToList(),
-        v.CreatedAt);
+        v.CreatedAt,
+        v.IsPublic);
 }
 
 public class CreateVoucherCommandValidator : AbstractValidator<CreateVoucherCommand>
@@ -186,6 +188,7 @@ public class VoucherHandlers(IVoucherRepository vouchers, ICurrentUser currentUs
             StartsAt = request.StartsAt?.ToUniversalTime() ?? now,
             EndsAt = request.EndsAt?.ToUniversalTime(),
             Status = VoucherStatus.Active,
+            IsPublic = request.IsPublic,
             TotalLimit = request.TotalLimit,
             PerCustomerLimit = request.PerCustomerLimit,
             CreatedBy = caller,

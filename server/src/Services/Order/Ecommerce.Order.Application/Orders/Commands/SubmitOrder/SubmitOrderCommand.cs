@@ -32,7 +32,8 @@ public record OrderItemResponse(
     string? Sku = null,
     string? OptionSummary = null,
     string? SellerName = null,
-    decimal Discount = 0m
+    decimal Discount = 0m,
+    Guid? SellerId = null   // specs/114: which shop, so checkout can list its public vouchers; null is the shop's own
 );
 
 public record OrderResponse(
