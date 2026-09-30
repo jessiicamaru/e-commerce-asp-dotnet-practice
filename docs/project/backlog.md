@@ -46,7 +46,7 @@ The first audit's #193-#200 are done (see below). A second audit on 2026-09-27, 
 
 | Issue | Title |
 | :-- | :-- |
-| [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217) | A person cannot delete their account or download their data |
+| [#217](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/217) | A person cannot delete their account or download their data - **the download is done** (specs/111, #231); deleting is specs/112 |
 | [#219](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/219) | A voucher cannot be edited |
 | [#220](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/220) | A shopper cannot see which vouchers they could use |
 | [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound |

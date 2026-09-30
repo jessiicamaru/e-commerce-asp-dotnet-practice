@@ -165,6 +165,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [108](../../specs/108-seller-returns/) | A seller's returns | #228 | #215: a seller lists the returns of their own parcels by state at `/shop/returns`, and each sale with one is badged |
 | [109](../../specs/109-catalogue-filters/) | Catalogue filters | #229 | #216: the catalogue filters by a range of the "from" price in the currency being browsed in, and by what is in stock - both indexed, both in the address |
 | [110](../../specs/110-staff-two-factor/) | Staff two-factor sign-in | #230 | #218: staff sign in with a code from an authenticator app (TOTP); staff roles only in a verified session, so every service refuses an unverified one; recovery codes and an administrator's reset |
+| [111](../../specs/111-my-data-export/) | Download my data | #231 | #217 (part 1): a person downloads one file of everything the six services hold about them, with what is withheld and why; every table of every model declared exported, withheld or not personal, and a test per service holds the list to the model |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

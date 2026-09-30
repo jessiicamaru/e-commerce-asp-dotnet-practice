@@ -1,0 +1,38 @@
+info:
+  name: order exports my orders
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/my-data"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answers for order, with every section", function() {
+          expect(res.body.service).to.equal("order");
+          expect(res.body.sections).to.have.all.keys("orders", "returns", "voucherUses", "voucherUseCounts", "vouchers", "payouts");
+          expect(res.body.withheld).to.be.an("array");
+        });
+        test("the orders I placed are in it", function() {
+          expect(res.body.sections.orders.length).to.be.greaterThan(0);
+          var mine = res.body.sections.orders.map(function (o) { return o.id; });
+          expect(mine).to.include(bru.getVar("orderId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/111 (#217). The caller's own, from the token - there is no id in the address to ask about anybody else.

@@ -2,7 +2,10 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
+import { toast } from 'sonner'
 import { Auth } from '@/services/auth'
+import { MyData } from '@/services/my-data'
+import type { MyDataService } from '@/services/my-data/types'
 import type { AccountProfile } from '@/services/auth/types'
 import { refusal } from '@/test/refusal'
 import { renderAsCustomer } from '@/test/render'
@@ -96,5 +99,55 @@ describe('AccountPage (specs/064)', () => {
     await user.click(screen.getByRole('button', { name: label('changePassword') }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Try again in 4 minutes.')
+  })
+
+  describe('download my data (specs/111)', () => {
+    /** What the browser was handed to save: the file's name and its parsed contents. */
+    const saved = () => {
+      const blobs: Blob[] = []
+      vi.stubGlobal('URL', { ...URL, createObjectURL: (blob: Blob) => (blobs.push(blob), 'blob:x'), revokeObjectURL: () => {} })
+      const names: string[] = []
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+        names.push(this.download)
+      })
+      return { names, file: async () => JSON.parse(await blobs[0].text()) }
+    }
+    const answer = (service: MyDataService) =>
+      Promise.resolve({ service, exportedAt: '2026-10-01T00:00:00Z', sections: { rows: [{ from: service }] }, withheld: [] })
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('asks all six services and saves one file with me and every answer in it', async () => {
+      const asked = vi.spyOn(MyData, 'of').mockImplementation(answer)
+      const done = vi.spyOn(toast, 'success').mockReturnValue('t')
+      const { names, file } = saved()
+      const user = userEvent.setup()
+      renderAsCustomer(<AccountPage />, '/account')
+
+      await user.click(await screen.findByRole('button', { name: label('myDataDownload') }))
+
+      await waitFor(() => expect(done).toHaveBeenCalledWith(label('myDataDone')))
+      expect(asked.mock.calls.map(([service]) => service).sort()).toEqual(['activity', 'cart', 'catalog', 'identity', 'order', 'payment'])
+      expect(names).toHaveLength(1)
+      expect(names[0]).toMatch(/^my-data-\d{4}-\d{2}-\d{2}\.json$/)
+      const contents = await file()
+      expect(contents.person).toEqual({ id: 'u1', email: 'a@b.test' })
+      expect(contents.services.order.sections.rows).toEqual([{ from: 'order' }])
+    })
+
+    it('still saves what answered, marks the rest and says which part is missing', async () => {
+      vi.spyOn(MyData, 'of').mockImplementation((service) => (service === 'payment' ? Promise.reject(refusal(503, 'down')) : answer(service)))
+      const warned = vi.spyOn(toast, 'warning').mockReturnValue('t')
+      const { file } = saved()
+      const user = userEvent.setup()
+      renderAsCustomer(<AccountPage />, '/account')
+
+      await user.click(await screen.findByRole('button', { name: label('myDataDownload') }))
+
+      await waitFor(() => expect(warned).toHaveBeenCalled())
+      expect(warned.mock.calls[0][0]).toContain(i18n.t('auth:account.myDataServices.payment'))
+      const contents = await file()
+      expect(contents.services.payment).toEqual({ unavailable: true })
+      expect(contents.services.identity.service).toBe('identity')
+    })
   })
 })

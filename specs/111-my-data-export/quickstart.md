@@ -13,7 +13,7 @@ Expected in each of the six services:
 - the sections test: every exported table is a section;
 - the two-people test: each export holds its owner's rows and none of the other's.
 
-## Scenario 2 - Through the gateway (Bruno `auth/` and `security-checks/`)
+## Scenario 2 - Through the gateway (Bruno `my-data/` and `security-checks/`)
 
 - The customer's six exports each answer 200 with `service`, `sections` and `withheld`.
 - The Identity export's `withheld` names `refresh_tokens`, and nothing in it contains `passwordHash`.

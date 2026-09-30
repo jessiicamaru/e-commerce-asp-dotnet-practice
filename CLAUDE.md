@@ -73,7 +73,7 @@ ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-
 
 `verify-saga.sh`, `verify-auth.sh` and Bruno each create a real product on every run, and **since specs/073
 (#118) each removes what it made**: the scripts in a `trap ... EXIT` (a failed run cleans up too, and keeps
-its exit status), Bruno in a last `teardown` folder (`seq: 17`, after `seller` at 16 - a folder without an
+its exit status), Bruno in a last `teardown` folder (`seq: 18`, after `seller` at 17 and `my-data` at 16 - a folder without an
 `info:` seq runs last, which is how `seller` used to). Before that there were 97 of them against 14 cameras.
 For what older runs left, the cleaner **keeps what `cameras.json` names and
 deletes the rest**, which is the safe way round - a keep list cannot miss a new kind of debris, a
@@ -639,6 +639,16 @@ as any admin exists. Self-registration always grants `Customer`.
 person per thing (partial unique index), `/admin/reports` for staff, most reported first. ⚠️ **Acting is the existing
 hide or take-down**, which closes the thing's reports in its own stage callback (`ContentReports.CloseAsync`) and tells
 each reporter - a new way to hide content must call it too, or its reports stay open. Nothing auto-hides.
+
+**A person downloads what the shop holds about them** (specs/111, #217): "Download my data" on `/account` asks six
+services - `/api/auth/me/data`, `/api/products/my-data`, `/api/orders/my-data`, `/api/cart/my-data`,
+`/api/payments/my-data`, `/api/notifications/my-data`, each the caller's own from the token - and the storefront writes
+one file, a service that did not answer marked `{ unavailable: true }` and named. ⚠️ **Every table of every model is
+declared** in `<Service>PersonalData.Inventory` (`Ecommerce.Shared.PersonalData`): exported into a section, withheld with
+a reason the person reads, or not personal - a new table fails that service's `MyDataTests` until it is declared, and
+account deletion (specs/112) reads the same list. Readers select fields by name, never entities: no password hash, TOTP
+secret, email data, full account number, staff identity or audit snapshot. A seller's sales are not in it - each is
+another person's order. [docs/features/personal-data.md](docs/features/personal-data.md).
 
 **A lock is decided with the person's history in view** (specs/100, #198): `GET /api/audit/people/{id}` (Staff) -
 Moderation entries whose `AboutUserId` is that person, the category fixed in code, reasons without snapshots. ⚠️ An

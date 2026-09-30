@@ -1,0 +1,11 @@
+info:
+  name: my-data
+  type: folder
+  seq: 16
+
+request:
+  auth: inherit
+
+docs: |-
+  What the shop holds about the customer (specs/111, #217) - one request per service, each the caller's own, as the
+  storefront's "Download my data" asks them. Late in the run, so the customer by now has orders, a payment and notices.

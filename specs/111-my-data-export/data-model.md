@@ -37,7 +37,8 @@
 | `orders`, `order_items` | exported | `orders`, with the lines and the frozen delivery copy |
 | `order_shipments` | exported | `orders[].parcels` for the buyer; a seller's sales withheld |
 | `parcel_returns` | exported | `returns` |
-| `voucher_redemptions`, `voucher_customer_uses` | exported | `voucherUses` |
+| `voucher_redemptions` | exported | `voucherUses` (each use: order, code, amount, released or not) |
+| `voucher_customer_uses` | exported | `voucherUseCounts` (uses per voucher) - its own section, since a count and a use are not the same shape (decided while building) |
 | `vouchers` | exported | `vouchers` (a seller's own) |
 | `payouts` | exported | `payouts` (a seller's own) |
 | `delivery_options`, `delivery_option_prices`, `carriers`, voucher conditions/targets/amounts | not personal | |

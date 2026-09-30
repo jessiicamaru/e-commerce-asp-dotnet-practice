@@ -51,7 +51,9 @@ be forgotten. The storefront composes one JSON download from the six answers.
 | **IV. Identity Comes From the Token** | **Pass.** No route takes a person's id; each filters by `ICurrentUser.Id`. |
 | **V. Evidence Over Assumption** | **Planned.** Inventory tests hold the declaration to each model, two-people tests run against PostgreSQL, plus mutations and Bruno. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): unchanged - I, II and IV pass as designed (six controllers named
+`MyDataController`, each on its service's existing route prefix; no new gateway route, the catch-alls carry them); III
+not applicable; V met - see the evidence in `tasks.md`.
 
 ## Project Structure
 
@@ -72,7 +74,7 @@ server/src/BuildingBlocks/Ecommerce.Shared/PersonalData/          (new)
 server/src/Services/<Service>/…Application/MyData/                (new, six services)
 server/tests/Ecommerce.<Service>.Tests/MyDataTests.cs              (new, six)
 client/src/utils/account/my-data.ts, pages/account
-bruno/auth/, bruno/security-checks/
+bruno/my-data/ (seq 16; seller 17, teardown 18), bruno/security-checks/
 ```
 
 ## Complexity Tracking

@@ -1,0 +1,36 @@
+info:
+  name: catalog exports my reviews and saved products
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/my-data"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answers for catalog, with every section", function() {
+          expect(res.body.service).to.equal("catalog");
+          expect(res.body.sections).to.have.all.keys("reviews", "questions", "savedProducts", "reports", "reviewEligibility", "shop", "products");
+          expect(res.body.withheld).to.be.an("array");
+        });
+        test("names product_viewers as withheld", function() {
+          expect(res.body.withheld.map(function (w) { return w.table; })).to.include("product_viewers");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/111 (#217). The caller's own, from the token - there is no id in the address to ask about anybody else.

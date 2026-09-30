@@ -1,0 +1,43 @@
+info:
+  name: identity exports my account
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/auth/me/data"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("answers for identity, with every section", function() {
+          expect(res.body.service).to.equal("identity");
+          expect(res.body.sections).to.have.all.keys("profile", "addresses", "shop", "payoutAccount", "shopApplications", "emails");
+          expect(res.body.withheld).to.be.an("array");
+        });
+        test("keeps the session secrets back, and says so", function() {
+          expect(res.body.withheld.map(function (w) { return w.table; })).to.include("refresh_tokens");
+          var text = JSON.stringify(res.body);
+          expect(text).to.not.contain("passwordHash");
+          expect(text).to.not.contain("twoFactorSecret");
+        });
+        test("my profile is mine", function() {
+          expect(res.body.sections.profile).to.have.length(1);
+          expect(res.body.sections.addresses.length).to.be.greaterThan(0);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/111 (#217). The caller's own, from the token - there is no id in the address to ask about anybody else.

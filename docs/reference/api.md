@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `027bc98`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `1732c6b2`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**192 endpoints** across 7 services.
+**198 endpoints** across 7 services.
 
-## Identity (54)
+## Identity (55)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -23,6 +23,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/auth/logout` | anyone | Ends the session: the refresh token is deleted server-side and the cookie is cleared. Anonymous on purpose - an expired access token must not stop someone signing out. Always 204. |
 | `GET` | `/api/auth/me` | signed in | The caller's own details (specs/064) - from the token, never from the request. |
 | `PUT` | `/api/auth/me` | signed in | Changes the caller's own name and phone (specs/064). The email is not changed here. |
+| `GET` | `/api/auth/me/data` | signed in | Everything Identity holds about the caller, and what it withholds and why (#217, specs/111). |
 | `PUT` | `/api/auth/me/password` | signed in | Changes the caller's own password (specs/064): 204, or 400 when the current one is wrong. Every other session ends; this browser's - named by its HttpOnly cookie, never by the body - stays. |
 | `DELETE` | `/api/auth/me/two-factor` | signed in | Turns it off, with the password and a code. 403 for staff, who keep it. |
 | `GET` | `/api/auth/me/two-factor` | signed in | The caller's own second factor (specs/110). |
@@ -65,7 +66,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (63)
+## Catalog (64)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -82,6 +83,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/products/insights/mine` | Seller | The signed-in seller's own products: views, ratings, the most viewed (specs/068). |
 | `GET` | `/api/products/insights/top-viewed` | Admin |  |
 | `GET` | `/api/products/mine` | Seller | The caller's own listings, and only theirs (specs/027). Takes no seller id. |
+| `GET` | `/api/products/my-data` | signed in |  |
 | `GET` | `/api/products/review` | Admin, Moderator | The moderators' queue (Pending, oldest first) or the history of one status. |
 | `GET` | `/api/products/saved` | signed in | The caller's saved products, newest first, as the listing reads them now. |
 | `GET` | `/api/products/saved/ids` | signed in | The ids alone - for drawing a filled heart on a page of cards. |
@@ -133,7 +135,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/shops/{sellerId}/close` | Admin, Moderator |  |
 | `POST` | `/api/shops/{sellerId}/reopen` | Admin, Moderator |  |
 
-## Cart (5)
+## Cart (6)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -142,8 +144,9 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/cart/items` | signed in |  |
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
+| `GET` | `/api/cart/my-data` | signed in |  |
 
-## Order (48)
+## Order (49)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -164,6 +167,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/orders/insights/revenue` | Admin |  |
 | `GET` | `/api/orders/insights/top-buyers` | Admin |  |
 | `GET` | `/api/orders/insights/top-products` | Admin |  |
+| `GET` | `/api/orders/my-data` | signed in |  |
 | `POST` | `/api/orders/payouts` | Admin | Staff: settle everything due to one seller in one currency. 201 with the payout; 409 when nothing is due - including when another administrator has just settled it. |
 | `GET` | `/api/orders/payouts/due` | Admin | Staff: every seller with something due now, per currency. |
 | `GET` | `/api/orders/quote` | signed in | What checking out would cost now - the same parts, computed by the same code, as the order the same choices would place (#38). Places nothing. |
@@ -206,14 +210,15 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/stock/{productId}` | Seller, Admin | Sets stock for one sellable unit; the id is a variant id (specs/020). |
 | `PUT` | `/api/stock/{productId}/low-stock-threshold` | Seller, Admin | A variant's own low-stock line (specs/102): null is the shop default, 0 never tells. Same owners as stock. |
 
-## Payment (2)
+## Payment (3)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
 | `GET` | `/api/payments` | Admin |  |
+| `GET` | `/api/payments/my-data` | signed in |  |
 | `GET` | `/api/payments/{orderId}` | Admin |  |
 
-## Activity (15)
+## Activity (16)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -223,6 +228,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/audit/summary` | Admin | How many entries each category holds in a period. |
 | `GET` | `/api/audit/{id}` | Admin | One entry, with its snapshots and field-level diff. |
 | `GET` | `/api/notifications` | signed in |  |
+| `GET` | `/api/notifications/my-data` | signed in |  |
 | `POST` | `/api/notifications/read-all` | signed in |  |
 | `GET` | `/api/notifications/unread-count` | signed in | The bell's number - polled, so it is kept to one count. |
 | `GET` | `/api/notifications/wording` | anyone | Per language, the keys an administrator reworded and what they say now. Cached for a minute. |
