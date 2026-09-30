@@ -34,6 +34,13 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
+        // Two-factor sign-in (#218, specs/110). No usable key refuses to start - never secrets under a known key.
+        services.AddOptions<TwoFactorOptions>()
+            .Bind(configuration.GetSection(TwoFactorOptions.SectionName))
+            .Validate(o => !o.Problems().Any(), "TwoFactor settings are invalid: TWO_FACTOR_KEY must be 32 random bytes in base64.")
+            .ValidateOnStart();
+        services.AddSingleton<ITwoFactorSecretProtector, TwoFactorSecretProtector>();
+
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IAddressRepository, AddressRepository>();

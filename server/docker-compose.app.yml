@@ -60,6 +60,9 @@ services:
       IDENTITY_DB_PORT: "5432"
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      # Two-factor sign-in (specs/110): the key is required; the administrator's secret is for development and CI.
+      TWO_FACTOR_KEY: ${TWO_FACTOR_KEY:?TWO_FACTOR_KEY is required - see .env.example}
+      ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
       # Feature 011: the address book, served to Order over gRPC on a second port (h2c).
       IDENTITY_GRPC_PORT: "8081"
       # Email (specs/060): to the Mailpit container, never a real inbox. Links in emails open the storefront.
