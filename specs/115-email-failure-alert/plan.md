@@ -32,7 +32,7 @@ shows the failed count from the email log.
 | **IV. Identity Comes From the Token** | **Not applicable.** A background sweep; recipients are the Admin role's holders. |
 | **V. Evidence Over Assumption** | **Planned.** Tests against PostgreSQL including two sweeps at once, mutations. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): unchanged - see `tasks.md`.
 
 ## Project Structure
 

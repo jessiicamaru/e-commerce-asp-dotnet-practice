@@ -250,6 +250,7 @@ would roll back the payout or the decision it announces.
 | `ReportActioned` | each person who reported it | `product` | `/products/{id}` | Staff hide the reported review, question or answer, or take the product down (Catalog, specs/101). Never who decided. |
 | `ReportDismissed` | each person who reported it | `product` | `/products/{id}` | Staff look and leave it as it is (Catalog, specs/101). |
 | `StockRunningLow` | the product's seller | `product` (name and options), `left` | `/shop/products/{id}` | A sale took the variant below its low-stock line (Catalog, from Inventory's `StockRanLowEvent`, specs/102). |
+| `EmailsFailed` | every administrator | `failed` (how many) | `/admin/email-delivery` | Emails failed for good since administrators were last told - at most one an hour (Identity's dispatcher, specs/115). |
 
 The shop's own goods have nobody to tell: no `NewSale`, `SaleCancelled`, `ParcelReceived` or product
 notice goes out for them.
@@ -409,4 +410,5 @@ Mutation checks (specs/078): each of these turns `NotificationWordingTests`, or 
 | [102-low-stock-notice](../../specs/102-low-stock-notice/) | [#209](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/209) | `StockRunningLow` and the `left` placeholder; `LowStockThresholdSet` (#200). |
 | [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | `PartCancelled` notice and audit action (#211). |
 | [105-correct-tracking](../../specs/105-correct-tracking/) | [#225](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/225) | `TrackingCorrected` notice and audit action (#212). |
+| [115-email-failure-alert](../../specs/115-email-failure-alert/) | #235 | `EmailsFailed` and the `failed` placeholder (#222). |
 | [107-shop-closure](../../specs/107-shop-closure/) | #227 | `ShopPaused`/`ShopResumed`/`ShopClosed`/`ShopReopened` audit actions; `ShopClosed`, `ShopReopened` notices (#214). |
