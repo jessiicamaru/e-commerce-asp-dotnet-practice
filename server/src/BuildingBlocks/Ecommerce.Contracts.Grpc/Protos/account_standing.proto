@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option csharp_namespace = "Ecommerce.Contracts.Grpc";
+
+package accountstanding;
+
+// What still keeps a person's account from being deleted (specs/112), asked by Identity before it deletes one. Served
+// by Order from the FORWARDED bearer token: the request is empty on purpose, like CartReading - a field naming the
+// person would let anything on the network ask about anybody.
+service AccountStanding {
+  rpc GetMyStanding (GetMyStandingRequest) returns (AccountStandingReply);
+}
+
+message GetMyStandingRequest {}
+
+message AccountStandingReply {
+  // Zero or more of OpenOrders, OpenReturns, OpenSales, UnpaidEarnings. Empty: nothing is open.
+  repeated string blockers = 1;
+}

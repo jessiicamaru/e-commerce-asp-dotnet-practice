@@ -20,6 +20,10 @@ public static class ActivityPersonalData
     /// </summary>
     public static readonly PersonalDataInventory Inventory = new()
     {
+        Kept = new Dictionary<string, string>
+        {
+            ["activity"] = "The security record of what happened, without your email or the snapshots of your details.",
+        },
         Service = "activity",
         Exported = new Dictionary<string, string> { ["notifications"] = "notifications", ["audit_entries"] = "activity" },
         NotPersonal = ["notification_wording_versions"],

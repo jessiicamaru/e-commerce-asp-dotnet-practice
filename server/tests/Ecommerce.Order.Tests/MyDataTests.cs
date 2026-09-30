@@ -65,6 +65,37 @@ public class MyDataTests(OrderTestFixture fixture)
         Assert.Contains("9012", json);   // where the payout went, as the seller's page shows it
     }
 
+    /// <summary>specs/112: the books stay, without the person - and nobody else's rows move.</summary>
+    [Fact]
+    public async Task A_deleted_account_leaves_its_orders_for_the_books_without_its_name_street_phone_or_words()
+    {
+        var mai = await PersonWithEverythingAsync("Mai");
+        var lan = await PersonWithEverythingAsync("Lan");
+
+        await SendAsync(Guid.Empty, new EraseAccountCommand(mai.Id));
+        await SendAsync(Guid.Empty, new EraseAccountCommand(mai.Id));   // a redelivery changes nothing
+        var export = await SendAsync(mai.Id, new GetMyDataQuery());
+
+        foreach (var section in OrderPersonalData.Inventory.Erased)
+            Assert.Empty(export.Sections[section]);
+        foreach (var section in OrderPersonalData.Inventory.Kept.Keys)
+            Assert.NotEmpty(export.Sections[section]);
+        var json = JsonSerializer.Serialize(export);
+        Assert.Contains(mai.Order.ToString(), json);
+        Assert.DoesNotContain("Mai Street 1", json);
+        Assert.DoesNotContain("\"RecipientName\":\"Mai\"", json);
+        Assert.DoesNotContain("Hanoi", json);
+        Assert.DoesNotContain("Mai returns it", json);
+        Assert.DoesNotContain("\"PaidToHolder\":\"MAI\"", json);
+        Assert.Contains("\"Country\":\"VN\"", json);   // the tax charged depends on it
+        Assert.Contains("\"Status\":\"Disabled\"", json);
+
+        var lanJson = JsonSerializer.Serialize(await SendAsync(lan.Id, new GetMyDataQuery()));
+        Assert.Contains("Lan Street 1", lanJson);
+        Assert.Contains("Lan returns it", lanJson);
+        Assert.Contains("\"PaidToHolder\":\"LAN\"", lanJson);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private static readonly Guid Administrator = Guid.CreateVersion7();
@@ -134,5 +165,12 @@ public class MyDataTests(OrderTestFixture fixture)
         _fixture.CurrentUser.Roles.Add("Customer");
         await using var scope = _fixture.NewScope();
         return await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
+    }
+
+    private async Task SendAsync(Guid caller, IRequest request)
+    {
+        _fixture.CurrentUser.Id = caller;
+        await using var scope = _fixture.NewScope();
+        await scope.ServiceProvider.GetRequiredService<ISender>().Send(request);
     }
 }

@@ -21,6 +21,10 @@ public static class IdentityPersonalData
     /// </summary>
     public static readonly PersonalDataInventory Inventory = new()
     {
+        Kept = new Dictionary<string, string>
+        {
+            ["profile"] = "An empty row under your id, so the orders and payments other services keep for the books still point at something; your name, email, phone and password are gone from it.",
+        },
         Service = "identity",
         Exported = new Dictionary<string, string>
         {

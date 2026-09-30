@@ -20,6 +20,13 @@ public static class CatalogPersonalData
     /// </summary>
     public static readonly PersonalDataInventory Inventory = new()
     {
+        Kept = new Dictionary<string, string>
+        {
+            ["reviews"] = "Other shoppers rely on them; they stay without your name.",
+            ["questions"] = "A seller's answer hangs on each; they stay without your name.",
+            ["products"] = "A seller's listings stay off the shelf, for the orders that name them.",
+            ["shop"] = "A closed shop stays, for the orders that name it.",
+        },
         Service = "catalog",
         Exported = new Dictionary<string, string>
         {

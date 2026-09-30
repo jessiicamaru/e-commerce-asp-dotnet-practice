@@ -99,9 +99,15 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IHos
             problemDetails.Extensions["errors"] = errors;
         }
 
-        // A refusal's facts, for a client to word it itself (specs/049). The handler's own keys win: a
-        // fact named traceId or errors is dropped rather than allowed to hide them.
-        if (exception is ForbiddenException { Facts: var facts })
+        // A refusal's facts, for a client to word it itself (specs/049; a 409's too since specs/112). The
+        // handler's own keys win: a fact named traceId or errors is dropped rather than allowed to hide them.
+        var facts = exception switch
+        {
+            ForbiddenException forbidden => forbidden.Facts,
+            ConflictException conflict => conflict.Facts,
+            _ => null,
+        };
+        if (facts is not null)
         {
             foreach (var (key, value) in facts)
             {
