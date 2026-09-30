@@ -33,7 +33,7 @@ quote's lines gain the seller id so checkout knows which shops to ask about.
 | **IV. Identity Comes From the Token** | **Pass.** The read is anonymous and names no person; the flag is set by the owner from the token. |
 | **V. Evidence Over Assumption** | **Planned.** Tests per filter against PostgreSQL, mutations, Bruno. Recorded in `tasks.md`. |
 
-**Post-design re-check**: to be done once implemented; results go in `tasks.md`.
+**Post-design re-check** (after implementation): unchanged - see `tasks.md`.
 
 ## Project Structure
 
