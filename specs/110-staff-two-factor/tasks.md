@@ -41,7 +41,7 @@ description: "Task list for Staff sign in with a second factor"
 - [x] T015 Mutations (quickstart Scenario 4), each red; every server suite and the client suite
 - [x] T016 Rebuilt containers; Bruno and the e2e run; the post-design Constitution re-check
 - [x] T017 Docs: `totp-two-factor.md` §7, moderation-and-staff, email, CLAUDE.md, guides, backlog, timeline; `generate_reference.py`
-- [ ] T018 Merged as #230, closing #218
+- [x] T018 Merged as #230, closing #218
 
 ## Evidence
 
