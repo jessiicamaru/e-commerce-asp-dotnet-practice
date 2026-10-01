@@ -50,7 +50,6 @@ things hidden, clipped, untranslated or wrong), then #246-#254 (usability).
 
 | Issue | Title |
 | :-- | :-- |
-| [#239](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/239) | Order lines clip their totals in narrow containers |
 | [#240](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/240) | A seller cannot edit what they listed - details, translations, variants |
 | [#241](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/241) | Deleted accounts are listed as Active with actions |
 | [#242](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/242) | The cart badge still counts what was just paid for |
@@ -105,6 +104,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#221](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/221) | The audit log and notifications grow without bound | [#236](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/236) (specs/116) |
 | [#237](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/237) | The seeded administrator is asked for a code nobody enrolled | [#255](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/255) (no spec: a development tool) |
 | [#238](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/238) | The seller sidebar covers the page when the shop name is long | [#256](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/256) (specs/117) |
+| [#239](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/239) | Order lines clip their totals in narrow containers | [#257](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/257) (specs/118) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |

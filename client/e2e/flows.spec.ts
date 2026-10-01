@@ -68,6 +68,13 @@ test.describe.serial('the storefront, end to end', () => {
 
     // The address saved through the API is chosen already; the first delivery option too.
     await expect(page.getByRole('radio', { name: /E2e Customer/ })).toBeChecked()
+
+    // The line's total is whole and inside the summary card - the narrow column once cut it short (specs/118, #239).
+    const lineTotal = page.getByTestId('order-line-total').first()
+    await expect(lineTotal).toBeVisible()
+    const totalBox = (await lineTotal.boundingBox())!
+    const cardBox = (await lineTotal.locator('xpath=ancestor::*[@data-slot="card"][1]').boundingBox())!
+    expect(totalBox.x + totalBox.width, 'the line total stays inside its card').toBeLessThanOrEqual(cardBox.x + cardBox.width)
     await page.getByRole('button', { name: /^Place order/ }).click()
 
     await expect(page).toHaveURL(/\/orders\/[0-9a-f-]{36}$/)

@@ -172,6 +172,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [115](../../specs/115-email-failure-alert/) | Email failure alert | #235 | #222: administrators get one in-app digest an hour when emails fail for good, each failure counted once (also by two sweeps at once) and again after a retry; the Overview shows the failed count |
 | [116](../../specs/116-activity-retention/) | Activity retention | #236 | #221: read notices go 90 days after reading, unread never; the audit log is kept for ever unless an operator sets years, and every trim is recorded in it; batched, safe on several instances, settings checked at start |
 | [117](../../specs/117-seller-sidebar-overflow/) | Seller sidebar | #256 | #238: the seller sidebar keeps to its 15rem column whatever the shop is called - its grids' one column may shrink, so a long name truncates instead of covering the page; the browser flows' seller has a long name and asserts it |
+| [118](../../specs/118-order-lines-narrow/) | Order lines at any width | #257 | #239: order lines are two-column rows - details with quantity × price under them, the total never wrapping - so no amount is clipped at checkout or on a phone; the total's rule is one row |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
