@@ -5,7 +5,7 @@ evidence it was found with (a search of the code, a request against the running 
 acceptance criteria. This page is the summary; the issue is the source of truth - close the issue and
 update this page in the same change.
 
-Last reviewed: 2026-09-24 (after #119-#128 and #132).
+Last reviewed: 2026-10-01 (after the screen review, #237-#254).
 
 ## Deliberately deferred
 
@@ -44,7 +44,30 @@ role and several carriers are left out.
 
 The first audit's #193-#200 are done, and so is the second's #217-#222 (2026-10-01, see below).
 
-Nothing open.
+**From the screen review of 2026-10-01**: every storefront screen (64) captured in a browser against the stack with
+live data, as a customer, a new seller and the administrator, at desktop and phone widths. #237-#245 first (defects:
+things hidden, clipped, untranslated or wrong), then #246-#254 (usability).
+
+| Issue | Title |
+| :-- | :-- |
+| [#237](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/237) | The seeded administrator is asked for a code nobody enrolled |
+| [#238](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/238) | The seller sidebar covers the page when the shop name is long |
+| [#239](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/239) | Order lines clip their totals in narrow containers |
+| [#240](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/240) | A seller cannot edit what they listed - details, translations, variants |
+| [#241](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/241) | Deleted accounts are listed as Active with actions |
+| [#242](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/242) | The cart badge still counts what was just paid for |
+| [#243](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/243) | The not-found page is one untranslated line |
+| [#244](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/244) | Staff screens show raw action names and an out-of-date status page |
+| [#245](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/245) | The catalogue on a phone is one long column |
+| [#246](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/246) | The admin console's menu is flat and shows nothing waiting |
+| [#247](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/247) | A seller's home does not say what needs them |
+| [#248](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/248) | Orders are identified only by a timestamp |
+| [#249](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/249) | Long staff lists cannot be searched or filtered |
+| [#250](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/250) | Notice wording is one 7,000px page |
+| [#251](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/251) | Product photographs are letterboxed in square frames |
+| [#252](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/252) | A signed-out shopper is not offered Add to cart |
+| [#253](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/253) | Checkout says nothing of payment or delivery time |
+| [#254](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/254) | The account menu differs between pages and devices |
 
 
 ## Priority 3 - technical debt

@@ -27,7 +27,8 @@ test.describe.serial('the storefront, end to end', () => {
     api = new Api(context)
 
     const categoryId = await api.category()
-    seller = await api.seller('Seller', 'E2e Lens House')
+    // A long shop name on purpose: it once widened the seller sidebar over every /shop page (specs/117, #238).
+    seller = await api.seller('Seller', 'E2e Lens House for Mirrorless and Film Cameras')
     camera = await api.list(seller.token, categoryId, 'camera')
     await api.approve(camera.productId)
     await api.stock(seller.token, camera, 5)
@@ -80,6 +81,14 @@ test.describe.serial('the storefront, end to end', () => {
     await page.goto('/shop/sales')
     await page.getByRole('link', { name: /^Placed / }).first().click()
     await expect(page).toHaveURL(new RegExp(`/shop/sales/${orderId}$`))
+
+    // Nothing in the sidebar reaches into the page, however long the shop's name (specs/117, #238).
+    await expect(page.getByTestId('seller-sidebar')).toContainText('E2e Lens House')
+    const sidebarRight = await page
+      .getByTestId('seller-sidebar')
+      .evaluate((aside) => Math.max(...[...aside.children].map((child) => child.getBoundingClientRect().right)))
+    const pageLeft = (await page.getByTestId('seller-page').boundingBox())!.x
+    expect(sidebarRight, 'the seller sidebar stays left of the page').toBeLessThanOrEqual(pageLeft)
 
     await page.getByRole('button', { name: 'Start preparing' }).click()
     await expect(page.getByText('Marked as being prepared.')).toBeVisible()
