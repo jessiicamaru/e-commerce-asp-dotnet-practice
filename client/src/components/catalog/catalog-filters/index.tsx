@@ -107,7 +107,7 @@ export function CatalogFilters({
           type="number"
           min={0}
           inputMode="decimal"
-          className="bg-card h-9 w-36 rounded-xl"
+          className="bg-card h-9 w-28 rounded-xl sm:w-36"
           aria-label={t('price.min')}
           placeholder={t('price.min')}
           value={min}
@@ -118,7 +118,7 @@ export function CatalogFilters({
           type="number"
           min={0}
           inputMode="decimal"
-          className="bg-card h-9 w-36 rounded-xl"
+          className="bg-card h-9 w-28 rounded-xl sm:w-36"
           aria-label={t('price.max')}
           placeholder={t('price.max')}
           value={max}

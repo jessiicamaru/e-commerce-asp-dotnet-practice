@@ -134,4 +134,26 @@ test.describe.serial('the storefront, end to end', () => {
     // In the list of reviews, not only in the form it was typed into.
     await expect(page.getByRole('listitem').filter({ hasText: 'Sharp, quiet and it arrived well packed.' })).toBeVisible()
   })
+
+  /**
+   * The catalogue on a phone (specs/122, #245): two products to a row, the first within 1.3 screens, nothing scrolling
+   * sideways. Last, so the flows' two approved products are on the shelf - in CI the catalogue is otherwise empty. It
+   * was one column, 6,450px for twelve products, the first ~1,350px down (807px now; the old hero alone
+   * still put it at 1,355px).
+   */
+  test('a shopper on a phone sees the catalogue two to a row', async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+    const page = await context.newPage()
+    await page.addInitScript(() => localStorage.setItem('language', 'en'))
+    await page.goto('/')
+
+    const cards = page.getByTestId('catalogue-grid').getByRole('listitem')
+    await expect(cards.nth(1)).toBeVisible()
+    const [first, second] = [(await cards.nth(0).boundingBox())!, (await cards.nth(1).boundingBox())!]
+    expect(second.y, 'the second product shares the first row').toBeCloseTo(first.y, 0)
+    const top = await cards.nth(0).evaluate((card) => card.getBoundingClientRect().top + window.scrollY)
+    expect(top, 'the first product starts within 1.3 screens').toBeLessThan(1100)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), 'nothing scrolls sideways').toBeLessThanOrEqual(390)
+    await context.close()
+  })
 })

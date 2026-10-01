@@ -63,7 +63,7 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
           {product.priceVaries && (
             <span className="text-muted-foreground text-xs">{t('product.from')}</span>
           )}
-          <Price value={product.price} currency={product.currency} className="text-lg font-semibold" />
+          <Price value={product.price} currency={product.currency} className="text-base font-semibold sm:text-lg" />
         </div>
       </div>
     </Link>

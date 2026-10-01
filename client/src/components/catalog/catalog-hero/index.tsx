@@ -22,6 +22,10 @@ const CHIPS = 6
  * Shown only on the unfiltered landing view: once somebody has searched, the results are what they
  * came for and a hero is in the way.
  * </p>
+ * <p>
+ * Compact on a phone (specs/122, #245): no featured photograph - it repeats a product shown just below and was most of
+ * the 1,350px before the first one - a smaller heading, and the categories in one scrolling row.
+ * </p>
  */
 export function CatalogHero({
   productCount,
@@ -37,12 +41,12 @@ export function CatalogHero({
   const { t } = useTranslation('catalog')
 
   return (
-    <section className="mb-10 grid items-start gap-4 lg:grid-cols-3">
-      <div className="from-primary/30 via-primary/10 relative grid gap-6 overflow-hidden rounded-[2rem] bg-linear-to-br to-transparent p-8 sm:grid-cols-[1.2fr_1fr] sm:items-center lg:col-span-2">
+    <section className="mb-6 grid items-start gap-4 sm:mb-10 lg:grid-cols-3">
+      <div className="from-primary/30 via-primary/10 relative grid gap-6 overflow-hidden rounded-[2rem] bg-linear-to-br to-transparent p-6 sm:grid-cols-[1.2fr_1fr] sm:items-center sm:p-8 lg:col-span-2">
         <div className="flex flex-col gap-6">
           <div>
             <p className="text-muted-foreground text-sm font-medium">{t('hero.eyebrow')}</p>
-            <h1 className="mt-2 text-4xl leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl">
+            <h1 className="mt-2 text-3xl leading-[1.05] font-bold tracking-tight text-balance sm:text-5xl">
               {t('hero.heading')}
             </h1>
           </div>
@@ -63,7 +67,7 @@ export function CatalogHero({
         {/* The featured camera sits IN the panel rather than beside it: a hero with a hole where a
             product should be was the first thing wrong with this, and only looking showed it. */}
         {featured && (
-          <Link to={`/products/${featured.id}`} className="group block">
+          <Link to={`/products/${featured.id}`} className="group hidden sm:block">
             <div className="transition-transform group-hover:-rotate-1 group-hover:scale-[1.02]">
               <ProductImage product={featured} large />
             </div>
@@ -73,15 +77,15 @@ export function CatalogHero({
         )}
       </div>
 
-      <div className="bg-card ring-border/60 rounded-[2rem] p-6 ring-1">
+      <div className="bg-card ring-border/60 min-w-0 rounded-[2rem] p-4 ring-1 sm:p-6">
         <h2 className="mb-3 text-sm font-semibold">{t('hero.categories')}</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
           {categories.slice(0, CHIPS).map((category) => (
             <button
               key={category.id}
               type="button"
               onClick={() => onCategory(category.id)}
-              className="bg-secondary hover:bg-primary hover:text-primary-foreground rounded-full px-3 py-1.5 text-sm transition-colors"
+              className="bg-secondary hover:bg-primary hover:text-primary-foreground shrink-0 rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors"
             >
               {category.name}
             </button>
