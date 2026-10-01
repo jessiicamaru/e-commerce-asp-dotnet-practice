@@ -17,9 +17,10 @@ namespace Ecommerce.WebApi.Controllers;
 public class UsersController : ApiControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
+    public async Task<IActionResult> Search(
+        [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 12, [FromQuery] bool includeDeleted = false)
     {
-        return Ok(await Mediator.Send(new GetUsersQuery(search, page, pageSize)));
+        return Ok(await Mediator.Send(new GetUsersQuery(search, page, pageSize, includeDeleted)));
     }
 
     /// <summary>Who these ids are - for the insights' top buyers (specs/047). Administrators only.</summary>

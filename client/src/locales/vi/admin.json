@@ -272,7 +272,8 @@
       "active": "Đang hoạt động",
       "locked": "Bị khoá đến {{until}}",
       "banned": "Bị cấm",
-      "bannedShopClosed": "Bị cấm · cửa hàng đã đóng"
+      "bannedShopClosed": "Bị cấm · cửa hàng đã đóng",
+      "deleted": "Đã xoá {{date}}"
     },
     "actions": "Thao tác với {{email}}",
     "grant": "Cấp quyền kiểm duyệt",
@@ -314,7 +315,9 @@
     "resetTwoFactorTitle": "Đặt lại xác thực hai bước cho {{email}}?",
     "resetTwoFactorBody": "Dành cho trường hợp mất điện thoại và hết mã khôi phục. Mọi phiên đăng nhập của họ sẽ kết thúc, họ nhận email ngay, và phải thiết lập lại ứng dụng xác thực ở lần đăng nhập tới.",
     "resetTwoFactorConfirm": "Đặt lại",
-    "twoFactorReset": "Đã đặt lại xác thực hai bước cho {{email}}."
+    "twoFactorReset": "Đã đặt lại xác thực hai bước cho {{email}}.",
+    "showDeleted": "Hiện tài khoản đã xoá",
+    "deletedName": "Tài khoản đã xoá"
   },
   "roles": {
     "Admin": "Quản trị viên",

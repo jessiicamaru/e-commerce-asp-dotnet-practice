@@ -13,6 +13,8 @@ export interface Account {
   banReason: string | null
   /** Whether there is a second factor to reset (specs/110). */
   twoFactorEnabled?: boolean
+  /** When the person deleted their account (specs/112): shown as Deleted, offered no action (specs/123). */
+  deletedAt?: string | null
 }
 
 export interface AccountPage {

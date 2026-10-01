@@ -44,6 +44,36 @@ beforeEach(async () => {
   vi.spyOn(Accounts, 'history').mockResolvedValue(history())
 })
 
+describe('AdminUsersPage: deleted accounts (specs/123, #241)', () => {
+  const gone = person({ id: 'u-gone', email: 'deleted-u-gone@deleted.invalid', firstName: '', lastName: '', roles: [], deletedAt: '2026-09-30T08:00:00Z' })
+
+  it('leaves deleted accounts out until asked, and asks again with them', async () => {
+    const search = vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
+    const user = userEvent.setup()
+    renderPage(renderAsAdmin)
+    await screen.findByText('lan@example.test')
+    expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, false)
+
+    await user.click(screen.getByRole('checkbox', { name: 'Show deleted accounts' }))
+
+    await waitFor(() => expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, true))
+  })
+
+  it('reads Deleted with its date and offers nothing but its history', async () => {
+    vi.spyOn(Accounts, 'search').mockResolvedValue(page(gone))
+    const user = userEvent.setup()
+    renderPage(renderAsAdmin, '/admin/users?deleted=1')
+
+    const row = (await screen.findByText('deleted-u-gone@deleted.invalid')).closest('tr')!
+    expect(within(row).getByText('Deleted account')).toBeInTheDocument()
+    expect(within(row).getByText(/^Deleted \d/)).toBeInTheDocument()
+    expect(within(row).queryByText('Active')).not.toBeInTheDocument()
+
+    const menu = await openActions(user, gone.email)
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['History…'])
+  })
+})
+
 describe('AdminUsersPage (specs/043)', () => {
   it('searches by what was typed, from the first page', async () => {
     const search = vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
@@ -53,7 +83,7 @@ describe('AdminUsersPage (specs/043)', () => {
 
     await user.type(screen.getByRole('textbox', { name: 'Email or name' }), 'lan@{Enter}')
 
-    await waitFor(() => expect(search).toHaveBeenLastCalledWith('lan@', 1, PAGE_SIZE))
+    await waitFor(() => expect(search).toHaveBeenLastCalledWith('lan@', 1, PAGE_SIZE, false))
   })
 
   it('shows who is locked, until when, and who is banned', async () => {

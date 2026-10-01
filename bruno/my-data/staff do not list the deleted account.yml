@@ -1,0 +1,33 @@
+info:
+  name: staff do not list the deleted account
+  type: http
+  seq: 14
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/users?search=deleted-"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("no deleted account is listed by default", function() {
+          var id = bru.getVar("leaverId");
+          expect(res.body.items.filter(function(u) { return u.id === id; })).to.have.length(0);
+          res.body.items.forEach(function(u) { expect(u.deletedAt).to.equal(null); });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Deleted accounts (specs/112) are left out of the staff list unless asked for (specs/123).

@@ -272,7 +272,8 @@
       "active": "Active",
       "locked": "Locked until {{until}}",
       "banned": "Banned",
-      "bannedShopClosed": "Banned · shop closed"
+      "bannedShopClosed": "Banned · shop closed",
+      "deleted": "Deleted {{date}}"
     },
     "actions": "Actions for {{email}}",
     "grant": "Make moderator",
@@ -314,7 +315,9 @@
     "resetTwoFactorTitle": "Reset two-factor sign-in for {{email}}?",
     "resetTwoFactorBody": "For a lost phone with no recovery code left. Every session of theirs ends, they are emailed at once, and they set up an authenticator again at their next sign-in.",
     "resetTwoFactorConfirm": "Reset",
-    "twoFactorReset": "Two-factor sign-in reset for {{email}}."
+    "twoFactorReset": "Two-factor sign-in reset for {{email}}.",
+    "showDeleted": "Show deleted accounts",
+    "deletedName": "Deleted account"
   },
   "roles": {
     "Admin": "Administrator",

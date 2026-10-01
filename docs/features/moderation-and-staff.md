@@ -156,6 +156,12 @@ has run out is shown as no lock. The row menu offers each person only the action
 and never an action on one's own account or on an administrator's; the server refuses the same things
 on its own.
 
+**A deleted account** (specs/112) is an emptied row the books still point at. Since specs/123 (#241) the list leaves it
+out unless staff tick "Show deleted accounts" (`includeDeleted=true`); then it reads **Deleted** with its date
+(`deletedAt` on the response) and offers only its history. Every moderation command on it - lock, unlock, ban, lift,
+grant, revoke - is **409 `AccountDeleted`** from the one lookup they share, and writes nothing. It was listed as Active,
+with the menu to lock and ban somebody who no longer exists.
+
 **Shoppers report what should not be on the shop** (specs/101, #199). Anybody signed in reports a
 visible review, question or product that is not their own, with a reason from a short list (`POST
 /api/reports`); one open report per person per thing is a partial unique index. `/admin/reports` (Staff,
@@ -252,7 +258,7 @@ Full list in [api.md](../reference/api.md).
 
 | Method | Path | Who |
 | :-- | :-- | :-- |
-| `GET` | `/api/users?search=&page=&pageSize=` | Admin, Moderator |
+| `GET` | `/api/users?search=&page=&pageSize=&includeDeleted=` | Admin, Moderator - deleted accounts only when asked (specs/123) |
 | `POST` | `/api/users/{id}/lock` (`days`, `reason`) | Admin, Moderator |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |
 | `POST` | `/api/users/{id}/ban` (`reason`) | Admin |

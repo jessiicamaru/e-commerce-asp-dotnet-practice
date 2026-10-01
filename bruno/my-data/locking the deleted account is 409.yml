@@ -1,0 +1,38 @@
+info:
+  name: locking the deleted account is 409
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/users/{{leaverId}}/lock"
+  body:
+    type: json
+    data: |-
+      {
+        "days": 1,
+        "reason": "Bruno checks a deleted account"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+        test("says the account was deleted", function() {
+          expect(res.body.code).to.equal("AccountDeleted");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Nobody is left to lock: every moderation command on a deleted account is 409 AccountDeleted and writes nothing (specs/123).

@@ -89,9 +89,11 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
         _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
     public async Task<(List<User> Items, int TotalCount)> SearchAsync(
-        string? search, int page, int pageSize, CancellationToken cancellationToken = default)
+        string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default)
     {
         var query = _context.Users.AsNoTracking();
+        if (!includeDeleted)
+            query = query.Where(u => u.DeletedAt == null);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
