@@ -12,18 +12,26 @@ description: "Task list for Notice wording is edited like the emails"
 
 ## Phase 1: Layout (US1)
 
-- [ ] T001 Kind list with names, edited mark and search; language switch; the chosen kind's editors
-- [ ] T002 The choice in the address
-- [ ] T003 Names for every kind in en and vi, held by a test
-- [ ] T004 Vitest
+- [x] T001 Kind list with names, edited mark and search; language switch; the chosen kind's editors
+- [x] T002 The choice in the address
+- [x] T003 Names for every kind in en and vi, held by a test
+- [x] T004 Vitest
 
 ## Phase 2: Verification and docs
 
-- [ ] T005 Mutations, each red
-- [ ] T006 Checked in a browser
-- [ ] T007 Timeline, backlog
-- [ ] T008 Merged, closes #250
+- [x] T005 Mutations, each red
+- [x] T006 Checked in a browser
+- [x] T007 Timeline, backlog
+- [x] T008 Merged, closes #250 - #267
 
 ## Evidence
 
-(Filled in when the work is verified.)
+**2026-10-01**
+
+- **Vitest** (9): the chosen kind in the chosen language, plural forms, the language switch; the address opens a kind
+  in a language; search by name; every kind in `notification-kinds.json` named in en and vi; the editor's tests.
+- **Mutations, each red**: every kind drawn at once; the address ignored; search by code only; a Vietnamese name
+  missing.
+- **Browser** as the administrator: `/admin/notifications?kind=AccountBanned&lang=vi` is 1,072px tall, from 7,028px.
+- **Client**: oxlint clean, type-check clean, Vitest 655/655, build green.
+- **Post-design Constitution re-check**: unchanged.
