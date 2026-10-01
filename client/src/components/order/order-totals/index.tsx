@@ -9,13 +9,18 @@ import type { Totals } from '@/services/order/types'
  *
  * Shown in the **order's own** currency (specs/022), which on a finished order is the one it was
  * placed in - not whatever the reader happens to be browsing in now.
+ *
+ * <p>
+ * At the right of whatever holds it, under the line totals; the total is one row spanning both columns, so its rule
+ * runs unbroken under the label and the amount - on the two cells it was cut by the column gap (specs/118, #239).
+ * </p>
  */
 export function OrderTotals({ totals, shippingName }: { totals: Totals; shippingName?: string }) {
   const { t } = useTranslation('checkout')
   const rate = totals.taxRate === null ? '' : ` (${+(totals.taxRate * 100).toFixed(2)}%)`
 
   return (
-    <dl className="my-4 grid max-w-sm grid-cols-[1fr_auto] gap-x-8 gap-y-1 text-sm">
+    <dl className="my-4 ml-auto grid w-full max-w-sm grid-cols-[1fr_auto] gap-x-8 gap-y-1 text-sm">
       {totals.subtotal !== null && (
         <>
           <dt>{t('totals.items')}</dt>
@@ -68,10 +73,12 @@ export function OrderTotals({ totals, shippingName }: { totals: Totals; shipping
               </dd>
             </>
           )}
-      <dt className="border-t pt-1 font-semibold">{t('totals.total')}</dt>
-      <dd className="border-t pt-1 text-right font-semibold">
-        <Price value={totals.totalAmount} currency={totals.currency} />
-      </dd>
+      <div className="col-span-2 grid grid-cols-subgrid border-t pt-1 font-semibold" data-testid="order-total-row">
+        <dt>{t('totals.total')}</dt>
+        <dd className="text-right">
+          <Price value={totals.totalAmount} currency={totals.currency} />
+        </dd>
+      </div>
     </dl>
   )
 }
