@@ -183,6 +183,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [126](../../specs/126-signed-out-add-to-cart/) | Add to cart signed out | #265 | #252: a signed-out shopper sees Add to cart; it opens sign-in saying why and comes back to the same variant; a SKU is shown only once a variant is chosen (no preselection - specs/020 D10 kept) |
 | [127](../../specs/127-account-menu/) | One account menu | #266 | #254: one ordered list of account destinations drives the avatar menu, the phone menu and the account page, which each missed something before; account pages start at the same edge as the rest |
 | [128](../../specs/128-notice-wording-layout/) | Notice wording layout | #267 | #250: notice wording is edited like the emails - kinds by readable name, a language switch, one kind's sentences, the choice in the address - 1,072px instead of 7,028px |
+| [129](../../specs/129-admin-menu/) | Admin menu | #269 | #246: the admin sidebar is grouped, counts what waits in five queues (by role, under their own query keys), and an order keeps the list it was opened from lit and leads back to it |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
