@@ -171,6 +171,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [114](../../specs/114-public-vouchers/) | Public vouchers | #234 | #220: an owner shows a voucher to shoppers or keeps it code only; the live public ones, priced in the shopper's currency and never with a count, are listed on the shop page, product pages and at checkout, where "Use" tries the code |
 | [115](../../specs/115-email-failure-alert/) | Email failure alert | #235 | #222: administrators get one in-app digest an hour when emails fail for good, each failure counted once (also by two sweeps at once) and again after a retry; the Overview shows the failed count |
 | [116](../../specs/116-activity-retention/) | Activity retention | #236 | #221: read notices go 90 days after reading, unread never; the audit log is kept for ever unless an operator sets years, and every trim is recorded in it; batched, safe on several instances, settings checked at start |
+| [117](../../specs/117-seller-sidebar-overflow/) | Seller sidebar | #256 | #238: the seller sidebar keeps to its 15rem column whatever the shop is called - its grids' one column may shrink, so a long name truncates instead of covering the page; the browser flows' seller has a long name and asserts it |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

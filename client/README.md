@@ -41,7 +41,7 @@ PascalCase for components, camelCase for everything else.
 | :-- | :-- | :-- |
 | `pages/` | one folder per page | Pages compose components; they hold almost no markup of their own |
 | `components/` | everything split out of a page | Grouped by the thing it is about: `product/`, `cart/`, `order/`, `checkout/`, `address/`, `auth/`, `layout/`, `shared/`, plus `ui/` from shadcn |
-| `layouts/` | the frames pages sit in | `main-layout` is the top bar, the page and the toaster; `seller-layout` is the sidebar every `/shop` page sits inside |
+| `layouts/` | the frames pages sit in | `main-layout` is the top bar, the page and the toaster; `seller-layout` is the sidebar every `/shop` page sits inside - its grids are `grid-cols-[minmax(0,1fr)]`, because an `auto` column is as wide as a truncated name's whole text (specs/117) |
 | `routes/` | which address shows which page | Nothing else decides that |
 | `services/` | one class per entity, calling the API through axios | `Product.list()`, `Cart.addItem()`. **Static methods**: there is nothing per-instance to hold |
 | `hooks/` | the TanStack Query hooks | `useProducts`, `useCart`, `usePlaceOrder`. A page never calls a service directly |

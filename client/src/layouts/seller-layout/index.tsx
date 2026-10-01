@@ -51,15 +51,20 @@ export function SellerLayout() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
-      <aside className="grid content-start gap-4 lg:sticky lg:top-28 lg:self-start">
-        <div className="bg-card ring-border/60 grid gap-3 rounded-3xl p-4 ring-1">
+      {/* Each grid here has one column that may shrink (minmax(0,1fr)): an `auto` column is as wide as its content's
+          min-content, and a truncated shop name's min-content is the whole name - so a long name widened the card past
+          the 15rem column and the sidebar covered the page (specs/117, #238). */}
+      <aside data-testid="seller-sidebar" className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-4 lg:sticky lg:top-28 lg:self-start">
+        <div className="bg-card ring-border/60 grid grid-cols-[minmax(0,1fr)] gap-3 rounded-3xl p-4 ring-1">
           <div className="flex items-center gap-3">
             <span className="bg-primary text-primary-foreground grid size-10 shrink-0 place-items-center rounded-2xl">
               <StoreIcon className="size-5" />
             </span>
             <div className="min-w-0">
               <p className="text-muted-foreground text-xs">{t('title')}</p>
-              <p className="truncate font-semibold">{shop.data?.shopName ?? '…'}</p>
+              <p className="truncate font-semibold" title={shop.data?.shopName}>
+                {shop.data?.shopName ?? '…'}
+              </p>
             </div>
           </div>
           {shop.data && (
@@ -100,7 +105,7 @@ export function SellerLayout() {
         </Link>
       </aside>
 
-      <div className="min-w-0">
+      <div className="min-w-0" data-testid="seller-page">
         <Outlet />
       </div>
     </div>
