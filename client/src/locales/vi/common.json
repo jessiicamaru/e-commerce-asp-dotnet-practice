@@ -24,7 +24,13 @@
     "notSoldIn": "Không bán bằng {{currency}}"
   },
   "loading": "Đang tải…",
-  "notFound": "Không tìm thấy trang.",
+  "notFound": {
+    "title": "Không có trang này",
+    "body": "Có thể địa chỉ bị gõ nhầm, hoặc nội dung ở đây đã được chuyển đi hay gỡ xuống.",
+    "searchPlaceholder": "Tìm trong cửa hàng",
+    "search": "Tìm",
+    "home": "Về cửa hàng"
+  },
   "checkingSession": "Đang kiểm tra phiên đăng nhập…",
   "error": {
     "unreachable": "Không kết nối được máy chủ. Thử lại sau giây lát.",
