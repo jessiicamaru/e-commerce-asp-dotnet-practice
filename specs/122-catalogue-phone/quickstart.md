@@ -2,7 +2,7 @@
 
 ## Scenario 1 - On a phone
 
-Open `/` at 390px. Expected: two products a row, the first within two screens, Min – Max on one row, nothing scrolling sideways.
+Open `/` at 390px. Expected: two products a row, the first within 1,100px, Min – Max on one row, nothing scrolling sideways.
 
 ## Scenario 2 - Tests
 

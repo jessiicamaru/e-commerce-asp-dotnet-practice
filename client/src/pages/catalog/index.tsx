@@ -97,7 +97,9 @@ export function CatalogPage() {
                   : t('resultCount', { count: page.totalCount })}
             </p>
 
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-4">
+            {/* Two to a row on a phone (specs/122, #245): 15rem cards fit one per row in 358px, which made twelve
+                products a 6,450px page. From `sm` up the cards fill the width as before. */}
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] sm:gap-4" data-testid="catalogue-grid">
               {page.items.map((product) => (
                 <li key={product.id}>
                   <ProductCard product={product} categoryName={categoryName(product.categoryId)} />

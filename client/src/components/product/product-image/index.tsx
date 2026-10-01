@@ -31,6 +31,7 @@ export function ProductImage({
   thumb?: boolean
 }) {
   const [failed, setFailed] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState<string | null>(null)
   const shown = imageUrl === undefined ? product.imageUrl : imageUrl
   const missing = !shown || failed === shown
 
@@ -61,11 +62,14 @@ export function ProductImage({
   }
 
   return (
+    // Tinted and pulsing until the photograph arrives (specs/122, #245): a lazy image on the card's own colour was a
+    // blank white box on a phone, indistinguishable from a broken one.
     <img
-      className={cn(shape, 'bg-card object-contain')}
+      className={cn(shape, 'object-contain', loaded === shown ? 'bg-card' : 'bg-muted animate-pulse')}
       src={shown!}
       alt={product.name}
       loading="lazy"
+      onLoad={() => setLoaded(shown)}
       onError={() => setFailed(shown)}
     />
   )

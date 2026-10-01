@@ -14,7 +14,7 @@ Responsive classes only: a two-column grid under `sm`, a compact hero (no featur
 **Testing**: Playwright at 390px; Vitest for the image's loading state  
 **Target Platform**: the storefront  
 **Project Type**: web client  
-**Performance Goals**: the first product within two screens  
+**Performance Goals**: the first product within 1,100px  
 **Constraints**: desktop unchanged  
 **Scale/Scope**: catalogue page, hero, filters, product image  
 

@@ -19,7 +19,7 @@ Most shoppers arrive on a phone. There the catalogue was one product per row - 6
 **Acceptance Scenarios**:
 
 1. **Given** the catalogue at 390px, **Then** products are two to a row and the page does not scroll sideways.
-2. **Given** the landing view at 390px, **Then** the first product starts within the first two screens: the hero is words and the button without the featured photo, the categories one scrolling row.
+2. **Given** the landing view at 390px, **Then** the first product starts within 1,100px of the top (about 1.3 screens): the hero is words and the button without the featured photo, the categories one scrolling row.
 3. **Given** the price filter at 390px, **Then** Min – Max sit on one row.
 4. **Given** a photograph still loading, **Then** its frame is tinted, not blank.
 
@@ -36,7 +36,7 @@ Most shoppers arrive on a phone. There the catalogue was one product per row - 6
 - **FR-002**: Below `sm` the hero hides the featured photograph, its padding and heading shrink, and the category chips scroll in one row.
 - **FR-003**: The price inputs are narrower below `sm` so Min – Max share a row.
 - **FR-004**: An image shows a tinted, pulsing frame until it has loaded.
-- **FR-005**: A browser test at 390px checks two products share the first row, the first product is within 1,700px of the top, and nothing scrolls sideways.
+- **FR-005**: A browser test at 390px checks two products share the first row, the first product is within 1,100px of the top, and nothing scrolls sideways.
 
 ## Success Criteria *(mandatory)*
 
