@@ -690,7 +690,8 @@ right password for a 2FA account answers only a challenge (hashed, 5 minutes, 5 
 required at startup. ⚠️ `ADMIN_TOTP_SECRET` seeds the administrator's secret **for development and CI only**, and every
 tool that signs in as staff - the verify scripts, the seed scripts, Bruno (`adminTotpSecret`, computed with crypto-js,
 since the CLI sandbox has no Node crypto) and Playwright - computes the code, waiting for the next 30-second window when
-this one's was just used.
+this one's was just used. A person signing in as that administrator gets the code (and the authenticator link) from
+`python seed/two_factor.py`; staff from before 2FA, unseeded, are sent to enrol (`SetupRequired`).
 Nobody stops themselves or an administrator, and a moderator does not stop a moderator - rules that
 depend on the target's row, so they live in `ModerationRules`, not in an attribute. **Unlocking obeys the
 same limits** (`EnsureMayRelease`, specs/050 - it had none until #121): nobody unlocks themselves, only an

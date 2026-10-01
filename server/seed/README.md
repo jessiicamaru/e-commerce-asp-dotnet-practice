@@ -1,5 +1,15 @@
 # seed
 
+## Signing in as the administrator
+
+With `ADMIN_TOTP_SECRET` set (development), Identity enrols the seeded administrator in two-factor sign-in at startup,
+so the sign-in page asks for a code straight away. Get it, or the link to put the account in an authenticator app:
+
+```bash
+cd server
+python seed/two_factor.py
+```
+
 ## Product photographs
 
 ```bash

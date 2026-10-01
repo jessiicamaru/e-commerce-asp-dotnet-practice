@@ -193,3 +193,10 @@ restart the count before every batch of guesses.
 `verify-auth.sh`, `verify-saga.sh`, the seed scripts, Bruno and Playwright compute its codes. It is for development and
 CI only. Because a code works once, two sign-ins within one 30-second window collide, and each of those tools waits
 for the next window when that happens.
+
+⚠️ **So the seeded administrator is asked for a code at the very first sign-in**, with no enrolment step a person ever
+saw - the seed did it. To sign in by hand, `python seed/two_factor.py` (from `server/`) prints the current code, the
+setup key and the `otpauth://` link to add the account to an authenticator app; it reads `ADMIN_TOTP_SECRET` from the
+environment or `server/.env`. Without that variable the administrator is not enrolled and is sent to
+`/account/two-factor` at sign-in instead (`SetupRequired`) - the same path as any member of staff from before
+two-factor existed.
