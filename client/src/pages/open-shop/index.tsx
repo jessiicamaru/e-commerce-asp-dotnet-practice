@@ -57,7 +57,7 @@ export function OpenShopPage() {
   }
 
   return (
-    <section className="mx-auto grid max-w-2xl gap-6">
+    <section className="grid max-w-2xl gap-6">
       <PageTitle title={t('apply.title')} subtitle={t('apply.subtitle')} />
 
       {applications.length > 0 && (

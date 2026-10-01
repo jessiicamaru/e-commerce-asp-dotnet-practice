@@ -48,7 +48,7 @@ PascalCase for components, camelCase for everything else.
 | `context/` | React context | `context/auth` is the session: provider in `index.tsx`, `useAuth` beside it |
 | `config/` | how a library is set up | `config/axios` (instance, interceptors, `ApiError`), `config/query-client` |
 | `utils/` | helper functions, grouped like `constants/` | `utils/shared` (`cn`, `money`), `utils/order`, `utils/cart`, `utils/address` |
-| `constants/` | constants, grouped by subject | `constants/shared`, `constants/order`, `constants/query-keys` |
+| `constants/` | constants, grouped by subject | `constants/shared`, `constants/order`, `constants/query-keys`; `constants/account` is the ONE list of account destinations the avatar menu, the phone menu and `/account` draw (specs/127) |
 
 Two rules that come out of the structure:
 

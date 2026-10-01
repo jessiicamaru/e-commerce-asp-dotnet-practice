@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { HeartIcon, LogOutIcon, MapPinIcon, PackageIcon, ShieldCheckIcon, StoreIcon, UserIcon } from 'lucide-react'
+import { LogOutIcon } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { accountDestinations } from '@/constants/account'
 import type { User } from '@/services/auth/types'
 import { initialsOf } from './initials'
 
@@ -61,33 +62,12 @@ export function UserMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => navigate('/account')}>
-            <UserIcon /> {t('nav.account')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/orders')}>
-            <PackageIcon /> {t('nav.orders')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/saved')}>
-            <HeartIcon /> {t('nav.saved')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/addresses')}>
-            <MapPinIcon /> {t('nav.addresses')}
-          </DropdownMenuItem>
-          {isSeller ? (
-            <DropdownMenuItem onClick={() => navigate('/shop')}>
-              <StoreIcon /> {t('seller:nav')}
+          {/* The one list every account menu draws (specs/127). */}
+          {accountDestinations({ isSeller, isStaff }).map(({ to, icon: Icon, label }) => (
+            <DropdownMenuItem key={to} onClick={() => navigate(to)}>
+              <Icon /> {t(label)}
             </DropdownMenuItem>
-          ) : (
-            // Anybody signed in may ask to sell (specs/044); the page says where their application stands.
-            <DropdownMenuItem onClick={() => navigate('/open-shop')}>
-              <StoreIcon /> {t('seller:openShop')}
-            </DropdownMenuItem>
-          )}
-          {isStaff && (
-            <DropdownMenuItem onClick={() => navigate('/admin')}>
-              <ShieldCheckIcon /> {t('admin:nav')}
-            </DropdownMenuItem>
-          )}
+          ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={onSignOut}>

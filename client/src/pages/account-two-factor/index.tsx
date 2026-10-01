@@ -36,7 +36,7 @@ export function AccountTwoFactorPage() {
   // The codes of a confirmation or a new set - shown until the person says they kept them.
   if (codes) {
     return (
-      <Card className="mx-auto max-w-xl">
+      <Card className="max-w-xl">
         <CardHeader>
           <CardTitle>{t('twoFactor.codesTitle')}</CardTitle>
           <CardDescription>{t('twoFactor.codesHint')}</CardDescription>
@@ -52,7 +52,7 @@ export function AccountTwoFactorPage() {
   const { enabled, enabledAt, recoveryCodesLeft, required } = status.data
 
   return (
-    <section className="mx-auto grid max-w-xl gap-6">
+    <section className="grid max-w-xl gap-6">
       <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
         <ShieldCheckIcon className="size-6" /> {t('twoFactor.title')}
       </h1>

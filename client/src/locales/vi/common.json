@@ -10,7 +10,9 @@
     "account": "Tài khoản",
     "addresses": "Sổ địa chỉ",
     "menu": "Menu",
-    "saved": "Đã lưu"
+    "saved": "Đã lưu",
+    "notifications": "Thông báo",
+    "twoFactor": "Xác thực hai lớp"
   },
   "language": {
     "label": "Ngôn ngữ",
