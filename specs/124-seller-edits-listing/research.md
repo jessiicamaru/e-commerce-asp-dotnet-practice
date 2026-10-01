@@ -16,10 +16,10 @@
 
 **Alternatives rejected**: Category exempt - an approved product could be moved anywhere unseen.
 
-## D3 - Which translations exist
+## D3 - The text as stored, on the lookup
 
-**Decision**: `translatedLanguages` on the lookup.
+**Decision**: `original` and `translations` (language, name, description - as stored) on the lookup.
 
-**Rationale**: A response's text falls back per field, so reading in English cannot tell "translated" from "falling back" - the page would offer to remove a translation that is not there, or prefill the Vietnamese as if it were English.
+**Rationale**: A response's text falls back per field, so reading it cannot tell translated from falling back - the page would offer to remove a translation that is not there, or prefill the original as if it were English. And once every language has its own text no read returns the original at all, though search and sorting still use it. First built as a list of language codes; the original's invisibility changed it.
 
-**Alternatives rejected**: A translations endpoint - one more route for a list of language codes.
+**Alternatives rejected**: A translations endpoint - one more route for what the lookup already loads.

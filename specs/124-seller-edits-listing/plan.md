@@ -4,7 +4,7 @@
 
 ## Summary
 
-Catalog gains `UpdateProductDetailsCommand` behind `PUT /api/products/{id}` and `translatedLanguages` on the lookup; the storefront's seller product page gains three cards over the new and the existing endpoints.
+Catalog gains `UpdateProductDetailsCommand` behind `PUT /api/products/{id}`, and the lookup carries the original text and each language's own text as stored; the storefront's seller product page gains three cards over the new and the existing endpoints, and reads signed in.
 
 ## Technical Context
 

@@ -13,7 +13,7 @@ description: "Task list for A seller edits what they listed"
 ## Phase 1: Server (US1, US2)
 
 - [ ] T001 `UpdateProductDetailsCommand` + validator + `PUT /api/products/{id}`
-- [ ] T002 `translatedLanguages` on the lookup
+- [ ] T002 `original` and `translations` on the lookup; the seller's page reads signed in
 - [ ] T003 Catalog tests: owner, other seller 404, admin, review move, category, nothing changed, response
 
 ## Phase 2: Storefront (US1-US4)

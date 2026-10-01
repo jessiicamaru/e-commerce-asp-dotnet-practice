@@ -10,4 +10,9 @@
 Audit `Catalog` / `ProductDetailsEdited` with before and after. An approved product edited by its seller: `ReviewStatus`
 `Pending`, off the shelf.
 
-`GET /api/products/{id}` gains `translatedLanguages: ["en"]`.
+`GET /api/products/{id}` gains, as stored (no fallback), and only on the lookup:
+
+```json
+"original": { "name": "Canon EOS R50", "description": "..." },
+"translations": [ { "language": "en", "name": "Canon EOS R50", "description": null } ]
+```

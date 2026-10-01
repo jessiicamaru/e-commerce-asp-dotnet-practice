@@ -31,8 +31,8 @@ A seller's product page edited the photograph, prices and stock - nothing else. 
 
 **Acceptance Scenarios**:
 
-1. **Given** the shop speaks Vietnamese (the default) and English, **Then** the page edits the default text in the details and offers an English name and description, saying when there is none yet and English readers see the Vietnamese.
-2. **Given** an English text saved, **Then** English readers see it; removed, they see the default again.
+1. **Given** the shop speaks Vietnamese and English, **Then** the page shows the original text in the details and offers each language its own name and description, saying when a language has none yet and its readers see the original.
+2. **Given** a language's text saved, **Then** its readers see it; removed, they see the original again.
 
 ---
 
@@ -57,7 +57,8 @@ A seller's product page edited the photograph, prices and stock - nothing else. 
 
 ### Edge Cases
 
-- The page is read in the default language for the details (whatever the seller browses in) and in each other language for its translation - a response carries one language's text (specs/021), like prices per currency.
+- **Found while building**: the seller's page read the product with `anonymous: true`, so the token was not sent and a product off the shelf - waiting, rejected, taken down - was a 404 on its own seller's page, exactly when it needs editing. It reads signed in now.
+- The original text is not tied to a language: it is what the seller typed when listing, in whatever language they browsed in, and what every reader without their own language's text sees. The page calls it Original and offers each of the shop's languages - Vietnamese included - its own text.
 - Nothing changed (the same name, description and category saved again) sends nothing back to review.
 - Option translations (`Kit: Body only` → `Bộ: Chỉ thân máy`) keep their endpoint; their editor is not part of this - the issue asks for the product's text, and option values are mostly shared vocabulary.
 
@@ -66,9 +67,10 @@ A seller's product page edited the photograph, prices and stock - nothing else. 
 ### Functional Requirements
 
 - **FR-001**: `PUT /api/products/{id}` (Seller, Admin) sets the product's default-language name and description and its category; owner or administrator only (404 otherwise); validated like creation; audited `ProductDetailsEdited`; calls `ProductReview.AfterSellerEditAsync` when anything changed.
-- **FR-002**: The product lookup carries `translatedLanguages`: the languages with a translation row.
-- **FR-003**: The seller's product page has a details card, a translations card per non-default language (save, remove) and an add-variant form (SKU, price, options).
-- **FR-004**: The new-product form's submit is at the end of the form; its hint no longer promises what does not exist.
+- **FR-002**: The product lookup carries `original` (the product's own name and description) and `translations` (each language's own text, as stored - no fallback).
+- **FR-003**: The seller's product page has a details card (the original text and the category), a card with each of the shop's languages' own text (save, remove) and an add-variant form (SKU, price, options).
+- **FR-004**: The seller's page reads the product signed in, so a product waiting for review, rejected or taken down opens on its own seller's page.
+- **FR-005**: The new-product form's submit is at the end of the form; its hint no longer promises what does not exist.
 
 ## Success Criteria *(mandatory)*
 
