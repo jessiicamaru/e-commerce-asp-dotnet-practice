@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ORDER_POLL_LIMIT_MS, ORDER_POLL_MS, isSettling } from '@/constants/order'
+import { CART_SETTLE_RECHECK_MS, ORDER_POLL_LIMIT_MS, ORDER_POLL_MS, isSettling } from '@/constants/order'
 import { queryKeys } from '@/constants/query-keys'
 import { Order } from '@/services/order'
 import type { CheckoutChoice } from '@/services/order/types'
@@ -43,13 +43,21 @@ export function usePlaceOrder() {
 /**
  * One order, asked about again every second while the saga is still settling it, and no longer than
  * {@link ORDER_POLL_LIMIT_MS}. Push would be better; polling is what #38 chose to start with.
+ *
+ * <p>
+ * When an order this page saw settling settles, the cart is read again - now and once more after
+ * {@link CART_SETTLE_RECHECK_MS} - because Cart empties it on completion, not when the order is placed (specs/010), and
+ * the header went on counting what had just been paid for (specs/119, #242).
+ * </p>
  */
 export function useOrder(id: string) {
+  const queryClient = useQueryClient()
   // Set on the first poll decision rather than during render: reading the clock while rendering makes
   // the result depend on when React happened to re-render.
   const startedAt = useRef<number | null>(null)
+  const sawSettling = useRef(false)
 
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.order(id),
     queryFn: () => Order.get(id),
     enabled: id !== '',
@@ -64,6 +72,22 @@ export function useOrder(id: string) {
       return Date.now() - startedAt.current < ORDER_POLL_LIMIT_MS ? ORDER_POLL_MS : false
     },
   })
+
+  const status = query.data?.status
+  useEffect(() => {
+    if (!status) return
+    if (isSettling(status)) {
+      sawSettling.current = true
+      return
+    }
+    if (!sawSettling.current) return
+    sawSettling.current = false
+    void queryClient.invalidateQueries({ queryKey: queryKeys.cart() })
+    const again = setTimeout(() => void queryClient.invalidateQueries({ queryKey: queryKeys.cart() }), CART_SETTLE_RECHECK_MS)
+    return () => clearTimeout(again)
+  }, [status, queryClient])
+
+  return query
 }
 
 export function useMyOrders(page: number, pageSize: number) {
