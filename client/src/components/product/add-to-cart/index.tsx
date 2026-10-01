@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Trans, useTranslation } from 'react-i18next'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ShoppingBagIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { QuantityStepper } from '@/components/shared/quantity-stepper'
@@ -9,7 +9,15 @@ import { useAuth } from '@/context/auth/useAuth'
 import { useAddToCart } from '@/hooks/cart'
 import { ApiError } from '@/config/axios'
 
-/** Adding needs an account: the cart is kept per customer by the Cart service, not in the browser. */
+/**
+ * Adding needs an account: the cart is kept per customer by the Cart service, not in the browser.
+ *
+ * <p>
+ * The button is shown to everybody (specs/126, #252) - a buy button hidden until you have an account loses the people
+ * deciding whether to make one. Signed out, pressing it opens sign-in with a reason, and the way back carries the
+ * chosen variant (`?variant=`), so the shopper returns to the same choice. Nothing is added before signing in.
+ * </p>
+ */
 export function AddToCart({
   productId,
   variantId,
@@ -35,23 +43,15 @@ export function AddToCart({
     return null
   }
 
-  if (!user) {
-    return (
-      <p className="text-sm">
-        <Trans
-          t={t}
-          i18nKey="product.signInToAdd"
-          components={[<Link key="0" to="/sign-in" state={{ from: location.pathname }} className="underline" />]}
-        />
-      </p>
-    )
-  }
-
   const soldOut = available !== undefined && available !== null && available <= 0
   const reason = disabledReason ?? (soldOut ? t('stock.out') : undefined)
 
   const add = () =>
-    addToCart.mutate([productId, quantity, variantId], {
+    !user
+      ? navigate('/sign-in', {
+          state: { from: variantId ? `${location.pathname}?variant=${variantId}` : location.pathname, reason: 'cart' },
+        })
+      : addToCart.mutate([productId, quantity, variantId], {
       onSuccess: () =>
         toast.success(t('product.added', { count: quantity }), {
           action: { label: t('product.viewCart'), onClick: () => navigate('/cart') },
