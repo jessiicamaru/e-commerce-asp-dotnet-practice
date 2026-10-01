@@ -40,7 +40,6 @@
     "added_one": "Đã thêm {{count}} vào giỏ.",
     "added_other": "Đã thêm {{count}} vào giỏ.",
     "addFailed": "Không thêm được. Thử lại.",
-    "signInToAdd": "<0>Đăng nhập</0> để thêm sản phẩm này vào giỏ.",
     "viewCart": "Xem giỏ hàng",
     "soldBy": "Bán bởi {{seller}}",
     "soldByShop": "Bán bởi <shop>{{seller}}</shop>",

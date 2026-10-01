@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { AuthContext } from '@/context/auth/useAuth'
@@ -28,7 +28,13 @@ function aProduct(variants: Variant[]): ProductModel {
   }
 }
 
-function renderPage() {
+/** Where Add to cart sent a signed-out shopper, and what it told the sign-in page. */
+function SignInStub() {
+  const location = useLocation()
+  return <p data-testid="sign-in">{JSON.stringify(location.state)}</p>
+}
+
+function renderPage(path = '/products/p1') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const auth = {
     user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, refreshSession: async () => true,
@@ -38,9 +44,10 @@ function renderPage() {
   return render(
     <AuthContext.Provider value={auth}>
       <QueryClientProvider client={client}>
-        <MemoryRouter initialEntries={['/products/p1']}>
+        <MemoryRouter initialEntries={[path]}>
           <Routes>
             <Route path="/products/:id" element={<ProductPage />} />
+            <Route path="/sign-in" element={<SignInStub />} />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>
@@ -53,6 +60,46 @@ beforeEach(async () => {
   // The reviews under the product (specs/046) - none, so these tests stay about the product itself.
   vi.spyOn(Product, 'recordView').mockResolvedValue()
   vi.spyOn(Reviews, 'forProduct').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
+})
+
+describe('ProductPage, signed out (specs/126, #252)', () => {
+  const kits = () =>
+    aProduct([
+      aVariant({ id: 'body', sku: 'XT5-BODY', optionSummary: 'Kit: Body only', options: [{ id: 'o1', name: 'Kit', value: 'Body only' }] }),
+      aVariant({ id: 'kit', sku: 'XT5-KIT', optionSummary: 'Kit: With lens', options: [{ id: 'o2', name: 'Kit', value: 'With lens' }] }),
+    ])
+
+  it('offers Add to cart, and sends the shopper to sign in with their choice and why', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue(kits())
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('radio', { name: /With lens/ }))
+    await user.click(screen.getByRole('button', { name: 'Add to cart' }))
+
+    expect(JSON.parse(screen.getByTestId('sign-in').textContent!)).toEqual({ from: '/products/p1?variant=kit', reason: 'cart' })
+  })
+
+  it('comes back with the variant chosen before signing in', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue(kits())
+    renderPage('/products/p1?variant=kit')
+
+    expect(await screen.findByRole('radio', { name: /With lens/ })).toBeChecked()
+    expect(screen.getByText('SKU XT5-KIT')).toBeInTheDocument()
+  })
+
+  /** specs/020 D10 is kept: with several shapes nothing is chosen - and then no SKU names one. */
+  it('names no SKU until a variant is chosen', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue(kits())
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByRole('radio', { name: /Body only/ })
+    expect(screen.queryByText(/^SKU /)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: /Body only/ }))
+    expect(screen.getByText('SKU XT5-BODY')).toBeInTheDocument()
+  })
 })
 
 describe('ProductPage pictures', () => {

@@ -40,7 +40,6 @@
     "added_one": "Added {{count}} to your cart.",
     "added_other": "Added {{count}} to your cart.",
     "addFailed": "It could not be added. Try again.",
-    "signInToAdd": "<0>Sign in</0> to add this to your cart.",
     "viewCart": "View cart",
     "soldBy": "Sold by {{seller}}",
     "soldByShop": "Sold by <shop>{{seller}}</shop>",

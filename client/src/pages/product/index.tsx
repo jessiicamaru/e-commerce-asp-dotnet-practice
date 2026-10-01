@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
 import { SaveButton } from '@/components/product/save-button'
@@ -21,8 +21,10 @@ import { PublicVouchers } from '@/components/voucher/public-vouchers'
 export function ProductPage() {
   const { t } = useTranslation('catalog')
   const { id = '' } = useParams()
+  // The choice survives a trip through sign-in (specs/126): Add to cart, signed out, returns here with ?variant=.
+  const [params] = useSearchParams()
   const { data: product, isPending, error } = useProduct(id)
-  const [chosenVariantId, setChosenVariantId] = useState<string | null>(null)
+  const [chosenVariantId, setChosenVariantId] = useState<string | null>(() => params.get('variant'))
   // One view per product opened (specs/047) - not per render, not per refetch when the tab regains focus.
   // Fire and forget: a view that fails to count is not worth an error on the page.
   const counted = useRef<string | null>(null)
@@ -146,9 +148,8 @@ export function ProductPage() {
             <p className="text-muted-foreground text-sm leading-relaxed">{product.description}</p>
           )}
 
-          <p className="text-muted-foreground border-t pt-4 text-xs">
-            {t('product.sku', { sku: variant?.sku ?? product.sku })}
-          </p>
+          {/* Only a chosen variant's: with nothing chosen the first one's SKU named a shape nobody picked (specs/126). */}
+          {variant && <p className="text-muted-foreground border-t pt-4 text-xs">{t('product.sku', { sku: variant.sku })}</p>}
         </div>
       </div>
 

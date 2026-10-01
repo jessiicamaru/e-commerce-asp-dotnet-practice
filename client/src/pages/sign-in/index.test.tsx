@@ -36,6 +36,38 @@ const locked = refusal(403, `This account is locked until 2026-10-01 07:30 UTC: 
 })
 const banned = refusal(403, 'This account is banned: Fraud', { code: 'AccountBanned', reason: 'Fraud' })
 
+describe('SignInPage says why it was opened (specs/126, #252)', () => {
+  function openedWith(state: unknown) {
+    const value = {
+      user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
+      signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {},
+      signOut: async () => {}, refreshSession: async () => true,
+    } as AuthState
+    render(
+      <AuthContext.Provider value={value}>
+        <MemoryRouter initialEntries={[{ pathname: '/sign-in', state }]}>
+          <SignInPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+  }
+
+  it('from Add to cart', () => {
+    openedWith({ from: '/products/p1?variant=kit', reason: 'cart' })
+    expect(screen.getByText('Sign in to add this to your cart. You will come back to it.')).toBeInTheDocument()
+  })
+
+  it('from the cart', () => {
+    openedWith({ from: '/cart' })
+    expect(screen.getByText('Sign in to see your cart.')).toBeInTheDocument()
+  })
+
+  it('says nothing more when opened on its own', () => {
+    openedWith(null)
+    expect(screen.queryByText(/to add this|to see your cart/)).not.toBeInTheDocument()
+  })
+})
+
 describe('SignInPage refusals (specs/049)', () => {
   beforeEach(async () => {
     await i18n.changeLanguage('en')

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorMessage } from '@/components/shared/query-state'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/auth/useAuth'
@@ -27,7 +27,11 @@ export function SignInPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const onward = () => navigate((location.state as { from?: string } | null)?.from ?? '/')
+  const arrival = location.state as { from?: string; reason?: string } | null
+  const onward = () => navigate(arrival?.from ?? '/')
+  // Why the shopper is here, when a page sent them (specs/126): pressing Add to cart, or opening the cart, signed out.
+  const reason =
+    arrival?.reason === 'cart' ? t('signIn.reasonAddToCart') : arrival?.from?.startsWith('/cart') ? t('signIn.reasonCart') : null
 
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -122,6 +126,7 @@ export function SignInPage() {
     <Card className="mx-auto max-w-md">
       <CardHeader>
         <CardTitle className="text-xl">{t('signIn.title')}</CardTitle>
+        {reason && <CardDescription>{reason}</CardDescription>}
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
