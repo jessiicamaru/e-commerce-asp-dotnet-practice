@@ -35,10 +35,15 @@ export function ProductImage({
   const shown = imageUrl === undefined ? product.imageUrl : imageUrl
   const missing = !shown || failed === shown
 
+  const loading = !!shown && loaded !== shown
+  // A large photograph is drawn at its own shape (specs/125, #251): a square frame put a landscape camera between two
+  // bands of white. Capped so a tall one cannot push the price off the screen; 4:3 only until it has loaded, so the
+  // page does not jump from nothing. Cards and thumbnails keep fixed frames - a grid needs equal cards.
   const shape = cn(
     'w-full overflow-hidden',
     thumb ? 'aspect-square rounded-xl' : 'rounded-2xl',
-    !thumb && (large ? 'aspect-square' : 'aspect-[4/3]'),
+    !thumb && !large && 'aspect-[4/3]',
+    large && (missing || loading ? 'aspect-[4/3]' : 'h-auto max-h-[36rem]'),
   )
 
   if (missing) {

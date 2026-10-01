@@ -30,6 +30,8 @@ test.describe.serial('the storefront, end to end', () => {
     // A long shop name on purpose: it once widened the seller sidebar over every /shop page (specs/117, #238).
     seller = await api.seller('Seller', 'E2e Lens House for Mirrorless and Film Cameras')
     camera = await api.list(seller.token, categoryId, 'camera')
+    // A 3:2 photograph, before approval - a new photograph of an approved product sends it back to review (specs/045).
+    await api.photograph(seller.token, camera.productId, 600, 400)
     await api.approve(camera.productId)
     await api.stock(seller.token, camera, 5)
     waiting = await api.list(seller.token, categoryId, 'waiting')
@@ -59,6 +61,13 @@ test.describe.serial('the storefront, end to end', () => {
     await signIn(page, customer.email)
     await page.goto(`/products/${camera.productId}`)
     await expect(page.getByRole('heading', { name: camera.name })).toBeVisible()
+    // Drawn at its own shape, 3:2 - not in a square frame between two bands of white (specs/125, #251).
+    const photo = page.getByRole('img', { name: camera.name }).first()
+    await expect(photo).toHaveJSProperty('complete', true)
+    await expect.poll(async () => {
+      const box = (await photo.boundingBox())!
+      return Math.round((box.width / box.height) * 100) / 100
+    }, { message: 'the photograph keeps its 3:2 shape' }).toBe(1.5)
     await page.getByRole('button', { name: 'Add to cart' }).click()
     await expect(page.getByText('Added 1 to your cart.')).toBeVisible()
 
