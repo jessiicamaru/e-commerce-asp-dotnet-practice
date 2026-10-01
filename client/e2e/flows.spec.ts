@@ -81,6 +81,8 @@ test.describe.serial('the storefront, end to end', () => {
     orderId = page.url().split('/orders/')[1]
     // The saga reserves the stock and the stub gateway approves: the order settles to Paid on its own.
     await expect(page.getByText('Paid. We will start preparing it soon.')).toBeVisible({ timeout: 60_000 })
+    // The header stops counting what was just paid for (specs/119, #242).
+    await expect(page.getByRole('link', { name: /^Cart \(\d+\)$/ })).toHaveCount(0)
   })
 
   test('the seller prepares the parcel and ships it', async ({ page }) => {

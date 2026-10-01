@@ -173,6 +173,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [116](../../specs/116-activity-retention/) | Activity retention | #236 | #221: read notices go 90 days after reading, unread never; the audit log is kept for ever unless an operator sets years, and every trim is recorded in it; batched, safe on several instances, settings checked at start |
 | [117](../../specs/117-seller-sidebar-overflow/) | Seller sidebar | #256 | #238: the seller sidebar keeps to its 15rem column whatever the shop is called - its grids' one column may shrink, so a long name truncates instead of covering the page; the browser flows' seller has a long name and asserts it |
 | [118](../../specs/118-order-lines-narrow/) | Order lines at any width | #257 | #239: order lines are two-column rows - details with quantity × price under them, the total never wrapping - so no amount is clipped at checkout or on a phone; the total's rule is one row |
+| [119](../../specs/119-cart-after-payment/) | Cart after payment | #258 | #242: the order page re-reads the cart when the order it watched settles (and once more 2 s later, for Cart's consumer), so the header stops counting what was just paid for |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

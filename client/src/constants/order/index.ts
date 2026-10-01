@@ -7,6 +7,12 @@ export const ORDER_POLL_MS = 1000
  */
 export const ORDER_POLL_LIMIT_MS = 30_000
 
+/**
+ * How long after an order settles the cart is read a second time (specs/119, #242): Cart empties it on the same
+ * `OrderCompletedEvent` Order settles on, and may apply it a moment after the order page has seen Paid.
+ */
+export const CART_SETTLE_RECHECK_MS = 2000
+
 /** Order statuses, as Order reports them (`Completed` is reported as `Paid` - specs/011). */
 export const ORDER_STATUS = {
   submitted: 'Submitted',
