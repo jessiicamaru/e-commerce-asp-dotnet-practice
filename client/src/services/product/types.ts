@@ -34,6 +34,37 @@ export interface Product {
   /** The average of the visible reviews, null when there are none (specs/046). */
   ratingAverage: number | null
   ratingCount: number
+  /**
+   * On the lookup only (specs/124): the text as stored, for its seller to edit - `name` and `description` above fall
+   * back per field, and once every language has its own text no read shows the original at all.
+   */
+  original?: ProductText | null
+  translations?: ProductTranslationText[] | null
+}
+
+/** A product's own name and description - what was typed when it was listed (specs/124). */
+export interface ProductText {
+  name: string
+  description: string | null
+}
+
+/** A product's own text in one language, as stored: a null description is none, not the original's (specs/124). */
+export interface ProductTranslationText extends ProductText {
+  language: string
+}
+
+/** What `PUT /api/products/{id}` sets (specs/124). */
+export interface ProductDetails {
+  name: string
+  description: string | null
+  categoryId: string
+}
+
+/** Another shape of a product (specs/020): its price is in the shop's DEFAULT currency, like listing one. */
+export interface NewVariant {
+  sku: string
+  price: number
+  options: { name: string; value: string }[]
 }
 
 export type ReviewStatus = 'Approved' | 'Pending' | 'Rejected'

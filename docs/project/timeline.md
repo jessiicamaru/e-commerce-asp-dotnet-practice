@@ -178,6 +178,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [121](../../specs/121-staff-labels-status/) | Audit labels and status | #260 | #244: all 112 recorded audit actions have words in both languages, held to the server's source by a test that reads every RecordAsync call; the status page asks all eight health routes by name, held to the gateway's configuration |
 | [122](../../specs/122-catalogue-phone/) | Catalogue on a phone | #261 | #245: on a phone the catalogue is two to a row, the hero compact without the featured photo and the categories one scrolling row, so the first product is 807px down instead of 1,355px and the page a third as tall |
 | [123](../../specs/123-deleted-accounts-staff/) | Deleted accounts for staff | #262 | #241: staff see a deleted account as Deleted with its date, listed only when asked, and every moderation command on it is 409 AccountDeleted |
+| [124](../../specs/124-seller-edits-listing/) | A seller edits a listing | #263 | #240: a seller corrects the original name, description and category (PUT /api/products/{id}, back to review when approved), writes each language's own text and adds variants from the product's page, which now reads signed in |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
