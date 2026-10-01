@@ -4,5 +4,14 @@
   "checking": "đang kiểm tra…",
   "up": "hoạt động",
   "down": "lỗi ({{detail}})",
-  "orchestratorNote": "Orchestrator không có endpoint health - nó không có bề mặt HTTP nào - nên không thể liệt kê ở đây."
+  "service": {
+    "identity": "Tài khoản và đăng nhập",
+    "catalog": "Danh mục sản phẩm",
+    "order": "Đơn hàng",
+    "orchestrator": "Điều phối thanh toán",
+    "inventory": "Tồn kho",
+    "payment": "Thanh toán",
+    "cart": "Giỏ hàng",
+    "activity": "Nhật ký và thông báo"
+  }
 }

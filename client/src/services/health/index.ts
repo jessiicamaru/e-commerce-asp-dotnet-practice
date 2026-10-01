@@ -1,11 +1,11 @@
 import { http } from '@/config/axios'
 
 /**
- * Each service's own `/health`, through the gateway's health routes.
- *
- * The orchestrator is missing on purpose: it has no controllers, so it has no health endpoint at all.
+ * Each service's own `/health`, through the gateway's health routes - every one of them, held to the gateway's
+ * `*-health-route` entries by a test (specs/121, #244). The orchestrator answers since specs/071; Activity since
+ * specs/041. Both were missing, behind a note saying the orchestrator could not be asked.
  */
-export const HEALTH_SERVICES = ['identity', 'catalog', 'order', 'inventory', 'payment', 'cart'] as const
+export const HEALTH_SERVICES = ['identity', 'catalog', 'order', 'orchestrator', 'inventory', 'payment', 'cart', 'activity'] as const
 
 export type HealthService = (typeof HEALTH_SERVICES)[number]
 
