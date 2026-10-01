@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ApiError } from '@/config/axios'
+import { accountDestinations } from '@/constants/account'
 import { useAuth } from '@/context/auth/useAuth'
 import { useChangePassword, useMe, useUpdateMe } from '@/hooks/me'
 import type { AccountProfile } from '@/services/auth/types'
@@ -18,27 +19,27 @@ import { MyDataCard } from './my-data'
 /** Your account (specs/064): your details and your password, each changed by you and nobody else. */
 export function AccountPage() {
   const { t } = useTranslation('auth')
-  const { user } = useAuth()
+  const { user, isSeller, isStaff } = useAuth()
 
   return (
-    <section className="mx-auto grid max-w-2xl gap-6">
+    <section className="grid max-w-2xl gap-6">
       <div>
         <h1 className="mb-1 text-2xl font-bold">{t('account.title')}</h1>
         <p className="text-muted-foreground text-sm">{user?.email}</p>
-        <p className="mt-3 flex gap-3 text-sm">
-          <Link to="/addresses" className="underline">
-            {t('account.addresses')}
-          </Link>
-          <Link to="/cart" className="underline">
-            {t('account.cart')}
-          </Link>
-          <Link to="/orders" className="underline">
-            {t('account.orders')}
-          </Link>
-          <Link to="/account/two-factor" className="underline">
-            {t('account.twoFactor')}
-          </Link>
-        </p>
+        {/* The one list every account menu draws (specs/127) - here it was four underlined words. */}
+        <nav aria-label={t('account.title')} className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {accountDestinations({ isSeller, isStaff })
+            .filter(({ to }) => to !== '/account')
+            .map(({ to, icon: Icon, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className="bg-card ring-border/60 hover:ring-primary/60 flex items-center gap-2 rounded-2xl p-3 text-sm font-medium ring-1 transition-colors"
+              >
+                <Icon className="text-muted-foreground size-4" /> {t(label)}
+              </Link>
+            ))}
+        </nav>
       </div>
       <DetailsForm />
       <PasswordForm />

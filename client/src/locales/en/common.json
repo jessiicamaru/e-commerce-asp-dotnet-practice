@@ -10,7 +10,9 @@
     "account": "Account",
     "addresses": "Addresses",
     "menu": "Menu",
-    "saved": "Saved"
+    "saved": "Saved",
+    "notifications": "Notifications",
+    "twoFactor": "Two-factor sign-in"
   },
   "language": {
     "label": "Language",

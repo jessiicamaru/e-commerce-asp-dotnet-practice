@@ -3,7 +3,6 @@ import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ApertureIcon,
   LogInIcon,
-  MapPinIcon,
   MenuIcon,
   PackageIcon,
   SearchIcon,
@@ -21,6 +20,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/in
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { accountDestinations } from '@/constants/account'
 import { useAuth } from '@/context/auth/useAuth'
 import { useCart } from '@/hooks/cart'
 import { cn } from '@/utils/shared'
@@ -210,28 +210,12 @@ function MobileMenu() {
               <p className="text-muted-foreground px-3 pb-1 text-xs">
                 {user.firstName} {user.lastName} · {user.email}
               </p>
-              <NavLink to="/account" className={item}>
-                <UserIcon /> {t('nav.account')}
-              </NavLink>
-              <NavLink to="/cart" className={item}>
-                <ShoppingBagIcon /> {t('nav.cart')}
-              </NavLink>
-              <NavLink to="/orders" end className={item}>
-                <PackageIcon /> {t('nav.orders')}
-              </NavLink>
-              <NavLink to="/addresses" className={item}>
-                <MapPinIcon /> {t('nav.addresses')}
-              </NavLink>
-              {isSeller && (
-                <NavLink to="/shop" className={item}>
-                  <StoreIcon /> {t('seller:nav')}
+              {/* The one list every account menu draws (specs/127): it was missing Saved, Notifications and Open a shop. */}
+              {accountDestinations({ isSeller, isStaff }).map(({ to, icon: Icon, label }) => (
+                <NavLink key={to} to={to} end className={item}>
+                  <Icon /> {t(label)}
                 </NavLink>
-              )}
-              {isStaff && (
-                <NavLink to="/admin" className={item}>
-                  <ShieldCheckIcon /> {t('admin:nav')}
-                </NavLink>
-              )}
+              ))}
             </>
           ) : (
             <>
