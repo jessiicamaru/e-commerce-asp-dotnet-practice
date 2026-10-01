@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -7,6 +7,7 @@ import { NotificationWording } from '@/services/notification-wording'
 import type { WordingEntry, WordingOverview } from '@/services/notification-wording/types'
 import { refusal } from '@/test/refusal'
 import { renderAsAdmin } from '@/test/render'
+import declared from '../../../../server/src/BuildingBlocks/Ecommerce.Shared/Notifications/notification-kinds.json'
 import { AdminWordingPage } from '.'
 
 // ProseMirror needs layout jsdom does not have; the page's logic is what is under test here.
@@ -31,16 +32,49 @@ beforeEach(async () => {
 })
 
 describe('AdminWordingPage (specs/078)', () => {
-  it("lists each kind's sentence in both languages, a plural form by form", async () => {
+  /** specs/128 (#250): one kind, one language at a time - chosen by name, kept in the address. */
+  it('shows the chosen kind in the chosen language, a plural form by form, and keeps the choice in the address', async () => {
     vi.spyOn(NotificationWording, 'overview').mockResolvedValue(overview())
+    const user = userEvent.setup()
     renderAsAdmin(<AdminWordingPage />, '/admin/notifications')
 
+    // The first kind, in the reader's language.
     expect(await screen.findByRole('button', { name: 'Edit NewSale (en)' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Edit NewSale (vi)' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit NewSale (vi)' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Edit NewReview/ })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'New review' }))
     expect(screen.getByRole('button', { name: 'Edit NewReview_one (en)' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit NewReview_other (en)' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: /Tiếng Việt|vi/ }))
     expect(screen.getByRole('button', { name: 'Edit NewReview (vi)' })).toBeInTheDocument()
-    expect(screen.getByText('Bạn có đơn bán mới: {{order}}.')).toBeInTheDocument()
+  })
+
+  it('opens on the kind and language the address names', async () => {
+    vi.spyOn(NotificationWording, 'overview').mockResolvedValue(overview())
+    renderAsAdmin(<AdminWordingPage />, '/admin/notifications?kind=NewSale&lang=vi')
+
+    expect(await screen.findByText('Bạn có đơn bán mới: {{order}}.')).toBeInTheDocument()
+  })
+
+  it('finds a kind by its name', async () => {
+    vi.spyOn(NotificationWording, 'overview').mockResolvedValue(overview())
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminWordingPage />, '/admin/notifications')
+
+    await user.type(await screen.findByRole('textbox', { name: 'Find a notice' }), 'new r')
+
+    const kinds = within(screen.getByRole('navigation', { name: 'Notices' })).getAllByRole('button')
+    expect(kinds.map((k) => k.textContent)).toEqual(['New review'])
+  })
+
+  it('has a name for every kind a service can send, in both languages', () => {
+    for (const kind of Object.keys(declared.kinds)) {
+      for (const language of ['en', 'vi']) {
+        expect(i18n.exists(`admin:wording.kindName.${kind}`, { lng: language }), `${kind} in ${language}`).toBe(true)
+      }
+    }
   })
 
   it('saves an edit on top of the version it opened, with a live sample', async () => {
@@ -53,7 +87,8 @@ describe('AdminWordingPage (specs/078)', () => {
     const user = userEvent.setup()
     renderAsAdmin(<AdminWordingPage />, '/admin/notifications')
 
-    expect(await screen.findByText('Edited')).toBeInTheDocument()
+    // Marked in the list of kinds and on the sentence itself.
+    expect(await screen.findAllByText('Edited')).toHaveLength(2)
     await user.click(screen.getByRole('button', { name: 'Edit NewSale (en)' }))
     const words = screen.getByLabelText('Words')
     await user.clear(words)
