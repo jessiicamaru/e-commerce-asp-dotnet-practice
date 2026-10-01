@@ -181,6 +181,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [124](../../specs/124-seller-edits-listing/) | A seller edits a listing | #263 | #240: a seller corrects the original name, description and category (PUT /api/products/{id}, back to review when approved), writes each language's own text and adds variants from the product's page, which now reads signed in |
 | [125](../../specs/125-photo-frames/) | Photographs at their own shape | #264 | #251: large product photographs are drawn at their own shape, capped in height, instead of in a square frame between bands of white; the flows upload a 3:2 photograph and measure it |
 | [126](../../specs/126-signed-out-add-to-cart/) | Add to cart signed out | #265 | #252: a signed-out shopper sees Add to cart; it opens sign-in saying why and comes back to the same variant; a SKU is shown only once a variant is chosen (no preselection - specs/020 D10 kept) |
+| [127](../../specs/127-account-menu/) | One account menu | #266 | #254: one ordered list of account destinations drives the avatar menu, the phone menu and the account page, which each missed something before; account pages start at the same edge as the rest |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

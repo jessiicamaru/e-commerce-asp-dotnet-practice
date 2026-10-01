@@ -12,17 +12,24 @@ description: "Task list for One account menu everywhere"
 
 ## Phase 1: One list (US1)
 
-- [ ] T001 `accountDestinations`
-- [ ] T002 The user menu, the phone menu and the account page draw it
-- [ ] T003 Account-area pages left-aligned
-- [ ] T004 Vitest: the three agree for a customer, a seller, staff
+- [x] T001 `accountDestinations`
+- [x] T002 The user menu, the phone menu and the account page draw it
+- [x] T003 Account-area pages left-aligned
+- [x] T004 Vitest: the three agree for a customer, a seller, staff
 
 ## Phase 2: Verification and docs
 
-- [ ] T005 Mutations, each red
-- [ ] T006 Timeline, backlog, client README
-- [ ] T007 Merged, closes #254
+- [x] T005 Mutations, each red
+- [x] T006 Timeline, backlog, client README
+- [x] T007 Merged, closes #254 - #266
 
 ## Evidence
 
-(Filled in when the work is verified.)
+**2026-10-01**
+
+- **Vitest** (10): for a customer, a seller and an administrator, the avatar menu, the phone menu and `/account` list
+  exactly `accountDestinations` in its order; the list includes Saved, Notifications, two-factor sign-in and Open a shop.
+- **Mutations, each red**: Notifications dropped from the list; the phone menu cut to four; the avatar menu ignoring
+  the seller role; the account page missing Saved.
+- **Client**: oxlint clean, Vitest 652/652, build green.
+- **Post-design Constitution re-check**: unchanged.
