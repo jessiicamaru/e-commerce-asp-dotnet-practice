@@ -28,6 +28,8 @@ runtime:
       code: |-
         if (res.status === 200 && res.body.token) {
           bru.setVar("leaverToken", res.body.token);
+          // Their id, for the staff checks after the deletion (specs/123).
+          bru.setVar("leaverId", res.body.id);
         }
     - type: tests
       code: |-

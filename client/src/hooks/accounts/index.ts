@@ -3,10 +3,10 @@ import { queryKeys } from '@/constants/query-keys'
 import { Accounts } from '@/services/accounts'
 
 /** A page of people matching the search. Keeps the previous page on screen while the next loads. */
-export function useAccounts(search: string, page: number, pageSize: number) {
+export function useAccounts(search: string, page: number, pageSize: number, includeDeleted = false) {
   return useQuery({
-    queryKey: queryKeys.accounts(search, page),
-    queryFn: () => Accounts.search(search, page, pageSize),
+    queryKey: queryKeys.accounts(search, page, includeDeleted),
+    queryFn: () => Accounts.search(search, page, pageSize, includeDeleted),
     placeholderData: (previous) => previous,
   })
 }

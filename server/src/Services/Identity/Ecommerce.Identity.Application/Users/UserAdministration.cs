@@ -25,7 +25,9 @@ public record UserAdminResponse(
     string? LockReason,
     DateTime? BannedAt,
     string? BanReason,
-    bool TwoFactorEnabled = false)
+    bool TwoFactorEnabled = false,
+    // When the person deleted their account (specs/112) - staff see "Deleted" and act on nothing (specs/123).
+    DateTime? DeletedAt = null)
 {
     public static UserAdminResponse From(User user, DateTime now) => new(
         user.Id, user.Email, user.FirstName, user.LastName,
@@ -36,13 +38,17 @@ public record UserAdminResponse(
         user.IsLocked(now) ? user.LockReason : null,
         user.BannedAt, user.BanReason,
         // Whether an administrator has anything to reset (specs/110) - never the secret.
-        user.TwoFactorEnabled);
+        user.TwoFactorEnabled,
+        user.DeletedAt);
 }
 
 public record UserAdminPage(List<UserAdminResponse> Items, int Page, int PageSize, int TotalCount);
 
-/// <summary>Staff look people up by email or name (specs/043). Paged, newest first.</summary>
-public record GetUsersQuery(string? Search, int Page = 1, int PageSize = 12) : IRequest<UserAdminPage>;
+/// <summary>
+/// Staff look people up by email or name (specs/043). Paged, newest first. Deleted accounts (specs/112) are left out
+/// unless asked for (specs/123): they are emptied rows nobody can act on.
+/// </summary>
+public record GetUsersQuery(string? Search, int Page = 1, int PageSize = 12, bool IncludeDeleted = false) : IRequest<UserAdminPage>;
 
 public class GetUsersQueryValidator : AbstractValidator<GetUsersQuery>
 {
@@ -60,7 +66,7 @@ public class GetUsersQueryHandler(IUserRepository users) : IRequestHandler<GetUs
 
     public async Task<UserAdminPage> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var (items, total) = await _users.SearchAsync(request.Search, request.Page, request.PageSize, cancellationToken);
+        var (items, total) = await _users.SearchAsync(request.Search, request.Page, request.PageSize, request.IncludeDeleted, cancellationToken);
         var now = DateTime.UtcNow;
         return new UserAdminPage(items.Select(u => UserAdminResponse.From(u, now)).ToList(), request.Page, request.PageSize, total);
     }
@@ -360,8 +366,17 @@ public class UserAdministrationHandlers(
 
     private static bool IsSeller(User user) => user.Roles.Any(r => r.Name == RoleNames.Seller);
 
-    private async Task<User> TargetAsync(Guid id, CancellationToken cancellationToken) =>
-        await _users.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("User not found.");
+    /// <summary>
+    /// The person every moderation command acts on. A deleted account (specs/112) is refused with 409 `AccountDeleted`
+    /// (specs/123): its row is real - staff can see it - but there is nobody left to lock, ban or grant a role to.
+    /// </summary>
+    private async Task<User> TargetAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var user = await _users.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException("User not found.");
+        if (user.DeletedAt is not null)
+            throw new ConflictException("This account was deleted.", new Dictionary<string, object?> { ["code"] = "AccountDeleted" });
+        return user;
+    }
 
     /// <summary>What the audit diff compares: the roles and the two stops, nothing personal.</summary>
     private static object Snapshot(User user) => new

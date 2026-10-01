@@ -661,7 +661,9 @@ never cached) and any of `OpenOrders`/`OpenReturns`/`OpenSales`/`UnpaidEarnings`
 (`deleted-<id>@deleted.invalid`, `users.DeletedAt`), deletes the rest and publishes `AccountDeleted` +
 `AccessTokensRevoked`; Catalog, Order, Cart and Activity erase on it (`EraseAccountFrom*Consumer`). ⚠️ Each inventory
 declares its **`Kept`** sections (the books, other shoppers' use); every other section must be empty after the erasure,
-and a test per service reads the export to check - a new table needs its erasure too.
+and a test per service reads the export to check - a new table needs its erasure too. Staff see such a row as
+**Deleted** (`deletedAt`), listed only with `includeDeleted=true`, and every moderation command on it is 409
+`AccountDeleted` (specs/123).
 
 **A lock is decided with the person's history in view** (specs/100, #198): `GET /api/audit/people/{id}` (Staff) -
 Moderation entries whose `AboutUserId` is that person, the category fixed in code, reasons without snapshots. ⚠️ An

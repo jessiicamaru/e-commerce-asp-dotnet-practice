@@ -1,0 +1,35 @@
+info:
+  name: staff find it when asked and it says deleted
+  type: http
+  seq: 15
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/users?search=deleted-&includeDeleted=true&pageSize=50"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the account is listed with when it was deleted", function() {
+          var id = bru.getVar("leaverId");
+          var found = res.body.items.filter(function(u) { return u.id === id; });
+          expect(found).to.have.length(1);
+          expect(found[0].deletedAt).to.be.a("string");
+          expect(found[0].roles).to.have.length(0);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  With includeDeleted=true the list carries deleted accounts, each with deletedAt (specs/123). Newest first, so the one just deleted is on the first page.

@@ -8,9 +8,11 @@ import type { Account, AccountPage, ModerationHistoryPage } from './types'
  * those rules, and the ones about WHO may be locked, on its own.
  */
 export class Accounts {
-  static async search(search: string, page: number, pageSize: number): Promise<AccountPage> {
+  /** Deleted accounts are left out unless `includeDeleted` (specs/123). */
+  static async search(search: string, page: number, pageSize: number, includeDeleted = false): Promise<AccountPage> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
     if (search) params.set('search', search)
+    if (includeDeleted) params.set('includeDeleted', 'true')
     const { data } = await http.get<AccountPage>(`/users?${params}`)
     return data
   }
