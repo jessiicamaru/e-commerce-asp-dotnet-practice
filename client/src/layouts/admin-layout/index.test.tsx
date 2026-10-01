@@ -1,26 +1,32 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
 import { AdminHome } from '@/pages/admin-home'
 import { Accounts } from '@/services/accounts'
 import { Admin } from '@/services/admin'
+import { Moderation } from '@/services/moderation'
+import { Reports } from '@/services/reports'
+import { ShopApplications } from '@/services/shop-applications'
 import { renderAsAdmin, renderAsModerator } from '@/test/render'
 import { AdminLayout } from '.'
 
-function renderConsole(as: typeof renderAsAdmin) {
+function renderConsole(as: typeof renderAsAdmin, path: string | { pathname: string; state: unknown } = '/admin') {
   return as(
     <Routes>
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminHome />} />
+        <Route path="orders/:id" element={<p>an order</p>} />
         <Route path="users" element={<p>the users page</p>} />
         <Route path="shops" element={<p>the shops page</p>} />
         <Route path="moderation" element={<p>the moderation page</p>} />
       </Route>
     </Routes>,
-    '/admin',
+    path as string,
   )
 }
+
+const page = (totalCount: number) => ({ items: [], page: 1, pageNumber: 1, pageSize: 1, totalCount, totalPages: 0, hasPreviousPage: false, hasNextPage: false }) as never
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')
@@ -49,5 +55,55 @@ describe('AdminLayout (specs/043)', () => {
     expect(screen.queryByRole('link', { name: /Vouchers/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Audit log/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Overview/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminLayout groups and counts (specs/129, #246)', () => {
+  beforeEach(() => {
+    vi.spyOn(Admin, 'fulfilment').mockImplementation(async (_status, _page, pageSize) => page(pageSize === 1 ? 3 : 0))
+    vi.spyOn(Admin, 'returns').mockResolvedValue(page(1))
+    vi.spyOn(Moderation, 'products').mockResolvedValue(page(14))
+    vi.spyOn(ShopApplications, 'list').mockResolvedValue(page(2))
+    vi.spyOn(Reports, 'queue').mockResolvedValue(page(0))
+  })
+
+  it('groups the links and shows what is waiting, nothing for an empty queue', async () => {
+    renderConsole(renderAsAdmin)
+
+    for (const heading of ['Orders', 'Money', 'Catalogue', 'Moderation', 'Messages', 'System']) {
+      expect(screen.getByRole('group', { name: heading })).toBeInTheDocument()
+    }
+    const orders = screen.getByRole('group', { name: 'Orders' })
+    expect(await within(orders).findByLabelText('3 waiting')).toBeInTheDocument()
+    expect(within(orders).getByLabelText('1 waiting')).toBeInTheDocument()
+    const moderation = screen.getByRole('group', { name: 'Moderation' })
+    expect(await within(moderation).findByLabelText('14 waiting')).toBeInTheDocument()
+    expect(within(moderation).getByLabelText('2 waiting')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: /Reports/ })).queryByLabelText(/waiting/)).not.toBeInTheDocument()
+  })
+
+  it("asks a moderator only for their own queues' counts", async () => {
+    renderConsole(renderAsModerator)
+
+    expect(await screen.findByLabelText('14 waiting')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Money' })).not.toBeInTheDocument()
+    await waitFor(() => expect(Moderation.products).toHaveBeenCalled())
+    expect(Admin.returns).not.toHaveBeenCalled()
+    expect(vi.mocked(Admin.fulfilment).mock.calls.filter(([, , size]) => size === 1)).toHaveLength(0)
+  })
+
+  it('keeps the list an order was opened from lit', async () => {
+    renderConsole(renderAsAdmin, { pathname: '/admin/orders/o1', state: { from: '/admin/orders/find?q=01a0' } })
+
+    await screen.findByText('an order')
+    expect(screen.getByRole('link', { name: /Find an order/ }).className).toContain('bg-primary')
+    expect(screen.getByRole('link', { name: /Orders to ship/ }).className).not.toContain('bg-primary')
+  })
+
+  it('falls back to Orders to ship for an order opened directly', async () => {
+    renderConsole(renderAsAdmin, '/admin/orders/o1')
+
+    await screen.findByText('an order')
+    expect(screen.getByRole('link', { name: /Orders to ship/ }).className).toContain('bg-primary')
   })
 })

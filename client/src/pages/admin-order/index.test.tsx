@@ -29,17 +29,33 @@ function order(shipments: Shipment[]): Order {
 const shop = (status: string): Shipment => ({ status, trackingReference: null, items: ['Ricoh GR III'], sellerName: null, isShop: true })
 const hers: Shipment = { status: 'Paid', trackingReference: null, items: ['Viltrox 56mm'], sellerName: 'Mai', isShop: false }
 
-function renderAt(id = 'o-1') {
+function renderAt(id = 'o-1', from?: string) {
   return renderAsAdmin(
     <Routes>
       <Route path="/admin/orders/:id" element={<AdminOrderPage />} />
     </Routes>,
-    `/admin/orders/${id}`,
+    (from ? { pathname: `/admin/orders/${id}`, state: { from } } : `/admin/orders/${id}`) as string,
   )
 }
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')
+})
+
+describe('AdminOrderPage, back where it came from (specs/129, #246)', () => {
+  it('leads back to the search it was opened from, filters included', async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([shop('Paid')]))
+    renderAt('o-1', '/admin/orders/find?q=01a0')
+
+    expect(await screen.findByRole('link', { name: 'Find an order' })).toHaveAttribute('href', '/admin/orders/find?q=01a0')
+  })
+
+  it('leads back to the fulfilment queue when opened directly', async () => {
+    vi.spyOn(Admin, 'order').mockResolvedValue(order([shop('Paid')]))
+    renderAt()
+
+    expect(await screen.findByRole('link', { name: 'Orders to ship' })).toHaveAttribute('href', '/admin')
+  })
 })
 
 describe('AdminOrderPage', () => {

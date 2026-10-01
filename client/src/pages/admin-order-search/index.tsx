@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { SearchIcon } from 'lucide-react'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
@@ -24,6 +24,7 @@ import { cn } from '@/utils/shared'
  */
 export function AdminOrderSearchPage() {
   const { t, i18n } = useTranslation('admin')
+  const location = useLocation()
   const [params, setParams] = useSearchParams()
   const q = (params.get('q') ?? '').trim()
   const asked = params.get('status')
@@ -118,6 +119,8 @@ export function AdminOrderSearchPage() {
                 <li key={order.orderId}>
                   <Link
                     to={`/admin/orders/${order.orderId}`}
+                    // Where it was opened from: the console keeps that link lit and the breadcrumb leads back (specs/129).
+                    state={{ from: `${location.pathname}${location.search}` }}
                     className="bg-card ring-border/60 hover:ring-primary/60 grid gap-1 rounded-3xl p-4 ring-1 transition-all"
                   >
                     <span className="flex flex-wrap items-center gap-2 font-medium">

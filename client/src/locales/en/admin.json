@@ -20,7 +20,17 @@
     "notifications": "Notifications",
     "findOrder": "Find an order",
     "categories": "Categories",
-    "delivery": "Delivery"
+    "delivery": "Delivery",
+    "group": {
+      "orders": "Orders",
+      "money": "Money",
+      "catalogue": "Catalogue",
+      "moderation": "Moderation",
+      "messages": "Messages",
+      "system": "System"
+    },
+    "waiting_one": "{{count}} waiting",
+    "waiting_other": "{{count}} waiting"
   },
   "queue": {
     "title": "Orders to ship",

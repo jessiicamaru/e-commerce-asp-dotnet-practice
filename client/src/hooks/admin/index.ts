@@ -1,6 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
 import { Admin } from '@/services/admin'
+import { Moderation } from '@/services/moderation'
+import { Reports } from '@/services/reports'
+import { ShopApplications } from '@/services/shop-applications'
 import type { QueueState, StaffOrderQuery } from '@/services/admin/types'
 
 /** One state's queue, a page at a time. Keeps the previous page on screen while the next loads. */
@@ -124,5 +127,37 @@ export function usePaySeller() {
   return useMutation({
     mutationFn: ({ sellerId, currency }: { sellerId: string; currency: string }) => Admin.pay(sellerId, currency),
     onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.payoutsDue() }),
+  })
+}
+
+/** What is waiting in each staff queue, by the sidebar link it belongs to (specs/129). */
+export type StaffWaiting = Partial<Record<'fulfilment' | 'returns' | 'products' | 'shops' | 'reports', number>>
+
+/**
+ * How much is waiting in each queue, for the console's sidebar (specs/129, #246) - each queue's own list read one row
+ * at a time for its `totalCount`, **under its own key**: the lists' keys carry the page but not its size, so sharing
+ * them would put this one-row page on the list's screen. Fulfilment and escalated returns are an administrator's;
+ * a moderator is not sent to ask for them (the server would refuse). Read again every minute and on focus.
+ */
+export function useStaffWaiting({ isAdmin }: { isAdmin: boolean }): StaffWaiting {
+  const queues = [
+    { name: 'fulfilment', adminOnly: true, read: () => Admin.fulfilment('Paid', 1, 1) },
+    { name: 'returns', adminOnly: true, read: () => Admin.returns('Escalated', 1, 1) },
+    { name: 'products', adminOnly: false, read: () => Moderation.products('Pending', 1, 1) },
+    { name: 'shops', adminOnly: false, read: () => ShopApplications.list('Pending', 1, 1) },
+    { name: 'reports', adminOnly: false, read: () => Reports.queue(1, 1) },
+  ] as const
+
+  return useQueries({
+    queries: queues.map((queue) => ({
+      queryKey: queryKeys.staffWaiting(queue.name),
+      queryFn: async () => (await queue.read()).totalCount,
+      enabled: isAdmin || !queue.adminOnly,
+      refetchInterval: 60_000,
+    })),
+    combine: (results) =>
+      Object.fromEntries(
+        queues.flatMap((queue, index) => (results[index].data === undefined ? [] : [[queue.name, results[index].data]])),
+      ) as StaffWaiting,
   })
 }
