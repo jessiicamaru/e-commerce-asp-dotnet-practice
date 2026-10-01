@@ -4,5 +4,14 @@
   "checking": "checking…",
   "up": "up",
   "down": "down ({{detail}})",
-  "orchestratorNote": "The orchestrator has no health endpoint - it has no HTTP surface at all - so it cannot be listed here."
+  "service": {
+    "identity": "Accounts and sign-in",
+    "catalog": "Catalogue",
+    "order": "Orders",
+    "orchestrator": "Checkout coordinator",
+    "inventory": "Stock",
+    "payment": "Payments",
+    "cart": "Cart",
+    "activity": "Audit log and notifications"
+  }
 }

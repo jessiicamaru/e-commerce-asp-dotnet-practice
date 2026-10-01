@@ -20,7 +20,7 @@ export function StatusPage() {
         <TableBody>
           {services.map(({ service, pending, health }) => (
             <TableRow key={service}>
-              <TableCell>{service}</TableCell>
+              <TableCell>{t(`service.${service}`)}</TableCell>
               <TableCell
                 className={cn(
                   'text-right',
@@ -38,8 +38,6 @@ export function StatusPage() {
           ))}
         </TableBody>
       </Table>
-
-      <p className="text-muted-foreground mt-4 text-sm">{t('orchestratorNote')}</p>
     </section>
   )
 }

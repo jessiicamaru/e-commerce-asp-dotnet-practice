@@ -117,6 +117,10 @@ The rules, each of which exists because of a way a front-end suite rots:
 - **Test what can be wrong.** What a hook asks for, what a guard lets through, what a form sends,
   how a server refusal reaches a person. Not that a `div` rendered. The tests worth having here are
   the ones naming a defect: *the price field must say VND while the shop is being read in USD*.
+- **Some tests read the server.** Words the storefront must have for something the server decides are held to the
+  server's own source (specs/121): `src/locales/audit-actions.test.ts` reads every `audit.RecordAsync(` call and fails
+  on an action with no label in either language, and `src/services/health/index.test.ts` holds `/status` to the
+  gateway's health routes. A new action recorded through a variable must be declared in that test's `INDIRECT`.
 
 **In a real browser too** (specs/080): `npm run e2e` runs `e2e/` with Playwright against the running compose
 stack, in the Edge Windows already has - see "Browser end to end" in
