@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { CancelOrder } from '@/components/order/cancel-order'
 import { CancelPart } from '@/components/order/cancel-part'
@@ -25,16 +25,25 @@ import { StaffReturn } from './staff-return'
 export function AdminOrderPage() {
   const { t, i18n } = useTranslation('admin')
   const { id = '' } = useParams()
+  const location = useLocation()
   const order = useStaffOrder(id)
   const { prepare, ship } = useMoveShopParcel(id)
   const cancel = useStaffCancelOrder(id)
   const cancelShopPart = useStaffCancelShopPart(id)
   const correctShopTracking = useStaffCorrectShopTracking(id)
 
+  // Back to the list it was opened from, its filters included (specs/129) - else the fulfilment queue.
+  const from = (location.state as { from?: string } | null)?.from
+  const backTo = from?.startsWith('/admin') ? from : '/admin'
+  const backLabel = backTo.startsWith('/admin/orders/find')
+    ? t('menu.findOrder')
+    : backTo.startsWith('/admin/returns')
+      ? t('menu.returns')
+      : t('order.back')
   const back = (
     <nav className="text-muted-foreground flex items-center gap-1 text-sm">
-      <Link to="/admin" className="hover:text-foreground">
-        {t('order.back')}
+      <Link to={backTo} className="hover:text-foreground">
+        {backLabel}
       </Link>
       <ChevronRightIcon className="size-4" />
       <span className="text-foreground font-mono text-xs">{id.slice(0, 8)}…</span>

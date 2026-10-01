@@ -20,7 +20,17 @@
     "notifications": "Thông báo",
     "findOrder": "Tìm đơn hàng",
     "categories": "Danh mục",
-    "delivery": "Giao hàng"
+    "delivery": "Giao hàng",
+    "group": {
+      "orders": "Đơn hàng",
+      "money": "Tiền",
+      "catalogue": "Danh mục",
+      "moderation": "Kiểm duyệt",
+      "messages": "Tin nhắn",
+      "system": "Hệ thống"
+    },
+    "waiting_one": "{{count}} đang chờ",
+    "waiting_other": "{{count}} đang chờ"
   },
   "queue": {
     "title": "Đơn cần giao",

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useLocation } from 'react-router-dom'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
@@ -21,6 +21,7 @@ import { cn } from '@/utils/shared'
  */
 export function AdminReturnsPage() {
   const { t, i18n } = useTranslation('admin')
+  const location = useLocation()
   const [params, setParams] = useSearchParams()
   const asked = params.get('status')
   const status: ReturnQueueState = RETURN_QUEUE_STATES.includes(asked as ReturnQueueState) ? (asked as ReturnQueueState) : 'Escalated'
@@ -62,6 +63,8 @@ export function AdminReturnsPage() {
               <li key={ret.id}>
                 <Link
                   to={`/admin/orders/${ret.orderId}`}
+                  // Where it was opened from: the console keeps that link lit and the breadcrumb leads back (specs/129).
+                  state={{ from: `${location.pathname}${location.search}` }}
                   className="bg-card ring-border/60 hover:ring-primary/60 grid gap-1 rounded-3xl p-4 ring-1 transition-all"
                 >
                   <span className="flex flex-wrap items-center gap-2 font-medium">

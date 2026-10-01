@@ -55,6 +55,8 @@ export const queryKeys = {
   emailTemplateVersions: (template: string, language: string) => ['email-templates', template, language, 'versions'] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
   accounts: (search: string, page: number, includeDeleted = false) => ['accounts', search, page, includeDeleted] as const,
+  /** A staff queue's count for the console's sidebar (specs/129) - its own key, never the list's. */
+  staffWaiting: (queue: string) => ['staff-waiting', queue] as const,
   personHistory: (id: string, page: number, pageSize: number) => ['person-history', id, page, pageSize] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,
   reviewQueue: (status: string, page: number) => ['review-queue', status, page] as const,
