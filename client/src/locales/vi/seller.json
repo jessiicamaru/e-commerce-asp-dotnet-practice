@@ -42,7 +42,7 @@
       "stock": "Sản phẩm mới đăng chưa có tồn kho cho tới khi bạn nhập, ở trang của chính sản phẩm đó."
     },
     "details": "Thông tin sản phẩm",
-    "detailsHint": "Những gì người mua nhìn thấy. Phiên bản, loại tiền thứ hai và ảnh được thêm ở trang của sản phẩm sau khi đăng.",
+    "detailsHint": "Những gì người mua nhìn thấy. Phiên bản, bản dịch, loại tiền thứ hai và ảnh làm tiếp ở trang của sản phẩm.",
     "categoryPlaceholder": "Tìm danh mục…"
   },
   "edit": {
@@ -357,5 +357,36 @@
       "Rejected": "Bị bác",
       "Received": "Đã nhận lại"
     }
+  },
+  "details": {
+    "title": "Tên, mô tả và danh mục",
+    "hint": "Chữ gốc: người đọc nào cũng thấy, trừ khi ngôn ngữ của họ có chữ riêng ở dưới.",
+    "save": "Lưu thông tin",
+    "saved": "Đã lưu thông tin."
+  },
+  "text": {
+    "title": "Chữ theo từng ngôn ngữ",
+    "hint": "Ngôn ngữ có chữ riêng sẽ hiện chữ đó; ngôn ngữ chưa có sẽ hiện chữ gốc ở trên.",
+    "own": "Có chữ riêng",
+    "none": "Chưa có - người đọc {{language}} thấy chữ gốc.",
+    "save": "Lưu {{language}}",
+    "saved": "Đã lưu chữ {{language}}.",
+    "remove": "Xoá {{language}}",
+    "removed": "Đã xoá chữ {{language}} - người đọc sẽ thấy chữ gốc."
+  },
+  "addVariant": {
+    "title": "Thêm phiên bản",
+    "hint": "Bộ, màu hoặc cỡ khác. Phiên bản mới chưa có tồn kho; thêm xong hãy nhập tồn kho và giá các loại tiền khác.",
+    "options": "Tuỳ chọn",
+    "optionName": "Tên tuỳ chọn {{number}}",
+    "optionValue": "Giá trị tuỳ chọn {{number}}",
+    "optionNamePlaceholder": "vd. Màu",
+    "optionValuePlaceholder": "vd. Bạc",
+    "removeOption": "Bỏ tuỳ chọn {{number}}",
+    "addOption": "Thêm tuỳ chọn",
+    "submit": "Thêm phiên bản",
+    "added": "Đã thêm phiên bản {{sku}}.",
+    "price": "Giá phiên bản mới theo {{currency}}",
+    "firstOption": "Sản phẩm mới bán một kiểu: hãy cho phiên bản mới một tuỳ chọn để phân biệt, vd. Màu: Bạc."
   }
 }

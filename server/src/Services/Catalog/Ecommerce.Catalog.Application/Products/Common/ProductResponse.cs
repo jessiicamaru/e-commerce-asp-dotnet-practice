@@ -69,7 +69,12 @@ public record ProductResponse(
     string? ReviewReason = null,
     // specs/046: the average of the visible reviews, null when there are none, and how many.
     decimal? RatingAverage = null,
-    int RatingCount = 0
+    int RatingCount = 0,
+    // specs/124, on the lookup only: the product's original text (its own columns) and its text in each language that
+    // has some - what a seller edits. The name and description above fall back per field, so reading them cannot tell
+    // "translated" from "falling back", and once every language has its own text the original is read by nobody.
+    ProductText? Original = null,
+    List<ProductTranslationText>? Translations = null
 )
 {
     /// <summary>
@@ -145,6 +150,16 @@ public record ProductResponse(
             p.ReviewStatus.ToString(),
             p.ReviewReason,
             p.RatingAverage,
-            p.RatingCount);
+            p.RatingCount,
+            withVariants ? new ProductText(p.Name, p.Description) : null,
+            withVariants
+                ? p.Translations.OrderBy(t => t.Language).Select(t => new ProductTranslationText(t.Language, t.Name, t.Description)).ToList()
+                : null);
     }
 }
+
+/// <summary>A product's text as stored: its own columns (specs/124).</summary>
+public record ProductText(string Name, string? Description);
+
+/// <summary>A product's own text in one language (specs/021), as stored - no fallback (specs/124).</summary>
+public record ProductTranslationText(string Language, string Name, string? Description);

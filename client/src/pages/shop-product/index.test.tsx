@@ -82,7 +82,7 @@ const priceBox = (currency: string) => screen.findByLabelText(`Price in ${curren
 beforeEach(async () => {
   await i18n.changeLanguage('en')
   localStorage.setItem('currency', 'USD')
-  vi.spyOn(Product, 'get').mockImplementation(async (_id, currency) =>
+  vi.spyOn(Product, 'getAsOwner').mockImplementation(async (_id, currency) =>
     currency === 'USD' ? inCurrency('USD', null) : inCurrency('VND', 52000000),
   )
   vi.spyOn(Stock, 'get').mockResolvedValue({
@@ -186,8 +186,9 @@ describe('SellerProductPage prices, read per currency', () => {
     expect(await priceBox('USD')).toHaveValue('')
   })
 
-  it('asks once per currency, with the currency stated rather than inherited', async () => {
-    const get = vi.mocked(Product.get)
+  /** Signed in (specs/124): anonymously, a product off the shelf was a 404 on its own seller's page. */
+  it('asks once per currency, signed in, with the currency stated rather than inherited', async () => {
+    const get = vi.mocked(Product.getAsOwner)
     renderPage()
 
     await waitFor(() => expect(get.mock.calls.length).toBeGreaterThanOrEqual(2))
@@ -315,7 +316,7 @@ describe('SellerProductPage variant photograph', () => {
 
   /** Removing is not "no picture": the shape goes back to showing the product's. */
   it('offers to fall back to the product photograph when the variant has one of its own', async () => {
-    vi.mocked(Product.get).mockImplementation(async (_id, currency) =>
+    vi.mocked(Product.getAsOwner).mockImplementation(async (_id, currency) =>
       inCurrency(currency ?? 'VND', currency === 'USD' ? null : 52000000, '/api/products/p1/variants/p1/image?v=1'),
     )
     const remove = vi.spyOn(Product, 'removeVariantImage').mockResolvedValue()

@@ -1,0 +1,34 @@
+info:
+  name: the lookup carries the text as stored
+  type: http
+  seq: 118
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the original and each language's own text, as stored", function() {
+          expect(res.body.original.name).to.equal("Bruno seller camera, details corrected");
+          var vi = res.body.translations.filter(function(t) { return t.language === "vi"; });
+          expect(vi).to.have.length(1);
+          expect(vi[0].name).to.equal("Bruno seller camera, renamed");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  Signed in as its seller - a product off the shelf is a 404 to anybody else. `original` and `translations` are filled on the lookup only (specs/124).

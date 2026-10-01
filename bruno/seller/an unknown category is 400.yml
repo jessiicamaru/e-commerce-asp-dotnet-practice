@@ -1,0 +1,39 @@
+info:
+  name: an unknown category is 400
+  type: http
+  seq: 117
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno seller camera",
+        "description": null,
+        "categoryId": "00000000-0000-0000-0000-000000000001"
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("says which field", function() {
+          expect(JSON.stringify(res.body.errors)).to.contain("CategoryId");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The category must exist (specs/124).

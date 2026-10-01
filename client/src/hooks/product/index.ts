@@ -2,7 +2,7 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { queryKeys } from '@/constants/query-keys'
 import { CURRENCIES } from '@/config/money'
 import { Product } from '@/services/product'
-import type { NewProduct, ProductQuery } from '@/services/product/types'
+import type { NewProduct, NewVariant, ProductDetails, ProductQuery, ProductText } from '@/services/product/types'
 
 export function useProducts(query: ProductQuery) {
   return useQuery({
@@ -78,6 +78,21 @@ export const useUploadProductImage = (productId: string) =>
 export const useDeleteProduct = (productId: string) =>
   useListingMutation(() => Product.remove(productId), productId)
 
+/** The original text and the category (specs/124). */
+export const useUpdateProductDetails = (productId: string) =>
+  useListingMutation((details: ProductDetails) => Product.updateDetails(productId, details), productId)
+
+/** One language's own text: saved, or taken away when `text` is null (specs/124). */
+export const useSetProductTranslation = (productId: string) =>
+  useListingMutation(
+    ({ language, text }: { language: string; text: ProductText | null }) =>
+      text ? Product.setTranslation(productId, language, text) : Product.removeTranslation(productId, language),
+    productId,
+  )
+
+export const useAddVariant = (productId: string) =>
+  useListingMutation((variant: NewVariant) => Product.addVariant(productId, variant), productId)
+
 /**
  * The same product read once per currency, for the seller's price editor.
  *
@@ -90,7 +105,8 @@ export function useProductInEveryCurrency(id: string) {
   return useQueries({
     queries: CURRENCIES.map((currency) => ({
       queryKey: ['product', id, currency] as const,
-      queryFn: () => Product.get(id, currency),
+      // Signed in: its own seller reads a product off the shelf too (specs/124).
+      queryFn: () => Product.getAsOwner(id, currency),
       enabled: id !== '',
       retry: false,
     })),

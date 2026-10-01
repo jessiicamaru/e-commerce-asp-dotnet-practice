@@ -162,6 +162,7 @@
       "ProductApproved": "Product approved",
       "ProductCreated": "Product listed",
       "ProductDeleted": "Product withdrawn",
+      "ProductDetailsEdited": "Name, description or category edited",
       "ProductImageRemoved": "Product photo removed",
       "ProductImageSet": "Product photo set",
       "ProductRejected": "Product rejected",

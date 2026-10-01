@@ -1,0 +1,41 @@
+info:
+  name: a seller corrects the details of their product
+  type: http
+  seq: 115
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{sellerProductId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno seller camera, details corrected",
+        "description": "Corrected after listing (specs/124)",
+        "categoryId": "{{categoryId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the original text is the corrected one", function() {
+          expect(res.body.original.name).to.equal("Bruno seller camera, details corrected");
+          expect(res.body.original.description).to.equal("Corrected after listing (specs/124)");
+          expect(res.body.categoryId).to.equal(bru.getVar("categoryId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The product's own name, description and category (specs/124, #240) - the original text, which no translation writes. A seller's change to an approved product sends it back to review.

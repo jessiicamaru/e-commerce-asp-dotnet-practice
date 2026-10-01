@@ -385,11 +385,14 @@ lookup (a 404 for anybody but its seller and staff) and **both pricing paths** a
 `ProductVariant.Sellable` - so checkout refuses an unapproved product the way it refuses an inactive one,
 with no new check anywhere else. Staff approve, reject or take down (with a reason the seller reads)
 through a guarded `UPDATE ... WHERE "ReviewStatus" IN (...)`; a seller resubmits a rejected one.
-⚠️ **A seller changing an approved product's name, description or any photograph - variant photographs
+⚠️ **A seller changing an approved product's name, description, category or any photograph - variant photographs
 included - sends it back to review and off the shelf** (decided with the user); prices and stock do not.
-That is `ProductReview.AfterSellerEditAsync`, called before the one save in eight handlers (option translations
-and adding a variant joined in specs/056, #126) - a ninth
-edit of what a shopper reads must call it too. A moderator's console opens on `/admin/moderation`:
+That is `ProductReview.AfterSellerEditAsync`, called before the one save in nine handlers (option translations
+and adding a variant joined in specs/056, #126; `PUT /api/products/{id}` - the original name, description and
+category, which nothing wrote before - in specs/124, #240) - a tenth edit of what a shopper reads must call it too.
+The seller's product page edits all of it, and reads the product **signed in** (`Product.getAsOwner`): asked
+anonymously, a product off the shelf was a 404 on its own seller's page. The lookup carries `original` and
+`translations` as stored, since the name and description fall back per field. A moderator's console opens on `/admin/moderation`:
 what is waiting in each queue and their own decisions (`GET /api/audit/mine`, Staff).
 
 ⚠️ **Off the shelf, what hangs on a product is a 404 too** (specs/081, #166): reviews and questions answer

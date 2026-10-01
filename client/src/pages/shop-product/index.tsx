@@ -5,6 +5,9 @@ import { ChevronRightIcon, ExternalLinkIcon, Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Availability } from '@/components/product/availability'
 import { ProductImage } from '@/components/product/product-image'
+import { AddVariantForm } from '@/components/seller/add-variant'
+import { ProductDetailsCard } from '@/components/seller/product-details'
+import { ProductTranslationsCard } from '@/components/seller/product-translations'
 import { VariantEditor } from '@/components/seller/variant-editor'
 import { ImageDropzone } from '@/components/shared/image-dropzone'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
@@ -41,7 +44,13 @@ import { ReviewBanner } from '@/components/seller/review-banner'
  * </p>
  * <p>
  * The prices are read <b>once per currency</b>, because a response carries one currency's prices
- * (specs/022) and the person setting them needs to see both.
+ * (specs/022) and the person setting them needs to see both - and <b>signed in</b> (specs/124): a product off the
+ * shelf is a 404 to anybody but its seller and staff, and this page asked anonymously.
+ * </p>
+ * <p>
+ * Since specs/124 (#240) the seller also edits what they listed: the original name, description and category, the
+ * text in each language, and another variant. Keyed by the product's stored text, so a save the server answers with
+ * new text gives the forms fresh values rather than a stale draft.
  * </p>
  */
 export function SellerProductPage() {
@@ -141,30 +150,36 @@ export function SellerProductPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl">
-          <CardHeader>
-            <CardTitle>{t('edit.variants')}</CardTitle>
-            <CardDescription>{t('edit.variantsHint')}</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            {variants.map((variant, index) => (
-              <Fragment key={variant.id}>
-                {index > 0 && <Separator />}
-                <VariantEditor
-                  product={item}
-                  variant={variant}
-                  index={index}
-                  count={variants.length}
-                  prices={Object.fromEntries(
-                    Object.entries(product.byCurrency).map(([currency, byVariant]) => [currency, byVariant[variant.id] ?? null]),
-                  )}
-                  stock={stock.byVariant[variant.id] ?? null}
-                  stockPending={stock.isPending}
-                />
-              </Fragment>
-            ))}
-          </CardContent>
-        </Card>
+        <div className="grid gap-6">
+          <ProductDetailsCard key={`${item.original?.name}|${item.original?.description}|${item.categoryId}`} product={item} />
+          <ProductTranslationsCard key={JSON.stringify(item.translations ?? [])} product={item} />
+
+          <Card className="rounded-3xl">
+            <CardHeader>
+              <CardTitle>{t('edit.variants')}</CardTitle>
+              <CardDescription>{t('edit.variantsHint')}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6">
+              {variants.map((variant, index) => (
+                <Fragment key={variant.id}>
+                  {index > 0 && <Separator />}
+                  <VariantEditor
+                    product={item}
+                    variant={variant}
+                    index={index}
+                    count={variants.length}
+                    prices={Object.fromEntries(
+                      Object.entries(product.byCurrency).map(([currency, byVariant]) => [currency, byVariant[variant.id] ?? null]),
+                    )}
+                    stock={stock.byVariant[variant.id] ?? null}
+                    stockPending={stock.isPending}
+                  />
+                </Fragment>
+              ))}
+              <AddVariantForm product={item} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </section>
   )

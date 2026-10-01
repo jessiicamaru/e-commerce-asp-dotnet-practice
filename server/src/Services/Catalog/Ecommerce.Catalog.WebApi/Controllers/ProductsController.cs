@@ -1,5 +1,6 @@
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
+using Ecommerce.Catalog.Application.Products.Commands.UpdateProductDetails;
 using Ecommerce.Catalog.Application.Products.Prices;
 using Ecommerce.Catalog.Application.Products.Variants.AddProductVariant;
 using Ecommerce.Catalog.Application.Products.Variants.UpdateProductVariant;
@@ -98,6 +99,17 @@ public class ProductsController : ApiControllerBase
     }
 
     /// <summary>
+    /// The product's own name, description and category (specs/124) - its default-language text, which no translation
+    /// writes. A seller's change to an approved product sends it back to review.
+    /// </summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateDetails(Guid id, [FromBody] ProductDetailsRequest request)
+    {
+        return Ok(await Mediator.Send(new UpdateProductDetailsCommand(id, request.Name, request.Description, request.CategoryId)));
+    }
+
+    /// <summary>
     /// This product's name and description in one language (specs/021). An upsert: writing it twice
     /// leaves the second text, not a conflict.
     /// </summary>
@@ -174,6 +186,8 @@ public class ProductsController : ApiControllerBase
     }
 
     public record TranslationRequest(string Name, string? Description);
+
+    public record ProductDetailsRequest(string Name, string? Description, Guid CategoryId);
 
     public record OptionTranslationRequest(string Name, string Value);
 

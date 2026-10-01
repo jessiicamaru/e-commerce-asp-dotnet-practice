@@ -3,7 +3,7 @@
 import { http } from '@/config/axios'
 import { CURRENCY_HEADER } from '@/config/money'
 import { visitorId } from '@/utils/shared'
-import type { NewProduct, Page, Product as ProductModel, ProductQuery } from './types'
+import type { NewProduct, NewVariant, Page, Product as ProductModel, ProductDetails, ProductQuery, ProductText } from './types'
 
 /** Catalog's products. Browsing needs no account, so every call here is anonymous. */
 export class Product {
@@ -57,6 +57,39 @@ export class Product {
   static async create(input: NewProduct): Promise<ProductModel> {
     const { data } = await http.post<ProductModel>('/products', input)
     return data
+  }
+
+  /**
+   * The product as its seller (or staff) reads it - signed in, unlike {@link Product.get} (specs/124): a product off
+   * the shelf, waiting for review, rejected or taken down, is a 404 to anybody else, and its own seller's page asked
+   * anonymously and got exactly that.
+   */
+  static async getAsOwner(id: string, currency?: string): Promise<ProductModel> {
+    const { data } = await http.get<ProductModel>(`/products/${id}`, {
+      headers: currency ? { [CURRENCY_HEADER]: currency } : undefined,
+    })
+    return data
+  }
+
+  /** The original name and description and the category (specs/124). A seller's edit of an approved one re-reviews it. */
+  static async updateDetails(productId: string, details: ProductDetails): Promise<ProductModel> {
+    const { data } = await http.put<ProductModel>(`/products/${productId}`, details)
+    return data
+  }
+
+  /** The product's own text in one language (specs/021) - an upsert. */
+  static async setTranslation(productId: string, language: string, text: ProductText): Promise<void> {
+    await http.put(`/products/${productId}/translations/${language}`, text)
+  }
+
+  /** Takes a language's own text away: its readers see the original again. */
+  static async removeTranslation(productId: string, language: string): Promise<void> {
+    await http.delete(`/products/${productId}/translations/${language}`)
+  }
+
+  /** Another shape (specs/020): no stock until its seller sets it, and only the default currency's price. */
+  static async addVariant(productId: string, variant: NewVariant): Promise<void> {
+    await http.post(`/products/${productId}/variants`, variant)
   }
 
   /**

@@ -42,7 +42,7 @@
       "stock": "A new listing has no stock until you set it, on the listing's own page."
     },
     "details": "Details",
-    "detailsHint": "What shoppers see. Variants, a second currency and photographs come next, on the listing's page.",
+    "detailsHint": "What shoppers see. Variants, translations, a second currency and photographs come next, on the listing's page.",
     "categoryPlaceholder": "Search categories…"
   },
   "edit": {
@@ -358,5 +358,36 @@
       "Rejected": "Turned down",
       "Received": "Received"
     }
+  },
+  "details": {
+    "title": "Name, description and category",
+    "hint": "The original text: what every reader sees unless their language has its own, below.",
+    "save": "Save details",
+    "saved": "Details saved."
+  },
+  "text": {
+    "title": "Text in each language",
+    "hint": "A language with its own text shows it; one without shows the original above.",
+    "own": "Own text",
+    "none": "None yet - {{language}} readers see the original.",
+    "save": "Save {{language}}",
+    "saved": "{{language}} text saved.",
+    "remove": "Remove {{language}}",
+    "removed": "{{language}} text removed - its readers see the original."
+  },
+  "addVariant": {
+    "title": "Add a variant",
+    "hint": "Another kit, colour or size. It starts with no stock; set its stock and other prices once it is added.",
+    "options": "Options",
+    "optionName": "Option {{number}} name",
+    "optionValue": "Option {{number}} value",
+    "optionNamePlaceholder": "e.g. Colour",
+    "optionValuePlaceholder": "e.g. Silver",
+    "removeOption": "Remove option {{number}}",
+    "addOption": "Add an option",
+    "submit": "Add variant",
+    "added": "Variant {{sku}} added.",
+    "price": "The new variant's price in {{currency}}",
+    "firstOption": "Sold one way so far: give the new shape an option that tells it apart, such as Colour: Silver."
   }
 }

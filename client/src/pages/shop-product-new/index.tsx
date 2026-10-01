@@ -118,6 +118,11 @@ export function NewProductPage() {
             </div>
 
             <ServerError error={create.error} fallback={t('listing.loadFailed')} />
+
+            {/* At the end of the form it submits (specs/124): beside it, under the notes, it read as part of them. */}
+            <Button type="submit" className="h-11 w-fit rounded-full px-6 text-base font-semibold" disabled={create.isPending}>
+              {create.isPending ? t('create.submitting') : t('create.submit')}
+            </Button>
           </CardContent>
         </Card>
 
@@ -134,10 +139,6 @@ export function NewProductPage() {
               <p>{t('create.consequences.stock')}</p>
             </CardContent>
           </Card>
-
-          <Button type="submit" className="h-11 rounded-full text-base font-semibold" disabled={create.isPending}>
-            {create.isPending ? t('create.submitting') : t('create.submit')}
-          </Button>
         </div>
       </form>
     </section>
