@@ -176,6 +176,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [119](../../specs/119-cart-after-payment/) | Cart after payment | #258 | #242: the order page re-reads the cart when the order it watched settles (and once more 2 s later, for Cart's consumer), so the header stops counting what was just paid for |
 | [120](../../specs/120-not-found-page/) | Not-found page | #259 | #243: an unknown address shows a translated page - what happened, a search box and the way back to the shop - instead of the English words Not found. |
 | [121](../../specs/121-staff-labels-status/) | Audit labels and status | #260 | #244: all 112 recorded audit actions have words in both languages, held to the server's source by a test that reads every RecordAsync call; the status page asks all eight health routes by name, held to the gateway's configuration |
+| [122](../../specs/122-catalogue-phone/) | Catalogue on a phone | #261 | #245: on a phone the catalogue is two to a row, the hero compact without the featured photo and the categories one scrolling row, so the first product is 807px down instead of 1,355px and the page a third as tall |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
