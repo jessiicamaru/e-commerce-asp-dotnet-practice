@@ -24,7 +24,13 @@
     "notSoldIn": "Not sold in {{currency}}"
   },
   "loading": "Loading…",
-  "notFound": "Not found.",
+  "notFound": {
+    "title": "This page is not here",
+    "body": "The address may be mistyped, or what was here has been moved or taken down.",
+    "searchPlaceholder": "Search the shop",
+    "search": "Search",
+    "home": "Back to the shop"
+  },
   "checkingSession": "Checking your session…",
   "error": {
     "unreachable": "The server could not be reached. Try again in a moment.",

@@ -174,6 +174,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [117](../../specs/117-seller-sidebar-overflow/) | Seller sidebar | #256 | #238: the seller sidebar keeps to its 15rem column whatever the shop is called - its grids' one column may shrink, so a long name truncates instead of covering the page; the browser flows' seller has a long name and asserts it |
 | [118](../../specs/118-order-lines-narrow/) | Order lines at any width | #257 | #239: order lines are two-column rows - details with quantity × price under them, the total never wrapping - so no amount is clipped at checkout or on a phone; the total's rule is one row |
 | [119](../../specs/119-cart-after-payment/) | Cart after payment | #258 | #242: the order page re-reads the cart when the order it watched settles (and once more 2 s later, for Cart's consumer), so the header stops counting what was just paid for |
+| [120](../../specs/120-not-found-page/) | Not-found page | #259 | #243: an unknown address shows a translated page - what happened, a search box and the way back to the shop - instead of the English words Not found. |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

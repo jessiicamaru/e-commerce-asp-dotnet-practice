@@ -51,6 +51,7 @@ import { NotificationsPage } from '@/pages/notifications'
 import { ConfirmEmailPage } from '@/pages/confirm-email'
 import { ForgotPasswordPage } from '@/pages/forgot-password'
 import { ResetPasswordPage } from '@/pages/reset-password'
+import { NotFoundPage } from '@/pages/not-found'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
@@ -255,7 +256,7 @@ export function AppRoutes() {
             />
             <Route path="overview" element={<AdminOverviewPage />} />
           </Route>
-          <Route path="*" element={<p>Not found.</p>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
