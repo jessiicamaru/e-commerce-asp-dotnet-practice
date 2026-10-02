@@ -71,7 +71,7 @@ separately, that is the moment for a micro-frontend. The packages introduced her
 | Passing the access token to the back office in the URL | Navigation cannot carry an `Authorization` header. A token in a URL lands in history, server logs and `Referer`. |
 | One refresh cookie for both apps (`Domain=.ecommerce.com`) | A script on the storefront could then use a staff session: the problem in section 1. |
 | A one-time hand-off code from storefront to back office | Sound, and it saves typing the password. Deferred as #279 until signing in twice proves a nuisance. |
-| A separate token audience for the back office | A stricter second line, enforced by every service. Deferred as #280. |
+| A separate token audience for the back office | A stricter second line, enforced by every service. Deferred as #280 - and built soon after, in specs/139. |
 
 ## 5. Consequences
 
@@ -97,4 +97,5 @@ separately, that is the moment for a micro-frontend. The packages introduced her
 | The back office exists: sign-in with a code, a staff guard, its own image on `:8089` | #276 | [specs/136](../../specs/136-back-office-app/) | Done - [back office](back-office.md) |
 | The console's pages move to the back office | #277 | [specs/137](../../specs/137-console-to-back-office/) | Done |
 | Staff roles only in a back-office session | #278 | [specs/138](../../specs/138-staff-roles-back-office/) | Done - the separation is now enforced, not only drawn |
-| A one-time hand-off code; a separate token audience | #279, #280 | - | Deferred |
+| A separate token audience: every service drops staff roles from a token not issued for the back office | #280 | [specs/139](../../specs/139-back-office-audience/) | Done |
+| A one-time hand-off code from the storefront to the back office | #279 | - | Next |

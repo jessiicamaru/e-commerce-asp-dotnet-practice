@@ -43,6 +43,10 @@ public class BackOfficeSessionTests(IdentityTestFixture fixture)
 
         Assert.Equal(SessionClient.Storefront, await StoredClientAsync(storefront.RefreshToken));
         Assert.Equal(SessionClient.BackOffice, await StoredClientAsync(backOffice.RefreshToken));
+
+        // Each app's tokens for that app (specs/139): every service honours a staff role only for the back office's.
+        Assert.Equal(["EcommerceClients"], Audiences(storefront.Token));
+        Assert.Equal([Ecommerce.Shared.Authentication.JwtSettings.DefaultBackOfficeAudience], Audiences(backOffice.Token));
     }
 
     /// <summary>A session keeps the app it was made for: refreshing a storefront session never gains a staff role.</summary>
@@ -167,6 +171,8 @@ public class BackOfficeSessionTests(IdentityTestFixture fixture)
 
     private static string CodeFor(string base32Secret, int stepsAway = 0) =>
         Totp.Code(Base32.Decode(base32Secret)!, Totp.StepAt(DateTime.UtcNow) + stepsAway);
+
+    private static IEnumerable<string> Audiences(string token) => new JwtSecurityTokenHandler().ReadJwtToken(token).Audiences;
 
     private static IEnumerable<string> TokenRoles(string token) =>
         new JwtSecurityTokenHandler().ReadJwtToken(token).Claims

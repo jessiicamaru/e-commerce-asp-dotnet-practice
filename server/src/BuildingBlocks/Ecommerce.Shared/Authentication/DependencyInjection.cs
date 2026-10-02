@@ -41,7 +41,8 @@ public static class DependencyInjection
                     ValidIssuer = jwtSettings.Issuer,
 
                     ValidateAudience = true,
-                    ValidAudience = jwtSettings.Audience,
+                    // The storefront's and the back office's (specs/139): a forwarded token keeps working in either.
+                    ValidAudiences = [jwtSettings.Audience, jwtSettings.BackOfficeAudience],
 
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
@@ -69,6 +70,14 @@ public static class DependencyInjection
                         if (context.Principal is { } principal && revoked.IsRevoked(principal))
                         {
                             context.Fail("This token was issued before its account's access was revoked.");
+                            return Task.CompletedTask;
+                        }
+
+                        // Staff only in the back office (#280, specs/139): a token not issued for it keeps every other
+                        // role, and loses Admin and Moderator - whatever Identity wrote, in every service.
+                        if (context.Principal is { } validated)
+                        {
+                            StaffRoles.KeepOnlyInTheBackOffice(validated, jwtSettings.BackOfficeAudience);
                         }
 
                         return Task.CompletedTask;
