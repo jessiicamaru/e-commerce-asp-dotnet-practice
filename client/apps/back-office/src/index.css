@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "../../../packages/ui/src/theme.css";
+
+/* The shared packages are outside this app's tree, which Tailwind scans by itself: name them, or the kit's
+   classes are never generated and the page builds unstyled (specs/135). */
+@source "../../../packages/ui/src";
+@source "../../../packages/core/src";

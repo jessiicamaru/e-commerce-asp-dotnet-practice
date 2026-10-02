@@ -11,7 +11,7 @@ works is a test that fails when it does not.
 | Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 809 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
 | Storefront unit tests | Vitest, jsdom, Testing Library | `client/apps/storefront/src/**/*.test.ts(x)` | 466 tests in 83 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
 | API collection | Bruno CLI | `bruno/` | 272 requests, 444 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
-| Browser end to end | Playwright (Edge locally, Chromium in CI) | `client/e2e/` | 4 flows | A page and the API it calls drifting apart: a gateway route missing, a field renamed, a toast that never shows |
+| Browser end to end | Playwright (Edge locally, Chromium in CI) | `client/e2e/` | 7 flows | A page and the API it calls drifting apart: a gateway route missing, a field renamed, a toast that never shows |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
 | Mutation checks | by hand, per change | recorded in each PR | 2-4 per feature | That a new test fails when the rule it guards is removed |
@@ -91,6 +91,9 @@ sees a page and the API it calls drift apart.
 
 - **The browser** locally is the **Edge Windows already has** (`channel: 'msedge'`), so nothing is downloaded. In CI
   it is Playwright's Chromium (`E2E_BROWSER_CHANNEL` empty). Both are Chromium.
+- **The back office** (specs/136) is `e2e/back-office.spec.ts`, at `portal.localhost:8089`
+  (`E2E_BACK_OFFICE_URL`): a moderator signs in with a code, stays signed in on a reload and signs out; a customer is
+  told it is for staff.
 - **The flows** are in `e2e/flows.spec.ts` and run in order, each as the person who does it:
   1. a moderator approves a product waiting for review;
   2. a customer adds a camera to the cart, checks out, and sees it *Paid*;
@@ -169,7 +172,7 @@ mutated binary - `touch` the restored file.
 | Image carries no secret | Checks every layer of every image for credentials |
 | Auth smoke test | `verify-auth.sh` against three services |
 | Saga end-to-end | All services and RabbitMQ in containers; `verify-saga.sh` on both branches |
-| Publish images | On `main` only, after the checks (the storefront's included): ten images - nine server images and the storefront - with immutable `sha-` tags to GHCR |
+| Publish images | On `main` only, after the checks (the storefront's included): eleven images - nine server images, the storefront and the back office (specs/136) - with immutable `sha-` tags to GHCR |
 
 A pull request is squash-merged only when every job is green.
 

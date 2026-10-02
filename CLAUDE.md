@@ -29,7 +29,9 @@ change under `client/` ships with tests, the same as one under `server/`.
 **The client is an npm workspace** (specs/135, [ADR-003](docs/architecture/adr-003-storefront-and-back-office.md)):
 `apps/storefront` (the shop), `packages/ui` (the shadcn kit and `cn`) and `packages/core` (config, context, services,
 hooks, utils, constants, locales, test helpers). The staff console is moving to a **back office** of its own, a second
-app at `portal.*` (#276-#278). We call them **storefront and back office**, never a micro-frontend: two apps sharing
+app at `portal.*` (#276-#278) - it exists since specs/136 (`apps/back-office`, `npm run dev:back-office` on
+`portal.localhost:5174`, [docs/architecture/back-office.md](docs/architecture/back-office.md)), and the console moves
+there in #277. We call them **storefront and back office**, never a micro-frontend: two apps sharing
 code at build time, not composed at run time. `@/` is an app's own `src`; shared code is imported as
 `@ecommerce/core/...` and `@ecommerce/ui/...`. ⚠️ A package never imports an app (`layering.test.ts`). ⚠️ The app's
 `index.css` names the packages with `@source`, or Tailwind never sees the kit and the page builds unstyled.
@@ -814,7 +816,7 @@ minutes after 5 wrong passwords in 15 minutes (`sign_in_throttles`, single `ON C
 statements). It is keyed on the email, so unknown addresses behave the same (#28), and it is **a pause,
 never the moderation lock**. `forgot-password` sends one email a minute per address.
 ⚠️ `X-Forwarded-For` is read **only** from `GATEWAY_TRUSTED_PROXIES` (compose: the storefront at
-`172.30.10.10` on the `edge` network). With none configured the gateway sets `ForwardedHeaders.None`,
+`172.30.10.10` and the back office at `172.30.10.11` on the `edge` network). With none configured the gateway sets `ForwardedHeaders.None`,
 because **empty `KnownProxies` + `KnownIPNetworks` means trust EVERY peer**, and a forged header per
 request then bypassed the limit.
 **An address is confirmed by its link** (specs/063, #106). Both registrations stage a hashed, single-use,
@@ -955,7 +957,10 @@ docker compose up -d                                                           #
 Host ports are 5000 and 5056-5063; inside their containers every service binds 8080. One
 [Dockerfile](server/Dockerfile) builds all nine server images, selected by a `PROJECT` build argument.
 **The storefront is the tenth** (specs/051): [client/Dockerfile](client/Dockerfile), nginx serving the
-bundle on **:8088** and forwarding `/api` to `GATEWAY_URL`, read at start. Open it on `localhost` - the
+bundle on **:8088** and forwarding `/api` to `GATEWAY_URL`, read at start. **The back office is the eleventh**
+(specs/136): the same Dockerfile with `--build-arg APP=back-office`, on **:8089**, opened at `portal.localhost` (⚠️
+cookies ignore the port - on one host the two apps would share a session). Its nginx is `172.30.10.11`, the second
+address in `GATEWAY_TRUSTED_PROXIES`. Open it on `localhost` - the
 refresh cookie is `Secure`. `.github/scripts/verify-storefront-image.sh` asks the image what a browser
 would (app, deep link, `/api`, 2 MB upload, cache headers); nginx's `client_max_body_size` must stay
 above Catalog's `ProductImageKey.MaxBytes`.
@@ -1026,8 +1031,8 @@ checks every layer, not the running container, and CI runs it.
 
 ## Published images
 
-A merge to `main` whose checks pass publishes ten images to GHCR - the nine server images and the
-storefront, which also waits for the `client` job - each built, scanned for
+A merge to `main` whose checks pass publishes eleven images to GHCR - the nine server images, the
+storefront and the back office, which also wait for the `client` job - each built, scanned for
 credentials, and only then pushed:
 
 ```text

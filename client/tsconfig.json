@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./apps/storefront" },
+    { "path": "./apps/back-office" },
     { "path": "./packages/core" },
     { "path": "./packages/ui" },
     { "path": "./tsconfig.node.json" },

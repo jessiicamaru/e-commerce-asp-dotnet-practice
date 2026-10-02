@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { LoadingRows } from '@/components/shared/query-state'
+import { LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Badge } from '@ecommerce/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@ecommerce/ui/dialog'

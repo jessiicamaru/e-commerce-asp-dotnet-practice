@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { WalletIcon } from 'lucide-react'
 import { PageTitle } from '@/components/seller/page-title'
 import { Price } from '@/components/shared/price'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import {
   AlertDialog,

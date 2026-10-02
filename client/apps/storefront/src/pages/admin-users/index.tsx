@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { EllipsisIcon, SearchIcon } from 'lucide-react'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { TabStrip } from '@/components/shared/tab-strip'
 import {

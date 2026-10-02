@@ -16,8 +16,10 @@ own (#276, #277). The two apps share everything that is not a page, through pack
 ```text
 client/
 ├── apps/storefront/      the shop - index.html, public/, src/{components,pages,layouts,routes}
-├── packages/ui/          the component kit (shadcn) and `cn`
-├── packages/core/        config, context, services, hooks, utils, constants, locales, test helpers
+├── apps/back-office/     the staff's app (specs/136) - sign-in, a staff guard; the console moves here in #277
+├── packages/ui/          the component kit (shadcn), `cn`, and `theme.css` - the look both apps share
+├── packages/core/        config, context, services, hooks, utils, constants, locales, test helpers, and
+│                         components/ that need the core (the sign-in form, the query-state messages)
 ├── e2e/                  Playwright flows (Vitest never reads them)
 ├── workspace.aliases.ts  the import names, for Vite and Vitest
 └── tsconfig.base.json    the same names for TypeScript
@@ -48,6 +50,8 @@ cd server && docker compose -f docker-compose.yml -f docker-compose.app.yml up -
 cd client
 npm install          # every workspace, one lock file
 npm run dev          # the storefront on http://localhost:5173 ; /api is proxied to http://localhost:5000
+npm run dev:back-office   # the back office on http://portal.localhost:5174 - a different HOST, not just a port:
+                          # cookies ignore the port, so on one host the two apps would share one session
 ```
 
 Point the proxy elsewhere with `GATEWAY_URL=http://host:port npm run dev`.

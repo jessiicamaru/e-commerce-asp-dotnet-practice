@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Pager } from '@/components/shared/pager'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { usePersonHistory } from '@ecommerce/core/hooks/accounts'
 import { humanise } from '@/pages/admin-audit/format'
 

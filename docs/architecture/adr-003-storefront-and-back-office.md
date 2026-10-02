@@ -88,3 +88,13 @@ separately, that is the moment for a micro-frontend. The packages introduced her
   - In development the two apps must be different **hosts** (`localhost` and `portal.localhost`), not different
     ports. Cookies ignore the port, so on one host the apps' refresh cookies would overwrite each other.
   - A notice sent to staff must link into the back office, not to a storefront page that no longer exists.
+
+## 6. Progress
+
+| Step | Issue | Record | State |
+| :-- | :-- | :-- | :-- |
+| The client becomes a workspace: `apps/storefront`, `packages/ui`, `packages/core` | #275 | [specs/135](../../specs/135-client-workspaces/) | Done |
+| The back office exists: sign-in with a code, a staff guard, its own image on `:8089` | #276 | [specs/136](../../specs/136-back-office-app/) | Done - [back office](back-office.md) |
+| The console's pages move to the back office | #277 | - | Next |
+| Staff roles only in a back-office session | #278 | - | After #277 |
+| A one-time hand-off code; a separate token audience | #279, #280 | - | Deferred |

@@ -6,7 +6,7 @@ import { ProductImage } from '@/components/product/product-image'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { Price } from '@/components/shared/price'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { Button } from '@ecommerce/ui/button'
 import {
   DropdownMenu,

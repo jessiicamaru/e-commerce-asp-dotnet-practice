@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { ApiError } from '@ecommerce/core/config/axios'
 import { AddressCard } from '@/components/address/address-card'
 import { AddressDialog } from '@/components/address/address-dialog'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { Button } from '@ecommerce/ui/button'
 import { useAddresses, useDeleteAddress, useMakeAddressDefault } from '@ecommerce/core/hooks/address'
 

@@ -13,7 +13,10 @@
 # recognisable and cannot be confused with the storefront answering it itself.
 set -euo pipefail
 
-IMAGE="${1:?usage: verify-storefront-image.sh <image[:tag]>}"
+IMAGE="${1:?usage: verify-storefront-image.sh <image[:tag]> [app name]}"
+# Which app, for the messages: the storefront unless told otherwise (specs/136 - the back office is checked the same
+# way, because every question below is one any of the client's single-page apps must answer).
+WHAT="${2:-storefront}"
 RUN="sf-verify-$$"
 NET="$RUN-net"
 STUB="$RUN-gateway"
@@ -117,7 +120,7 @@ fi
 
 echo
 if [ "$failures" -gt 0 ]; then
-  echo "::error::$failures storefront image check(s) failed for $IMAGE"
+  echo "::error::$failures $WHAT image check(s) failed for $IMAGE"
   exit 1
 fi
-echo "The storefront image serves the storefront."
+echo "The $WHAT image serves the $WHAT."

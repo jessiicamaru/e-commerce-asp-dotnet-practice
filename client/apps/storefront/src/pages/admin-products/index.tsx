@@ -7,7 +7,7 @@ import { ProductImage } from '@/components/product/product-image'
 import { PageTitle } from '@/components/seller/page-title'
 import { Price } from '@/components/shared/price'
 import { Pager } from '@/components/shared/pager'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Button, buttonVariants } from '@ecommerce/ui/button'
 import {

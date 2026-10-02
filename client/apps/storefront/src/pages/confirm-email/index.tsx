@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ErrorMessage } from '@/components/shared/query-state'
+import { ErrorMessage } from '@ecommerce/core/components/query-state'
 import { Alert, AlertDescription } from '@ecommerce/ui/alert'
 import { buttonVariants } from '@ecommerce/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ecommerce/ui/card'

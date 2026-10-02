@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { PageTitle } from '@/components/seller/page-title'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { TabStrip } from '@/components/shared/tab-strip'
 import { useEmailTemplates } from '@ecommerce/core/hooks/email-template'
 import { EmailEditor } from './email-editor'
