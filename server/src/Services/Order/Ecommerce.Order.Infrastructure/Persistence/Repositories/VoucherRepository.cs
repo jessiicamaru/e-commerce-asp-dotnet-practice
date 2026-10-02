@@ -166,9 +166,26 @@ public class VoucherRepository(OrderDbContext context) : IVoucherRepository
         return false;
     }
 
-    public async Task<(List<VoucherSummary> Items, int TotalCount)> GetPageAsync(Guid? sellerId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(List<VoucherSummary> Items, int TotalCount)> GetPageAsync(
+        Guid? sellerId, int page, int pageSize, CancellationToken cancellationToken = default,
+        string? search = null, string? state = null, DateTime? now = null)
     {
         var query = _context.Vouchers.AsNoTracking().Where(v => v.SellerId == sellerId);
+
+        // By code or name, and by state (specs/133) - in SQL, so the total is the filtered list's, not a page's.
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var key = $"%{search.Trim().ToLower().Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_")}%";
+            query = query.Where(v => EF.Functions.Like(v.Code.ToLower(), key, "\\") || EF.Functions.Like(v.Name.ToLower(), key, "\\"));
+        }
+        var at = now ?? DateTime.UtcNow;
+        query = state switch
+        {
+            VoucherListState.Disabled => query.Where(v => v.Status == VoucherStatus.Disabled),
+            VoucherListState.Ended => query.Where(v => v.Status != VoucherStatus.Disabled && v.EndsAt != null && v.EndsAt <= at),
+            VoucherListState.Active => query.Where(v => v.Status != VoucherStatus.Disabled && (v.EndsAt == null || v.EndsAt > at)),
+            _ => query,
+        };
         var total = await query.CountAsync(cancellationToken);
         var rows = await query
             .Include(v => v.Conditions).Include(v => v.Targets).Include(v => v.Amounts)

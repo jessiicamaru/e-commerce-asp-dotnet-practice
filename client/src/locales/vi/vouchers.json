@@ -90,5 +90,14 @@
     "codeOnly": "Chỉ dùng bằng mã",
     "show": "Hiển thị cho khách hàng",
     "showHint": "Được liệt kê trên trang cửa hàng, trang sản phẩm và khi thanh toán trong lúc còn dùng được. Nếu không, chỉ người bạn đưa mã mới dùng được."
+  },
+  "filter": {
+    "search": "Mã hoặc tên",
+    "state": {
+      "All": "Tất cả",
+      "Active": "Đang chạy",
+      "Ended": "Đã hết hạn",
+      "Disabled": "Đã tắt"
+    }
   }
 }

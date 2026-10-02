@@ -1,0 +1,31 @@
+info:
+  name: an unknown state is 400
+  type: http
+  seq: 44
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/users?state=Frozen"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400", function() {
+          expect(res.status).to.equal(400);
+        });
+        test("names the state", function() {
+          expect(Object.keys(res.body.errors)).to.include("State");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A state the list does not know is refused, not ignored (specs/133).

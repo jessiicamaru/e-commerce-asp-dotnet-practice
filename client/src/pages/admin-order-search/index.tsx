@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useLocation } from 'react-router-dom'
 import { OrderRow } from '@/components/order/order-row'
@@ -11,11 +11,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PAGE_SIZE } from '@/constants/shared'
 import { queryKeys } from '@/constants/query-keys'
+import { Admin } from '@/services/admin'
 import { useStaffOrderSearch } from '@/hooks/admin'
 import { Accounts } from '@/services/accounts'
 import { STAFF_ORDER_STATES, type StaffOrderState } from '@/services/admin/types'
 import { Insights } from '@/services/insights'
 import { cn } from '@/utils/shared'
+import { describeOrderStatus } from '@/utils/order'
 
 /**
  * Find any order (specs/096): by the start of its id, or by the customer's email, in any status. Order knows people only
@@ -41,10 +43,22 @@ export function AdminOrderSearchPage() {
   const customer = byEmail ? people.data?.items.find((a) => a.email.toLowerCase() === q.toLowerCase()) : undefined
   const nobody = byEmail && people.isSuccess && !customer
 
+  const searchable = !byEmail || customer !== undefined
   const orders = useStaffOrderSearch(
     { status, search: byEmail || !q ? undefined : q, customerId: customer?.id, page, pageSize: PAGE_SIZE },
-    !byEmail || customer !== undefined,
+    searchable,
   )
+  // How many orders each state holds for this search (specs/133): a page of one each - the query is the key, so the
+  // size keeps them apart from the list's own page (specs/130).
+  const counts = useQueries({
+    queries: [undefined, ...STAFF_ORDER_STATES].map((state) => ({
+      queryKey: queryKeys.staffOrders({ status: state, search: byEmail || !q ? undefined : q, customerId: customer?.id, page: 1, pageSize: 1 }),
+      queryFn: () => Admin.findOrders({ status: state, search: byEmail || !q ? undefined : q, customerId: customer?.id, page: 1, pageSize: 1 }),
+      enabled: searchable,
+    })),
+    combine: (results) => results.map((result) => result.data?.totalCount),
+  })
+  const { t: tOrders } = useTranslation('orders')
 
   const ids = [...new Set((orders.data?.items ?? []).map((o) => o.userId))]
   const who = useQuery({ queryKey: queryKeys.people(ids), queryFn: () => Insights.people(ids), enabled: ids.length > 0 })
@@ -85,7 +99,7 @@ export function AdminOrderSearchPage() {
       </form>
 
       <div role="tablist" className="bg-card ring-border/60 flex flex-wrap gap-1 justify-self-start rounded-full p-1 ring-1">
-        {[undefined, ...STAFF_ORDER_STATES].map((state) => (
+        {[undefined, ...STAFF_ORDER_STATES].map((state, index) => (
           <button
             key={state ?? 'all'}
             type="button"
@@ -98,6 +112,7 @@ export function AdminOrderSearchPage() {
             )}
           >
             {state ? t(`findOrder.state.${state}`) : t('findOrder.all')}
+            {counts[index] !== undefined && <span className="ml-1.5 tabular-nums opacity-70">{counts[index]}</span>}
           </button>
         ))}
       </div>
@@ -136,7 +151,10 @@ export function AdminOrderSearchPage() {
                         <span className="text-muted-foreground text-xs">
                           {person ? `${person.firstName} ${person.lastName} · ${person.email}` : t('findOrder.someone')}
                         </span>
-                        {order.failureReason && <span className="text-destructive text-xs">{order.failureReason}</span>}
+                        {/* In the customer's words (specs/133) - not the server's text with a product id in it. */}
+                        {order.failureReason && (
+                          <span className="text-destructive text-xs">{describeOrderStatus(tOrders, order.status, order.failureReason)}</span>
+                        )}
                       </>
                     }
                   />

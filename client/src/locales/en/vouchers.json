@@ -90,5 +90,14 @@
     "codeOnly": "Code only",
     "show": "Show it to shoppers",
     "showHint": "Listed on the shop page, product pages and at checkout while it can be used. Otherwise only people you give the code to can use it."
+  },
+  "filter": {
+    "search": "Code or name",
+    "state": {
+      "All": "All",
+      "Active": "Active",
+      "Ended": "Ended",
+      "Disabled": "Turned off"
+    }
   }
 }

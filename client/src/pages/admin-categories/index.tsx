@@ -1,12 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { PlusIcon } from 'lucide-react'
+import { PlusIcon, SearchIcon } from 'lucide-react'
 import { PageTitle } from '@/components/seller/page-title'
+import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { Label } from '@/components/ui/label'
+import { PAGE_SIZE } from '@/constants/shared'
 import { ApiError } from '@/config/axios'
 import { useCategoriesIn, useCategoryChanges } from '@/hooks/category'
 import type { Category } from '@/services/category/types'
@@ -17,6 +21,11 @@ import { CategoryRow } from './category-row'
  * The shop's categories (specs/097): created, renamed and translated here rather than through the API. Vietnamese is the
  * category's own text, English a translation (specs/026); the address (slug) is fixed when it is created, so links to it
  * keep working. Deleting one that still has products is refused by the server, and the page says why in its words.
+ *
+ * <p>
+ * Searched by name (either language) or address, twelve to a page (specs/133, #249). The list comes back whole from
+ * the server, so both are done here - nothing narrower to ask for.
+ * </p>
  */
 export function AdminCategoriesPage() {
   const { t } = useTranslation('admin')
@@ -26,6 +35,9 @@ export function AdminCategoriesPage() {
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugTouched, setSlugTouched] = useState(false)
+  const [params, setParams] = useSearchParams()
+  const search = params.get('q') ?? ''
+  const page = Number(params.get('page') ?? '1') || 1
 
   const create = (event: FormEvent) => {
     event.preventDefault()
@@ -40,6 +52,22 @@ export function AdminCategoriesPage() {
   }
 
   const english = new Map<string, Category>((en.data ?? []).map((c) => [c.id, c]))
+  const term = search.trim().toLowerCase()
+  const found = (vi.data ?? []).filter(
+    (c) =>
+      !term ||
+      c.name.toLowerCase().includes(term) ||
+      c.slug.toLowerCase().includes(term) ||
+      (english.get(c.id)?.name.toLowerCase().includes(term) ?? false),
+  )
+  const shown = found.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const go = (next: { q?: string; page?: number }) => {
+    const merged = new URLSearchParams()
+    const q = next.q ?? search
+    if (q) merged.set('q', q)
+    if (next.page && next.page > 1) merged.set('page', String(next.page))
+    setParams(merged)
+  }
   const refusal = changes.create.error ? ApiError.from(changes.create.error).message : null
 
   return (
@@ -76,11 +104,29 @@ export function AdminCategoriesPage() {
       ) : vi.data.length === 0 ? (
         <p className="bg-card ring-border/60 rounded-3xl p-8 text-sm ring-1">{t('categories.none')}</p>
       ) : (
-        <ul className="grid gap-3">
-          {vi.data.map((category) => (
-            <CategoryRow key={category.id} vi={category} en={english.get(category.id)} changes={changes} />
-          ))}
-        </ul>
+        <>
+          <InputGroup className="h-10 max-w-sm rounded-full">
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+            <InputGroupInput
+              aria-label={t('categories.search')}
+              placeholder={t('categories.search')}
+              value={search}
+              onChange={(event) => go({ q: event.target.value, page: 1 })}
+            />
+          </InputGroup>
+          {found.length === 0 ? (
+            <p className="text-muted-foreground text-sm">{t('categories.noneFound')}</p>
+          ) : (
+            <ul className="grid gap-3">
+              {shown.map((category) => (
+                <CategoryRow key={category.id} vi={category} en={english.get(category.id)} changes={changes} />
+              ))}
+            </ul>
+          )}
+          <Pager page={page} pageSize={PAGE_SIZE} totalCount={found.length} onChange={(next) => go({ page: next })} />
+        </>
       )}
     </section>
   )

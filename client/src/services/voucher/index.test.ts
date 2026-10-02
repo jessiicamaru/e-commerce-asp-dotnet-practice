@@ -37,3 +37,15 @@ describe('Voucher.public (specs/114)', () => {
     expect(get).toHaveBeenCalledWith('/vouchers/public?platform=true&sellerId=s1&sellerId=s2&productId=p1&variantId=v1', { anonymous: true })
   })
 })
+
+describe('Voucher.mine (specs/133)', () => {
+  it('sends the search and the state, and leaves out what is empty', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: { items: [] } })
+
+    await Voucher.mine(1, 12, { search: 'TET', state: 'Ended' })
+    await Voucher.mine(1, 12, { search: '', state: '' })
+
+    expect(get.mock.calls[0][0]).toBe('/vouchers/mine?page=1&pageSize=12&search=TET&state=Ended')
+    expect(get.mock.calls[1][0]).toBe('/vouchers/mine?page=1&pageSize=12')
+  })
+})

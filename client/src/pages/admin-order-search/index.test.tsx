@@ -49,8 +49,10 @@ describe('AdminOrderSearchPage (specs/096)', () => {
     const link = await screen.findByRole('link', { name: /01a0dd2b/ })
     expect(link).toHaveAttribute('href', '/admin/orders/01a0dd2b-5f3e-7000-8000-000000000001')
     expect(await screen.findByText('Mai Tran · mai@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Card declined')).toBeInTheDocument()
-    expect(find).toHaveBeenLastCalledWith({ status: undefined, search: '01a0dd2b', customerId: undefined, page: 1, pageSize: PAGE_SIZE })
+    // The customer's words for the failure (specs/133), not the server's text.
+    expect(screen.getByText(/payment was declined/)).toBeInTheDocument()
+    expect(screen.queryByText('Card declined')).not.toBeInTheDocument()
+    expect(find).toHaveBeenCalledWith({ status: undefined, search: '01a0dd2b', customerId: undefined, page: 1, pageSize: PAGE_SIZE })
   })
 
   /** Order knows people by id only: an email goes to Identity first, and its id to Order. */
@@ -79,6 +81,19 @@ describe('AdminOrderSearchPage (specs/096)', () => {
 
     await user.click(await screen.findByRole('tab', { name: 'Failed' }))
 
-    await waitFor(() => expect(find).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'Failed' })))
+    await waitFor(() => expect(find).toHaveBeenCalledWith(expect.objectContaining({ status: 'Failed', pageSize: PAGE_SIZE })))
+  })
+})
+
+describe('AdminOrderSearchPage: how many in each state (specs/133, #249)', () => {
+  it('says on each tab how many orders the search finds there', async () => {
+    const find = vi.spyOn(Admin, 'findOrders').mockImplementation(async (query) =>
+      query.pageSize === 1 ? { items: [], page: 1, pageSize: 1, totalCount: query.status === 'Failed' ? 3 : query.status ? 0 : 9 } : page(order()),
+    )
+    renderPage('/admin/orders/find?q=01a0dd2b')
+
+    expect(await screen.findByRole('tab', { name: /^Failed\s*3$/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /^All\s*9$/ })).toBeInTheDocument()
+    expect(find).toHaveBeenCalledWith({ status: 'Failed', search: '01a0dd2b', customerId: undefined, page: 1, pageSize: 1 })
   })
 })

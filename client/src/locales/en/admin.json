@@ -328,7 +328,17 @@
     "resetTwoFactorConfirm": "Reset",
     "twoFactorReset": "Two-factor sign-in reset for {{email}}.",
     "showDeleted": "Show deleted accounts",
-    "deletedName": "Deleted account"
+    "deletedName": "Deleted account",
+    "filter": {
+      "role": "Role",
+      "anyRole": "Any role",
+      "state": {
+        "All": "All",
+        "Active": "Active",
+        "Locked": "Locked",
+        "Banned": "Banned"
+      }
+    }
   },
   "roles": {
     "Admin": "Administrator",
@@ -679,7 +689,9 @@
     "english": "English",
     "noEnglish": "No English yet",
     "none": "No categories yet.",
-    "loadFailed": "The categories could not be loaded."
+    "loadFailed": "The categories could not be loaded.",
+    "search": "Name or address",
+    "noneFound": "No category matches."
   },
   "deliverySettings": {
     "title": "Delivery",

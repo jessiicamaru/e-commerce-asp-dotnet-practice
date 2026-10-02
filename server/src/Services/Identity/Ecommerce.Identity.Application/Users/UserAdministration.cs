@@ -48,7 +48,21 @@ public record UserAdminPage(List<UserAdminResponse> Items, int Page, int PageSiz
 /// Staff look people up by email or name (specs/043). Paged, newest first. Deleted accounts (specs/112) are left out
 /// unless asked for (specs/123): they are emptied rows nobody can act on.
 /// </summary>
-public record GetUsersQuery(string? Search, int Page = 1, int PageSize = 12, bool IncludeDeleted = false) : IRequest<UserAdminPage>;
+/// <param name="Role">Somebody holding this role (specs/133).</param>
+/// <param name="State"><c>Active</c> (neither locked nor banned), <c>Locked</c> (a lock still running) or <c>Banned</c>.</param>
+public record GetUsersQuery(
+    string? Search, int Page = 1, int PageSize = 12, bool IncludeDeleted = false, string? Role = null, string? State = null)
+    : IRequest<UserAdminPage>;
+
+/// <summary>The states the users list is filtered by (specs/133).</summary>
+public static class UserListState
+{
+    public const string Active = "Active";
+    public const string Locked = "Locked";
+    public const string Banned = "Banned";
+
+    public static readonly IReadOnlyList<string> Names = [Active, Locked, Banned];
+}
 
 public class GetUsersQueryValidator : AbstractValidator<GetUsersQuery>
 {
@@ -57,6 +71,12 @@ public class GetUsersQueryValidator : AbstractValidator<GetUsersQuery>
         RuleFor(x => x.Page).GreaterThan(0);
         RuleFor(x => x.PageSize).InclusiveBetween(1, 50);
         RuleFor(x => x.Search).MaximumLength(255);
+        RuleFor(x => x.Role)
+            .Must(role => role is null || RoleNames.Descriptions.ContainsKey(role))
+            .WithMessage($"Role must be one of: {string.Join(", ", RoleNames.Descriptions.Keys)}.");
+        RuleFor(x => x.State)
+            .Must(state => state is null || UserListState.Names.Contains(state))
+            .WithMessage($"State must be one of: {string.Join(", ", UserListState.Names)}.");
     }
 }
 
@@ -66,7 +86,8 @@ public class GetUsersQueryHandler(IUserRepository users) : IRequestHandler<GetUs
 
     public async Task<UserAdminPage> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var (items, total) = await _users.SearchAsync(request.Search, request.Page, request.PageSize, request.IncludeDeleted, cancellationToken);
+        var (items, total) = await _users.SearchAsync(
+            request.Search, request.Page, request.PageSize, request.IncludeDeleted, cancellationToken, request.Role, request.State, DateTime.UtcNow);
         var now = DateTime.UtcNow;
         return new UserAdminPage(items.Select(u => UserAdminResponse.From(u, now)).ToList(), request.Page, request.PageSize, total);
     }

@@ -187,6 +187,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [130](../../specs/130-staff-count-keys/) | Staff count keys | #270 | #268: the moderation dashboard and the overview read the sidebar's counts, list keys carry their page size, and a decision re-reads the counts - a one-row count page no longer stands in for a queue's first page |
 | [131](../../specs/131-seller-needs-you/) | Seller needs-you | #271 | #247: a seller's home opens with what needs them - sales to prepare (a new status filter on their sales, counted across every page), questions, returns and a missing payout account - and the seller menu badges the same counts |
 | [132](../../specs/132-recognisable-orders/) | Recognisable orders | #272 | #248: every order list names up to three lines (the biggest first), and lists and order pages share one short reference - the notices' eight characters, with copy - and a coloured status chip |
+| [133](../../specs/133-staff-list-filters/) | Long staff lists can be searched and filtered | #273 | #249: vouchers by code, name and state; people by role and state; categories searched and paged; order tabs counted |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

@@ -52,11 +52,11 @@ describe('AdminUsersPage: deleted accounts (specs/123, #241)', () => {
     const user = userEvent.setup()
     renderPage(renderAsAdmin)
     await screen.findByText('lan@example.test')
-    expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, false)
+    expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, false, { role: '', state: '' })
 
     await user.click(screen.getByRole('checkbox', { name: 'Show deleted accounts' }))
 
-    await waitFor(() => expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, true))
+    await waitFor(() => expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, true, { role: '', state: '' }))
   })
 
   it('reads Deleted with its date and offers nothing but its history', async () => {
@@ -83,7 +83,7 @@ describe('AdminUsersPage (specs/043)', () => {
 
     await user.type(screen.getByRole('textbox', { name: 'Email or name' }), 'lan@{Enter}')
 
-    await waitFor(() => expect(search).toHaveBeenLastCalledWith('lan@', 1, PAGE_SIZE, false))
+    await waitFor(() => expect(search).toHaveBeenLastCalledWith('lan@', 1, PAGE_SIZE, false, { role: '', state: '' }))
   })
 
   it('shows who is locked, until when, and who is banned', async () => {
@@ -94,7 +94,7 @@ describe('AdminUsersPage (specs/043)', () => {
     renderPage(renderAsAdmin)
 
     expect(await screen.findByText(/Locked until/)).toBeInTheDocument()
-    expect(screen.getByText('Banned')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Banned')).toBeInTheDocument()
   })
 
   /** specs/095: a ban closes a seller's shop, and the page says so; a customer's ban does not mention a shop. */
@@ -106,7 +106,7 @@ describe('AdminUsersPage (specs/043)', () => {
     renderPage(renderAsAdmin)
 
     expect(await screen.findByText('Banned · shop closed')).toBeInTheDocument()
-    expect(screen.getByText('Banned')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Banned')).toBeInTheDocument()
   })
 
   it('lets an administrator make somebody a moderator', async () => {
@@ -311,5 +311,19 @@ describe('AdminUsersPage, resetting two-factor sign-in (specs/110)', () => {
 
     const menu = await openActions(user, 'lan@example.test')
     expect(within(menu).queryByRole('menuitem', { name: 'Reset two-factor sign-in' })).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminUsersPage: by role and state (specs/133, #249)', () => {
+  it('asks for the state chosen, and for a role named in the address', async () => {
+    const search = vi.spyOn(Accounts, 'search').mockResolvedValue(page(person()))
+    const user = userEvent.setup()
+    renderPage(renderAsAdmin, '/admin/users?role=Moderator')
+    await screen.findByText('lan@example.test')
+    expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, false, { role: 'Moderator', state: '' })
+
+    await user.click(screen.getByRole('tab', { name: 'Locked' }))
+
+    await waitFor(() => expect(search).toHaveBeenLastCalledWith('', 1, PAGE_SIZE, false, { role: 'Moderator', state: 'Locked' }))
   })
 })

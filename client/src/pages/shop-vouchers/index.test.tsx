@@ -162,3 +162,21 @@ describe('AdminVouchersPage (specs/070)', () => {
     })
   })
 })
+
+describe('vouchers searched and filtered (specs/133, #249)', () => {
+  it('asks for the code or name typed, and the state chosen, each tab saying how many', async () => {
+    const mine = vi.spyOn(Voucher, 'mine').mockImplementation(async (_page, size, filter = {}) =>
+      size === 1 ? ({ items: [], page: 1, pageSize: 1, totalCount: filter.state === 'Ended' ? 4 : filter.state ? 1 : 6 }) : page([sale]),
+    )
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminVouchersPage />, '/admin/vouchers')
+
+    expect(await screen.findByRole('tab', { name: 'Ended 4' })).toBeInTheDocument()
+    await user.type(screen.getByRole('textbox', { name: 'Code or name' }), 'mai{Enter}')
+    await waitFor(() => expect(mine).toHaveBeenCalledWith(1, 12, { search: 'mai', state: '' }))
+
+    await user.click(screen.getByRole('tab', { name: /Ended/ }))
+    await waitFor(() => expect(mine).toHaveBeenCalledWith(1, 12, { search: 'mai', state: 'Ended' }))
+    expect(mine).toHaveBeenCalledWith(1, 1, { search: 'mai', state: 'Ended' })
+  })
+})
