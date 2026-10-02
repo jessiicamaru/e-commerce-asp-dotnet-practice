@@ -192,6 +192,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [135](../../specs/135-client-workspaces/) | The client becomes a workspace of apps and packages | #281 | #275: npm workspaces - apps/storefront, packages/ui, packages/core; the first step to a back office (ADR-003) |
 | [136](../../specs/136-back-office-app/) | A back office for staff, with its own sign-in | #282 | #276: apps/back-office at portal.*: sign-in with a code, a staff guard, its own session and image (ADR-003 step 2) |
 | [137](../../specs/137-console-to-back-office/) | The admin and moderator console moves to the back office | #283 | #277: 21 console pages and their layout to apps/back-office, 36 shared components to packages/core; /admin/* redirects; closing a shop moves too (ADR-003 step 3) |
+| [138](../../specs/138-staff-roles-back-office/) | Staff roles only in a back-office session | #284 | #278: refresh_tokens.Client from Origin; Admin/Moderator only in a verified back-office session; tools sign in as the back office (ADR-003 step 4) |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
