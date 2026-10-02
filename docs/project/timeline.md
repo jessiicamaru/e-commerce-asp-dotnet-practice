@@ -185,6 +185,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [128](../../specs/128-notice-wording-layout/) | Notice wording layout | #267 | #250: notice wording is edited like the emails - kinds by readable name, a language switch, one kind's sentences, the choice in the address - 1,072px instead of 7,028px |
 | [129](../../specs/129-admin-menu/) | Admin menu | #269 | #246: the admin sidebar is grouped, counts what waits in five queues (by role, under their own query keys), and an order keeps the list it was opened from lit and leads back to it |
 | [130](../../specs/130-staff-count-keys/) | Staff count keys | #270 | #268: the moderation dashboard and the overview read the sidebar's counts, list keys carry their page size, and a decision re-reads the counts - a one-row count page no longer stands in for a queue's first page |
+| [131](../../specs/131-seller-needs-you/) | Seller needs-you | #271 | #247: a seller's home opens with what needs them - sales to prepare (a new status filter on their sales, counted across every page), questions, returns and a missing payout account - and the seller menu badges the same counts |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
