@@ -1,0 +1,175 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+/* The shared packages are outside this app's tree, which Tailwind scans by itself: name them, or the kit's
+   classes are never generated and the page builds unstyled (specs/135). */
+@source "../../../packages/ui/src";
+@source "../../../packages/core/src";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    /* A camera shop, not a dashboard: warm paper rather than clinical white, one saturated accent,
+       and enough radius that a card reads as an object. The palette is our own - the reference the
+       owner sent was read for its design LANGUAGE (light, bento, round, airy, one accent) and not
+       copied, and none of its branding is here. */
+
+    /* Warm off-white. Pure white behind white cards leaves nothing to separate them. */
+    --background: oklch(0.977 0.008 106);
+    --foreground: oklch(0.18 0.012 106);
+
+    /* Cards are the lightest thing on the page, so they lift off the background without a border. */
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.18 0.012 106);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.18 0.012 106);
+
+    /* The accent, and the only saturated colour in the interface. Dark text ON it, because a lime
+       this bright cannot carry white text at any accessible contrast. */
+    --primary: oklch(0.885 0.175 124);
+    --primary-foreground: oklch(0.22 0.04 124);
+
+    --secondary: oklch(0.955 0.01 106);
+    --secondary-foreground: oklch(0.24 0.012 106);
+    --muted: oklch(0.955 0.01 106);
+    --muted-foreground: oklch(0.52 0.012 106);
+    --accent: oklch(0.93 0.035 124);
+    --accent-foreground: oklch(0.24 0.04 124);
+
+    --destructive: oklch(0.58 0.21 27);
+
+    --border: oklch(0.915 0.008 106);
+    --input: oklch(0.915 0.008 106);
+    --ring: oklch(0.78 0.12 124);
+
+    --chart-1: oklch(0.885 0.175 124);
+    --chart-2: oklch(0.72 0.1 124);
+    --chart-3: oklch(0.55 0.06 124);
+    --chart-4: oklch(0.42 0.03 106);
+    --chart-5: oklch(0.28 0.012 106);
+
+    /* 1rem, up from 0.625: the difference between a form control and an object you would pick up. */
+    --radius: 1rem;
+
+    --sidebar: oklch(0.977 0.008 106);
+    --sidebar-foreground: oklch(0.18 0.012 106);
+    --sidebar-primary: oklch(0.885 0.175 124);
+    --sidebar-primary-foreground: oklch(0.22 0.04 124);
+    --sidebar-accent: oklch(0.955 0.01 106);
+    --sidebar-accent-foreground: oklch(0.24 0.012 106);
+    --sidebar-border: oklch(0.915 0.008 106);
+    --sidebar-ring: oklch(0.78 0.12 124);
+}
+
+.dark {
+    /* Not the light theme inverted: a warm near-black, cards a step lighter so they still read as
+       objects, and the same lime - which survives a dark background far better than it survives a
+       white one. */
+    --background: oklch(0.17 0.008 106);
+    --foreground: oklch(0.96 0.006 106);
+
+    --card: oklch(0.225 0.008 106);
+    --card-foreground: oklch(0.96 0.006 106);
+    --popover: oklch(0.225 0.008 106);
+    --popover-foreground: oklch(0.96 0.006 106);
+
+    --primary: oklch(0.86 0.175 124);
+    --primary-foreground: oklch(0.2 0.04 124);
+
+    --secondary: oklch(0.28 0.008 106);
+    --secondary-foreground: oklch(0.96 0.006 106);
+    --muted: oklch(0.28 0.008 106);
+    --muted-foreground: oklch(0.72 0.008 106);
+    --accent: oklch(0.32 0.03 124);
+    --accent-foreground: oklch(0.92 0.06 124);
+
+    --destructive: oklch(0.7 0.19 22);
+
+    --border: oklch(1 0 0 / 12%);
+    --input: oklch(1 0 0 / 16%);
+    --ring: oklch(0.6 0.1 124);
+
+    --chart-1: oklch(0.86 0.175 124);
+    --chart-2: oklch(0.7 0.1 124);
+    --chart-3: oklch(0.55 0.06 124);
+    --chart-4: oklch(0.42 0.03 106);
+    --chart-5: oklch(0.32 0.012 106);
+
+    --sidebar: oklch(0.225 0.008 106);
+    --sidebar-foreground: oklch(0.96 0.006 106);
+    --sidebar-primary: oklch(0.86 0.175 124);
+    --sidebar-primary-foreground: oklch(0.2 0.04 124);
+    --sidebar-accent: oklch(0.28 0.008 106);
+    --sidebar-accent-foreground: oklch(0.96 0.006 106);
+    --sidebar-border: oklch(1 0 0 / 12%);
+    --sidebar-ring: oklch(0.6 0.1 124);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+/* Words an administrator writes in the rich-text editor (specs/077): the few elements the server's allow-list
+   keeps, given back the look Tailwind's reset takes away - so the editor shows roughly what the email will. */
+@layer components {
+  .email-body p { margin: 0 0 0.75rem; }
+  .email-body h2 { margin: 0 0 0.75rem; font-size: 1.25rem; font-weight: 700; }
+  .email-body h3 { margin: 0 0 0.75rem; font-size: 1.1rem; font-weight: 700; }
+  .email-body ul { margin: 0 0 0.75rem; padding-left: 1.5rem; list-style: disc; }
+  .email-body ol { margin: 0 0 0.75rem; padding-left: 1.5rem; list-style: decimal; }
+  .email-body blockquote { margin: 0 0 0.75rem; padding-left: 0.75rem; border-left: 3px solid var(--border); color: var(--muted-foreground); }
+  .email-body a { text-decoration: underline; text-underline-offset: 2px; }
+  .email-body hr { margin: 1rem 0; }
+}

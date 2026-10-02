@@ -471,7 +471,7 @@ initialising i18n and loading the module graph, and Vitest runs the suite's 51 f
 a busy machine that first wait sometimes crossed a second.
 
 **Fix.** [#101](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/101) raised the
-wait to three seconds for the whole suite, in `client/src/test/setup.ts`:
+wait to three seconds for the whole suite, in `client/packages/core/src/test/setup.ts`:
 
 ```ts
 configure({ asyncUtilTimeout: 3000 })

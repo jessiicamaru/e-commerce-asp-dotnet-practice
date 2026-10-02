@@ -97,12 +97,12 @@ See the [messages reference](../reference/messages.md).
 
 | Path | What it does |
 | :-- | :-- |
-| `client/src/components/product/product-reviews/` | The reviews section on the product page: average, count, list, and a form offered only when the server says the customer is eligible. A refusal is shown in the server's words, and the form is pre-filled with the customer's own review for editing. |
-| `client/src/components/product/star-rating/` | `StarRating` (read-only, whole and half stars, the number in words for screen readers) and `StarInput` (five toggle buttons). |
-| `client/src/components/product/product-card/`, `client/src/pages/product/` | The average on each listing card and next to the product's name. |
-| `client/src/pages/admin-reviews/` | `/admin/reviews` for staff: visible and hidden tabs, hide with a required reason, restore. |
-| `client/src/services/review/`, `client/src/hooks/review/` | `Reviews` over axios. `useMyReview` only asks when signed in. `useWriteReview` refetches the reviews and the product afterwards, so the page shows the server's recomputed average. |
-| `client/src/locales/*/notifications.json` | Wording for the `NewReview` notice in both languages. |
+| `client/apps/storefront/src/components/product/product-reviews/` | The reviews section on the product page: average, count, list, and a form offered only when the server says the customer is eligible. A refusal is shown in the server's words, and the form is pre-filled with the customer's own review for editing. |
+| `client/apps/storefront/src/components/product/star-rating/` | `StarRating` (read-only, whole and half stars, the number in words for screen readers) and `StarInput` (five toggle buttons). |
+| `client/apps/storefront/src/components/product/product-card/`, `client/apps/storefront/src/pages/product/` | The average on each listing card and next to the product's name. |
+| `client/apps/storefront/src/pages/admin-reviews/` | `/admin/reviews` for staff: visible and hidden tabs, hide with a required reason, restore. |
+| `client/packages/core/src/services/review/`, `client/packages/core/src/hooks/review/` | `Reviews` over axios. `useMyReview` only asks when signed in. `useWriteReview` refetches the reviews and the product afterwards, so the page shows the server's recomputed average. |
+| `client/packages/core/src/locales/*/notifications.json` | Wording for the `NewReview` notice in both languages. |
 
 ## Tests
 
@@ -110,8 +110,8 @@ See the [messages reference](../reference/messages.md).
 | :-- | :-- |
 | `Ecommerce.Catalog.Tests/ReviewTests` | `Somebody_who_has_not_received_it_cannot_review_it` (403); `One_review_each_signed_with_the_first_name_and_the_average_follows`; `A_hidden_review_is_neither_shown_nor_counted`; `The_seller_is_told_about_a_new_review_not_about_every_edit`; `Receiving_it_twice_is_one_right_to_review`. |
 | `Ecommerce.Order.Tests/DeliveryTests` | `A_confirmed_parcel_announces_the_products_in_it_once` and `The_sweep_announces_each_parcel_it_delivers` (one event per parcel, carrying that parcel's products, never twice), plus the specs/040 delivery rules the event depends on. |
-| `client/src/components/product/product-reviews/index.test.tsx` | Shows the average, count and text; offers no form to somebody not eligible; posts stars and words; fills the form for an edit; shows a server refusal in its words. |
-| `client/src/pages/admin-reviews/index.test.tsx` | Hiding needs a reason; the hidden tab shows why, and restoring puts a review back. |
+| `client/apps/storefront/src/components/product/product-reviews/index.test.tsx` | Shows the average, count and text; offers no form to somebody not eligible; posts stars and words; fills the form for an edit; shows a server refusal in its words. |
+| `client/apps/storefront/src/pages/admin-reviews/index.test.tsx` | Hiding needs a reason; the hidden tab shows why, and restoring puts a review back. |
 | `bruno/reviews/` | The customer whose parcel arrived may review, reviews, edits the same review; the product carries its average; a moderator hides it (off the page), sees it among the hidden, restores it; a customer cannot hide. |
 | `bruno/seller/someone who did not receive it cannot review it.yml` | The refusal, in the seller folder, which runs last. |
 | `bruno/security-checks/reviewing without a token is 401.yml` | Writing needs a token. |

@@ -5,7 +5,7 @@ evidence it was found with (a search of the code, a request against the running 
 acceptance criteria. This page is the summary; the issue is the source of truth - close the issue and
 update this page in the same change.
 
-Last reviewed: 2026-10-02 (the staff portal, #275-#280).
+Last reviewed: 2026-10-02 (the back office, #275-#280).
 
 ## Deliberately deferred
 
@@ -52,21 +52,20 @@ things hidden, clipped, untranslated or wrong), then #246-#254 (usability).
 | :-- | :-- |
 
 
-## Priority 2a - the staff portal
+## Priority 2a - the back office
 
-Decided with the user on 2026-10-02: the admin and moderator console leaves the shop for its own app,
-`portal.ecommerce.com`. Staff do not shop, and a staff session should not share an origin with user-written content.
+Decided with the user on 2026-10-02: the admin and moderator console leaves the shop - now the **storefront** - for a
+**back office** of its own at `portal.ecommerce.com` ([ADR-003](../architecture/adr-003-storefront-and-back-office.md)). Staff do not shop, and a staff session should not share an origin with user-written content.
 Two SPAs in one monorepo, not module federation. In order - #278 must follow #277. #279 and #280 are recorded but
 deferred.
 
 | Issue | Title |
 | :-- | :-- |
-| [#275](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/275) | Split the storefront into npm workspaces |
-| [#276](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/276) | A portal app for staff, with its own sign-in |
-| [#277](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/277) | The admin and moderator console moves to the portal |
-| [#278](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/278) | Staff roles only in a portal session |
-| [#279](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/279) | One-time handoff from the shop to the portal - deferred until signing in twice proves a nuisance |
-| [#280](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/280) | A separate token audience for the portal - deferred, the stricter second line |
+| [#276](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/276) | A back-office app for staff, with its own sign-in |
+| [#277](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/277) | The admin and moderator console moves to the back office |
+| [#278](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/278) | Staff roles only in a back-office session |
+| [#279](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/279) | One-time handoff from the storefront to the back office - deferred until signing in twice proves a nuisance |
+| [#280](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/280) | A separate token audience for the back office - deferred, the stricter second line |
 
 ## Priority 3 - technical debt
 
@@ -122,6 +121,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#248](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/248) | Orders are identified only by a timestamp | [#272](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/272) (specs/132) |
 | [#249](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/249) | Long staff lists cannot be searched or filtered | [#273](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/273) (specs/133) |
 | [#253](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/253) | Checkout says nothing of payment or delivery time | [#274](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/274) (specs/134) |
+| [#275](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/275) | Split the storefront into npm workspaces | [#281](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/281) (specs/135) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |

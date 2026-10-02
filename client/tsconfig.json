@@ -1,8 +1,9 @@
 {
   "files": [],
-  "compilerOptions": { "paths": { "@/*": ["./src/*"], "cn": ["./src/utils/shared/cn.ts"] } },
   "references": [
-    { "path": "./tsconfig.app.json" },
+    { "path": "./apps/storefront" },
+    { "path": "./packages/core" },
+    { "path": "./packages/ui" },
     { "path": "./tsconfig.node.json" },
     { "path": "./tsconfig.e2e.json" }
   ]

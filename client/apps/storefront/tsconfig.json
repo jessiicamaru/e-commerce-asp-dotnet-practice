@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../node_modules/.tmp/storefront.tsbuildinfo",
+    // "@/" is this app's own src - never used by a package (specs/135 research D3).
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ecommerce/core/*": ["../../packages/core/src/*"],
+      "@ecommerce/ui/*": ["../../packages/ui/src/*"],
+      "cn": ["../../packages/ui/src/cn.ts"]
+    }
+  },
+  "include": ["src", "../../packages/core/src/test/setup.ts"]
+}

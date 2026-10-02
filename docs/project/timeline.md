@@ -189,6 +189,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [132](../../specs/132-recognisable-orders/) | Recognisable orders | #272 | #248: every order list names up to three lines (the biggest first), and lists and order pages share one short reference - the notices' eight characters, with copy - and a coloured status chip |
 | [133](../../specs/133-staff-list-filters/) | Long staff lists can be searched and filtered | #273 | #249: vouchers by code, name and state; people by role and state; categories searched and paged; order tabs counted |
 | [134](../../specs/134-checkout-payment-delivery-time/) | Checkout says how payment works and how long delivery takes | #274 | #253: a delivery time per option, set at /admin/delivery; a payment card that says when no money moves |
+| [135](../../specs/135-client-workspaces/) | The client becomes a workspace of apps and packages | #281 | #275: npm workspaces - apps/storefront, packages/ui, packages/core; the first step to a back office (ADR-003) |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

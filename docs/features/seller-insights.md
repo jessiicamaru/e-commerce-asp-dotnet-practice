@@ -56,10 +56,10 @@ No message and no table is new. The reads use `order_items`, `order_shipments`, 
 
 | Path | What it does |
 | :-- | :-- |
-| `client/src/pages/shop-insights/` | The page: the period, two cards (views and rating), revenue, and two top-5 lists. |
-| `client/src/components/insights/` | Shared with the Overview since specs/068: `DailyRevenueChart`, `RevenuePanel`, `RankedList`, `InsightPanel` and `PeriodPicker`. Their words are in `common` (`insights.*`). |
-| `client/src/utils/insights/` | `periodRange`, which gives today and the N - 1 days before it: the chart's days. |
-| `client/src/layouts/seller-layout/` | The **Insights** link, second in the shop console. |
+| `client/apps/storefront/src/pages/shop-insights/` | The page: the period, two cards (views and rating), revenue, and two top-5 lists. |
+| `client/apps/storefront/src/components/insights/` | Shared with the Overview since specs/068: `DailyRevenueChart`, `RevenuePanel`, `RankedList`, `InsightPanel` and `PeriodPicker`. Their words are in `common` (`insights.*`). |
+| `client/packages/core/src/utils/insights/` | `periodRange`, which gives today and the N - 1 days before it: the chart's days. |
+| `client/apps/storefront/src/layouts/seller-layout/` | The **Insights** link, second in the shop console. |
 
 ## Tests
 
@@ -67,8 +67,8 @@ No message and no table is new. The reads use `order_items`, `order_shipments`, 
 | :-- | :-- |
 | `Ecommerce.Order.Tests/SellerInsightsTests` (11) | Revenue is the seller's lines before tax, never the order's total. Another seller's lines never appear. Only sold orders count. A received return is excluded and an open one is not. A return is one seller's part. An order counts once. Currencies are never added together. The period is whole days and has its limits. Top products are ranked by units, with revenue per currency. A token without an id is refused. |
 | `Ecommerce.Catalog.Tests/SellerProductInsightsTests` (6) | Only the seller's own products, and views only inside the period, with the most viewed first. The rating is weighted. No reviews gives a null rating. The list is limited but the totals are not. The period rule. A token without an id is refused. |
-| `client/src/pages/shop-insights/index.test.tsx` | What both services are asked for, over exactly the chart's days. Revenue per currency, never added together. The rating and each product's views and rating. Nothing yet rather than zeros. A new period asks again. |
-| `client/src/services/insights/index.test.ts` | The three URLs, with no seller id. |
+| `client/apps/storefront/src/pages/shop-insights/index.test.tsx` | What both services are asked for, over exactly the chart's days. Revenue per currency, never added together. The rating and each product's views and rating. Nothing yet rather than zeros. A new period asks again. |
+| `client/packages/core/src/services/insights/index.test.ts` | The three URLs, with no seller id. |
 | `bruno/seller/` 56-59 | 200 for the seller with the right shape, including the product this folder listed. 403 for a customer on both services. |
 
 ## Known limits

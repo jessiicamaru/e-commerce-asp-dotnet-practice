@@ -51,7 +51,7 @@ sequenceDiagram
 
 **Identity.** `GET /api/users/stats` returns `UserStats(Total, Customers, Sellers, Moderators, Admins, Locked, Banned)`: a count per role, accounts locked until a future time, and banned accounts. `GET /api/users/lookup?ids=` returns `UserBrief(Id, Email, FirstName, LastName)` for 1 to 100 ids and leaves out unknown ones. The Overview uses it to put emails on the top buyers, because Order knows buyers only by id.
 
-**The chart.** `DailyRevenueChart` draws one column for every day of the period, not only the days with revenue. `periodDays(first, last)` in `client/src/utils/insights` lists every `YYYY-MM-DD` day from the response's `firstDay` to its `lastDay` - the server's days, because the browser's clock knows neither the shop's time zone nor what the server counted (specs/082). Days with no sales stay empty. Bars scale to the busiest day, which is named above the chart. The first and last days are labelled below it, and hovering or focusing a column shows the date, the amount and the number of orders. The chart shows one currency at a time: the one whose revenue card is selected.
+**The chart.** `DailyRevenueChart` draws one column for every day of the period, not only the days with revenue. `periodDays(first, last)` in `client/packages/core/src/utils/insights` lists every `YYYY-MM-DD` day from the response's `firstDay` to its `lastDay` - the server's days, because the browser's clock knows neither the shop's time zone nor what the server counted (specs/082). Days with no sales stay empty. Bars scale to the busiest day, which is named above the chart. The first and last days are labelled below it, and hovering or focusing a column shows the date, the amount and the number of orders. The chart shows one currency at a time: the one whose revenue card is selected.
 
 ## Rules and guarantees
 
@@ -107,12 +107,12 @@ None. The insights are reads, and the view counter is a single SQL statement. No
 
 | Path | What it does |
 | :-- | :-- |
-| `client/src/pages/admin-overview/index.tsx` | `AdminOverviewPage`: period buttons, six headline cards (the two waiting counts link to their queues), revenue cards per currency, the chart, and three top-5 lists. |
-| `client/src/components/insights/` | Shared with the seller's Insights page since specs/068: `DailyRevenueChart` (one keyboard-focusable column per day, bars scaled to the peak, a tooltip that stays inside the card), `RevenuePanel`, `RankedList`, `InsightPanel`, `PeriodPicker`. |
-| `client/src/utils/insights/index.ts` | `periodDays`: every day from `firstDay` to `lastDay`, as the server counted them. `periodRange`: the request's `from` and `to` for a period. |
-| `client/src/services/insights/`, `client/src/hooks/insights/` | The `Insights` class (Order, Catalog and Identity calls) and `useInsights`, with `TOP = 5`. |
-| `client/src/pages/product/index.tsx` | Sends `Product.recordView(id)` once per product opened. |
-| `client/src/layouts/admin-layout/` | The Overview link, first in the sidebar, shown to administrators only. |
+| `client/apps/storefront/src/pages/admin-overview/index.tsx` | `AdminOverviewPage`: period buttons, six headline cards (the two waiting counts link to their queues), revenue cards per currency, the chart, and three top-5 lists. |
+| `client/apps/storefront/src/components/insights/` | Shared with the seller's Insights page since specs/068: `DailyRevenueChart` (one keyboard-focusable column per day, bars scaled to the peak, a tooltip that stays inside the card), `RevenuePanel`, `RankedList`, `InsightPanel`, `PeriodPicker`. |
+| `client/packages/core/src/utils/insights/index.ts` | `periodDays`: every day from `firstDay` to `lastDay`, as the server counted them. `periodRange`: the request's `from` and `to` for a period. |
+| `client/packages/core/src/services/insights/`, `client/packages/core/src/hooks/insights/` | The `Insights` class (Order, Catalog and Identity calls) and `useInsights`, with `TOP = 5`. |
+| `client/apps/storefront/src/pages/product/index.tsx` | Sends `Product.recordView(id)` once per product opened. |
+| `client/apps/storefront/src/layouts/admin-layout/` | The Overview link, first in the sidebar, shown to administrators only. |
 
 ## Tests
 
@@ -122,10 +122,10 @@ None. The insights are reads, and the view counter is a single SQL statement. No
 | `Ecommerce.Order.Tests/SellerInsightsTests` | `The_admin_overview_leaves_a_received_return_out_the_way_the_sellers_page_does` (specs/084): admin revenue and the buyer's spending are less exactly the refund, the returned product leaves the top products, an open return changes nothing, and the seller's page agrees. |
 | `Ecommerce.Catalog.Tests/ProductViewTests` | `Twenty_visitors_at_once_count_twenty`; one visitor twenty times at once counts once; a signed-in shopper counts once whatever visitor id they send; naming nobody counts every time; a product's viewers from earlier days go with its first view today (specs/086); `Staff_and_the_seller_do_not_count_and_neither_does_what_is_not_on_the_shelf`; `The_most_viewed_come_first`. |
 | `Ecommerce.Identity.Tests/UserReportTests` | `Ids_are_turned_into_emails_and_unknown_ones_are_left_out`; `The_counts_follow_the_roles`. |
-| `client/src/pages/admin-overview/index.test.tsx` | Revenue per currency, never added together; top buyers named by email; waiting counts shown; a different period asks again; the request covers exactly the days the chart draws. |
-| `client/src/components/insights/daily-revenue-chart/index.test.tsx` | One column per day with empty days included; bars scaled to the busiest day, which is named; one currency at a time; the hover text gives day, amount and orders. |
-| `client/src/utils/insights/index.test.ts` | `periodDays` lists every day oldest first, crosses a month end, and gives as many days as asked. |
-| `client/src/pages/product/index.test.tsx` (`ProductPage views`) | The page reports a view once, however often it renders. |
+| `client/apps/storefront/src/pages/admin-overview/index.test.tsx` | Revenue per currency, never added together; top buyers named by email; waiting counts shown; a different period asks again; the request covers exactly the days the chart draws. |
+| `client/apps/storefront/src/components/insights/daily-revenue-chart/index.test.tsx` | One column per day with empty days included; bars scaled to the busiest day, which is named; one currency at a time; the hover text gives day, amount and orders. |
+| `client/packages/core/src/utils/insights/index.test.ts` | `periodDays` lists every day oldest first, crosses a month end, and gives as many days as asked. |
+| `client/apps/storefront/src/pages/product/index.test.tsx` (`ProductPage views`) | The page reports a view once, however often it renders. |
 | `bruno/admin-insights/` | A shopper opens the product page; revenue per currency, top selling, most viewed, top buyers, who the buyers are, and people in numbers answer 200 to an administrator; a customer and a moderator get 403. |
 | `bruno/security-checks/insights without a token is 401.yml`, `people without a token is 401.yml` | 401 without a token. |
 

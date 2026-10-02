@@ -5,9 +5,10 @@
 **/.env.*
 
 # --- installed and built on the host: wrong platform, large, and rebuilt inside ---
-node_modules/
-dist/
-coverage/
+# `**/` because client/ is a workspace (specs/135): each app and package can have its own.
+**/node_modules/
+**/dist/
+**/coverage/
 *.log
 
 # --- not needed to build the bundle ---
