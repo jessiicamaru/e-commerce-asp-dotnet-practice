@@ -1,12 +1,12 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `71b88285`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `8b809b0b`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**202 endpoints** across 7 services.
+**204 endpoints** across 7 services.
 
-## Identity (56)
+## Identity (58)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -18,6 +18,8 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/addresses/{id}/default` | signed in |  |
 | `POST` | `/api/auth/confirm-email` | anyone | Uses the link sent to confirm an address (specs/063). Anonymous - it may be opened anywhere. 204, or 400. |
 | `POST` | `/api/auth/forgot-password` | anyone | Asks for a link to choose a new password (specs/061). Always 202, whether or not the address has an account (#28). The email is written in the language the request comes in. |
+| `POST` | `/api/auth/handoff` | signed in | A single-use code to cross to the back office without the password (#279, specs/140): staff with two-factor sign-in only. The storefront carries it in the address's fragment, which no server sees. |
+| `POST` | `/api/auth/handoff/redeem` | anyone | Redeems a handoff for a two-factor challenge - never a session. Used, expired and made up are one 400. |
 | `POST` | `/api/auth/login` | anyone | The first step (specs/110): with two-factor sign-in on, the right password answers a challenge and sets no cookie - there is no session until the code. |
 | `POST` | `/api/auth/login/two-factor` | anyone | The second step: the challenge and a code (or a recovery code) for the session (specs/110). |
 | `POST` | `/api/auth/logout` | anyone | Ends the session: the refresh token is deleted server-side and the cookie is cleared. Anonymous on purpose - an expired access token must not stop someone signing out. Always 204. |

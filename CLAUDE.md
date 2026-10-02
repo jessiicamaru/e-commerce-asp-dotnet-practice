@@ -714,7 +714,11 @@ seed scripts, Bruno, Playwright's `Api` - sends the back office's `Origin` when 
 `roles`. **And every service checks again** (specs/139, #280): back-office tokens are issued for
 `JwtSettings:BackOfficeAudience` (`EcommerceBackOffice` by default), both audiences are valid, and
 `AddJwtAuthentication` drops `Admin`/`Moderator` from any other token (`StaffRoles.KeepOnlyInTheBackOffice`, after the
-revocation check) - a new service gets it by calling the method it must call anyway. The
+revocation check) - a new service gets it by calling the method it must call anyway. **Crossing from the storefront**
+(specs/140, #279): "Management platform" takes a single-use **handoff** (`POST /api/auth/handoff`, staff with 2FA only,
+SHA-256 in `back_office_handoffs`, 30 seconds, once) to `portal.../auth/callback#code=` - ⚠️ the FRAGMENT, which no server
+logs - where `POST /api/auth/handoff/redeem` (anonymous, `sign-in`-limited, one guarded `UPDATE`) answers a two-factor
+**challenge, never a session**: the handoff replaces the password, not the code. The
 right password for a 2FA account answers only a challenge (hashed, 5 minutes, 5 tries); a code works once (a guarded
 `TwoFactorLastStep`), and the password alone never clears the email pause. `TWO_FACTOR_KEY` (AES-GCM for the secrets) is
 required at startup. ⚠️ `ADMIN_TOTP_SECRET` seeds the administrator's secret **for development and CI only**, and every

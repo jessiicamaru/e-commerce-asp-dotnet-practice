@@ -220,6 +220,12 @@ unique - **the token itself is never stored** - `expires_at` (24 hours), `used_a
 statement that uses it) and `created_at`. Sending a new link deletes the person's unused ones first, and at
 most one is sent a minute.
 
+### `back_office_handoffs` Table
+The same shape again (specs/140): `id`, `user_id` (FK, cascade), `code_hash` CHAR(64) unique - **the code itself is
+never stored** - `expires_at` (**30 seconds**), `used_at` (set by the one guarded statement that redeems it) and
+`created_at`. A row is the code that took a staff member from the storefront to the back office; redeemed, it yields a
+two-factor challenge, never a session.
+
 ### `sign_in_throttles` Table
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |

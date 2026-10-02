@@ -50,7 +50,7 @@ What is withheld, and why:
 
 | Service | Table | Reason |
 | :-- | :-- | :-- |
-| Identity | `refresh_tokens`, `password_reset_tokens`, `email_confirmation_tokens`, `two_factor_challenges`, `two_factor_recovery_codes` | Secrets (stored as hashes) that would sign somebody in; a copy in a downloaded file is a copy to lose |
+| Identity | `refresh_tokens`, `password_reset_tokens`, `email_confirmation_tokens`, `two_factor_challenges`, `two_factor_recovery_codes`, `back_office_handoffs` (specs/140) | Secrets (stored as hashes) that would sign somebody in; a copy in a downloaded file is a copy to lose |
 | Identity | `sign_in_throttles` | Keyed by email to slow down guessing; counts of failed attempts, not the person's data |
 | Catalog | `product_viewers` | A hash of a session or browser id that counts a view once; it cannot be traced back to the person |
 | Cart | `checkout_outcomes` | Working records that match a checkout to its outcome; the order itself is in Order's export |

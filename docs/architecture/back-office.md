@@ -81,6 +81,7 @@ over plain HTTP.
 | `src/pages/admin-*` | The 21 console pages, folder names kept so history follows them (specs/137 D2) |
 | `src/components/close-shop` | Closing a shop, offered on an approved application and on a seller's row in People |
 | `src/pages/sign-in` | Signing in |
+| `src/pages/auth-callback` | Where a handoff lands (specs/140): the fragment removed, the code redeemed once, the sign-in form opened at the code step - or the ordinary sign-in if anything fails |
 
 It shares the kit and the theme (`packages/ui`, `theme.css`) and the core: session, services and translations. The
 36 components the console shares with the storefront (order rows, parcel actions, the insights panels, the voucher
@@ -93,7 +94,7 @@ pages...) live in `packages/core/src/components` (specs/137 D1).
 | Each app knows the other's address | `core/config/apps`, from `window.__APP_CONFIG__`. In a container nginx serves it at `/app-config.js` from `STOREFRONT_URL` and `BACK_OFFICE_URL`. In development each app's `public/app-config.js` is empty, so the defaults apply: `localhost:5173` and `portal.localhost:5174`. |
 | An old `/admin/...` address on the storefront | `ToBackOffice` sends the browser to the same path in the back office, query and all. |
 | A notice whose link is `/admin/...` | `openNoticeLink` opens it in the back office. Identity stores staff notices that way, and the stored ones need the mapping as much as new ones. |
-| Staff on the storefront | "Management platform" in the header and on the account page, a full navigation (`followDestination`): a router asked to go to an absolute address would treat it as a path. |
+| Staff on the storefront | "Management platform" in the header and on the account page, a full navigation (`followDestination`): a router asked to go to an absolute address would treat it as a path. Since specs/140 it carries a **handoff**: `goToBackOffice` asks Identity for a single-use code and opens `/auth/callback#code=...`, where the back office asks only for the authenticator's code (see [two-factor sign-in, section 7](../features/auth/totp-two-factor.md#7-how-this-project-uses-it)). |
 | A console link to a product | `ProductLink`: the storefront's address in a new tab, so the console stays where it was. |
 
 ## Tests
