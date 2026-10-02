@@ -81,6 +81,20 @@ public class AuthController : ApiControllerBase
         return Ok(result with { RefreshToken = "" });
     }
 
+    /// <summary>
+    /// A single-use code to cross to the back office without the password (#279, specs/140): staff with two-factor
+    /// sign-in only. The storefront carries it in the address's fragment, which no server sees.
+    /// </summary>
+    [HttpPost("handoff")]
+    public async Task<IActionResult> IssueHandoff() =>
+        Ok(await Mediator.Send(new Ecommerce.Application.Auth.Handoff.IssueBackOfficeHandoffCommand()));
+
+    /// <summary>Redeems a handoff for a two-factor challenge - never a session. Used, expired and made up are one 400.</summary>
+    [AllowAnonymous]
+    [HttpPost("handoff/redeem")]
+    public async Task<IActionResult> RedeemHandoff([FromBody] Ecommerce.Application.Auth.Handoff.RedeemBackOfficeHandoffCommand command) =>
+        Ok(await Mediator.Send(command));
+
     /// <summary>Everything Identity holds about the caller, and what it withholds and why (#217, specs/111).</summary>
     [HttpGet("me/data")]
     public async Task<IActionResult> MyData() => Ok(await Mediator.Send(new Ecommerce.Application.MyData.GetMyDataQuery()));

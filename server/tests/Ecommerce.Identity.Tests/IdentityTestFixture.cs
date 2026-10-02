@@ -87,6 +87,7 @@ public class IdentityTestFixture : IAsyncLifetime
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton(TimeProvider.System);
         services.AddApplication();
         // With retries on, as in production: a retrying strategy refuses a hand-opened transaction, and a
         // fixture without it passed code that answered every refresh with 500 (found building #29).
@@ -129,6 +130,7 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddScoped<IEmailTemplateStore, EmailTemplateStore>();
         services.AddSingleton<IHtmlSanitizer, AllowListHtmlSanitizer>();
         services.AddScoped<Ecommerce.Application.Auth.Commands.PasswordReset.IPasswordResetRepository, PasswordResetRepository>();
+        services.AddScoped<Ecommerce.Application.Auth.Handoff.IBackOfficeHandoffRepository, BackOfficeHandoffRepository>();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Ecommerce.Application.Auth.SignInThrottling.SignInOptions()));
         services.AddScoped<Ecommerce.Application.Auth.SignInThrottling.ISignInThrottle, SignInThrottleRepository>();
         services.AddScoped<Ecommerce.Application.Auth.Commands.EmailConfirmation.IEmailConfirmationRepository, EmailConfirmationRepository>();

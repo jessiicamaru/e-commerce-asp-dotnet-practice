@@ -19,6 +19,7 @@ public class AccountErasure(ApplicationDbContext context) : IAccountErasure
         await _context.OutgoingEmails.Where(e => e.RecipientId == userId).ExecuteDeleteAsync(cancellationToken);
         await _context.RefreshTokens.Where(t => t.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await _context.PasswordResetTokens.Where(t => t.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await _context.BackOfficeHandoffs.Where(h => h.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await _context.EmailConfirmationTokens.Where(t => t.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await _context.TwoFactorChallenges.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await _context.TwoFactorRecoveryCodes.Where(c => c.UserId == userId).ExecuteDeleteAsync(cancellationToken);
