@@ -338,7 +338,8 @@
         "Locked": "Bị khoá",
         "Banned": "Bị cấm"
       }
-    }
+    },
+    "closeShop": "Đóng cửa hàng"
   },
   "roles": {
     "Admin": "Quản trị viên",
@@ -713,5 +714,6 @@
     "optionSaved": "Đã lưu “{{name}}”.",
     "minDays": "Sớm nhất (ngày)",
     "maxDays": "Muộn nhất (ngày)"
-  }
+  },
+  "goToBackOffice": "Trang quản trị"
 }

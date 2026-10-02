@@ -30,8 +30,12 @@ change under `client/` ships with tests, the same as one under `server/`.
 `apps/storefront` (the shop), `packages/ui` (the shadcn kit and `cn`) and `packages/core` (config, context, services,
 hooks, utils, constants, locales, test helpers). The staff console is moving to a **back office** of its own, a second
 app at `portal.*` (#276-#278) - it exists since specs/136 (`apps/back-office`, `npm run dev:back-office` on
-`portal.localhost:5174`, [docs/architecture/back-office.md](docs/architecture/back-office.md)), and the console moves
-there in #277. We call them **storefront and back office**, never a micro-frontend: two apps sharing
+`portal.localhost:5174`, [docs/architecture/back-office.md](docs/architecture/back-office.md)), and **the console lives
+there since specs/137**: every `/admin/x` below is the back office's `/x`, and the storefront redirects the old
+address (`ToBackOffice`). ⚠️ Each app learns the other's address at run time from `/app-config.js`
+(`core/config/apps`, nginx's `STOREFRONT_URL`/`BACK_OFFICE_URL`) - never bake one in. ⚠️ An absolute address is
+another app: `followDestination`, `openNoticeLink` and `ProductLink` do a full navigation or a new tab, because a
+router treats "http://..." as a path. Components both apps draw live in `packages/core/src/components`. We call them **storefront and back office**, never a micro-frontend: two apps sharing
 code at build time, not composed at run time. `@/` is an app's own `src`; shared code is imported as
 `@ecommerce/core/...` and `@ecommerce/ui/...`. ⚠️ A package never imports an app (`layering.test.ts`). ⚠️ The app's
 `index.css` names the packages with `@source`, or Tailwind never sees the kit and the page builds unstyled.
@@ -546,7 +550,7 @@ with the last four only. Recording a payout asks Identity over gRPC (`PayoutAcco
 administrator's token forwarded) **before** the claim, and freezes bank, holder and last four on `payouts`; no account
 is a 409 that claims nothing. ⚠️ `AuditSnapshot` redacts by property NAME - an account number is masked by hand.
 
-**Administrators have a console** (specs/038): `/admin` in the storefront - the fulfilment queue per
+**Administrators have a console** (specs/038): `/admin` in the storefront until specs/137, the back office now - the fulfilment queue per
 state, one order with the shop's parcel and its next step, and the payouts due with a confirmed "record
 payout". It needed one new endpoint, `GET /api/orders/fulfilment/{id}` (Admin): ⚠️ **the one read of an
 order that is not scoped to its owner** - the role on the route is the whole permission, so its handler

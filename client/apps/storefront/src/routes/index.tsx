@@ -1,7 +1,6 @@
-import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '@/components/auth/require-auth'
-import { RequireRole } from '@/components/auth/require-role'
+import { RequireRole } from '@ecommerce/core/components/auth/require-role'
 import { MainLayout } from '@/layouts/main-layout'
 import { SellerLayout } from '@/layouts/seller-layout'
 import { AccountPage } from '@/pages/account'
@@ -24,43 +23,20 @@ import { ShopSalePage } from '@/pages/shop-sale'
 import { ShopSalesPage } from '@/pages/shop-sales'
 import { ShopPayoutsPage } from '@/pages/shop-payouts'
 import { ShopReturnsPage } from '@/pages/shop-returns'
-import { AdminLayout } from '@/layouts/admin-layout'
-import { AdminOrderPage } from '@/pages/admin-order'
-import { AdminDeliveryPage } from '@/pages/admin-delivery'
-import { AdminCategoriesPage } from '@/pages/admin-categories'
-import { AdminOrderSearchPage } from '@/pages/admin-order-search'
-import { AdminReturnsPage } from '@/pages/admin-returns'
-import { AdminEmailDeliveryPage } from '@/pages/admin-email-delivery'
-import { AdminVouchersPage } from '@/pages/admin-vouchers'
 import { ShopVouchersPage } from '@/pages/shop-vouchers'
 import { ShopQuestionsPage } from '@/pages/shop-questions'
-import { AdminPayoutsPage } from '@/pages/admin-payouts'
-import { AdminAuditPage } from '@/pages/admin-audit'
-import { AdminHome } from '@/pages/admin-home'
-import { AdminUsersPage } from '@/pages/admin-users'
-import { AdminShopsPage } from '@/pages/admin-shops'
 import { OpenShopPage } from '@/pages/open-shop'
-import { AdminModerationPage } from '@/pages/admin-moderation'
-import { AdminProductsPage } from '@/pages/admin-products'
-import { AdminReviewsPage } from '@/pages/admin-reviews'
-import { AdminQuestionsPage } from '@/pages/admin-questions'
-import { AdminReportsPage } from '@/pages/admin-reports'
-import { LoadingRows } from '@ecommerce/core/components/query-state'
-import { AdminOverviewPage } from '@/pages/admin-overview'
 import { NotificationsPage } from '@/pages/notifications'
 import { ConfirmEmailPage } from '@/pages/confirm-email'
 import { ForgotPasswordPage } from '@/pages/forgot-password'
 import { ResetPasswordPage } from '@/pages/reset-password'
 import { NotFoundPage } from '@/pages/not-found'
+import { ToBackOffice } from '@/components/layout/to-back-office'
 import { SignInPage } from '@/pages/sign-in'
 import { SignUpPage } from '@/pages/sign-up'
 import { StatusPage } from '@/pages/status'
 
 /** Every address the storefront answers. Anything behind RequireAuth needs a signed-in customer. */
-// The one page that brings a rich-text editor (specs/077): loaded when an administrator opens it, so no shopper
-// downloads ProseMirror to look at a camera.
-const AdminEmailsPage = lazy(() => import('@/pages/admin-emails').then((page) => ({ default: page.AdminEmailsPage })))
-const AdminWordingPage = lazy(() => import('@/pages/admin-wording').then((page) => ({ default: page.AdminWordingPage })))
 
 export function AppRoutes() {
   return (
@@ -179,83 +155,9 @@ export function AppRoutes() {
             <Route path="vouchers" element={<ShopVouchersPage />} />
             <Route path="questions" element={<ShopQuestionsPage />} />
           </Route>
-          {/* The administrator's console (specs/038). Same bargain as /shop: RequireRole draws, the
-              server decides. */}
-          <Route
-            path="/admin"
-            element={
-              <RequireRole role={['Admin', 'Moderator']}>
-                <AdminLayout />
-              </RequireRole>
-            }
-          >
-            <Route index element={<AdminHome />} />
-            <Route
-              path="orders/find"
-              element={
-                <RequireRole role={['Admin']}>
-                  <AdminOrderSearchPage />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="categories"
-              element={
-                <RequireRole role={['Admin']}>
-                  <AdminCategoriesPage />
-                </RequireRole>
-              }
-            />
-            <Route
-              path="delivery"
-              element={
-                <RequireRole role={['Admin']}>
-                  <AdminDeliveryPage />
-                </RequireRole>
-              }
-            />
-            <Route path="orders/:id" element={<AdminOrderPage />} />
-            <Route path="returns" element={<AdminReturnsPage />} />
-            <Route
-              path="email-delivery"
-              element={
-                <RequireRole role={['Admin']}>
-                  <AdminEmailDeliveryPage />
-                </RequireRole>
-              }
-            />
-            <Route path="vouchers" element={<AdminVouchersPage />} />
-            <Route path="payouts" element={<AdminPayoutsPage />} />
-            <Route path="audit" element={<AdminAuditPage />} />
-            <Route path="users" element={<AdminUsersPage />} />
-            <Route path="shops" element={<AdminShopsPage />} />
-            <Route path="moderation" element={<AdminModerationPage />} />
-            <Route path="products" element={<AdminProductsPage />} />
-            <Route path="reviews" element={<AdminReviewsPage />} />
-            <Route path="questions" element={<AdminQuestionsPage />} />
-            <Route path="reports" element={<AdminReportsPage />} />
-            <Route
-              path="emails"
-              element={
-                <RequireRole role={['Admin']}>
-                  <Suspense fallback={<LoadingRows />}>
-                    <AdminEmailsPage />
-                  </Suspense>
-                </RequireRole>
-              }
-            />
-            <Route
-              path="notifications"
-              element={
-                <RequireRole role={['Admin']}>
-                  <Suspense fallback={<LoadingRows />}>
-                    <AdminWordingPage />
-                  </Suspense>
-                </RequireRole>
-              }
-            />
-            <Route path="overview" element={<AdminOverviewPage />} />
-          </Route>
+          {/* The console moved to the back office (specs/137): an old address - a bookmark, an email, a notice - is the
+              same page there. */}
+          <Route path="/admin/*" element={<ToBackOffice />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

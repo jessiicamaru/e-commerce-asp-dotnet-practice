@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { TicketPercentIcon, XIcon } from 'lucide-react'
-import { ServerError } from '@/components/shared/server-error'
+import { ServerError } from '@ecommerce/core/components/shared/server-error'
 import { PublicVouchers } from '@/components/voucher/public-vouchers'
 import { Badge } from '@ecommerce/ui/badge'
 import { Button } from '@ecommerce/ui/button'

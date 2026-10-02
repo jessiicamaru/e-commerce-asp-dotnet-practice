@@ -1,0 +1,125 @@
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { Route, Routes } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '@ecommerce/core/config/i18n'
+import { Insights } from '@ecommerce/core/services/insights'
+import { Moderation } from '@ecommerce/core/services/moderation'
+import { OutgoingEmails } from '@ecommerce/core/services/outgoing-email'
+import { ShopApplications } from '@ecommerce/core/services/shop-applications'
+import { renderAsAdmin } from '@ecommerce/core/test/render'
+import { AdminOverviewPage } from '.'
+
+function renderPage() {
+  return renderAsAdmin(
+    <Routes>
+      <Route path="/overview" element={<AdminOverviewPage />} />
+    </Routes>,
+    '/overview',
+  )
+}
+
+beforeEach(async () => {
+  await i18n.changeLanguage('en')
+  vi.spyOn(Insights, 'revenue').mockResolvedValue({
+    from: '', to: '',
+    totals: [
+      { currency: 'VND', revenue: 84_000_000, orders: 2, averageOrderValue: 42_000_000 },
+      { currency: 'USD', revenue: 1_700, orders: 1, averageOrderValue: 1_700 },
+    ],
+    days: [
+      { day: '2031-01-25', currency: 'VND', revenue: 84_000_000, orders: 2 },
+      { day: '2031-01-26', currency: 'USD', revenue: 1_700, orders: 1 },
+    ],
+    firstDay: '2031-01-02',
+    lastDay: '2031-01-31',
+  })
+  vi.spyOn(Insights, 'topProducts').mockResolvedValue([{ productId: 'p1', productName: 'Fujifilm X-T5', units: 3, revenue: [] }])
+  vi.spyOn(Insights, 'topViewed').mockResolvedValue([{ productId: 'p2', name: 'Sony A7 IV', views: 41 }])
+  vi.spyOn(Insights, 'topBuyers').mockResolvedValue([{ customerId: 'c1', orders: 2, spent: [{ currency: 'VND', amount: 84_000_000 }] }])
+  vi.spyOn(Insights, 'people').mockResolvedValue([{ id: 'c1', email: 'lan@example.test', firstName: 'Lan', lastName: 'Pham' }])
+  vi.spyOn(Insights, 'userStats').mockResolvedValue({ total: 20, customers: 18, sellers: 3, moderators: 1, admins: 1, locked: 1, banned: 1 })
+  vi.spyOn(Moderation, 'products').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 4, totalCount: 4, hasPreviousPage: false, hasNextPage: true })
+  vi.spyOn(ShopApplications, 'list').mockResolvedValue({ items: [], page: 1, pageSize: 1, totalCount: 2 })
+  vi.spyOn(OutgoingEmails, 'list').mockResolvedValue({ items: [], page: 1, pageSize: 1, totalCount: 5 } as never)
+})
+
+describe('AdminOverviewPage (specs/047)', () => {
+  /** Dong and dollars are two facts: two totals, never one number made of both. */
+  it('shows revenue per currency, never added together', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: /₫84,000,000\s*2 orders/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /\$1,700\.00\s*1 order/ })).toBeInTheDocument()
+    expect(screen.queryByText(/85,700,000|84,001,700/)).not.toBeInTheDocument()
+  })
+
+  it('names the top buyers by email and shows what waits for review', async () => {
+    renderPage()
+
+    expect(await screen.findByText('lan@example.test')).toBeInTheDocument()
+    expect(screen.getByText('Fujifilm X-T5')).toBeInTheDocument()
+    expect(screen.getByText('41 views')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Products to review\s*4/ })).toHaveAttribute('href', '/products')
+  })
+
+  /**
+   * #125 (specs/055): the server counts whole UTC days, both ends included. "Last 7 days" asked from exactly
+   * 7 x 24 h ago touched EIGHT dates while the chart drew seven, so the earliest day's revenue was in the
+   * totals and had no bar.
+   */
+  it('asks for today and the days before it', async () => {
+    const revenue = vi.mocked(Insights.revenue)
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('button', { name: /₫84,000,000\s*2 orders/ })
+
+    await user.click(screen.getByRole('button', { name: 'Last 7 days' }))
+    await waitFor(() => expect(revenue).toHaveBeenCalledTimes(2))
+
+    const [from, to] = revenue.mock.calls[1]
+    expect(Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000)).toBe(6)
+  })
+
+  /**
+   * #168 (specs/082): the server counts the SHOP's days, and says which ones they were. A browser deriving
+   * them from its own clock in UTC drew the day before in Hanoi's morning - and an order paid at 06:30 there
+   * on a bar labelled yesterday.
+   */
+  it("draws exactly the shop's days the server counted", async () => {
+    renderPage()
+
+    const chart = await screen.findByRole('list', { name: 'Revenue per day' })
+    const columns = within(chart).getAllByRole('listitem')
+    expect(columns).toHaveLength(30)
+    expect(columns[0]).toHaveAccessibleName(/^Jan 2:/)
+    expect(columns[29]).toHaveAccessibleName(/^Jan 31:/)
+    expect(columns[23]).toHaveAccessibleName(/^Jan 25: ₫84,000,000/)
+  })
+
+  it('asks again for a different period', async () => {
+    const revenue = vi.mocked(Insights.revenue)
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('button', { name: /₫84,000,000\s*2 orders/ })
+    const [firstFrom] = revenue.mock.calls[0]
+
+    await user.click(screen.getByRole('button', { name: 'Last 7 days' }))
+
+    await waitFor(() => expect(revenue).toHaveBeenCalledTimes(2))
+    const [secondFrom] = revenue.mock.calls[1]
+    expect(new Date(secondFrom).getTime()).toBeGreaterThan(new Date(firstFrom).getTime())
+  })
+})
+
+describe('AdminOverviewPage failed emails (specs/115)', () => {
+  it('shows how many emails failed for good, from the email log, linking to it', async () => {
+    renderAsAdmin(<AdminOverviewPage />, '/overview')
+
+    const card = await screen.findByRole('link', { name: /Emails not delivered/ })
+    await waitFor(() => expect(card).toHaveTextContent('5'))
+    expect(card).toHaveAttribute('href', '/email-delivery')
+    expect(OutgoingEmails.list).toHaveBeenCalledWith('Failed', '', 1, 1)
+  })
+})
+

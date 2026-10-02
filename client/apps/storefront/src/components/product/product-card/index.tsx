@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ProductImage } from '@/components/product/product-image'
+import { ProductImage } from '@ecommerce/core/components/product/product-image'
 import { SaveButton } from '@/components/product/save-button'
-import { StarRating } from '@/components/product/star-rating'
-import { Price } from '@/components/shared/price'
+import { StarRating } from '@ecommerce/core/components/product/star-rating'
+import { Price } from '@ecommerce/core/components/shared/price'
 import type { Product } from '@ecommerce/core/services/product/types'
 
 /**

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Price } from '@/components/shared/price'
+import { Price } from '@ecommerce/core/components/shared/price'
 import { Badge } from '@ecommerce/ui/badge'
 import { Separator } from '@ecommerce/ui/separator'
 import type { Sale } from '@ecommerce/core/services/order/types'

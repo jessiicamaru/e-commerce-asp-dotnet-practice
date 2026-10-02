@@ -88,12 +88,12 @@ declared in `notification-kinds.json` and worded in both languages:
 | Path | What it does |
 | :-- | :-- |
 | `client/apps/storefront/src/components/product/product-questions/` | The **Questions** section under the reviews: the list, the ask form for a customer who is not the seller, and an answer box for whoever answers this product. The box is drawn from `product.sellerId` and the roles, and is for drawing only. |
-| `client/apps/storefront/src/components/question/question-item/` | One question and its answer, with the shop's name. The product page and both queues use it. |
-| `client/apps/storefront/src/components/question/answer-form/` | Answer or rewrite. It is folded to a button until opened, and a refusal is shown in the server's words. |
-| `client/apps/storefront/src/components/question/answer-queue/` | The caller's queue, unanswered or answered. |
+| `client/packages/core/src/components/question/question-item/` | One question and its answer, with the shop's name. The product page and both queues use it. |
+| `client/packages/core/src/components/question/answer-form/` | Answer or rewrite. It is folded to a button until opened, and a refusal is shown in the server's words. |
+| `client/packages/core/src/components/question/answer-queue/` | The caller's queue, unanswered or answered. |
 | `client/apps/storefront/src/pages/shop-questions/` | `/shop/questions`, linked in the seller menu. |
-| `client/apps/storefront/src/pages/admin-questions/` | `/admin/questions`, with the tabs *To answer*, *Visible* and *Hidden*. `moderation-actions.tsx` beside it hides with a reason through `TextPrompt`. |
-| `client/apps/storefront/src/components/shared/tab-strip/` | The pill tabs both pages use. |
+| `client/apps/back-office/src/pages/admin-questions/` | `/admin/questions`, with the tabs *To answer*, *Visible* and *Hidden*. `moderation-actions.tsx` beside it hides with a reason through `TextPrompt`. |
+| `client/packages/core/src/components/shared/tab-strip/` | The pill tabs both pages use. |
 
 ## Tests
 

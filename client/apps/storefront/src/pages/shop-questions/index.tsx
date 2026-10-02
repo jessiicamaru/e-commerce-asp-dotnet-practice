@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import { AnswerQueue } from '@/components/question/answer-queue'
-import { PageTitle } from '@/components/seller/page-title'
-import { TabStrip } from '@/components/shared/tab-strip'
+import { AnswerQueue } from '@ecommerce/core/components/question/answer-queue'
+import { PageTitle } from '@ecommerce/core/components/seller/page-title'
+import { TabStrip } from '@ecommerce/core/components/shared/tab-strip'
 
 /**
  * What shoppers asked about a seller's products (specs/076, #110), and where the seller answers. The answer is

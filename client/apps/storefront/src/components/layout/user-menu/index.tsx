@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@ecommerce/ui/dropdown-menu'
-import { accountDestinations } from '@ecommerce/core/constants/account'
+import { accountDestinations, followDestination } from '@ecommerce/core/constants/account'
 import type { User } from '@ecommerce/core/services/auth/types'
 import { initialsOf } from './initials'
 
@@ -64,7 +64,7 @@ export function UserMenu({
         <DropdownMenuGroup>
           {/* The one list every account menu draws (specs/127). */}
           {accountDestinations({ isSeller, isStaff }).map(({ to, icon: Icon, label }) => (
-            <DropdownMenuItem key={to} onClick={() => navigate(to)}>
+            <DropdownMenuItem key={to} onClick={() => followDestination(to, navigate)}>
               <Icon /> {t(label)}
             </DropdownMenuItem>
           ))}

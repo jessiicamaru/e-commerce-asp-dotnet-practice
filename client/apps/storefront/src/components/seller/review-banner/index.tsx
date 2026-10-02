@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { ServerError } from '@/components/shared/server-error'
+import { ServerError } from '@ecommerce/core/components/shared/server-error'
 import { Button } from '@ecommerce/ui/button'
 import { useResubmitProduct } from '@ecommerce/core/hooks/product'
 import type { Product } from '@ecommerce/core/services/product/types'

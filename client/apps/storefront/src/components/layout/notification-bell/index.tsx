@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { openNoticeLink } from '@ecommerce/core/utils/notifications/open-link'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { BellIcon, CheckCheckIcon } from 'lucide-react'
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@ecommerce/ui/dropdown-menu'
 import { useMarkRead, useNotifications, useUnreadCount } from '@ecommerce/core/hooks/notifications'
-import { NoticeText } from '@/components/shared/notice-text'
+import { NoticeText } from '@ecommerce/core/components/shared/notice-text'
 import { describeNotification } from '@ecommerce/core/utils/notifications'
 import { cn } from 'cn'
 
@@ -63,7 +64,7 @@ export function NotificationBell() {
               className="grid items-start gap-0.5 py-2"
               onClick={() => {
                 if (!n.readAt) mark.one.mutate(n.id)
-                if (n.link) navigate(n.link)
+                if (n.link) openNoticeLink(n.link, navigate)
               }}
             >
               <span className={cn('text-sm whitespace-normal', !n.readAt && 'font-semibold')}>

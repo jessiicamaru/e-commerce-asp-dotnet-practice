@@ -76,6 +76,14 @@ status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 # nothing would otherwise end the script silently - which the negative control for this very check did.
 header() { curl -s -D - -o /dev/null "$1" | tr -d '\r' | { grep -i "^$2:" || true; } | head -n1 | cut -d' ' -f2-; }
 
+# --- where the other app is (specs/137): written by nginx from STOREFRONT_URL and BACK_OFFICE_URL ---------
+config="$(curl -s "$BASE/app-config.js")"
+if printf '%s' "$config" | grep -q 'window.__APP_CONFIG__' && printf '%s' "$config" | grep -q '"backOfficeUrl": "http'; then
+  pass "/app-config.js names both apps"
+else
+  fail "/app-config.js: '$config'"
+fi
+
 # --- the app ---------------------------------------------------------------------------------------
 index="$(curl -s "$BASE/")"
 if printf '%s' "$index" | grep -q 'id="root"'; then pass "/ serves the app"; else fail "/ does not serve the app"; docker logs "$APP" | tail -20; fi

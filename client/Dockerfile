@@ -39,5 +39,8 @@ COPY --from=build /src/apps/${APP}/dist /usr/share/nginx/html
 
 # Where /api goes. Compose sets it; the default is the gateway's name in docker-compose.app.yml.
 ENV GATEWAY_URL=http://gateway:8080
+# Where each app is, for the links between them (specs/137) - compose's addresses by default.
+ENV STOREFRONT_URL=http://localhost:8088
+ENV BACK_OFFICE_URL=http://portal.localhost:8089
 
 EXPOSE 8080

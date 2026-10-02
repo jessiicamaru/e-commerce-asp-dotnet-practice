@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { StockBadge } from '@/components/product/stock-badge'
-import { Price } from '@/components/shared/price'
+import { Price } from '@ecommerce/core/components/shared/price'
 import { Label } from '@ecommerce/ui/label'
 import { RadioGroup, RadioGroupItem } from '@ecommerce/ui/radio-group'
 import type { Variant } from '@ecommerce/core/services/product/types'

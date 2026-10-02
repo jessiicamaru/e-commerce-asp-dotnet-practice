@@ -3,13 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { PauseCircleIcon, StoreIcon } from 'lucide-react'
 import { ProductCard } from '@/components/product/product-card'
-import { CloseShop } from '@/components/admin/close-shop'
-import { Pager } from '@/components/shared/pager'
+import { Pager } from '@ecommerce/core/components/shared/pager'
 import { PublicVouchers } from '@/components/voucher/public-vouchers'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { PAGE_SIZE } from '@ecommerce/core/constants/shared'
 import { queryKeys } from '@ecommerce/core/constants/query-keys'
-import { useAuth } from '@ecommerce/core/context/auth/useAuth'
 import { useProducts } from '@ecommerce/core/hooks/product'
 import { Shops } from '@ecommerce/core/services/shops'
 
@@ -21,7 +19,6 @@ import { Shops } from '@ecommerce/core/services/shops'
 export function ShopFrontPage() {
   const { t } = useTranslation('catalog')
   const { sellerId = '' } = useParams()
-  const { isStaff } = useAuth()
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
   const shop = useQuery({ queryKey: queryKeys.shopFront(sellerId), queryFn: () => Shops.get(sellerId), retry: false })
@@ -48,7 +45,6 @@ export function ShopFrontPage() {
           ) : (
             <p className="text-sm">{t('shop.onSale', { count: shop.data.productCount })}</p>
           )}
-          {isStaff && <CloseShop sellerId={shop.data.sellerId} shopName={shop.data.shopName} />}
         </header>
       )}
 

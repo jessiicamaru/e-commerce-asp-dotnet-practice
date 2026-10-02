@@ -1,5 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { screen } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@ecommerce/core/config/i18n'
@@ -85,24 +84,14 @@ describe('ShopFrontPage, paused and closed (specs/107)', () => {
   })
 
   /** Staff close a shop from its page, and only with the reason its seller will read. */
-  it('lets staff close the shop with a reason', async () => {
+  /** Closing a shop moved to the back office (specs/137): a storefront session is never staff after #278. */
+  it('offers staff no way to close it either', async () => {
     vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
     vi.spyOn(Product, 'list').mockResolvedValue(empty)
-    const close = vi.spyOn(Shops, 'close').mockResolvedValue({
-      sellerId: 's1', shopName: 'Mai Lens', state: 'Closed', pausedAt: null, closedAt: '2026-09-27T08:00:00Z', closedReason: 'Fakes',
-    })
-    vi.spyOn(Shops, 'closed').mockResolvedValue(empty)
-    const user = userEvent.setup()
     renderAsModerator(route, '/shops/s1')
 
-    await user.click(await screen.findByRole('button', { name: 'Close shop' }))
-    const dialog = await screen.findByRole('dialog')
-    const confirm = within(dialog).getByRole('button', { name: 'Close shop' })
-    expect(confirm).toBeDisabled()
-    await user.type(within(dialog).getByLabelText('Reason (the seller reads this)'), '  Fakes ')
-    await user.click(confirm)
-
-    await waitFor(() => expect(close).toHaveBeenCalledWith('s1', 'Fakes'))
+    expect(await screen.findByRole('heading', { name: 'Mai Lens' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close shop' })).not.toBeInTheDocument()
   })
 
   it('offers a customer no way to close it', async () => {

@@ -1,4 +1,5 @@
 import { BellIcon, HeartIcon, KeyRoundIcon, MapPinIcon, PackageIcon, ShieldCheckIcon, StoreIcon, UserIcon } from 'lucide-react'
+import { backOfficeUrl } from '@ecommerce/core/config/apps'
 import type { LucideIcon } from 'lucide-react'
 
 /** One place a signed-in person can go from their account: where, with which icon, and the words for it. */
@@ -31,6 +32,16 @@ export function accountDestinations({ isSeller, isStaff }: { isSeller: boolean; 
     isSeller
       ? { to: '/shop', icon: StoreIcon, label: 'seller:nav' }
       : { to: '/open-shop', icon: StoreIcon, label: 'seller:openShop' },
-    ...(isStaff ? [{ to: '/admin', icon: ShieldCheckIcon, label: 'admin:nav' }] : []),
+    // The back office is another application (specs/137): its absolute address, opened by a full navigation.
+    ...(isStaff ? [{ to: backOfficeUrl(), icon: ShieldCheckIcon, label: 'admin:goToBackOffice' }] : []),
   ]
+}
+
+/**
+ * Goes to a destination (specs/137): a path is a page of this app, an absolute address is another application - the
+ * back office - reached by a full navigation. A router asked to navigate to "http://..." would treat it as a path.
+ */
+export function followDestination(to: string, navigate: (to: string) => void) {
+  if (/^https?:\/\//.test(to)) window.location.assign(to)
+  else navigate(to)
 }
