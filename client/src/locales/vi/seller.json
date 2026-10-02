@@ -82,7 +82,7 @@
   "sales": {
     "title": "Đơn đã bán",
     "link": "Đơn đã bán",
-    "subtitle": "Các đơn có hàng bạn đăng bán. Bạn chỉ thấy phần của mình - không thấy phần còn lại của đơn, người mua hay nơi giao.",
+    "subtitle": "Các đơn có hàng bạn đăng bán. Bạn chỉ thấy phần của mình - không thấy phần còn lại của đơn - và chỉ thấy địa chỉ người mua khi phần hàng của bạn đang chờ hoặc đang chuẩn bị.",
     "none": "Chưa có ai mua hàng bạn đăng. Đơn sẽ hiện ở đây sau khi đã thanh toán.",
     "loadFailed": "Không tải được danh sách đơn đã bán.",
     "lines_one": "{{count}} dòng của bạn",
@@ -119,13 +119,24 @@
     "listings": "Sản phẩm đang bán",
     "soldOut": "Hết hàng",
     "orders": "Đơn đã bán",
-    "revenue": "Doanh thu",
+    "revenue": "Doanh số trước hoa hồng",
     "revenueHint": "Chỉ phần hàng của bạn, chưa gồm thuế. Mỗi loại tiền tính riêng.",
     "revenueWindow": "Tính trên {{count}} đơn gần nhất.",
     "recentSales": "Đơn gần đây",
     "all": "Xem tất cả",
     "restock": "Cần nhập hàng",
-    "nothingSoldOut": "Chưa có sản phẩm nào hết hàng."
+    "nothingSoldOut": "Chưa có sản phẩm nào hết hàng.",
+    "needs": {
+      "title": "Cần bạn xử lý",
+      "none": "Không có việc gì đang chờ bạn.",
+      "toPrepare_one": "{{count}} đơn cần chuẩn bị",
+      "toPrepare_other": "{{count}} đơn cần chuẩn bị",
+      "questions_one": "{{count}} câu hỏi cần trả lời",
+      "questions_other": "{{count}} câu hỏi cần trả lời",
+      "returns_one": "{{count}} yêu cầu trả hàng cần quyết định",
+      "returns_other": "{{count}} yêu cầu trả hàng cần quyết định",
+      "payoutAccount": "Thêm tài khoản nhận tiền - cửa hàng không thể trả tiền cho bạn nếu thiếu"
+    }
   },
   "products": {
     "search": "Tìm sản phẩm theo tên hoặc SKU",
@@ -388,5 +399,7 @@
     "added": "Đã thêm phiên bản {{sku}}.",
     "price": "Giá phiên bản mới theo {{currency}}",
     "firstOption": "Sản phẩm mới bán một kiểu: hãy cho phiên bản mới một tuỳ chọn để phân biệt, vd. Màu: Bạc."
-  }
+  },
+  "menuWaiting_one": "{{count}} đang chờ",
+  "menuWaiting_other": "{{count}} đang chờ"
 }

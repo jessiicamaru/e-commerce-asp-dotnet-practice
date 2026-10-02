@@ -93,6 +93,7 @@ public interface IOrderRepository
         Guid sellerId,
         int page,
         int pageSize,
+        string? partStatus = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

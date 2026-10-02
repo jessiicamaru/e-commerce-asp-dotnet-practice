@@ -1,0 +1,33 @@
+info:
+  name: a seller lists the sales waiting to be prepared
+  type: http
+  seq: 119
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/sales?status=Paid&pageSize=1"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a page of one, with the total of every such sale", function() {
+          expect(res.body.items.length).to.be.at.most(1);
+          expect(res.body.totalCount).to.be.a("number");
+          res.body.items.forEach(function(s) { expect(s.status).to.equal("Paid"); });
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The seller's own part waiting to be prepared (specs/131) - what the shop's home and menu count.

@@ -105,8 +105,10 @@ export class Order {
     return data
   }
 
-  static async sales(page: number, pageSize: number): Promise<SalePage> {
-    const { data } = await http.get<SalePage>(`/orders/sales?page=${page}&pageSize=${pageSize}`)
+  /** `status` filters by the seller's own part (specs/131): `Paid` is waiting to be prepared. */
+  static async sales(page: number, pageSize: number, status?: string): Promise<SalePage> {
+    const filter = status ? `&status=${encodeURIComponent(status)}` : ''
+    const { data } = await http.get<SalePage>(`/orders/sales?page=${page}&pageSize=${pageSize}${filter}`)
     return data
   }
 

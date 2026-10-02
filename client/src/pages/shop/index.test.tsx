@@ -5,6 +5,7 @@ import { Order } from '@/services/order'
 import type { SaleSummary } from '@/services/order/types'
 import { Product } from '@/services/product'
 import type { Product as ProductModel } from '@/services/product/types'
+import { Seller } from '@/services/seller'
 import { Shops } from '@/services/shops'
 import { renderAsSeller } from '@/test/render'
 import { ShopPage } from '.'
@@ -47,6 +48,16 @@ describe('ShopPage (overview)', () => {
     expect(screen.getByRole('link', { name: /List your first product/i })).toHaveAttribute('href', '/shop/products/new')
   })
 
+  /** specs/131 (#247): what waits for the seller, on the home - here a new seller with no payout account. */
+  it('opens with what needs the seller, even before anything is listed', async () => {
+    vi.spyOn(Product, 'mine').mockResolvedValue(emptyPage)
+    vi.spyOn(Seller, 'payoutAccount').mockResolvedValue(null)
+    renderAsSeller(<ShopPage />)
+
+    const panel = await screen.findByRole('region', { name: 'Needs you' })
+    expect(await within(panel).findByRole('link', { name: /Add the account your payouts go to/ })).toBeInTheDocument()
+  })
+
   /**
    * Dong and dollars are never added together - the shop converts nothing (specs/022). A single
    * revenue number over both would be a sum of two different units, and look perfectly plausible.
@@ -59,7 +70,7 @@ describe('ShopPage (overview)', () => {
     })
     renderAsSeller(<ShopPage />)
 
-    const card = (await screen.findByText('Your takings')).closest('[data-slot="card"]') as HTMLElement
+    const card = (await screen.findByText('Sales before commission')).closest('[data-slot="card"]') as HTMLElement
     expect(card.textContent).toMatch(/7[.,\s]?570[.,\s]?000/) // 5,190,000 + 2,380,000
     expect(card.textContent).toMatch(/\$54\.99/)
   })

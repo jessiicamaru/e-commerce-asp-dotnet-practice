@@ -21,6 +21,16 @@ describe('Order.sales', () => {
   })
 })
 
+describe('Order.sales by part (specs/131)', () => {
+  it('asks for the sales whose own part is in a state', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: { items: [] } })
+
+    await Order.sales(1, 1, 'Paid')
+
+    expect(get.mock.calls[0][0]).toBe('/orders/sales?page=1&pageSize=1&status=Paid')
+  })
+})
+
 describe('Order.sale', () => {
   it('asks for one sale by the order id alone', async () => {
     const get = vi.spyOn(http, 'get').mockResolvedValue({ data: {} })

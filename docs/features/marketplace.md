@@ -135,7 +135,7 @@ ownership check. A seller's own adjustment tells nobody, and nobody is told abou
 At checkout Order prices each line with `CatalogPricing.PriceVariants`, whose `PricedVariant` carries
 `optional string seller_id = 9` (empty for the shop's own goods) and `optional string seller_name = 10`.
 Order freezes both onto the line (`order_items.SellerId`, `SellerName`) and never writes them again.
-`GET /api/orders/sales` and `/sales/{id}` read only the caller's lines, with a subtotal over them.
+`GET /api/orders/sales` and `/sales/{id}` read only the caller's lines, with a subtotal over them. Since specs/131 (#247) the list takes an optional `status` of the caller's own part - `Paid` (waiting to be prepared, neither it nor the order cancelled), `Preparing`, `Shipped`, `Cancelled` - filtered in SQL so the total covers every page. The seller's home opens with **Needs you**: sales to prepare, questions to answer, returns to decide and a missing payout account, each linking to where it is done, and the seller menu badges Sales, Questions and Returns with the same counts (`useSellerWaiting`, a page of one from each owner under keys of their own).
 
 Each seller ships their own part of an order (`order_shipments`, one row per seller per order plus one
 for the shop's own goods). Preparing, shipping, the customer confirming receipt and the 7-day
@@ -332,7 +332,7 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `PUT` | `/api/stock/{variantId}` | Seller, Admin - ownership asked of Catalog |
 | `PUT` | `/api/stock/{variantId}/low-stock-threshold` | Seller, Admin - the same ownership check (specs/102) |
 | `POST` | `/api/orders/sales/{id}/cancel` | Seller - their own part, before it ships (specs/104) |
-| `GET` | `/api/orders/sales`, `/api/orders/sales/{id}` | Seller |
+| `GET` | `/api/orders/sales?status=`, `/api/orders/sales/{id}` | Seller - `status` of their own part (specs/131) |
 | `POST` | `/api/orders/sales/{id}/preparing`, `/api/orders/sales/{id}/shipment` | Seller |
 | `GET` | `/api/orders/sales/balance` | Seller |
 | `GET` | `/api/orders/sales/payouts` | Seller |
@@ -461,6 +461,7 @@ decided there, in the same transaction as the products.
 | [104-seller-cancels-part](../../specs/104-seller-cancels-part/) | [#224](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/224) | A seller cancels their part of an order they cannot fulfil; a cancelled part earns nothing and gives back their voucher (#211). |
 | [106-payout-accounts](../../specs/106-payout-accounts/) | [#226](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/226) | A seller gives a payout account (Identity `seller_payout_accounts`); a payout asks for it over gRPC and freezes bank, holder and last four (#213). |
 | [107-shop-closure](../../specs/107-shop-closure/) | #227 | A seller pauses their shop, staff close one with a reason; `sellers.PausedAt`/`ClosedAt`, one shelf statement for all three reasons (#214). |
+| [131-seller-needs-you](../../specs/131-seller-needs-you/) | #271 | `status` on the seller's sales; Needs you on `/shop` and badges on the seller menu (#247). |
 | [028-seller-console](../../specs/028-seller-console/) | [#65](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/65), [#78](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/78) | `/shop` and its pages; `roles` on the authentication response; the client's first tests. |
 | [031-seller-stock](../../specs/031-seller-stock/) | [#71](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/71) | Sellers stock their own variants; `CatalogOwnership` gRPC; the three 404s. |
 | [034-seller-sales](../../specs/034-seller-sales/) | [#77](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/77) | `order_items.SellerId` frozen at checkout; `/api/orders/sales`. |

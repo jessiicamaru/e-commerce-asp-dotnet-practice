@@ -1,6 +1,7 @@
 using Ecommerce.Order.Application.Orders.Commands.CorrectTracking;
 using Ecommerce.Order.Application.Common.Interfaces;
 using Ecommerce.Order.Application.Orders.Common;
+using Ecommerce.Order.Application.Orders.Queries.GetMySales;
 using Ecommerce.Order.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -294,6 +295,7 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         Guid sellerId,
         int page,
         int pageSize,
+        string? partStatus = null,
         CancellationToken cancellationToken = default)
     {
         var statuses = Sales.Statuses;
@@ -303,6 +305,20 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
         var query = _context.Orders
             .AsNoTracking()
             .Where(x => statuses.Contains(x.Status) && x.Items.Any(i => i.SellerId == sellerId));
+
+        // By THEIR part's state (specs/131) - in SQL too, so the total counts every page, not a window.
+        query = partStatus switch
+        {
+            SalePartFilter.Paid => query.Where(x => x.Status != OrderStatus.Cancelled && x.Shipments.Any(s =>
+                s.SellerId == sellerId && s.Status == ShipmentStatus.Pending && s.CancelledAt == null)),
+            SalePartFilter.Preparing => query.Where(x => x.Status != OrderStatus.Cancelled && x.Shipments.Any(s =>
+                s.SellerId == sellerId && s.Status == ShipmentStatus.Preparing && s.CancelledAt == null)),
+            SalePartFilter.Shipped => query.Where(x => x.Shipments.Any(s =>
+                s.SellerId == sellerId && s.Status == ShipmentStatus.Shipped && s.CancelledAt == null)),
+            SalePartFilter.Cancelled => query.Where(x => x.Status == OrderStatus.Cancelled
+                || x.Shipments.Any(s => s.SellerId == sellerId && s.CancelledAt != null)),
+            _ => query,
+        };
 
         var totalCount = await query.CountAsync(cancellationToken);
 

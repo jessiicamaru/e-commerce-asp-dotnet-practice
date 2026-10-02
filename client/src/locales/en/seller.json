@@ -82,7 +82,7 @@
   "sales": {
     "title": "Sales",
     "link": "Sales",
-    "subtitle": "Orders that include something you listed. You see your own lines only - not the rest of the order, the customer or where it is going.",
+    "subtitle": "Orders that include something you listed. You see your own lines only - not the rest of the order - and the customer's address only while your part is waiting or being prepared.",
     "none": "Nothing you listed has been bought yet. An order appears here once it has been paid.",
     "loadFailed": "Your sales could not be loaded.",
     "lines_one": "{{count}} of your lines",
@@ -119,13 +119,24 @@
     "listings": "Listings",
     "soldOut": "Out of stock",
     "orders": "Orders sold",
-    "revenue": "Your takings",
+    "revenue": "Sales before commission",
     "revenueHint": "Your lines only, before tax. Each currency on its own.",
     "revenueWindow": "Over your latest {{count}} sales.",
     "recentSales": "Latest sales",
     "all": "See all",
     "restock": "Needs restocking",
-    "nothingSoldOut": "Nothing has run out."
+    "nothingSoldOut": "Nothing has run out.",
+    "needs": {
+      "title": "Needs you",
+      "none": "Nothing is waiting for you.",
+      "toPrepare_one": "{{count}} sale to prepare",
+      "toPrepare_other": "{{count}} sales to prepare",
+      "questions_one": "{{count}} question to answer",
+      "questions_other": "{{count}} questions to answer",
+      "returns_one": "{{count}} return to decide",
+      "returns_other": "{{count}} returns to decide",
+      "payoutAccount": "Add the account your payouts go to - the shop cannot pay you without one"
+    }
   },
   "products": {
     "search": "Search your listings by name or SKU",
@@ -389,5 +400,7 @@
     "added": "Variant {{sku}} added.",
     "price": "The new variant's price in {{currency}}",
     "firstOption": "Sold one way so far: give the new shape an option that tells it apart, such as Colour: Silver."
-  }
+  },
+  "menuWaiting_one": "{{count}} waiting",
+  "menuWaiting_other": "{{count}} waiting"
 }

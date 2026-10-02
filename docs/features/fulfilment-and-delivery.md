@@ -172,7 +172,7 @@ Full list: [../reference/api.md](../reference/api.md).
 | `GET` | `/api/orders/{id}` | signed in (owner; includes parcels) |
 | `POST` | `/api/orders/{id}/cancel` | signed in (owner) |
 | `POST` | `/api/orders/{id}/shipments/{shipmentId}/received` | signed in (owner) |
-| `GET` | `/api/orders/sales` | Seller |
+| `GET` | `/api/orders/sales?status=` | Seller - `status` of their own part (specs/131) |
 | `GET` | `/api/orders/sales/{id}` | Seller |
 | `POST` | `/api/orders/sales/{id}/preparing` | Seller |
 | `POST` | `/api/orders/sales/{id}/shipment` | Seller (body `trackingReference`, 1-100 characters) |

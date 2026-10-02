@@ -58,6 +58,8 @@ export const queryKeys = {
   accounts: (search: string, page: number, includeDeleted = false) => ['accounts', search, page, includeDeleted] as const,
   /** A staff queue's count for the console's sidebar (specs/129) - its own key, never the list's. */
   staffWaiting: (queue: string) => ['staff-waiting', queue] as const,
+  /** What waits for a seller (specs/131) - its own keys too. */
+  sellerWaiting: (what: string) => ['seller-waiting', what] as const,
   personHistory: (id: string, page: number, pageSize: number) => ['person-history', id, page, pageSize] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,
   // The page size is part of the key (specs/130): a page of one, read for a count, once stood in for the list's page.
