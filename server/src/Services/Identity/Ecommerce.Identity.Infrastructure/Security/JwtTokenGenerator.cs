@@ -20,7 +20,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _jwtSettings = jwtOptions.Value;
     }
 
-    public string GenerateAccessToken(User user, bool twoFactorVerified = false)
+    public string GenerateAccessToken(User user, bool twoFactorVerified, SessionClient client)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
@@ -34,9 +34,9 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        // Staff roles only from a session verified with a second factor (#218, specs/110): every service authorizes from
-        // these, so leaving them out is what refuses an unverified staff session everywhere.
-        foreach (var role in SessionRoles.Of(user, twoFactorVerified))
+        // Staff roles only from a back-office session verified with a second factor (#218, specs/110, specs/138): every
+        // service authorizes from these, so leaving them out refuses such a session everywhere.
+        foreach (var role in SessionRoles.Of(user, twoFactorVerified, client))
         {
             claims.Add(new(ClaimTypes.Role, role));
         }

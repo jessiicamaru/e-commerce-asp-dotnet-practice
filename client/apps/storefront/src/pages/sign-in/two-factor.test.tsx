@@ -10,7 +10,7 @@ import { SignInPage } from '.'
 
 function renderSignIn(signIn: () => Promise<SignInStep>, completeSignIn: AuthState['completeSignIn'] = async () => {}) {
   const value = {
-    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
+    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false,
     signIn, completeSignIn, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 

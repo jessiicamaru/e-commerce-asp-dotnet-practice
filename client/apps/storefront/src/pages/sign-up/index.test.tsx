@@ -11,7 +11,7 @@ import { SignUpPage } from '.'
 /** Fills the form, sends it, and returns what the page then says. */
 async function signUpAnswered(signUp: AuthState['signUp']) {
   const value = {
-    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
+    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false,
     signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 

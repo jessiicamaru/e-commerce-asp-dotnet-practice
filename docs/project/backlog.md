@@ -61,7 +61,6 @@ deferred.
 
 | Issue | Title |
 | :-- | :-- |
-| [#278](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/278) | Staff roles only in a back-office session |
 | [#279](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/279) | One-time handoff from the storefront to the back office - deferred until signing in twice proves a nuisance |
 | [#280](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/280) | A separate token audience for the back office - deferred, the stricter second line |
 
@@ -122,6 +121,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#275](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/275) | Split the storefront into npm workspaces | [#281](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/281) (specs/135) |
 | [#276](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/276) | A back-office app for staff, with its own sign-in | [#282](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/282) (specs/136) |
 | [#277](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/277) | The admin and moderator console moves to the back office | [#283](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/283) (specs/137) |
+| [#278](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/278) | Staff roles only in a back-office session | [#284](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/284) (specs/138) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |

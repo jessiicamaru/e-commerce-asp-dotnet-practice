@@ -65,7 +65,12 @@ export class Api {
     expect(challenge, `${email} is asked for a code`).toBeTruthy()
 
     const { code, step } = await freshCode(secret, person?.lastStep)
-    const second = await this.request.post('/api/auth/login/two-factor', { data: { challenge, code } })
+    // Staff act from the back office (specs/138): only a session made there carries a staff role - Identity knows the app
+    // by the Origin of the request that exchanges the code.
+    const second = await this.request.post('/api/auth/login/two-factor', {
+      data: { challenge, code },
+      headers: { Origin: process.env.E2E_BACK_OFFICE_URL ?? 'http://portal.localhost:8089' },
+    })
     expect(second.status(), `the code for ${email}`).toBe(200)
     if (person) person.lastStep = step
     return (await second.json()).token

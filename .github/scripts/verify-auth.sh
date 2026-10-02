@@ -85,6 +85,10 @@ print(str((struct.unpack(">I", h[o:o + 4])[0] & 0x7FFFFFFF) % 10**6).zfill(6))
 '
 }
 
+# Staff act from the back office (specs/138): only a session made there carries a staff role, and Identity knows the
+# app by the Origin of the request that exchanges the code.
+BACK_OFFICE_ORIGIN="${BACK_OFFICE_ORIGIN:-http://portal.localhost:8089}"
+
 # Signs the administrator in, both steps (specs/110), and prints the access token. A code works once: when this
 # window's was already used - another script a moment ago - it waits for the next window and asks again.
 admin_sign_in() {
@@ -94,7 +98,7 @@ admin_sign_in() {
       -d "$(json_object email "$ADMIN_EMAIL" password "$ADMIN_PASSWORD")") || return 1
     challenge=$(printf '%s' "$first" | json_field challenge)
     [ -n "$challenge" ] || return 1
-    answer=$(curl -sS -X POST "$IDENTITY_URL/api/auth/login/two-factor" -H 'Content-Type: application/json' \
+    answer=$(curl -sS -X POST "$IDENTITY_URL/api/auth/login/two-factor" -H 'Content-Type: application/json' -H "Origin: $BACK_OFFICE_ORIGIN" \
       -d "$(json_object challenge "$challenge" code "$(totp "$ADMIN_TOTP_SECRET")")")
     token=$(printf '%s' "$answer" | json_field token 2>/dev/null || true)
     if [ -n "$token" ]; then

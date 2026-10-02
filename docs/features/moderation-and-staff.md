@@ -238,7 +238,9 @@ nobody, because Activity never knew their authors.
     (specs/038).
 16. **Staff sign in with a second factor** (specs/110, #218). `Admin` and `Moderator` are written into an access token
     only for a session verified with a code from an authenticator app, so an unverified staff session is refused
-    everywhere; staff without it are told `SetupRequired`. A role granted later, such as Moderator, needs enrolment too.
+    everywhere; staff without it are told `SetupRequired`. **And only for a session made in the back office** (specs/138):
+    on the storefront a staff member is a customer, whatever they verified with (see the
+    [back office](../architecture/back-office.md)). A role granted later, such as Moderator, needs enrolment too.
     Staff cannot turn it off. Only an administrator resets somebody else's, never their own, which ends the person's
     sessions and emails them. *Why:* an administrator can ban, cancel, pay out and read full bank account numbers
     (specs/106); one leaked password should not be enough. How it works:

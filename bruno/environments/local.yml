@@ -3,6 +3,9 @@ variables:
   - name: baseUrl
     value: http://localhost:5000
     description: The YARP gateway. Every request goes through it, like a real client would.
+  - name: backOfficeOrigin
+    value: http://portal.localhost:8089
+    description: The back office's origin (specs/138). Staff roles are written only into a session whose code was exchanged from it.
   - name: mailpitUrl
     value: http://localhost:8025
     description: Mailpit, where every email the stack sends lands (specs/060). Links in emails are read from here.

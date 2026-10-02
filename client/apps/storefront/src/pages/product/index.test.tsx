@@ -37,7 +37,7 @@ function SignInStub() {
 function renderPage(path = '/products/p1') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const auth = {
-    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, refreshSession: async () => true,
+    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false, refreshSession: async () => true,
     signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
 

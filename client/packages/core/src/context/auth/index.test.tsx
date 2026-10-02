@@ -76,3 +76,27 @@ describe('AuthProvider, two-factor sign-in (specs/110)', () => {
     expect(screen.getByTestId('who')).toHaveTextContent('mod@b.test Customer true')
   })
 })
+
+describe('AuthProvider, staff on the storefront (specs/138)', () => {
+  /** A storefront session holds no staff role, so it is the account that says the back office is theirs. */
+  it('offers the back office from the account, not from the session', async () => {
+    vi.spyOn(Auth, 'signInTwoFactor').mockResolvedValue(session({ roles: ['Customer'], staffAccount: true }))
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('who')).toHaveTextContent('nobody'))
+
+    await act(async () => { await auth.completeSignIn('ch-1', { code: '123456' }) })
+
+    expect(auth.isStaff).toBe(false)
+    expect(auth.hasBackOffice).toBe(true)
+  })
+
+  it('offers it to nobody whose account is not staff, and to nobody when an older Identity does not say', async () => {
+    vi.spyOn(Auth, 'signInTwoFactor').mockResolvedValue(session({ roles: ['Customer'] }))
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('who')).toHaveTextContent('nobody'))
+
+    await act(async () => { await auth.completeSignIn('ch-1', { code: '123456' }) })
+
+    expect(auth.hasBackOffice).toBe(false)
+  })
+})

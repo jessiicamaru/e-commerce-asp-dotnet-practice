@@ -12,14 +12,16 @@ import type { AuthState } from '@ecommerce/core/context/auth/types'
  * Here and not in a test file, because importing from a `.test.tsx` runs that file's suites again
  * inside the importing one.
  */
-function renderWithRoles(roles: string[], children: ReactNode, path: string, emailConfirmed = true) {
+function renderWithRoles(roles: string[], children: ReactNode, path: string, emailConfirmed = true, staffAccount?: boolean) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const staff = roles.includes('Admin') || roles.includes('Moderator')
   const value = {
-    user: { id: 'u1', email: 'a@b.test', firstName: 'Mai', lastName: 'T', roles, emailConfirmed },
+    user: { id: 'u1', email: 'a@b.test', firstName: 'Mai', lastName: 'T', roles, emailConfirmed, staffAccount: staffAccount ?? staff },
     restoring: false,
     isSeller: roles.includes('Seller'),
     isAdmin: roles.includes('Admin'),
-    isStaff: roles.includes('Admin') || roles.includes('Moderator'),
+    isStaff: staff,
+    hasBackOffice: staffAccount ?? staff,
     signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
 
@@ -57,6 +59,14 @@ export function renderAsModerator(children: ReactNode, path = '/') {
   return renderWithRoles(['Moderator', 'Customer'], children, path)
 }
 
+/**
+ * A staff member on the STOREFRONT (specs/138): the account is staff, the session holds only their other roles - which
+ * is all a storefront session ever holds.
+ */
+export function renderAsStaffOnTheStorefront(children: ReactNode, path = '/') {
+  return renderWithRoles(['Customer'], children, path, true, true)
+}
+
 /** Nobody signed in (specs/075): what a visitor who has not signed in sees and can do. */
 export function renderSignedOut(children: ReactNode, path = '/') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -66,6 +76,7 @@ export function renderSignedOut(children: ReactNode, path = '/') {
     isSeller: false,
     isAdmin: false,
     isStaff: false,
+    hasBackOffice: false,
     signIn: async () => ({ setupRequired: false }), signUp: async () => {}, signOut: async () => {}, refreshSession: async () => false,
   } as unknown as AuthState
 

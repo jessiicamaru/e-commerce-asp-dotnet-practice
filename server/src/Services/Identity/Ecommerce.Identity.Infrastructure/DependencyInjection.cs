@@ -34,6 +34,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        // Which application a sign-in comes from (specs/138): staff roles for the back office only.
+        services.AddHttpContextAccessor();
+        services.AddSingleton<ISessionClient, OriginSessionClient>();
 
         // Two-factor sign-in (#218, specs/110). No usable key refuses to start - never secrets under a known key.
         services.AddOptions<TwoFactorOptions>()

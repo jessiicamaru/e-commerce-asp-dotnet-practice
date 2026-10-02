@@ -131,6 +131,7 @@ public class TwoFactorHandlers(
     IAuditTrail audit,
     IEmailSender email,
     IPublishEndpoint publish,
+    ISessionClient sessionClient,
     IOptions<TwoFactorOptions> settings) :
     IRequestHandler<LoginTwoFactorCommand, AuthResponse>,
     IRequestHandler<GetMyTwoFactorQuery, TwoFactorStatus>,
@@ -204,6 +205,8 @@ public class TwoFactorHandlers(
             UserId = user.Id,
             ExpiresAt = now.AddDays(JwtConstants.TokenDurationDay),
             TwoFactorVerified = true,
+            // The app is decided here, at the code, from this request's Origin (specs/138): staff roles for the back office only.
+            Client = sessionClient.Current,
         };
         user.RefreshTokens.Add(refreshToken);
 
@@ -219,10 +222,11 @@ public class TwoFactorHandlers(
 
         return new AuthResponse(
             user.Id, user.Email, user.FirstName, user.LastName,
-            _tokens.GenerateAccessToken(user, twoFactorVerified: true),
+            _tokens.GenerateAccessToken(user, twoFactorVerified: true, refreshToken.App),
             refreshToken.Token,
-            SessionRoles.Of(user, twoFactorVerified: true),
-            user.EmailConfirmed);
+            SessionRoles.Of(user, twoFactorVerified: true, refreshToken.App),
+            user.EmailConfirmed,
+            StaffAccount: SessionRoles.IsStaff(user));
     }
 
     // ------------------------------------------------------------------ the caller's own

@@ -96,5 +96,5 @@ separately, that is the moment for a micro-frontend. The packages introduced her
 | The client becomes a workspace: `apps/storefront`, `packages/ui`, `packages/core` | #275 | [specs/135](../../specs/135-client-workspaces/) | Done |
 | The back office exists: sign-in with a code, a staff guard, its own image on `:8089` | #276 | [specs/136](../../specs/136-back-office-app/) | Done - [back office](back-office.md) |
 | The console's pages move to the back office | #277 | [specs/137](../../specs/137-console-to-back-office/) | Done |
-| Staff roles only in a back-office session | #278 | - | Next |
+| Staff roles only in a back-office session | #278 | [specs/138](../../specs/138-staff-roles-back-office/) | Done - the separation is now enforced, not only drawn |
 | A one-time hand-off code; a separate token audience | #279, #280 | - | Deferred |

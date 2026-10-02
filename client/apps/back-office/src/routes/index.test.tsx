@@ -11,7 +11,7 @@ function renderAt(path: string, roles: string[]) {
   window.history.pushState({}, '', path)
   const value = {
     user: { id: 'u1', email: 'mod@demo.test', firstName: 'Mai', lastName: 'T', roles, emailConfirmed: true },
-    restoring: false, isSeller: false, isAdmin: roles.includes('Admin'), isStaff: true,
+    restoring: false, isSeller: false, isAdmin: roles.includes('Admin'), isStaff: true, hasBackOffice: true,
     signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {},
     signOut: async () => {}, refreshSession: async () => true,
   } as AuthState

@@ -83,7 +83,8 @@ public class RegisterSellerCommandHandler(
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
     IAuditTrail audit,
-    EmailConfirmations confirmations) : IRequestHandler<RegisterSellerCommand, AuthResponse>
+    EmailConfirmations confirmations,
+    ISessionClient sessionClient) : IRequestHandler<RegisterSellerCommand, AuthResponse>
 {
     private readonly EmailConfirmations _confirmations = confirmations;
     private readonly IAuditTrail _audit = audit;
@@ -134,7 +135,7 @@ public class RegisterSellerCommandHandler(
             after: new { user.Email, user.FirstName, user.LastName, application.ShopName, Roles = user.Roles.Select(r => r.Name) },
             actor: AuditActors.Of(user), cancellationToken: cancellationToken);
 
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, twoFactorVerified: false, sessionClient.Current);
         var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
 
         user.RefreshTokens.Add(new RefreshToken
@@ -142,6 +143,8 @@ public class RegisterSellerCommandHandler(
             Token = refreshTokenString,
             UserId = user.Id,
             ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay),
+            // A new account is a customer (specs/138): the app is recorded all the same, from the Origin.
+            Client = sessionClient.Current,
         });
 
         // The link to confirm the address (specs/063): the shop is approved only once it is used.

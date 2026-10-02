@@ -22,6 +22,10 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         // False for every session from before specs/110: none was verified with a code.
         builder.Property(rt => rt.TwoFactorVerified).IsRequired().HasDefaultValue(false);
 
+        // Null for every session from before specs/138, read as the storefront: expand-only, so an earlier image runs.
+        builder.Property(rt => rt.Client).HasConversion<string>().HasMaxLength(16);
+        builder.Ignore(rt => rt.App);
+
         builder.HasOne(rt => rt.User)
             .WithMany(u => u.RefreshTokens)
             .HasForeignKey(rt => rt.UserId)

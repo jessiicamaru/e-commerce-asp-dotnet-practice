@@ -42,7 +42,7 @@ import { cn } from 'cn'
  */
 export function TopBar() {
   const { t } = useTranslation()
-  const { user, restoring, isSeller, isStaff, signOut } = useAuth()
+  const { user, restoring, isSeller, hasBackOffice, signOut } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
@@ -102,14 +102,14 @@ export function TopBar() {
                     <StoreIcon />
                   </IconLink>
                 )}
-                {isStaff && (
+                {hasBackOffice && (
                   <IconLink to={backOfficeUrl()} label={t('admin:goToBackOffice')}>
                     <ShieldCheckIcon />
                   </IconLink>
                 )}
               </span>
               <span className="hidden md:inline-flex md:pl-1">
-                <UserMenu user={user} isSeller={isSeller} isStaff={isStaff} onSignOut={() => void signOut()} />
+                <UserMenu user={user} isSeller={isSeller} isStaff={hasBackOffice} onSignOut={() => void signOut()} />
               </span>
             </>
           ) : (
@@ -183,7 +183,7 @@ function IconLink({
  */
 function MobileMenu() {
   const { t } = useTranslation()
-  const { user, isSeller, isStaff, signOut } = useAuth()
+  const { user, isSeller, hasBackOffice, signOut } = useAuth()
 
   const item = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -212,7 +212,7 @@ function MobileMenu() {
                 {user.firstName} {user.lastName} · {user.email}
               </p>
               {/* The one list every account menu draws (specs/127): it was missing Saved, Notifications and Open a shop. */}
-              {accountDestinations({ isSeller, isStaff }).map(({ to, icon: Icon, label }) => (
+              {accountDestinations({ isSeller, isStaff: hasBackOffice }).map(({ to, icon: Icon, label }) => (
                 <NavLink key={to} to={to} end className={item}>
                   <Icon /> {t(label)}
                 </NavLink>

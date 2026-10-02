@@ -22,6 +22,11 @@ export interface AuthState {
    */
   isStaff: boolean
   /**
+   * Whether to offer the back office (specs/138): the ACCOUNT is staff. Not `isStaff` - on the storefront a staff
+   * member's session holds no staff role at all, which is the point. For drawing only, like the rest.
+   */
+  hasBackOffice: boolean
+  /**
    * Asks Identity for a fresh session now (specs/044) - how roles granted since sign-in, like Seller after
    * an approval, reach this tab without signing out. False when the session could not be renewed.
    */

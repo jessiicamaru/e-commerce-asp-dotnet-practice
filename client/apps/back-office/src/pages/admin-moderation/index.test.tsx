@@ -50,7 +50,7 @@ describe('AdminModerationPage (specs/045)', () => {
 describe('staff counts never share a list cache (specs/130, #268)', () => {
   const moderator = {
     user: { id: 'm1', email: 'mod@b.test', firstName: 'Mai', lastName: 'T', roles: ['Moderator'], emailConfirmed: true },
-    restoring: false, isSeller: false, isAdmin: false, isStaff: true,
+    restoring: false, isSeller: false, isAdmin: false, isStaff: true, hasBackOffice: true,
   } as unknown as AuthState
   const listed = { id: 'p1', name: 'Mai Lens 35mm', reviewStatus: 'Pending' }
 

@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roles: response.roles ?? [],
       emailConfirmed: response.emailConfirmed ?? true,
       twoFactorSetupRequired: response.twoFactor === 'SetupRequired',
+      staffAccount: response.staffAccount ?? false,
     })
   }, [])
 
@@ -68,6 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSeller: user?.roles.includes('Seller') ?? false,
       isAdmin: user?.roles.includes('Admin') ?? false,
       isStaff: user?.roles.some((role) => role === 'Admin' || role === 'Moderator') ?? false,
+      // Staff whose session is elsewhere (specs/138): a storefront session holds no staff role, so it is the account.
+      hasBackOffice: user?.staffAccount ?? false,
       refreshSession: refresh,
       async signIn(email, password) {
         const response = await Auth.signIn(email, password)

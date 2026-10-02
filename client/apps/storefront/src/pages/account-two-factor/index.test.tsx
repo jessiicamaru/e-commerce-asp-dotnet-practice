@@ -20,7 +20,7 @@ function renderWithSession(refreshSession: () => Promise<boolean>) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const value = {
     user: { id: 'u1', email: 'mod@b.test', firstName: 'Mai', lastName: 'T', roles: ['Customer'], emailConfirmed: true, twoFactorSetupRequired: true },
-    restoring: false, isSeller: false, isAdmin: false, isStaff: false, refreshSession,
+    restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false, refreshSession,
     signIn: async () => ({ setupRequired: true }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {},
   } as AuthState
   return render(

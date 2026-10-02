@@ -50,10 +50,15 @@ def kind(content: bytes) -> str | None:
     return None
 
 
+# The administrator acts from the back office (specs/138): only a session made there carries a staff role, and
+# Identity knows the app by the Origin. Every request says it.
+BACK_OFFICE_ORIGIN = os.environ.get("BACK_OFFICE_ORIGIN", "http://portal.localhost:8089")
+
 def call(method, path, body=None, token=None, raw=None, content_type=None):
     data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
     request = urllib.request.Request(BASE + path, data=data, method=method)
     request.add_header("Content-Type", content_type or "application/json")
+    request.add_header("Origin", BACK_OFFICE_ORIGIN)
     if token:
         request.add_header("Authorization", "Bearer " + token)
     try:
