@@ -25,6 +25,7 @@ export const queryKeys = {
   shippingOptions: () => ['shipping-options'] as const,
   carrier: () => ['carrier'] as const,
   deliverySettings: () => ['delivery-settings'] as const,
+  paymentProvider: () => ['payment-provider'] as const,
   checkoutQuote: (choice: CheckoutChoice) => ['checkout-quote', choice] as const,
   order: (id: string) => ['order', id] as const,
   myOrders: (page: number) => ['orders', page] as const,

@@ -28,7 +28,7 @@ public class GetShippingOptionsQueryHandler(IShippingOptions options, IRequestCu
 
         IReadOnlyList<ShippingOptionResponse> offered = _options.Offered(asked.Code)
             .Select(option => new ShippingOptionResponse(
-                option.Code, option.Name, option.PriceIn(asked.Code), asked.Code))
+                option.Code, option.Name, option.PriceIn(asked.Code), asked.Code, option.MinDays, option.MaxDays))
             .ToList();
 
         return Task.FromResult(offered);

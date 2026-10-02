@@ -33,5 +33,16 @@
     "remove": "Remove {{code}}",
     "failed": "This code could not be checked. Try again.",
     "full": "At most {{count}} codes"
+  },
+  "deliveryDays_zero": "Same business day",
+  "deliveryDays_one": "{{count}} business day",
+  "deliveryDays_other": "{{count}} business days",
+  "deliveryDaysRange": "{{min}}–{{max}} business days",
+  "payment": {
+    "title": "Payment",
+    "charged": "Your order is charged once, in full, when you place it.",
+    "refused": "If the payment is refused, nothing is taken and the items go back on sale.",
+    "refunded": "An order cancelled before it ships is refunded in full.",
+    "stub": "This shop is a demonstration: payments are approved by a test provider, and no money is moved."
   }
 }

@@ -22,7 +22,8 @@ public interface IShippingOptions
 /// What it costs, per currency. A currency absent from here is one this delivery is <b>not offered
 /// in</b> - never one to convert into (specs/022).
 /// </param>
-public record ShippingOption(string Code, string Name, IReadOnlyDictionary<string, decimal> Prices)
+/// <param name="MinDays">How long it takes in business days, soonest and latest; both null when it says nothing (specs/134).</param>
+public record ShippingOption(string Code, string Name, IReadOnlyDictionary<string, decimal> Prices, int? MinDays = null, int? MaxDays = null)
 {
     /// <summary>What it costs in this currency, or <c>null</c> when it is not offered in it.</summary>
     public decimal? PriceIn(string currency) =>

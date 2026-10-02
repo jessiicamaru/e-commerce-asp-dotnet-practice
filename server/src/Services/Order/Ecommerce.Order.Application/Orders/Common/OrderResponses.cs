@@ -69,7 +69,11 @@ public record ShippingAddressResponse(
 /// What it costs in <paramref name="Currency"/>. Only options priced in the request's currency are
 /// offered at all (specs/022 FR-008), so this is never null on an offered option.
 /// </param>
-public record ShippingOptionResponse(string Code, string Name, decimal? Price = null, string Currency = "");
+/// <param name="MinDays">
+/// How long it takes in business days, soonest and latest (specs/134) - offered options and the quote only. An order does
+/// not freeze it, so an order's option reports null.
+/// </param>
+public record ShippingOptionResponse(string Code, string Name, decimal? Price = null, string Currency = "", int? MinDays = null, int? MaxDays = null);
 
 /// <param name="VariantId">Which shape of the product was bought; null on lines from before variants.</param>
 /// <param name="OptionSummary">What the customer chose, in words, as frozen at purchase (specs/020).</param>

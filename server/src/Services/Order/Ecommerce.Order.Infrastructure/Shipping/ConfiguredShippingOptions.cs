@@ -1,4 +1,5 @@
 using Ecommerce.Order.Application.Common.Interfaces;
+using Ecommerce.Order.Application.Delivery;
 using Ecommerce.Shared.Money;
 using Microsoft.Extensions.Configuration;
 
@@ -58,10 +59,17 @@ public class ConfiguredShippingOptions : IShippingOptions
                     $"Delivery option '{o.Code}' has a negative price in {negative.Key}.");
             }
 
+            if (DeliveryEstimate.Problem(o.MinDays, o.MaxDays) is { } problem)
+            {
+                throw new InvalidOperationException($"Delivery option '{o.Code}': {problem}");
+            }
+
             return new ShippingOption(
                 o.Code.Trim().ToLowerInvariant(),
                 o.Name.Trim(),
-                o.Prices.ToDictionary(price => price.Key.Trim().ToUpperInvariant(), price => price.Value));
+                o.Prices.ToDictionary(price => price.Key.Trim().ToUpperInvariant(), price => price.Value),
+                o.MinDays,
+                o.MaxDays);
         }).ToList();
 
         // A shop that cannot deliver anything in its own currency cannot take an order at all, and
@@ -94,5 +102,10 @@ public class ConfiguredShippingOptions : IShippingOptions
 
         /// <summary>One amount per currency code. Keyed by code so a third currency is a key.</summary>
         public Dictionary<string, decimal>? Prices { get; set; }
+
+        /// <summary>Business days, soonest and latest; both or neither (specs/134). Seeds a new option only.</summary>
+        public int? MinDays { get; set; }
+
+        public int? MaxDays { get; set; }
     }
 }

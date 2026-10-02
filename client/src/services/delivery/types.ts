@@ -11,6 +11,9 @@ export interface DeliveryOption {
   isActive: boolean
   sortOrder: number
   prices: Record<string, number>
+  /** Business days, soonest and latest - both or neither (specs/134). */
+  minDays: number | null
+  maxDays: number | null
 }
 
 export interface DeliverySettings {

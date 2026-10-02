@@ -60,7 +60,8 @@ public class GetCheckoutQuoteQueryHandler(CheckoutPricing pricing)
                 l.SellerId)).ToList(),
             new ShippingAddressResponse(a.RecipientName, a.Line1, a.Line2, a.City, a.Region, a.PostalCode, a.Country, a.Phone),
             new ShippingOptionResponse(
-                priced.Shipping.Code, priced.Shipping.Name, priced.DeliveryPrice, priced.Currency),
+                priced.Shipping.Code, priced.Shipping.Name, priced.DeliveryPrice, priced.Currency,
+                priced.Shipping.MinDays, priced.Shipping.MaxDays),
             priced.DeliveryPrice,
             priced.Totals.Subtotal,
             priced.Totals.Tax,

@@ -70,7 +70,7 @@ public class OrdersController : ApiControllerBase
     [Authorize(Roles = "Admin")]
     [HttpPut("delivery/options/{code}")]
     public async Task<IActionResult> SaveDeliveryOption(string code, [FromBody] DeliveryOptionBody body) =>
-        Ok(await Mediator.Send(new SaveDeliveryOptionCommand(code, body.Name, body.IsActive, body.SortOrder, body.Prices ?? [])));
+        Ok(await Mediator.Send(new SaveDeliveryOptionCommand(code, body.Name, body.IsActive, body.SortOrder, body.Prices ?? [], body.MinDays, body.MaxDays)));
 
     /// <summary>Staff: the carrier's name and tracking address template (<c>{reference}</c> where the reference goes).</summary>
     [Authorize(Roles = "Admin")]
@@ -78,7 +78,7 @@ public class OrdersController : ApiControllerBase
     public async Task<IActionResult> SaveCarrier([FromBody] CarrierBody body) =>
         Ok(await Mediator.Send(new SaveCarrierCommand(body.Name, body.TrackingUrlTemplate)));
 
-    public record DeliveryOptionBody(string Name, bool IsActive, int SortOrder, Dictionary<string, decimal>? Prices);
+    public record DeliveryOptionBody(string Name, bool IsActive, int SortOrder, Dictionary<string, decimal>? Prices, int? MinDays = null, int? MaxDays = null);
 
     public record CarrierBody(string Name, string? TrackingUrlTemplate);
 

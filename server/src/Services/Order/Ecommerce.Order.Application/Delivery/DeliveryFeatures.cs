@@ -32,11 +32,32 @@ public interface IDeliveryRepository
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
-public record DeliveryOptionResponse(string Code, string Name, bool IsActive, int SortOrder, IReadOnlyDictionary<string, decimal> Prices)
+public record DeliveryOptionResponse(
+    string Code, string Name, bool IsActive, int SortOrder, IReadOnlyDictionary<string, decimal> Prices, int? MinDays = null, int? MaxDays = null)
 {
     public static DeliveryOptionResponse From(DeliveryOption option) => new(
         option.Code, option.Name, option.IsActive, option.SortOrder,
-        option.Prices.OrderBy(p => p.Currency).ToDictionary(p => p.Currency, p => p.Amount));
+        option.Prices.OrderBy(p => p.Currency).ToDictionary(p => p.Currency, p => p.Amount), option.MinDays, option.MaxDays);
+}
+
+/// <summary>
+/// What a delivery time may be (specs/134): both ends or neither, whole business days from 0 to <see cref="LongestDays"/>,
+/// the soonest not after the latest. One rule for the editor and for configuration; the table's CHECK says it again.
+/// </summary>
+public static class DeliveryEstimate
+{
+    public const int LongestDays = 60;
+
+    /// <summary>Why this is not a delivery time, or null when it is one.</summary>
+    public static string? Problem(int? minDays, int? maxDays) => (minDays, maxDays) switch
+    {
+        (null, null) => null,
+        (null, _) or (_, null) => "A delivery time needs both the soonest and the latest day, or neither.",
+        ( < 0, _) => "The soonest day cannot be negative.",
+        (_, > LongestDays) => $"The latest day can be at most {LongestDays}.",
+        var (min, max) when min > max => "The soonest day cannot be after the latest.",
+        _ => null,
+    };
 }
 
 public record CarrierResponse(string Name, string? TrackingUrlTemplate)
@@ -53,7 +74,9 @@ public record GetDeliverySettingsQuery : IRequest<DeliverySettingsResponse>;
 public record GetCarrierQuery : IRequest<CarrierResponse>;
 
 /// <summary>Creates the option under a new code, or changes one; the code itself never changes.</summary>
-public record SaveDeliveryOptionCommand(string Code, string Name, bool IsActive, int SortOrder, Dictionary<string, decimal> Prices)
+/// <param name="MinDays">The delivery time in business days, soonest and latest - both or neither (specs/134).</param>
+public record SaveDeliveryOptionCommand(
+    string Code, string Name, bool IsActive, int SortOrder, Dictionary<string, decimal> Prices, int? MinDays = null, int? MaxDays = null)
     : IRequest<DeliveryOptionResponse>;
 
 public record SaveCarrierCommand(string Name, string? TrackingUrlTemplate) : IRequest<CarrierResponse>;
@@ -67,6 +90,11 @@ public partial class SaveDeliveryOptionCommandValidator : AbstractValidator<Save
             .WithMessage("A code is 1 to 32 lower-case letters, digits or hyphens.");
         RuleFor(x => x.Name).Must(n => !string.IsNullOrWhiteSpace(n)).WithMessage("A name is required.").MaximumLength(100);
         RuleFor(x => x.SortOrder).InclusiveBetween(0, 1000);
+        RuleFor(x => x).Custom((command, context) =>
+        {
+            if (DeliveryEstimate.Problem(command.MinDays, command.MaxDays) is { } problem)
+                context.AddFailure(command.MinDays is null ? nameof(command.MinDays) : nameof(command.MaxDays), problem);
+        });
         RuleFor(x => x.Prices).NotNull();
         RuleForEach(x => x.Prices).Custom((price, context) =>
         {
@@ -139,6 +167,8 @@ public class DeliveryHandlers(IDeliveryRepository delivery, IAuditTrail audit) :
         option.Name = request.Name.Trim();
         option.IsActive = request.IsActive;
         option.SortOrder = request.SortOrder;
+        option.MinDays = request.MinDays;
+        option.MaxDays = request.MaxDays;
         option.UpdatedAt = now;
         var wanted = request.Prices.ToDictionary(p => p.Key.Trim().ToUpperInvariant(), p => p.Value);
         option.Prices.RemoveAll(p => !wanted.ContainsKey(p.Currency));

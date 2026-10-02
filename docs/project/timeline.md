@@ -188,6 +188,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [131](../../specs/131-seller-needs-you/) | Seller needs-you | #271 | #247: a seller's home opens with what needs them - sales to prepare (a new status filter on their sales, counted across every page), questions, returns and a missing payout account - and the seller menu badges the same counts |
 | [132](../../specs/132-recognisable-orders/) | Recognisable orders | #272 | #248: every order list names up to three lines (the biggest first), and lists and order pages share one short reference - the notices' eight characters, with copy - and a coloured status chip |
 | [133](../../specs/133-staff-list-filters/) | Long staff lists can be searched and filtered | #273 | #249: vouchers by code, name and state; people by role and state; categories searched and paged; order tabs counted |
+| [134](../../specs/134-checkout-payment-delivery-time/) | Checkout says how payment works and how long delivery takes | #274 | #253: a delivery time per option, set at /admin/delivery; a payment card that says when no money moves |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

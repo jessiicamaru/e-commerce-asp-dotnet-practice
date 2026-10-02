@@ -710,6 +710,8 @@
     "save": "Lưu",
     "add": "Thêm",
     "newOption": "Hình thức mới",
-    "optionSaved": "Đã lưu “{{name}}”."
+    "optionSaved": "Đã lưu “{{name}}”.",
+    "minDays": "Sớm nhất (ngày)",
+    "maxDays": "Muộn nhất (ngày)"
   }
 }

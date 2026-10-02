@@ -1,0 +1,45 @@
+info:
+  name: an administrator gives express a delivery time
+  type: http
+  seq: 19
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/orders/delivery/options/express"
+  body:
+    type: json
+    data: |-
+      {}
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Express as stored, so this request changes only its time and the last one puts it back.
+        const axios = require("axios");
+        const settings = await axios.get(bru.interpolate("{{baseUrl}}/api/orders/delivery"),
+          { headers: { Authorization: "Bearer " + bru.getVar("adminToken") } });
+        const express = settings.data.options.filter(function(o) { return o.code === "express"; })[0];
+        bru.setVar("expressBefore", JSON.stringify(express));
+        req.setBody({ name: express.name, isActive: express.isActive, sortOrder: express.sortOrder, prices: express.prices, minDays: 1, maxDays: 2 });
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("one to two business days", function() {
+          expect(res.body.minDays).to.equal(1);
+          expect(res.body.maxDays).to.equal(2);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/134 (#253): an option says how long it takes, in business days, set with the option.

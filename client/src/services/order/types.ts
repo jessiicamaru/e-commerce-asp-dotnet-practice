@@ -6,6 +6,9 @@ export interface ShippingOption {
   /** In `currency`. Only options priced in the request's currency are offered (specs/022). */
   price: number | null
   currency: string
+  /** How long it takes in business days, soonest and latest; null when it says nothing (specs/134). */
+  minDays?: number | null
+  maxDays?: number | null
 }
 
 export interface OrderLine {

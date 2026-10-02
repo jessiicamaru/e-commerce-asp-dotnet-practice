@@ -8,7 +8,12 @@ public class DeliveryOptionConfiguration : IEntityTypeConfiguration<DeliveryOpti
 {
     public void Configure(EntityTypeBuilder<DeliveryOption> builder)
     {
-        builder.ToTable("delivery_options").HasKey(o => o.Code);
+        // An estimate is both ends or neither, within reason (specs/134) - the validator says so in words first. ⚠️ Each
+        // end is named NOT NULL: a CHECK passes when it evaluates to NULL, so "MaxDays" <= 60 alone let one end through.
+        builder.ToTable("delivery_options", t => t.HasCheckConstraint("ck_delivery_options_estimate",
+            "(\"MinDays\" IS NULL AND \"MaxDays\" IS NULL) OR (\"MinDays\" IS NOT NULL AND \"MaxDays\" IS NOT NULL"
+            + " AND \"MinDays\" >= 0 AND \"MaxDays\" <= 60 AND \"MinDays\" <= \"MaxDays\")"));
+        builder.HasKey(o => o.Code);
         builder.Property(o => o.Code).HasMaxLength(32).ValueGeneratedNever();
         builder.Property(o => o.Name).HasMaxLength(100).IsRequired();
         builder.Property(o => o.IsActive).IsRequired();

@@ -98,9 +98,9 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 ```
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (57 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (26 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (268 tests,
+`Ecommerce.Payment.Tests` (26 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (366 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (221 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
-(19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (184 tests, PostgreSQL on 5435) and
+(19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (260 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (36 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (13 tests, no database - the
@@ -243,7 +243,8 @@ test says so.
 
 **The orchestrator publishes through the transactional outbox, like everything else** (`AddEntityFrameworkOutbox<OrchestratorDbContext>` + `UseBusOutbox()`, with `AddTransactionalOutboxEntities()` in its `OnModelCreating`). It did not until `20260921104437_AddTransactionalOutbox`, and the consequence was that the first order after a cold start never settled — see the gotcha below. Principle III applies to the state machine exactly as it applies to a command handler.
 
-⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
+⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. The checkout's payment card reads that `provider` (specs/134)
+and says "no money is moved" only while it starts with `Stub` - keep the prefix. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
 
 Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf.
 
@@ -349,7 +350,9 @@ through the saga into `ProcessPaymentCommand`, so `payments.Currency` finally sa
 is. Delivery has a price per currency - in Order's `delivery_options` / `delivery_option_prices` since specs/098 (#196),
 edited at `/admin/delivery` and **seeded from `Shipping:Options` with missing codes only** (a restart never undoes an
 edit); checkout reads the table per request (`StoredShippingOptions`). An option not priced in the checkout's currency
-is not offered, and the last one on offer cannot be turned off. The shop has **one carrier** (decided with the user):
+is not offered, and the last one on offer cannot be turned off. Each says how long it takes - `MinDays`/`MaxDays`, business
+days, both or neither (specs/134; ⚠️ the CHECK names each end `IS NOT NULL`, since a CHECK passes on NULL) - for the list
+and the quote, never frozen on the order. The shop has **one carrier** (decided with the user):
 `carriers` holds its name and a tracking template with `{reference}`, public at `GET /api/orders/delivery/carrier`, and
 the storefront's `TrackingLink` links every shop-carrier reference.
 

@@ -6,6 +6,7 @@ import { ApiError } from '@/config/axios'
 import { AddressDialog } from '@/components/address/address-dialog'
 import { AddressChoice } from '@/components/checkout/address-choice'
 import { DeliveryChoice } from '@/components/checkout/delivery-choice'
+import { PaymentCard } from '@/components/checkout/payment-card'
 import { VoucherBox } from '@/components/checkout/voucher-box'
 import { OrderLines } from '@/components/order/order-lines'
 import { OrderTotals } from '@/components/order/order-totals'
@@ -106,6 +107,8 @@ export function CheckoutPage() {
               <DeliveryChoice options={options.data} shippingOption={shippingOption} onChange={setChosenShippingOption} />
             </CardContent>
           </Card>
+
+          <PaymentCard />
         </div>
 
         <Card className="rounded-3xl lg:sticky lg:top-28">
