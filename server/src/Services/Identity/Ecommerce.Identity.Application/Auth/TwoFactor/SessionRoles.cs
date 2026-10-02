@@ -4,9 +4,10 @@ using Ecommerce.Domain.Entities;
 namespace Ecommerce.Application.Auth.TwoFactor;
 
 /// <summary>
-/// Which of a person's roles a session carries (#218, specs/110 research D2): staff roles only when the session was
-/// verified with a second factor. Every service authorizes from the token's roles, so withholding them here is what
-/// makes every staff endpoint in every service refuse an unverified session - with no change anywhere else.
+/// Which of a person's roles a session carries: staff roles only when the session was verified with a second factor
+/// (#218, specs/110 research D2) AND was made for the back office (#278, specs/138, ADR-003). Every service authorizes
+/// from the token's roles, so withholding them here is what makes every staff endpoint in every service refuse an
+/// unverified session, and any storefront session - with no change anywhere else.
 /// </summary>
 /// <remarks>
 /// ⚠️ The ONE place this is decided. The access token and <c>AuthResponse.Roles</c> both come from <see cref="Of"/>, so
@@ -22,8 +23,10 @@ public static class SessionRoles
 
     public static bool IsStaff(User user) => user.Roles.Any(role => Staff.Contains(role.Name));
 
-    public static IReadOnlyList<string> Of(User user, bool twoFactorVerified) =>
-        user.Roles.Select(role => role.Name).Where(name => twoFactorVerified || !Staff.Contains(name)).ToList();
+    public static IReadOnlyList<string> Of(User user, bool twoFactorVerified, SessionClient client) =>
+        user.Roles.Select(role => role.Name)
+            .Where(name => !Staff.Contains(name) || (twoFactorVerified && client == SessionClient.BackOffice))
+            .ToList();
 
     /// <summary>What the storefront is told about a session it holds: staff without 2FA must set it up.</summary>
     public static string? State(User user) => IsStaff(user) && !user.TwoFactorEnabled ? SetupRequired : null;

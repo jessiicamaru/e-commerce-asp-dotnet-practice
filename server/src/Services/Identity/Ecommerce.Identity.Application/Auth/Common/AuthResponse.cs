@@ -35,5 +35,8 @@ public record AuthResponse(
     IReadOnlyList<string> Roles,
     bool EmailConfirmed,
     string? TwoFactor = null,
-    string? Challenge = null
+    string? Challenge = null,
+    // The account holds a staff role (#278, specs/138), whatever THIS session carries: the storefront draws its link to
+    // the back office from it. It grants nothing - every staff endpoint decides from the token's roles.
+    bool StaffAccount = false
 );

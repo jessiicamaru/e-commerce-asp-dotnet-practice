@@ -116,8 +116,10 @@ public class RefreshTokenCommandHandler(
             Token = _jwtTokenGenerator.GenerateRefreshToken(),
             UserId = user.Id,
             ExpiresAt = now.AddDays(JwtConstants.TokenDurationDay),
-            // ⚠️ Carried across the rotation: a verified session stays verified, an unverified one stays without staff roles.
+            // ⚠️ Carried across the rotation: a verified session stays verified, an unverified one stays without staff roles,
+            // and a session stays the app it was made for (specs/138) - a storefront session never becomes a back office one.
             TwoFactorVerified = presented.TwoFactorVerified,
+            Client = presented.App,
         };
 
         if (!await _userRepository.TryRotateRefreshTokenAsync(request.RefreshToken, replacement, now, cancellationToken))
@@ -137,11 +139,12 @@ public class RefreshTokenCommandHandler(
             user.Email,
             user.FirstName,
             user.LastName,
-            _jwtTokenGenerator.GenerateAccessToken(user, replacement.TwoFactorVerified),
+            _jwtTokenGenerator.GenerateAccessToken(user, replacement.TwoFactorVerified, replacement.App),
             replacement.Token,
-            SessionRoles.Of(user, replacement.TwoFactorVerified),
+            SessionRoles.Of(user, replacement.TwoFactorVerified, replacement.App),
             user.EmailConfirmed,
-            TwoFactor: SessionRoles.State(user)
+            TwoFactor: SessionRoles.State(user),
+            StaffAccount: SessionRoles.IsStaff(user)
         );
     }
 }

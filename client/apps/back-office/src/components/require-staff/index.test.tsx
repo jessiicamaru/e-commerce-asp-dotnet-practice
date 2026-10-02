@@ -15,7 +15,7 @@ function renderAs(user: Partial<User> | null, signOut = vi.fn(async () => {})) {
     restoring: false,
     isSeller: roles.includes('Seller'),
     isAdmin: roles.includes('Admin'),
-    isStaff: roles.includes('Admin') || roles.includes('Moderator'),
+    isStaff: roles.includes('Admin') || roles.includes('Moderator'), hasBackOffice: roles.includes('Admin') || roles.includes('Moderator'),
     signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut, refreshSession: async () => true,
   } as AuthState
 

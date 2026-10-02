@@ -6,6 +6,10 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/auth/login/two-factor"
+  # Staff roles only in a back-office session (specs/138): Identity knows the app by the Origin of this request.
+  headers:
+    - name: Origin
+      value: "{{backOfficeOrigin}}"
   body:
     type: json
     data: |-
@@ -50,8 +54,9 @@ runtime:
         test("status 200", function() {
           expect(res.status, "400 means the code was refused: either adminTotpSecret is not the server's ADMIN_TOTP_SECRET, or this collection signed the administrator in less than 30 seconds ago - a code works once; wait for the next window and run again").to.equal(200);
         });
-        test("the session carries Admin, now that it was verified with a code", function() {
+        test("the session carries Admin, now that it was verified with a code - in the back office", function() {
           expect(res.body.roles).to.include("Admin");
+          expect(res.body.staffAccount).to.equal(true);
           expect(res.body.token).to.be.a("string").and.not.equal("");
         });
         if (res.status === 200) bru.setVar("adminToken", res.body.token);

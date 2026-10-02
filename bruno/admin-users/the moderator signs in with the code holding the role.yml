@@ -6,6 +6,10 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/auth/login/two-factor"
+  # Staff roles only in a back-office session (specs/138): Identity knows the app by the Origin of this request.
+  headers:
+    - name: Origin
+      value: "{{backOfficeOrigin}}"
   body:
     type: json
     data: |-

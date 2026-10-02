@@ -11,7 +11,7 @@ import { SignInPage } from '.'
 /** Signs in with whatever the server answers, and returns what the page then says. */
 async function signInAnswered(answer: unknown) {
   const value = {
-    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
+    user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false,
     signIn: async () => { throw answer },
     completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession: async () => true,
   } as AuthState
@@ -39,7 +39,7 @@ const banned = refusal(403, 'This account is banned: Fraud', { code: 'AccountBan
 describe('SignInPage says why it was opened (specs/126, #252)', () => {
   function openedWith(state: unknown) {
     const value = {
-      user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false,
+      user: null, restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false,
       signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {},
       signOut: async () => {}, refreshSession: async () => true,
     } as AuthState

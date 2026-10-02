@@ -13,7 +13,7 @@ function open(path: string, signedIn = false) {
   const refreshSession = vi.fn().mockResolvedValue(true)
   const value = {
     user: signedIn ? { id: 'u1', email: 'lan@demo.test', firstName: 'Lan', lastName: 'P', roles: ['Customer'], emailConfirmed: false } : null,
-    restoring: false, isSeller: false, isAdmin: false, isStaff: false,
+    restoring: false, isSeller: false, isAdmin: false, isStaff: false, hasBackOffice: false,
     signIn: async () => ({ setupRequired: false }), completeSignIn: async () => {}, signUp: async () => {}, signOut: async () => {}, refreshSession,
   } as AuthState
 

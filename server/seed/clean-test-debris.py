@@ -40,6 +40,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 GREEN, YELLOW, RED, DIM, RESET = "\033[32m", "\033[33m", "\033[31m", "\033[2m", "\033[0m"
 
 
+# The administrator acts from the back office (specs/138): only a session made there carries a staff role, and
+# Identity knows the app by the Origin. Every request says it.
+BACK_OFFICE_ORIGIN = os.environ.get("BACK_OFFICE_ORIGIN", "http://portal.localhost:8089")
+
 def call(method, path, body=None, token=None):
     request = urllib.request.Request(
         BASE + path,
@@ -48,6 +52,7 @@ def call(method, path, body=None, token=None):
         headers={
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "Origin": BACK_OFFICE_ORIGIN,
             **({"Authorization": "Bearer " + token} if token else {}),
         },
     )

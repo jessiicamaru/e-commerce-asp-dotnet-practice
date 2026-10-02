@@ -17,6 +17,12 @@ export interface User {
   emailConfirmed: boolean
   /** Staff without two-factor sign-in: their staff pages wait until they set it up (specs/110). */
   twoFactorSetupRequired?: boolean
+  /**
+   * The account is staff, whatever this session carries (specs/138): a storefront session never holds a staff role, so
+   * this is how the storefront knows to offer the back office. For drawing only; a missing value (an older Identity)
+   * reads false.
+   */
+  staffAccount?: boolean
 }
 
 export interface AuthResponse extends User {

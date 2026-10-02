@@ -16,7 +16,7 @@ function renderAt(state: Partial<AuthState>, role: string | string[] = 'Seller')
     restoring: false,
     isSeller: false,
     isAdmin: false,
-    isStaff: false,
+    isStaff: false, hasBackOffice: false,
     refreshSession: async () => true,
     signIn: async () => ({ setupRequired: false }),
     signUp: async () => {},

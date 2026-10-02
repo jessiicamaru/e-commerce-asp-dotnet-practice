@@ -85,6 +85,10 @@ def set_stock(variant_id, quantity, token):
     die(f"Inventory never registered variant {variant_id}. Is it running, and is RabbitMQ up?")
 
 
+# The administrator acts from the back office (specs/138): only a session made there carries a staff role, and
+# Identity knows the app by the Origin. Every request says it.
+BACK_OFFICE_ORIGIN = os.environ.get("BACK_OFFICE_ORIGIN", "http://portal.localhost:8089")
+
 def call(method, path, body=None, token=None, tolerate=()):
     request = urllib.request.Request(
         BASE + path,
@@ -93,6 +97,7 @@ def call(method, path, body=None, token=None, tolerate=()):
         headers={
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "Origin": BACK_OFFICE_ORIGIN,
             # Seeded text is the DEFAULT language and the DEFAULT currency; the English text and the
             # dollar prices are written afterwards, each in its own request (specs/021, specs/022).
             "Accept-Language": "vi",

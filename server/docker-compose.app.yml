@@ -71,6 +71,8 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
       STOREFRONT_URL: http://localhost:8088
+      # The back office's origins (specs/138): staff roles only in a session whose code was exchanged from one of them.
+      BackOffice__Origins: http://portal.localhost:8089,http://portal.localhost:5174
     ports:
       - "5056:8080"
       - "6056:8081"

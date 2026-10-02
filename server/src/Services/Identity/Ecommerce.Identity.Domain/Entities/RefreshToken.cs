@@ -18,6 +18,15 @@ public class RefreshToken
     /// </summary>
     public bool TwoFactorVerified { get; set; }
 
+    /// <summary>
+    /// The application this session was made for (#278, specs/138), from the sign-in's <c>Origin</c> and carried across
+    /// every rotation. Null for every session from before it - read as <see cref="SessionClient.Storefront"/>, the less
+    /// privileged answer.
+    /// </summary>
+    public SessionClient? Client { get; set; }
+
+    public SessionClient App => Client ?? SessionClient.Storefront;
+
     public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
 
     public Guid UserId { get; set; }

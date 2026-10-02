@@ -19,7 +19,8 @@ IPasswordHasher passwordHasher,
 IJwtTokenGenerator jwtTokenGenerator
     ,
     IAuditTrail audit,
-    EmailConfirmations confirmations) : IRequestHandler<RegisterCommand, AuthResponse>
+    EmailConfirmations confirmations,
+    ISessionClient sessionClient) : IRequestHandler<RegisterCommand, AuthResponse>
 {
     private readonly IAuditTrail _audit = audit;
     private readonly EmailConfirmations _confirmations = confirmations;
@@ -70,7 +71,7 @@ IJwtTokenGenerator jwtTokenGenerator
         await _confirmations.StageAsync(user, request.Language, DateTime.UtcNow, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, twoFactorVerified: false, sessionClient.Current);
 
         var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
 
@@ -78,7 +79,9 @@ IJwtTokenGenerator jwtTokenGenerator
         {
             Token = refreshTokenString,
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
+            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay),
+            // A new account is a customer (specs/138): the app is recorded all the same, from the Origin.
+            Client = sessionClient.Current,
         });
 
         await _userRepository.SaveChangesAsync(cancellationToken);

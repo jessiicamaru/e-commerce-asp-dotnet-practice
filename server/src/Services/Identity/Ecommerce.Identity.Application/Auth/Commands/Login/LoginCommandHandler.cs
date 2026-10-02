@@ -14,8 +14,10 @@ using Microsoft.Extensions.Options;
 namespace Ecommerce.Application.Auth.Commands.Login;
 
 public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator,
-    IAuditTrail audit, ISignInThrottle throttle, IOptions<SignInOptions> signInOptions, ITwoFactorRepository twoFactor) : IRequestHandler<LoginCommand, AuthResponse>
+    IAuditTrail audit, ISignInThrottle throttle, IOptions<SignInOptions> signInOptions, ITwoFactorRepository twoFactor,
+    ISessionClient client) : IRequestHandler<LoginCommand, AuthResponse>
 {
+    private readonly ISessionClient _client = client;
     private readonly ITwoFactorRepository _twoFactor = twoFactor;
     private readonly IAuditTrail _audit = audit;
     private readonly ISignInThrottle _throttle = throttle;
@@ -123,14 +125,16 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
         await _throttle.ClearAsync(emailKey, cancellationToken);
 
         // Without a second factor the session holds no staff roles (specs/110): a staff member is told to set it up.
-        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, twoFactorVerified: false);
+        var app = _client.Current;
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(user, twoFactorVerified: false, app);
         var refreshTokenString = _jwtTokenGenerator.GenerateRefreshToken();
 
         user.RefreshTokens.Add(new RefreshToken
         {
             Token = refreshTokenString,
             UserId = user.Id,
-            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay)
+            ExpiresAt = DateTime.UtcNow.AddDays(JwtConstants.TokenDurationDay),
+            Client = app,
         });
 
         await _audit.RecordAsync(
@@ -145,9 +149,10 @@ public class LoginCommandHandler(IUserRepository userRepository, IPasswordHasher
             user.LastName,
             accessToken,
             refreshTokenString,
-            SessionRoles.Of(user, twoFactorVerified: false),
+            SessionRoles.Of(user, twoFactorVerified: false, app),
             user.EmailConfirmed,
-            TwoFactor: SessionRoles.State(user)
+            TwoFactor: SessionRoles.State(user),
+            StaffAccount: SessionRoles.IsStaff(user)
         );
     }
 }

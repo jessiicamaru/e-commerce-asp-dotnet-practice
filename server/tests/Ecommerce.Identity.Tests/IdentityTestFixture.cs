@@ -76,6 +76,12 @@ public class IdentityTestFixture : IAsyncLifetime
     /// <summary>What Order answers about an account's open business (specs/112) - set per test, empty by default.</summary>
     public TestAccountStanding Standing { get; } = new();
 
+    /// <summary>
+    /// Which application a sign-in comes from (specs/138). The back office by default - the staff tests sign in as staff
+    /// do - and a test about the storefront says so, and puts it back.
+    /// </summary>
+    public TestSessionClient SessionClient { get; } = new();
+
     /// <summary>A provider whose caller is <paramref name="userId"/>.</summary>
     public ServiceProvider For(Guid userId, params string[] roles)
     {
@@ -101,6 +107,7 @@ public class IdentityTestFixture : IAsyncLifetime
         services.AddScoped<Ecommerce.Application.MyData.IPersonalDataReader, PersonalDataReader>();
         services.AddScoped<Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountErasure, AccountErasure>();
         services.AddSingleton<Ecommerce.Application.Auth.Commands.DeleteAccount.IAccountStanding>(Standing);
+        services.AddSingleton<Ecommerce.Application.Common.Interfaces.ISessionClient>(SessionClient);
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new JwtSettings
         {
             Secret = "identity-tests-signing-key-of-at-least-32-bytes",
@@ -296,4 +303,10 @@ public sealed class TestAccountStanding : Ecommerce.Application.Auth.Commands.De
 
         return Task.FromResult<IReadOnlyList<string>>(Blockers.ToList());
     }
+}
+
+/// <summary>The application a test signs in from (specs/138), settable; the back office unless a test says otherwise.</summary>
+public sealed class TestSessionClient : Ecommerce.Application.Common.Interfaces.ISessionClient
+{
+    public Ecommerce.Domain.Entities.SessionClient Current { get; set; } = Ecommerce.Domain.Entities.SessionClient.BackOffice;
 }

@@ -19,7 +19,7 @@ import { MyDataCard } from './my-data'
 /** Your account (specs/064): your details and your password, each changed by you and nobody else. */
 export function AccountPage() {
   const { t } = useTranslation('auth')
-  const { user, isSeller, isStaff } = useAuth()
+  const { user, isSeller, hasBackOffice } = useAuth()
 
   return (
     <section className="grid max-w-2xl gap-6">
@@ -28,7 +28,7 @@ export function AccountPage() {
         <p className="text-muted-foreground text-sm">{user?.email}</p>
         {/* The one list every account menu draws (specs/127) - here it was four underlined words. */}
         <nav aria-label={t('account.title')} className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {accountDestinations({ isSeller, isStaff })
+          {accountDestinations({ isSeller, isStaff: hasBackOffice })
             .filter(({ to }) => to !== '/account')
             .map(({ to, icon: Icon, label }) => (
               <Link

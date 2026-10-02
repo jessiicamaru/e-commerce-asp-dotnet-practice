@@ -9,7 +9,7 @@ import { Auth } from '@ecommerce/core/services/auth'
 import type { User } from '@ecommerce/core/services/auth/types'
 import { Cart } from '@ecommerce/core/services/cart'
 import { Notifications } from '@ecommerce/core/services/notifications'
-import { renderAsAdmin, renderAsCustomer, renderAsSeller } from '@ecommerce/core/test/render'
+import { renderAsAdmin, renderAsCustomer, renderAsSeller, renderAsStaffOnTheStorefront } from '@ecommerce/core/test/render'
 import { accountDestinations } from '@ecommerce/core/constants/account'
 
 const user = { id: 'u1', email: 'a@b.test', firstName: 'Mai', lastName: 'T', roles: [] } as unknown as User
@@ -61,5 +61,20 @@ describe('one account menu everywhere (specs/127, #254)', () => {
   it('offers Saved, Notifications and two-factor sign-in - what the menus were missing', () => {
     const labels = expected({ isSeller: false, isStaff: false })
     expect(labels).toEqual(expect.arrayContaining(['Saved', 'Notifications', 'Two-factor sign-in', 'Open a shop']))
+  })
+})
+
+describe('the back office for staff on the storefront (specs/138)', () => {
+  it('is offered to a staff account whose storefront session holds no staff role', async () => {
+    renderAsStaffOnTheStorefront(<AccountPage />, '/account')
+
+    expect(await screen.findByRole('link', { name: /Management platform/ })).toHaveAttribute('href', 'http://portal.localhost:5174/')
+  })
+
+  it('is offered to nobody else', async () => {
+    renderAsCustomer(<AccountPage />, '/account')
+
+    await screen.findByRole('link', { name: /Orders/ })
+    expect(screen.queryByRole('link', { name: /Management platform/ })).not.toBeInTheDocument()
   })
 })
