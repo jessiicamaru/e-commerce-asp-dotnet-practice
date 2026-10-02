@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams, useLocation } from 'react-router-dom'
+import { useSearchParams, useLocation } from 'react-router-dom'
+import { OrderRow } from '@/components/order/order-row'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
-import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { useFulfilmentQueue } from '@/hooks/admin'
 import { QUEUE_STATES, type QueueState } from '@/services/admin/types'
@@ -18,7 +18,7 @@ import { cn } from '@/utils/shared'
  * </p>
  */
 export function AdminOrdersPage() {
-  const { t, i18n } = useTranslation('admin')
+  const { t } = useTranslation('admin')
   const location = useLocation()
   const [params, setParams] = useSearchParams()
   const asked = params.get('status')
@@ -59,25 +59,20 @@ export function AdminOrdersPage() {
           <ul className="grid gap-3">
             {queue.data.items.map((order) => (
               <li key={order.orderId}>
-                <Link
+                {/* Reference, products and status (specs/132); where it was opened from rides along (specs/129). */}
+                <OrderRow
                   to={`/admin/orders/${order.orderId}`}
-                  // Where it was opened from: the console keeps that link lit and the breadcrumb leads back (specs/129).
                   state={{ from: `${location.pathname}${location.search}` }}
-                  className="bg-card ring-border/60 hover:ring-primary/60 grid gap-1 rounded-3xl p-4 ring-1 transition-all"
-                >
-                  <span className="font-medium">
-                    {t('queue.placedAt', { at: new Date(order.createdAt).toLocaleString(i18n.language) })}
-                  </span>
-                  <span className="text-sm">
-                    {t('queue.items', { count: order.itemCount })} ·{' '}
-                    <Price value={order.totalAmount} currency={order.currency} className="font-semibold" />
-                  </span>
-                  {order.shipmentCount > 1 && (
-                    <span className="text-muted-foreground text-xs">
-                      {t('queue.parcels', { shipped: order.shipmentsShipped, count: order.shipmentCount })}
-                    </span>
-                  )}
-                </Link>
+                  orderId={order.orderId}
+                  lines={order.lines}
+                  lineCount={order.itemCount}
+                  createdAt={order.createdAt}
+                  status={order.status}
+                  shipped={order.shipmentsShipped}
+                  parcels={order.shipmentCount}
+                  amount={order.totalAmount}
+                  currency={order.currency}
+                />
               </li>
             ))}
           </ul>

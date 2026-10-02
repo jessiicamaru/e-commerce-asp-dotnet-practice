@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams, useLocation } from 'react-router-dom'
+import { useSearchParams, useLocation } from 'react-router-dom'
+import { OrderRow } from '@/components/order/order-row'
 import { SearchIcon } from 'lucide-react'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
-import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,7 @@ import { cn } from '@/utils/shared'
  * overview does (specs/047). What was asked is in the address (`?q=&status=&page=`).
  */
 export function AdminOrderSearchPage() {
-  const { t, i18n } = useTranslation('admin')
+  const { t } = useTranslation('admin')
   const location = useLocation()
   const [params, setParams] = useSearchParams()
   const q = (params.get('q') ?? '').trim()
@@ -117,25 +117,29 @@ export function AdminOrderSearchPage() {
               const person = personOf(order.userId)
               return (
                 <li key={order.orderId}>
-                  <Link
+                  {/* Reference, products and status (specs/132), with whose it is; where it was opened from rides
+                      along (specs/129). */}
+                  <OrderRow
                     to={`/admin/orders/${order.orderId}`}
-                    // Where it was opened from: the console keeps that link lit and the breadcrumb leads back (specs/129).
                     state={{ from: `${location.pathname}${location.search}` }}
-                    className="bg-card ring-border/60 hover:ring-primary/60 grid gap-1 rounded-3xl p-4 ring-1 transition-all"
-                  >
-                    <span className="flex flex-wrap items-center gap-2 font-medium">
-                      <span className="font-mono text-sm">{order.orderId.slice(0, 8)}</span>
-                      <span className="text-muted-foreground text-xs">{t(`findOrder.state.${order.status}`, { defaultValue: order.status })}</span>
-                    </span>
-                    <span className="text-sm">
-                      {person ? `${person.firstName} ${person.lastName} · ${person.email}` : t('findOrder.someone')}
-                    </span>
-                    <span className="text-sm">
-                      {new Date(order.createdAt).toLocaleString(i18n.language)} · {t('queue.items', { count: order.itemCount })} ·{' '}
-                      <Price value={order.totalAmount} currency={order.currency} className="font-semibold" />
-                    </span>
-                    {order.failureReason && <span className="text-destructive text-xs">{order.failureReason}</span>}
-                  </Link>
+                    orderId={order.orderId}
+                    lines={order.lines}
+                    lineCount={order.itemCount}
+                    createdAt={order.createdAt}
+                    status={order.status}
+                    shipped={order.shipmentsShipped}
+                    parcels={order.shipmentCount}
+                    amount={order.totalAmount}
+                    currency={order.currency}
+                    detail={
+                      <>
+                        <span className="text-muted-foreground text-xs">
+                          {person ? `${person.firstName} ${person.lastName} · ${person.email}` : t('findOrder.someone')}
+                        </span>
+                        {order.failureReason && <span className="text-destructive text-xs">{order.failureReason}</span>}
+                      </>
+                    }
+                  />
                 </li>
               )
             })}

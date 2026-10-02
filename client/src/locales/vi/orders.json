@@ -17,7 +17,8 @@
     "backToCart": "Về giỏ hàng",
     "tracking": "Mã vận đơn: {{reference}}",
     "deliveringTo": "Giao tới",
-    "taking": "Việc này lâu hơn bình thường. Đơn hàng của bạn vẫn an toàn; xem lại sau một phút."
+    "taking": "Việc này lâu hơn bình thường. Đơn hàng của bạn vẫn an toàn; xem lại sau một phút.",
+    "placedOn": "· đặt lúc {{at}}"
   },
   "status": {
     "submitted": "Chúng tôi đang giữ hàng và thu tiền…",
@@ -118,5 +119,21 @@
     "keep": "Giữ nguyên",
     "confirm": "Lưu mã đã sửa",
     "done": "Đã sửa mã vận đơn."
-  }
+  },
+  "chip": {
+    "Submitted": "Đang xử lý",
+    "Paid": "Đã thanh toán",
+    "Preparing": "Đang chuẩn bị",
+    "Shipped": "Đã gửi",
+    "Failed": "Thất bại",
+    "Cancelled": "Đã huỷ",
+    "partly": "Đã gửi {{shipped}}/{{count}}"
+  },
+  "row": {
+    "more_one": "+ {{count}} món khác",
+    "more_other": "+ {{count}} món khác"
+  },
+  "reference": "Đơn {{reference}}",
+  "copy": "Sao chép mã đơn",
+  "copied": "Đã sao chép mã đơn."
 }

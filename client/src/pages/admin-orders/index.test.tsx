@@ -35,7 +35,8 @@ describe('AdminOrdersPage', () => {
 
     const link = await screen.findByRole('link', { name: /2 items/ })
     expect(link).toHaveAttribute('href', '/admin/orders/o-1')
-    expect(screen.getByText('1 of 2 parcels sent')).toBeInTheDocument()
+    // Partly sent, in the row's chip (specs/132).
+    expect(screen.getByText('1 of 2 shipped')).toBeInTheDocument()
     expect(queue).toHaveBeenCalledWith('Paid', 1, PAGE_SIZE)
   })
 

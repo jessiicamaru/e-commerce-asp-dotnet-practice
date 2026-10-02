@@ -52,7 +52,7 @@ A customer's orders, a seller's sales and the staff queues each named an order b
 
 ### Functional Requirements
 
-- **FR-001**: The customer list, the fulfilment queue, the staff search and the seller's sales each carry `lines`: up to three of (productId, variantId, productName), in the order bought - for sales, the caller's own lines only.
+- **FR-001**: The customer list, the fulfilment queue, the staff search and the seller's sales each carry `lines`: up to three of (productId, variantId, productName), the biggest first - for sales, the caller's own lines only.
 - **FR-002**: One client helper words the short reference; one `OrderStatusChip` colours a status; one `OrderRow` draws a row (picture, reference, names, date, status, amount) as a single link, used by the customer's orders, the seller's sales and both staff lists.
 - **FR-003**: The order page and the staff order page show the reference with a copy button; the staff page shows the status.
 

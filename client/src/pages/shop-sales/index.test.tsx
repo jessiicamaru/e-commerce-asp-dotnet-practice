@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@/config/i18n'
@@ -65,7 +65,7 @@ describe('ShopSalesPage', () => {
     })
     render_()
 
-    const [returned, plain] = await screen.findAllByRole('link', { name: /Placed/ })
+    const [returned, plain] = await screen.findAllByRole('link', { name: /^o-/ })
     expect(returned).toHaveTextContent('Return: To answer')
     expect(plain).not.toHaveTextContent('Return:')
   })
@@ -74,11 +74,12 @@ describe('ShopSalesPage', () => {
     vi.spyOn(Order, 'sales').mockResolvedValue(onePaidSale)
     render_()
 
-    const link = await screen.findByRole('link', { name: /Placed/ })
+    const link = await screen.findByRole('link', { name: /^o-1/ })
     expect(link).toHaveAttribute('href', '/shop/sales/o-1')
     expect(link).toHaveTextContent('1 of your lines')
     expect(link).toHaveTextContent('2 units')
-    expect(link).toHaveTextContent('Paid - waiting to be prepared')
+    // Its part's state as a chip (specs/132).
+    expect(within(link).getByText('Paid')).toBeInTheDocument()
   })
 
   /**
@@ -89,7 +90,7 @@ describe('ShopSalesPage', () => {
     vi.spyOn(Order, 'sales').mockResolvedValue(onePaidSale)
     render_()
 
-    const link = await screen.findByRole('link', { name: /Placed/ })
+    const link = await screen.findByRole('link', { name: /^o-1/ })
     expect(link.textContent).toMatch(/104[.,\s]?000[.,\s]?000/)
     expect(link.textContent).toMatch(/₫|VND/)
   })

@@ -13,7 +13,7 @@ description: "Task list for Orders are recognisable"
 ## Phase 1: Server (US2)
 
 - [ ] T001 Line previews on four queries; sales filtered to the caller
-- [ ] T002 Order tests: three at most, order bought, seller's own only
+- [ ] T002 Order tests: three at most, biggest first, seller's own only
 
 ## Phase 2: Storefront (US1-US3)
 

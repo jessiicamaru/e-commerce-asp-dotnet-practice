@@ -68,7 +68,9 @@ public record SaleSummaryResponse(
     decimal? ShippingShare = null,
     decimal? Payout = null,
     bool PaidOut = false,
-    string? ReturnStatus = null);
+    string? ReturnStatus = null,
+    // The caller's own lines only, up to three (specs/132) - never another seller's goods on the same order.
+    IReadOnlyList<OrderLinePreview>? Lines = null);
 
 
 /// <summary>

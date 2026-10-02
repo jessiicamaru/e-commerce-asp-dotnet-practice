@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ChevronRightIcon, MapPinIcon, PhoneIcon } from 'lucide-react'
 import { CancelOrder } from '@/components/order/cancel-order'
+import { OrderReference } from '@/components/order/order-reference'
+import { OrderStatusChip } from '@/components/order/order-status-chip'
 import { CancelPart } from '@/components/order/cancel-part'
 import { CorrectTracking } from '@/components/order/correct-tracking'
 import { OrderLines } from '@/components/order/order-lines'
@@ -72,9 +74,16 @@ export function AdminOrderPage() {
   return (
     <section className="grid gap-6">
       {back}
-      <h1 className="text-2xl font-bold tracking-tight">
-        {t('queue.placedAt', { at: new Date(data.createdAt).toLocaleString(i18n.language) })}
-      </h1>
+      <div className="grid gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t('queue.placedAt', { at: new Date(data.createdAt).toLocaleString(i18n.language) })}
+        </h1>
+        {/* Its reference and its state (specs/132) - the staff page showed neither. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <OrderReference orderId={data.orderId} />
+          <OrderStatusChip status={data.status} />
+        </div>
+      </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="grid gap-6">

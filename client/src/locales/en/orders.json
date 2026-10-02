@@ -17,7 +17,8 @@
     "backToCart": "Back to your cart",
     "tracking": "Tracking reference: {{reference}}",
     "deliveringTo": "Delivering to",
-    "taking": "This is taking longer than usual. Your order is safe; check back in a minute."
+    "taking": "This is taking longer than usual. Your order is safe; check back in a minute.",
+    "placedOn": "· placed {{at}}"
   },
   "status": {
     "submitted": "We are reserving your items and taking payment…",
@@ -118,5 +119,21 @@
     "keep": "Keep it",
     "confirm": "Save the correction",
     "done": "Tracking reference corrected."
-  }
+  },
+  "chip": {
+    "Submitted": "Settling",
+    "Paid": "Paid",
+    "Preparing": "Preparing",
+    "Shipped": "Shipped",
+    "Failed": "Failed",
+    "Cancelled": "Cancelled",
+    "partly": "{{shipped}} of {{count}} shipped"
+  },
+  "row": {
+    "more_one": "+ {{count}} more",
+    "more_other": "+ {{count}} more"
+  },
+  "reference": "Order {{reference}}",
+  "copy": "Copy the order reference",
+  "copied": "Order reference copied."
 }

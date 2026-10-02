@@ -33,7 +33,9 @@ public record StaffOrderSummaryResponse(
     DateTime CreatedAt,
     string Currency,
     int ShipmentCount,
-    int ShipmentsShipped);
+    int ShipmentsShipped,
+    // Up to three lines by name (specs/132).
+    IReadOnlyList<Common.OrderLinePreview>? Lines = null);
 
 public partial class GetOrdersForStaffQueryValidator : AbstractValidator<GetOrdersForStaffQuery>
 {

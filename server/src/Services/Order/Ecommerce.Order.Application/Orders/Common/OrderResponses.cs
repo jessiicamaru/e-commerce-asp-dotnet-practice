@@ -19,8 +19,14 @@ public record OrderSummaryResponse(
     string Currency = "",
     string Language = "",
     int ShipmentCount = 0,
-    int ShipmentsShipped = 0
+    int ShipmentsShipped = 0,
+    // What is in it (specs/132, #248): up to three lines, by name - an order listed as a timestamp could not be told
+    // from the next. As frozen at checkout.
+    IReadOnlyList<OrderLinePreview>? Lines = null
 );
+
+/// <summary>One line of an order, as a list shows it (specs/132): which product, which shape, and its frozen name.</summary>
+public record OrderLinePreview(Guid ProductId, Guid? VariantId, string ProductName);
 
 /// <summary>
 /// One part of an order - one parcel (specs/035). The customer sees each: what is in it, where it has

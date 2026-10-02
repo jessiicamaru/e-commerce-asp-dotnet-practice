@@ -332,7 +332,7 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `PUT` | `/api/stock/{variantId}` | Seller, Admin - ownership asked of Catalog |
 | `PUT` | `/api/stock/{variantId}/low-stock-threshold` | Seller, Admin - the same ownership check (specs/102) |
 | `POST` | `/api/orders/sales/{id}/cancel` | Seller - their own part, before it ships (specs/104) |
-| `GET` | `/api/orders/sales?status=`, `/api/orders/sales/{id}` | Seller - `status` of their own part (specs/131) |
+| `GET` | `/api/orders/sales?status=`, `/api/orders/sales/{id}` | Seller - `status` of their own part (specs/131); each row names up to three of their own `lines` (specs/132) |
 | `POST` | `/api/orders/sales/{id}/preparing`, `/api/orders/sales/{id}/shipment` | Seller |
 | `GET` | `/api/orders/sales/balance` | Seller |
 | `GET` | `/api/orders/sales/payouts` | Seller |

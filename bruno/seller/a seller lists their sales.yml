@@ -29,6 +29,9 @@ runtime:
             expect(sale).to.not.have.property("totalAmount");
             expect(sale).to.not.have.property("userId");
             expect(sale).to.have.property("subtotal");
+            // Their own lines by name, at most three (specs/132).
+            expect(sale.lines).to.be.an("array");
+            expect(sale.lines.length).to.be.at.most(3);
           });
         });
 
