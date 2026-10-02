@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@ecommerce/core/config/i18n'
+import { Auth } from '@ecommerce/core/services/auth'
 import { UserMenu } from '.'
 
 const user = { id: 'u1', email: 'mai@demo.test', firstName: 'Mai', lastName: 'Trần', roles: [] as string[], emailConfirmed: true }
@@ -37,14 +38,16 @@ describe('UserMenu', () => {
 
   /** specs/038: the console is drawn for an administrator only - again courtesy, not the permission. */
   /** The console is the back office now (specs/137): another application, at its own address. */
-  it('offers the back office to staff and nobody else, as another application', async () => {
+  /** Another application, reached with a handoff (specs/140) so the back office asks only for the code. */
+  it('offers the back office to staff and nobody else, crossing with a handoff', async () => {
     const assign = vi.fn()
     vi.stubGlobal('location', { ...window.location, assign })
+    vi.spyOn(Auth, 'handoff').mockResolvedValue('h-1')
     await open(false, vi.fn(), true)
 
     await userEvent.setup().click(screen.getByRole('menuitem', { name: /Management platform/ }))
 
-    expect(assign).toHaveBeenCalledWith('http://portal.localhost:5174/')
+    await waitFor(() => expect(assign).toHaveBeenCalledWith('http://portal.localhost:5174/auth/callback#code=h-1'))
     vi.unstubAllGlobals()
   })
 

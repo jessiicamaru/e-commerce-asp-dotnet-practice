@@ -24,6 +24,7 @@ import { AdminShopsPage } from '@/pages/admin-shops'
 import { AdminUsersPage } from '@/pages/admin-users'
 import { AdminVouchersPage } from '@/pages/admin-vouchers'
 import { SignInPage } from '@/pages/sign-in'
+import { AuthCallbackPage } from '@/pages/auth-callback'
 
 // The two pages that bring a rich-text editor (specs/077): loaded when an administrator opens them.
 const AdminEmailsPage = lazy(() => import('@/pages/admin-emails').then((page) => ({ default: page.AdminEmailsPage })))
@@ -44,6 +45,8 @@ export function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/sign-in" element={<SignInPage />} />
+        {/* Where the storefront's "Management platform" lands with a handoff (specs/140) - public, like signing in. */}
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route
           element={
             <RequireStaff>

@@ -1,0 +1,31 @@
+info:
+  name: a customer is given no handoff
+  type: http
+  seq: 14
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/handoff"
+  auth:
+    type: bearer
+    token: "{{customerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 403", function() {
+          expect(res.status).to.equal(403);
+        });
+        test("says why", function() {
+          expect(res.body.code).to.equal("NotStaff");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/140 (#279): a handoff to the back office is for staff with two-factor sign-in.

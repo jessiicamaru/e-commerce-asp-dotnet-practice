@@ -19,6 +19,8 @@ export interface SignInFormProps {
   passwordAction?: ReactNode
   /** Under the first step - the storefront's "create an account". */
   footer?: ReactNode
+  /** A challenge already in hand - a handoff redeemed (specs/140): the form opens at the code step. */
+  initialChallenge?: string
 }
 
 /**
@@ -26,12 +28,12 @@ export interface SignInFormProps {
  * two-factor sign-in on, the right password leads to the code from the authenticator app - or one recovery code - and
  * only that signs the person in. Every refusal is worded here once, so the two apps cannot disagree about one.
  */
-export function SignInForm({ onSignedIn, onSetupRequired, description, passwordAction, footer }: SignInFormProps) {
+export function SignInForm({ onSignedIn, onSetupRequired, description, passwordAction, footer, initialChallenge }: SignInFormProps) {
   const { t, i18n } = useTranslation('auth')
   const { signIn, completeSignIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [challenge, setChallenge] = useState<string | null>(null)
+  const [challenge, setChallenge] = useState<string | null>(initialChallenge ?? null)
   const [code, setCode] = useState('')
   const [byRecoveryCode, setByRecoveryCode] = useState(false)
   const [error, setError] = useState<string | null>(null)

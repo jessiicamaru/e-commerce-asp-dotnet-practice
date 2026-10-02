@@ -180,6 +180,30 @@ to another host, so such a page cannot present that either. A tool that is not a
 still has to know the password and the code. The auth response's `staffAccount` tells the storefront to offer the back
 office to staff whose session there holds no staff role. It draws a link and grants nothing.
 
+**Crossing from the storefront** ([specs/140](../../../specs/140-back-office-handoff/), #279). A staff member signed
+in to the storefront who clicks "Management platform" is not asked for their password again:
+
+```mermaid
+sequenceDiagram
+    participant S as Storefront
+    participant I as Identity
+    participant B as Back office
+    S->>I: POST /api/auth/handoff (the storefront session's token)
+    I-->>S: {code} - 32 random bytes, kept as SHA-256, 30 seconds, once
+    S->>B: open portal.../auth/callback#code=... (a fragment: no server sees it)
+    B->>B: remove the fragment from the address
+    B->>I: POST /api/auth/handoff/redeem {code} (one guarded UPDATE)
+    I-->>B: {twoFactor: "Required", challenge} - never a session
+    B->>I: POST /api/auth/login/two-factor {challenge, code} (Origin: the back office)
+    I-->>B: the back-office session, staff roles in the token
+```
+
+The handoff stands in for the password, **never for the second factor**. A stolen storefront session cannot become a
+back-office one without the authenticator. Only staff with two-factor sign-in are given one (403 `NotStaff` /
+`TwoFactorSetupRequired`); used, expired and made-up codes are one 400; redeeming is anonymous and limited like
+sign-in. If anything fails, the link opens the back office's ordinary sign-in: the handoff costs a password, never a
+way in.
+
 **A second line, in every service** ([specs/139](../../../specs/139-back-office-audience/), #280). A back-office
 session's access tokens are issued for their own audience, `JwtSettings:BackOfficeAudience` (`EcommerceBackOffice` by
 default; an empty setting is the default too). Every service accepts both audiences, but `AddJwtAuthentication` removes

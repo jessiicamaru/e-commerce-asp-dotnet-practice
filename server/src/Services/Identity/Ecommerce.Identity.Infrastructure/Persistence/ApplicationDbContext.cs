@@ -16,6 +16,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<ShopApplication> ShopApplications => Set<ShopApplication>();
     public DbSet<OutgoingEmail> OutgoingEmails => Set<OutgoingEmail>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<BackOfficeHandoff> BackOfficeHandoffs => Set<BackOfficeHandoff>();
     public DbSet<SignInThrottle> SignInThrottles => Set<SignInThrottle>();
     public DbSet<EmailConfirmationToken> EmailConfirmationTokens => Set<EmailConfirmationToken>();
     public DbSet<EmailTemplateVersion> EmailTemplateVersions => Set<EmailTemplateVersion>();

@@ -40,6 +40,7 @@ public static class IdentityPersonalData
         [
             new("refresh_tokens", "The secrets of your signed-in sessions. Sign out to end a session."),
             new("password_reset_tokens", "Hashes of password-reset links; each works once, for 30 minutes."),
+            new("back_office_handoffs", "Hashes of the codes that took you from the storefront to the back office; each works once, for 30 seconds."),
             new("email_confirmation_tokens", "Hashes of address-confirmation links; each works once."),
             new("two_factor_challenges", "Hashes of the five-minute step between your password and your code."),
             new("two_factor_recovery_codes", "Hashes of your recovery codes - you were shown the codes once."),

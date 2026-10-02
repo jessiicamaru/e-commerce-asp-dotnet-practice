@@ -1,6 +1,7 @@
 import { expect, request, test, type APIRequestContext } from '@playwright/test'
 import { Api, type Person } from './support/api'
-import { BACK_OFFICE, signInToBackOffice } from './support/ui'
+import { freshCode } from './support/totp'
+import { BACK_OFFICE, signIn, signInToBackOffice } from './support/ui'
 
 /**
  * The back office in a browser (specs/136, 137, ADR-003): staff sign in on an origin of their own, with the code, and
@@ -40,6 +41,24 @@ test.describe.serial('the back office', () => {
     await expect(page).toHaveURL(/\/sign-in$/)
     await page.reload()
     await expect(page).toHaveURL(/\/sign-in$/)
+  })
+
+  /** specs/140: from the storefront, signed in, staff cross with a handoff - the back office asks only for the code. */
+  test('a moderator on the storefront crosses to the back office with only the code', async ({ page }) => {
+    await signIn(page, moderator)
+    await page.goto('/account')
+
+    await page.getByRole('main').getByRole('link', { name: 'Management platform' }).click()
+
+    await expect(page).toHaveURL(new RegExp(`^${BACK_OFFICE}/auth/callback$`))
+    await expect(page.getByLabel('Code')).toBeVisible()
+    await expect(page.getByLabel('Password', { exact: true })).toHaveCount(0)
+    const { code, step } = await freshCode(moderator.totpSecret!, moderator.lastStep)
+    await page.getByLabel('Code').fill(code)
+    await page.getByRole('button', { name: 'Verify' }).click()
+    moderator.lastStep = step
+
+    await expect(page).toHaveURL(new RegExp(`^${BACK_OFFICE}/moderation$`))
   })
 
   test('a customer is told the back office is for staff', async ({ page }) => {

@@ -1,0 +1,38 @@
+info:
+  name: the handoff yields a challenge, not a session
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/handoff/redeem"
+  body:
+    type: json
+    data: |-
+      {
+        "code": "{{handoffCode}}"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a challenge for the code from the authenticator - no token", function() {
+          expect(res.body.twoFactor).to.equal("Required");
+          expect(res.body.challenge).to.be.a("string").and.not.equal("");
+          expect(res.body.token).to.equal("");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  The handoff stands in for the password, never for the second factor (specs/140 research D1).

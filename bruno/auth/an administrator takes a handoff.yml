@@ -1,0 +1,32 @@
+info:
+  name: an administrator takes a handoff
+  type: http
+  seq: 15
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/auth/handoff"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("a code to carry to the back office", function() {
+          expect(res.body.code).to.be.a("string").and.not.equal("");
+        });
+        if (res.status === 200) bru.setVar("handoffCode", res.body.code);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  A single-use code, 30 seconds (specs/140). The storefront carries it in the fragment of the back office address.

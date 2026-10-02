@@ -8,7 +8,7 @@ import { Button } from '@ecommerce/ui/button'
 import { Input } from '@ecommerce/ui/input'
 import { Label } from '@ecommerce/ui/label'
 import { ApiError } from '@ecommerce/core/config/axios'
-import { accountDestinations } from '@ecommerce/core/constants/account'
+import { accountDestinations, destinationClick } from '@ecommerce/core/constants/account'
 import { useAuth } from '@ecommerce/core/context/auth/useAuth'
 import { useChangePassword, useMe, useUpdateMe } from '@ecommerce/core/hooks/me'
 import type { AccountProfile } from '@ecommerce/core/services/auth/types'
@@ -34,6 +34,7 @@ export function AccountPage() {
               <Link
                 key={to}
                 to={to}
+                onClick={destinationClick(to)}
                 className="bg-card ring-border/60 hover:ring-primary/60 flex items-center gap-2 rounded-2xl p-3 text-sm font-medium ring-1 transition-colors"
               >
                 <Icon className="text-muted-foreground size-4" /> {t(label)}
