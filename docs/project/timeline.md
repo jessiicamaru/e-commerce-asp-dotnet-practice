@@ -194,6 +194,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [137](../../specs/137-console-to-back-office/) | The admin and moderator console moves to the back office | #283 | #277: 21 console pages and their layout to apps/back-office, 36 shared components to packages/core; /admin/* redirects; closing a shop moves too (ADR-003 step 3) |
 | [138](../../specs/138-staff-roles-back-office/) | Staff roles only in a back-office session | #284 | #278: refresh_tokens.Client from Origin; Admin/Moderator only in a verified back-office session; tools sign in as the back office (ADR-003 step 4) |
 | [139](../../specs/139-back-office-audience/) | A separate token audience for the back office | #285 | #280: back-office tokens for their own audience; every service drops staff roles from any other token (ADR-003, second line) |
+| [140](../../specs/140-back-office-handoff/) | A one-time handoff from the storefront to the back office | #286 | #279: staff cross with a single-use code in the URL fragment, redeemed for a two-factor challenge - never a session; ADR-003 complete |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
