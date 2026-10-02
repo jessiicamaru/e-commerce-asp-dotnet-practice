@@ -53,7 +53,8 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
             Issuer = _jwtSettings.Issuer,
-            Audience = _jwtSettings.Audience,
+            // Each app's tokens for that app (specs/139): every service honours a staff role only for the back office's.
+            Audience = client == SessionClient.BackOffice ? _jwtSettings.BackOfficeAudience : _jwtSettings.Audience,
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature)

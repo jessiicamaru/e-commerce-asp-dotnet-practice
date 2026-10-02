@@ -180,6 +180,13 @@ to another host, so such a page cannot present that either. A tool that is not a
 still has to know the password and the code. The auth response's `staffAccount` tells the storefront to offer the back
 office to staff whose session there holds no staff role. It draws a link and grants nothing.
 
+**A second line, in every service** ([specs/139](../../../specs/139-back-office-audience/), #280). A back-office
+session's access tokens are issued for their own audience, `JwtSettings:BackOfficeAudience` (`EcommerceBackOffice` by
+default; an empty setting is the default too). Every service accepts both audiences, but `AddJwtAuthentication` removes
+`Admin` and `Moderator` from any token not issued for the back office, right after the revocation check. If Identity
+ever wrote a staff role into a storefront token, no service would honour it. Every other role, and the token itself,
+are left alone.
+
 **Signing in.**
 
 ```mermaid

@@ -31,7 +31,8 @@ flowchart LR
 - **The only place staff are staff** (specs/138). Identity records which app made each session
   (`refresh_tokens.Client`, from the request's `Origin` against `BackOffice:Origins`) and writes staff roles only into a
   back-office session verified with a code. On the storefront the same person is a customer, and `staffAccount` on the
-  auth response is what draws their link here. How it works:
+  auth response is what draws their link here. **Every service checks it again** (specs/139): a back-office token's
+  audience is `EcommerceBackOffice`, and `AddJwtAuthentication` drops the staff roles from any other token. How it works:
   [two-factor sign-in, section 7](../features/auth/totp-two-factor.md#7-how-this-project-uses-it).
 - **Trusted like the storefront.** The gateway reads `X-Forwarded-For` only from known proxies (specs/062). The back
   office's nginx is one of them, at `172.30.10.11` on the `edge` network. Without that, every member of staff would
