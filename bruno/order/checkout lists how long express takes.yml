@@ -1,0 +1,30 @@
+info:
+  name: checkout lists how long express takes
+  type: http
+  seq: 20
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/orders/shipping-options"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("express says one to two days", function() {
+          const express = res.body.filter(function(o) { return o.code === "express"; })[0];
+          expect(express.minDays).to.equal(1);
+          expect(express.maxDays).to.equal(2);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  What checkout offers carries the time (specs/134), anonymously like the rest of the list.

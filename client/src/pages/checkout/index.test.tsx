@@ -5,6 +5,7 @@ import i18n from '@/config/i18n'
 import { Address } from '@/services/address'
 import type { Address as AddressModel } from '@/services/address/types'
 import { Order } from '@/services/order'
+import { Payment } from '@/services/payment'
 import { Voucher } from '@/services/voucher'
 import type { Order as OrderModel, Quote } from '@/services/order/types'
 import { refusal } from '@/test/refusal'
@@ -20,6 +21,7 @@ beforeEach(async () => {
   await i18n.changeLanguage('en')
   vi.spyOn(Order, 'shippingOptions').mockResolvedValue([{ code: 'standard', name: 'Standard', price: 30000, currency: 'VND' }])
   vi.spyOn(Order, 'quote').mockRejectedValue(new Error('not under test'))
+  vi.spyOn(Payment, 'isStub').mockResolvedValue(null)
 })
 
 describe('CheckoutPage without an address', () => {
@@ -141,5 +143,40 @@ describe('CheckoutPage public vouchers (specs/114)', () => {
 
     expect(asked).toHaveBeenCalledWith({ platform: true, sellerIds: ['s1'] })
     await waitFor(() => expect(quoted).toHaveBeenCalledWith({ addressId: 'a-new', shippingOption: 'standard', voucherCodes: ['MAI10'] }))
+  })
+})
+
+describe('CheckoutPage: delivery time and payment (specs/134, #253)', () => {
+  it('says how long each option takes, and nothing for one that does not say', async () => {
+    vi.spyOn(Address, 'list').mockResolvedValue([saved])
+    vi.spyOn(Order, 'shippingOptions').mockResolvedValue([
+      { code: 'standard', name: 'Standard', price: 30000, currency: 'VND', minDays: 3, maxDays: 5 },
+      { code: 'express', name: 'Express', price: 60000, currency: 'VND', minDays: 1, maxDays: 1 },
+      { code: 'pickup', name: 'Pick up', price: 0, currency: 'VND', minDays: null, maxDays: null },
+    ])
+    renderAsSeller(<CheckoutPage />, '/checkout')
+
+    expect(await screen.findByText('3–5 business days')).toBeInTheDocument()
+    expect(screen.getByText('1 business day')).toBeInTheDocument()
+    expect(screen.getByText('Pick up').parentElement).not.toHaveTextContent(/day/)
+  })
+
+  it('says how payment works, and that no money moves while Payment says it is the stand-in', async () => {
+    vi.spyOn(Address, 'list').mockResolvedValue([saved])
+    vi.spyOn(Payment, 'isStub').mockResolvedValue(true)
+    renderAsSeller(<CheckoutPage />, '/checkout')
+
+    expect(await screen.findByText('Your order is charged once, in full, when you place it.')).toBeInTheDocument()
+    expect(await screen.findByRole('note')).toHaveTextContent('no money is moved')
+  })
+
+  it('says nothing about the provider when Payment is a real one or cannot be asked', async () => {
+    vi.spyOn(Address, 'list').mockResolvedValue([saved])
+    const stub = vi.spyOn(Payment, 'isStub').mockResolvedValue(false)
+    renderAsSeller(<CheckoutPage />, '/checkout')
+
+    expect(await screen.findByText('Your order is charged once, in full, when you place it.')).toBeInTheDocument()
+    await waitFor(() => expect(stub).toHaveBeenCalled())
+    expect(screen.queryByText(/no money is moved/)).not.toBeInTheDocument()
   })
 })

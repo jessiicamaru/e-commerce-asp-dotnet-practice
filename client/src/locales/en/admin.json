@@ -710,6 +710,8 @@
     "save": "Save",
     "add": "Add",
     "newOption": "New option",
-    "optionSaved": "“{{name}}” saved."
+    "optionSaved": "“{{name}}” saved.",
+    "minDays": "Soonest (days)",
+    "maxDays": "Latest (days)"
   }
 }

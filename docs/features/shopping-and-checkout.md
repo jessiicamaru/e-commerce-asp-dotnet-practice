@@ -8,7 +8,7 @@ What happens after `Paid` (parcels, cancellation, delivery) is in [fulfilment-an
 
 | Role | Capabilities |
 | :-- | :-- |
-| Anyone | Read the delivery options and their prices (`GET /api/orders/shipping-options`), and the carrier's tracking page (`GET /api/orders/delivery/carrier`). |
+| Anyone | Read the delivery options, their prices and how long each takes (`GET /api/orders/shipping-options`), and the carrier's tracking page (`GET /api/orders/delivery/carrier`). |
 | Administrator | Change delivery prices, add or turn off options, name the carrier and its tracking address (`/admin/delivery`, specs/098). The last option on offer cannot be turned off. |
 | Customer (any signed-in user) | Keep one cart: add a variant, change a quantity, remove a line, empty it. See it priced at today's catalogue prices. Ask for a checkout quote. Place an order to one of their addresses (or their default) with a delivery option. List their own orders and open one, polling until it settles. |
 | Seller | Everything a customer can do: a seller also holds the `Customer` role (specs/027). |
@@ -30,7 +30,9 @@ A line is addressed by its sellable id (`CartLine.SellableId` = `VariantId ?? Pr
 
 1. reads the caller's cart from Cart over gRPC (`CartReading.GetMyCart`), forwarding the caller's own `Authorization` header - the request message is empty;
 2. reads the address from Identity over gRPC (`AddressReading.GetMyAddress`), again with the forwarded token; a null `addressId` means the default address;
-3. resolves the delivery option from Order's `delivery_options` table - edited by administrators at `/admin/delivery` and seeded from `Shipping:Options` since specs/098 (#196) - and its price in the request's currency;
+3. resolves the delivery option from Order's `delivery_options` table - edited by administrators at `/admin/delivery` and seeded from `Shipping:Options` since specs/098 (#196) - and its price in the request's currency, with its delivery time in business days
+   (`MinDays`/`MaxDays`, specs/134, both or neither; a CHECK refuses anything else) for the list and the quote, never
+   frozen on the order;
 4. asks Catalog to price the variants (`CatalogPricing.PriceVariants`) in the request's language and currency;
 5. computes the total in named parts with `OrderTotals.Compute`, using the tax rate for the destination country (`Tax:Rates`, falling back to `Tax:DefaultRate`).
 
@@ -166,6 +168,7 @@ Cart consumes three events and keeps one `checkout_outcomes` row per order. `Ord
 | [`order_state_data`](../reference/data-model.md#order_state_data) | Orchestrator | The in-flight saga instance: state, amount, currency, failure reason, payment id. |
 | [`stock_items`](../reference/data-model.md#stock_items) | Inventory | `QuantityOnHand` and `QuantityReserved` per variant; CHECK constraints keep on hand non-negative and reserved within on hand. |
 | [`stock_reservations`](../reference/data-model.md#stock_reservations) | Inventory | One per order and variant: `Held`, `Confirmed`, `Released` or `Expired`, with `ExpiresAt`. |
+| [`delivery_options`](../reference/data-model.md#delivery_options) | Order | Code, name, offered, order, and since specs/134 the delivery time (`MinDays`/`MaxDays`, business days, both or neither, 0-60). Prices per currency in `delivery_option_prices`. |
 | [`payments`](../reference/data-model.md#payments) | Payment | One per order: amount, currency, provider (`Stub`), status. |
 
 ## API
@@ -228,7 +231,8 @@ Notifications on settlement: the buyer gets `OrderPaid` or `OrderFailed`; each s
 | [client/src/utils/cart/index.ts](../../client/src/utils/cart/index.ts) | Why a line cannot be bought, as a translation key. |
 | [client/src/pages/checkout/index.tsx](../../client/src/pages/checkout/index.tsx) | Checkout (`/checkout`): shows Order's own quote, then places the order. |
 | [client/src/components/checkout/address-choice/index.tsx](../../client/src/components/checkout/address-choice/index.tsx) | Chooses an address, or adds one in a dialog and chooses it on save. |
-| [client/src/components/checkout/delivery-choice/index.tsx](../../client/src/components/checkout/delivery-choice/index.tsx) | The delivery options and prices, as Order reports them. |
+| [client/src/components/checkout/delivery-choice/index.tsx](../../client/src/components/checkout/delivery-choice/index.tsx) | The delivery options, prices and delivery times, as Order reports them; an option with no time says none (specs/134). |
+| [client/src/components/checkout/payment-card/index.tsx](../../client/src/components/checkout/payment-card/index.tsx) | How payment works - charged once in full when placed, a refusal takes nothing, a cancellation is refunded in full - and, **only while Payment's `/health` names a `Stub` provider**, that no money is moved (specs/134). Read from Payment rather than written here, so the sentence cannot outlive the stub. |
 | [client/src/components/order/order-totals/index.tsx](../../client/src/components/order/order-totals/index.tsx) | The named parts of a total, in the order's own currency. |
 | [client/src/pages/orders/index.tsx](../../client/src/pages/orders/index.tsx) | The customer's orders, newest first (`/orders`). |
 | [client/src/pages/order/index.tsx](../../client/src/pages/order/index.tsx) | One order (`/orders/:id`); polls every `ORDER_POLL_MS` (1 s) for up to `ORDER_POLL_LIMIT_MS` (30 s) while it is `Submitted`. |
@@ -259,15 +263,17 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 | [`CheckoutOutcomeTests`](../../server/tests/Ecommerce.Cart.Tests/CheckoutOutcomeTests.cs) | Completion before or after submission removes the ordered lines once; what was added since survives; a failed order leaves the cart alone; a stray failure cannot undo a completion. |
 | [`VariantLineTests`](../../server/tests/Ecommerce.Cart.Tests/VariantLineTests.cs) | Two shapes of one product are two lines; a pre-variant line is still addressed by its product id; a completed order takes out the variant it bought and not its sibling, and an item or line naming no variant falls back to the product (specs/052). |
 | [client `pages/cart/index.test.tsx`](../../client/src/pages/cart/index.test.tsx) | Quantity changes and removal are sent for the variant the line belongs to. |
-| [client `pages/checkout/index.test.tsx`](../../client/src/pages/checkout/index.test.tsx) | A customer with no address adds one in place and the order is priced to it. |
+| [`DeliveryEstimateTests`](../../server/tests/Ecommerce.Order.Tests/DeliveryEstimateTests.cs) | A time set with an option is what checkout lists and quotes, and clearing it says nothing; one end only, negative, over 60 or soonest after latest is refused naming the field; the table's CHECK refuses the same when the validator is skipped; configuration seeds a new option's time and leaves a stored one; a configured time that is not one stops the service (specs/134). |
+| [client `pages/checkout/index.test.tsx`](../../client/src/pages/checkout/index.test.tsx) | A customer with no address adds one in place and the order is priced to it. Each option's delivery time, and none for one without; the payment card, with the no-money line only while Payment says it is the stub (specs/134). |
 
 **End to end:** [`.github/scripts/verify-saga.sh`](../../.github/scripts/verify-saga.sh) is the only check that sees between services. It places a real order through the cart with a real customer token, sends fabricated prices, names and a foreign user id in both the add-to-cart and checkout bodies, recomputes the expected total independently (catalogue price, delivery, tax at the stored rate rounded to the currency's minor unit), follows the order to `Paid` or `Failed`, and asserts on `QuantityOnHand` **and** `QuantityReserved`, the cart after settlement, and the amount Payment was asked for. It runs whichever branch Payment reports; CI runs both (`saga-e2e` job, Payment restarted in between).
 
-**Bruno:** [`bruno/cart/`](../../bruno/cart/) and [`bruno/order/`](../../bruno/order/) (checkout, quote, quotes and options in dollars, a dong order stays in dong); negative cases in [`bruno/security-checks/`](../../bruno/security-checks/) (checkout without a delivery option is 400, unknown address is 404, another customer's order is 404, cart without a token is 401, negative quantity is 400).
+**Bruno:** [`bruno/cart/`](../../bruno/cart/) and [`bruno/order/`](../../bruno/order/) (checkout, quote, quotes and options in dollars, a dong order stays in dong; express given a delivery time, listed, a time that is not one is 400, and put back - 19-22); negative cases in [`bruno/security-checks/`](../../bruno/security-checks/) (checkout without a delivery option is 400, unknown address is 404, another customer's order is 404, cart without a token is 401, negative quantity is 400).
 
 ## Known limits
 
-- **Payment is a stub.** It approves or rejects according to `PAYMENT_OUTCOME` and moves no money. A real provider is deliberately deferred; `StubPaymentGateway` is the seam.
+- **Payment is a stub.** It approves or rejects according to `PAYMENT_OUTCOME` and moves no money. A real provider is deliberately deferred; `StubPaymentGateway` is the seam. Checkout says so to the customer while Payment reports it (specs/134).
+- **A delivery time is one estimate for every destination**, in business days, and an order does not keep it (specs/134 research D3). Options stored before specs/134 say no time until an administrator sets one - configuration seeds new codes only.
 - **One running Payment exercises one branch.** The outcome is resolved at startup, so both branches need two runs with a restart in between.
 - **Discounts come from vouchers only** ([vouchers](vouchers.md), specs/069; screens in specs/070). There are no automatic sale prices.
 - **Checkout depends synchronously on Catalog, Cart and Identity.** Any one being down refuses orders with 503.
@@ -298,6 +304,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 | [022-multi-currency-prices](../../specs/022-multi-currency-prices/) | #59 | Two price lists, no conversion; currency frozen and carried to the payment. |
 | [034-seller-sales](../../specs/034-seller-sales/) | #77 | The seller id frozen on each line at checkout. |
 | [035-seller-shipments](../../specs/035-seller-shipments/) | #79 | Checkout writes one shipment part per seller plus the shop's. |
+| [134-checkout-payment-delivery-time](../../specs/134-checkout-payment-delivery-time/) | #274 | Each delivery option says how long it takes, set at `/admin/delivery`; checkout has a payment card that says plainly when no money moves (#253). |
 | [132-recognisable-orders](../../specs/132-recognisable-orders/) | #272 | Order lists name up to three lines; one short reference (eight characters, as the notices write it) and a status chip on every list and order page (#248). |
 | [036-parcel-shop-names](../../specs/036-parcel-shop-names/) | #80 | The shop name frozen on each line. |
 | [037-seller-payouts](../../specs/037-seller-payouts/) | #81 | Commission rate and each part's earnings frozen at checkout. |

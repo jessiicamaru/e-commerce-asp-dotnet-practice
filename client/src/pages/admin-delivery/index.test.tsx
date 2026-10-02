@@ -10,8 +10,8 @@ import { AdminDeliveryPage } from '.'
 
 const settings = (): DeliverySettings => ({
   options: [
-    { code: 'standard', name: 'Standard delivery', isActive: true, sortOrder: 0, prices: { VND: 30000, USD: 2 } },
-    { code: 'express', name: 'Express delivery', isActive: true, sortOrder: 1, prices: { VND: 60000 } },
+    { code: 'standard', name: 'Standard delivery', isActive: true, sortOrder: 0, prices: { VND: 30000, USD: 2 }, minDays: 3, maxDays: 5 },
+    { code: 'express', name: 'Express delivery', isActive: true, sortOrder: 1, prices: { VND: 60000 }, minDays: null, maxDays: null },
   ],
   carrier: { name: 'Shop delivery', trackingUrlTemplate: null },
 })
@@ -34,7 +34,9 @@ describe('AdminDeliveryPage (specs/098)', () => {
     await user.click(within(express).getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
-      expect(save).toHaveBeenCalledWith({ code: 'express', name: 'Express delivery', isActive: true, sortOrder: 1, prices: { VND: 75000 } }),
+      expect(save).toHaveBeenCalledWith({
+        code: 'express', name: 'Express delivery', isActive: true, sortOrder: 1, prices: { VND: 75000 }, minDays: null, maxDays: null,
+      }),
     )
     expect(within(express).getByLabelText('Code')).toHaveAttribute('readonly')
   })
@@ -79,5 +81,38 @@ describe('AdminDeliveryPage (specs/098)', () => {
     await user.type(screen.getByLabelText('Tracking address'), 'https://ghn.example/track/{{reference}')
     await user.click(screen.getAllByRole('button', { name: 'Save' })[0])
     await waitFor(() => expect(save).toHaveBeenLastCalledWith({ name: 'GHN', trackingUrlTemplate: 'https://ghn.example/track/{reference}' }))
+  })
+})
+
+describe('AdminDeliveryPage: how long an option takes (specs/134, #253)', () => {
+  it('shows the time stored and sends the one typed, an empty one as none', async () => {
+    const save = vi.spyOn(Delivery, 'saveOption').mockResolvedValue(settings().options[0])
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminDeliveryPage />, '/admin/delivery')
+
+    const standard = await screen.findByRole('form', { name: 'Standard delivery' })
+    expect(within(standard).getByLabelText('Soonest (days)')).toHaveValue(3)
+    expect(within(standard).getByLabelText('Latest (days)')).toHaveValue(5)
+    await user.clear(within(standard).getByLabelText('Latest (days)'))
+    await user.type(within(standard).getByLabelText('Latest (days)'), '7')
+    await user.click(within(standard).getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ code: 'standard', minDays: 3, maxDays: 7 })))
+
+    await user.clear(within(standard).getByLabelText('Soonest (days)'))
+    await user.clear(within(standard).getByLabelText('Latest (days)'))
+    await user.click(within(standard).getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ code: 'standard', minDays: null, maxDays: null })))
+  })
+
+  it("shows the server's words for a time that is not one", async () => {
+    vi.spyOn(Delivery, 'saveOption').mockRejectedValue(refusal(400, 'The soonest day cannot be after the latest.'))
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminDeliveryPage />, '/admin/delivery')
+
+    const standard = await screen.findByRole('form', { name: 'Standard delivery' })
+    await user.type(within(standard).getByLabelText('Soonest (days)'), '9')
+    await user.click(within(standard).getByRole('button', { name: 'Save' }))
+
+    expect(await within(standard).findByText('The soonest day cannot be after the latest.')).toBeInTheDocument()
   })
 })

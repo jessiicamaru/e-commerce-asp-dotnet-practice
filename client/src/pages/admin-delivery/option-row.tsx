@@ -23,6 +23,9 @@ export function OptionRow({ option, changes }: { option: DeliveryOption | null; 
   const [prices, setPrices] = useState<Record<string, string>>(
     Object.fromEntries(CURRENCIES.map((c) => [c, option?.prices[c] !== undefined ? String(option.prices[c]) : ''])),
   )
+  // How long it takes, in business days (specs/134): both or neither - empty says nothing at checkout.
+  const [minDays, setMinDays] = useState(option?.minDays != null ? String(option.minDays) : '')
+  const [maxDays, setMaxDays] = useState(option?.maxDays != null ? String(option.maxDays) : '')
   const [refusal, setRefusal] = useState<string | null>(null)
 
   const save = (event: FormEvent) => {
@@ -34,7 +37,15 @@ export function OptionRow({ option, changes }: { option: DeliveryOption | null; 
         .map(([currency, amount]) => [currency, Number(amount)]),
     )
     changes.option
-      .mutateAsync({ code: code.trim(), name: name.trim(), isActive: active, sortOrder: Number(sortOrder) || 0, prices: priced })
+      .mutateAsync({
+        code: code.trim(),
+        name: name.trim(),
+        isActive: active,
+        sortOrder: Number(sortOrder) || 0,
+        prices: priced,
+        minDays: minDays.trim() === '' ? null : Number(minDays),
+        maxDays: maxDays.trim() === '' ? null : Number(maxDays),
+      })
       .then(() => {
         toast.success(t('deliverySettings.optionSaved', { name: name.trim() }))
         if (!option) {
@@ -76,6 +87,14 @@ export function OptionRow({ option, changes }: { option: DeliveryOption | null; 
               />
             </div>
           ))}
+          <div className="grid gap-1.5">
+            <Label htmlFor={`${id}-min-days`}>{t('deliverySettings.minDays')}</Label>
+            <Input id={`${id}-min-days`} type="number" min={0} max={60} value={minDays} onChange={(e) => setMinDays(e.target.value)} className="w-28" />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`${id}-max-days`}>{t('deliverySettings.maxDays')}</Label>
+            <Input id={`${id}-max-days`} type="number" min={0} max={60} value={maxDays} onChange={(e) => setMaxDays(e.target.value)} className="w-28" />
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
             {t('deliverySettings.offered')}

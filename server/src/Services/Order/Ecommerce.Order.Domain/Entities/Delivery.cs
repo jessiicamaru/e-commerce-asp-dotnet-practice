@@ -18,6 +18,15 @@ public class DeliveryOption
     /// <summary>The order shoppers see the options in, lowest first.</summary>
     public int SortOrder { get; set; }
 
+    /// <summary>
+    /// How long it takes, in business days - the soonest and the latest (specs/134, #253). Both or neither: null is "says
+    /// nothing", never zero. A promise made at checkout, so an order does not freeze it the way it freezes the price.
+    /// </summary>
+    public int? MinDays { get; set; }
+
+    /// <inheritdoc cref="MinDays"/>
+    public int? MaxDays { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

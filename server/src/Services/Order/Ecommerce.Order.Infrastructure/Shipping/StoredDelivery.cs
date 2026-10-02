@@ -20,7 +20,7 @@ public class StoredShippingOptions(OrderDbContext context) : IShippingOptions
         .Where(o => o.IsActive)
         .OrderBy(o => o.SortOrder).ThenBy(o => o.Code)
         .ToList()
-        .Select(o => new ShippingOption(o.Code, o.Name, o.Prices.ToDictionary(p => p.Currency, p => p.Amount)))
+        .Select(o => new ShippingOption(o.Code, o.Name, o.Prices.ToDictionary(p => p.Currency, p => p.Amount), o.MinDays, o.MaxDays))
         .ToList());
 
     public IReadOnlyList<ShippingOption> All => _offered.Value;
@@ -73,8 +73,8 @@ public static class DeliverySeed
         {
             var now = DateTime.UtcNow;
             var inserted = await context.Database.SqlQuery<string>($"""
-                INSERT INTO delivery_options ("Code", "Name", "IsActive", "SortOrder", "CreatedAt", "UpdatedAt")
-                VALUES ({option.Code}, {option.Name}, true, {order++}, {now}, {now})
+                INSERT INTO delivery_options ("Code", "Name", "IsActive", "SortOrder", "MinDays", "MaxDays", "CreatedAt", "UpdatedAt")
+                VALUES ({option.Code}, {option.Name}, true, {order++}, {option.MinDays}, {option.MaxDays}, {now}, {now})
                 ON CONFLICT ("Code") DO NOTHING
                 RETURNING "Code" AS "Value"
                 """).ToListAsync(cancellationToken);
