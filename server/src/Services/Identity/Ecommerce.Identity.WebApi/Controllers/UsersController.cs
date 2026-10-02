@@ -18,9 +18,10 @@ public class UsersController : ApiControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Search(
-        [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 12, [FromQuery] bool includeDeleted = false)
+        [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 12, [FromQuery] bool includeDeleted = false,
+        [FromQuery] string? role = null, [FromQuery] string? state = null)
     {
-        return Ok(await Mediator.Send(new GetUsersQuery(search, page, pageSize, includeDeleted)));
+        return Ok(await Mediator.Send(new GetUsersQuery(search, page, pageSize, includeDeleted, role, state)));
     }
 
     /// <summary>Who these ids are - for the insights' top buyers (specs/047). Administrators only.</summary>

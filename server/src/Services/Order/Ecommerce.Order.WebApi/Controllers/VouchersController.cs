@@ -29,8 +29,9 @@ public class VouchersController : ApiControllerBase
 
     /// <summary>The caller's vouchers: the platform's for an administrator, their own for a seller.</summary>
     [HttpGet("mine")]
-    public async Task<IActionResult> Mine([FromQuery] int page = 1, [FromQuery] int pageSize = 12) =>
-        Ok(await Mediator.Send(new GetMyVouchersQuery(page, pageSize)));
+    public async Task<IActionResult> Mine(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 12, [FromQuery] string? search = null, [FromQuery] string? state = null) =>
+        Ok(await Mediator.Send(new GetMyVouchersQuery(page, pageSize, search, state)));
 
     /// <summary>
     /// Corrects an active voucher's name, end, limits and minimums (specs/113) - never what it takes off. Not yours is a

@@ -37,7 +37,20 @@ public record CreateVoucherCommand(
     bool IsPublic = false) : IRequest<VoucherSummary>;
 
 /// <summary>The caller's vouchers: the platform's for an administrator, their own for a seller. Newest first.</summary>
-public record GetMyVouchersQuery(int Page = 1, int PageSize = 12) : IRequest<PagedResponse<VoucherSummary>>;
+/// <param name="Search">Part of the code or the name, any case (specs/133).</param>
+/// <param name="State"><c>Active</c> (not disabled, not ended), <c>Ended</c> (its end has passed) or <c>Disabled</c>.</param>
+public record GetMyVouchersQuery(int Page = 1, int PageSize = 12, string? Search = null, string? State = null)
+    : IRequest<PagedResponse<VoucherSummary>>;
+
+/// <summary>The states a voucher list is filtered by (specs/133).</summary>
+public static class VoucherListState
+{
+    public const string Active = "Active";
+    public const string Ended = "Ended";
+    public const string Disabled = "Disabled";
+
+    public static readonly IReadOnlyList<string> Names = [Active, Ended, Disabled];
+}
 
 /// <summary>Stops a voucher being used from now on. Orders that used it keep it - it is frozen on them.</summary>
 public record DisableVoucherCommand(Guid Id) : IRequest<VoucherSummary>;
@@ -153,6 +166,10 @@ public class GetMyVouchersQueryValidator : AbstractValidator<GetMyVouchersQuery>
     {
         RuleFor(x => x.Page).GreaterThanOrEqualTo(1);
         RuleFor(x => x.PageSize).InclusiveBetween(1, 50);
+        RuleFor(x => x.Search).MaximumLength(100);
+        RuleFor(x => x.State)
+            .Must(state => state is null || VoucherListState.Names.Contains(state))
+            .WithMessage($"State must be one of: {string.Join(", ", VoucherListState.Names)}.");
     }
 }
 
@@ -226,7 +243,9 @@ public class VoucherHandlers(IVoucherRepository vouchers, ICurrentUser currentUs
     public async Task<PagedResponse<VoucherSummary>> Handle(GetMyVouchersQuery request, CancellationToken cancellationToken)
     {
         var caller = Caller();
-        var (items, total) = await _vouchers.GetPageAsync(VoucherRules.IsAdmin(_currentUser) ? null : caller, request.Page, request.PageSize, cancellationToken);
+        var (items, total) = await _vouchers.GetPageAsync(
+            VoucherRules.IsAdmin(_currentUser) ? null : caller, request.Page, request.PageSize, cancellationToken,
+            request.Search, request.State, DateTime.UtcNow);
         return new PagedResponse<VoucherSummary>(items, request.Page, request.PageSize, total);
     }
 

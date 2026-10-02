@@ -40,7 +40,9 @@ export const queryKeys = {
   myPayoutAccount: () => ['payout-account', 'mine'] as const,
   payoutAccounts: (sellerIds: string[]) => ['payout-accounts', sellerIds] as const,
   adminReturns: (status: string, page: number) => ['admin-returns', status, page] as const,
-  myVouchers: (page: number) => ['vouchers', 'mine', page] as const,
+  myVouchers: (page: number, search = '', state = '') => ['vouchers', 'mine', page, search, state] as const,
+  /** A voucher state tab's count (specs/133): a page of one under its own key. */
+  myVoucherCount: (state: string, search: string) => ['vouchers', 'mine-count', state, search] as const,
   publicVouchers: (scope: PublicVoucherScope | null) => ['vouchers', 'public', scope] as const,
   savedIds: () => ['saved', 'ids'] as const,
   savedProducts: (page: number) => ['saved', 'list', page] as const,
@@ -55,7 +57,8 @@ export const queryKeys = {
   wordingVersions: (key: string, language: string) => ['notification-wording', key, language, 'versions'] as const,
   emailTemplateVersions: (template: string, language: string) => ['email-templates', template, language, 'versions'] as const,
   auditLog: (filter: AuditFilter, page: number) => ['audit-log', filter, page] as const,
-  accounts: (search: string, page: number, includeDeleted = false) => ['accounts', search, page, includeDeleted] as const,
+  accounts: (search: string, page: number, includeDeleted = false, role = '', state = '') =>
+    ['accounts', search, page, includeDeleted, role, state] as const,
   /** A staff queue's count for the console's sidebar (specs/129) - its own key, never the list's. */
   staffWaiting: (queue: string) => ['staff-waiting', queue] as const,
   /** What waits for a seller (specs/131) - its own keys too. */

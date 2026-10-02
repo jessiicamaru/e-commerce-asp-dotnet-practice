@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
 import { Accounts } from '@/services/accounts'
+import type { AccountFilter } from '@/services/accounts/types'
 
 /** A page of people matching the search. Keeps the previous page on screen while the next loads. */
-export function useAccounts(search: string, page: number, pageSize: number, includeDeleted = false) {
+export function useAccounts(search: string, page: number, pageSize: number, includeDeleted = false, filter: AccountFilter = {}) {
   return useQuery({
-    queryKey: queryKeys.accounts(search, page, includeDeleted),
-    queryFn: () => Accounts.search(search, page, pageSize, includeDeleted),
+    queryKey: queryKeys.accounts(search, page, includeDeleted, filter.role ?? '', filter.state ?? ''),
+    queryFn: () => Accounts.search(search, page, pageSize, includeDeleted, filter),
     placeholderData: (previous) => previous,
   })
 }

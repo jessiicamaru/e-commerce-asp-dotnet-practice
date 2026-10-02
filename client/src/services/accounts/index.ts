@@ -1,6 +1,6 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
-import type { Account, AccountPage, ModerationHistoryPage } from './types'
+import type { Account, AccountPage, ModerationHistoryPage, AccountFilter } from './types'
 
 /**
  * People, as staff look after them (specs/043) - Identity through the gateway. Looking people up and
@@ -9,10 +9,15 @@ import type { Account, AccountPage, ModerationHistoryPage } from './types'
  */
 export class Accounts {
   /** Deleted accounts are left out unless `includeDeleted` (specs/123). */
-  static async search(search: string, page: number, pageSize: number, includeDeleted = false): Promise<AccountPage> {
+  static async search(
+    search: string, page: number, pageSize: number, includeDeleted = false, filter: AccountFilter = {},
+  ): Promise<AccountPage> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
     if (search) params.set('search', search)
     if (includeDeleted) params.set('includeDeleted', 'true')
+    // By role and by state (specs/133); left out when not chosen.
+    if (filter.role) params.set('role', filter.role)
+    if (filter.state) params.set('state', filter.state)
     const { data } = await http.get<AccountPage>(`/users?${params}`)
     return data
   }

@@ -41,7 +41,10 @@ public interface IUserRepository
     /// Users whose email or name contains <paramref name="search"/> (case- and accent-blind on email via
     /// its lower-case form), newest first, with their roles (specs/043).
     /// </summary>
-    Task<(List<User> Items, int TotalCount)> SearchAsync(string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default);
+    /// <remarks><paramref name="role"/> and <paramref name="state"/> narrow the list (specs/133).</remarks>
+    Task<(List<User> Items, int TotalCount)> SearchAsync(
+        string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default,
+        string? role = null, string? state = null, DateTime? now = null);
 
     /// <summary>Who these ids are, for an administrator's report (specs/047). Unknown ids are left out.</summary>
     Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);

@@ -1,6 +1,6 @@
 // The model types live in ./types, imported from there: this file's export is the class.
 import { http } from '@/config/axios'
-import type { NewVoucher, PublicVoucher, PublicVoucherScope, VoucherEdit, VoucherPage, VoucherSummary } from './types'
+import type { NewVoucher, PublicVoucher, PublicVoucherScope, VoucherEdit, VoucherPage, VoucherSummary, VoucherFilter } from './types'
 
 /**
  * Vouchers (specs/069, 070): an administrator's are the platform's, a seller's their shop's. Nothing here names
@@ -24,8 +24,12 @@ export class Voucher {
   }
 
   /** The caller's own: the platform's for an administrator, theirs for a seller. Newest first. */
-  static async mine(page: number, pageSize: number): Promise<VoucherPage> {
-    const { data } = await http.get<VoucherPage>(`/vouchers/mine?page=${page}&pageSize=${pageSize}`)
+  static async mine(page: number, pageSize: number, filter: VoucherFilter = {}): Promise<VoucherPage> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+    // By code or name and by state (specs/133); left out when empty.
+    if (filter.search) params.set('search', filter.search)
+    if (filter.state) params.set('state', filter.state)
+    const { data } = await http.get<VoucherPage>(`/vouchers/mine?${params}`)
     return data
   }
 

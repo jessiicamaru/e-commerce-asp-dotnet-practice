@@ -1,16 +1,29 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useQueries } from '@tanstack/react-query'
 import { queryKeys } from '@/constants/query-keys'
 import { Order } from '@/services/order'
 import type { CheckoutChoice } from '@/services/order/types'
 import { Voucher } from '@/services/voucher'
-import type { NewVoucher, PublicVoucherScope, VoucherEdit } from '@/services/voucher/types'
+import { VOUCHER_STATES, type NewVoucher, type PublicVoucherScope, type VoucherEdit, type VoucherFilter } from '@/services/voucher/types'
 
 /** The caller's vouchers, a page at a time. */
-export function useMyVouchers(page: number, pageSize: number) {
+export function useMyVouchers(page: number, pageSize: number, filter: VoucherFilter = {}) {
   return useQuery({
-    queryKey: queryKeys.myVouchers(page),
-    queryFn: () => Voucher.mine(page, pageSize),
+    queryKey: queryKeys.myVouchers(page, filter.search ?? '', filter.state ?? ''),
+    queryFn: () => Voucher.mine(page, pageSize, filter),
     placeholderData: (previous) => previous,
+  })
+}
+
+/** How many vouchers each state tab holds for the search being shown (specs/133) - a page of one each. */
+export function useMyVoucherCounts(search: string) {
+  const states = ['', ...VOUCHER_STATES] as const
+  return useQueries({
+    queries: states.map((state) => ({
+      queryKey: queryKeys.myVoucherCount(state, search),
+      queryFn: async () => (await Voucher.mine(1, 1, { search, state })).totalCount,
+    })),
+    combine: (results) =>
+      Object.fromEntries(states.map((state, index) => [state || 'All', results[index].data])) as Record<string, number | undefined>,
   })
 }
 

@@ -1,0 +1,31 @@
+info:
+  name: a seller finds their disabled voucher
+  type: http
+  seq: 121
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/vouchers/mine?state=Disabled&search={{sellerVoucherCode}}"
+  auth:
+    type: bearer
+    token: "{{sellerToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the one disabled earlier", function() {
+          expect(res.body.items.map(v => v.code)).to.deep.equal([bru.getVar("sellerVoucherCode")]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  By code and by state (specs/133, #249).

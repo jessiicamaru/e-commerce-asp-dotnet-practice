@@ -89,11 +89,24 @@ public class UserRepository(ApplicationDbContext _context) : IUserRepository
         _context.Users.Include(u => u.Roles).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
     public async Task<(List<User> Items, int TotalCount)> SearchAsync(
-        string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default)
+        string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default,
+        string? role = null, string? state = null, DateTime? now = null)
     {
         var query = _context.Users.AsNoTracking();
         if (!includeDeleted)
             query = query.Where(u => u.DeletedAt == null);
+
+        // By role and by state (specs/133), in SQL like the search, so the total is the filtered list's.
+        if (role is not null)
+            query = query.Where(u => u.Roles.Any(r => r.Name == role));
+        var at = now ?? DateTime.UtcNow;
+        query = state switch
+        {
+            Application.Users.UserListState.Banned => query.Where(u => u.BannedAt != null),
+            Application.Users.UserListState.Locked => query.Where(u => u.BannedAt == null && u.LockedUntil != null && u.LockedUntil > at),
+            Application.Users.UserListState.Active => query.Where(u => u.BannedAt == null && (u.LockedUntil == null || u.LockedUntil <= at)),
+            _ => query,
+        };
 
         if (!string.IsNullOrWhiteSpace(search))
         {

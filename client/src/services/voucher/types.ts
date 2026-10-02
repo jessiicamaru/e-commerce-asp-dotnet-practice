@@ -111,3 +111,13 @@ export interface PublicVoucher {
   conditions: VoucherCondition[]
   targeted: boolean
 }
+
+/** A state a voucher list is filtered by (specs/133): active, past its end, or turned off. */
+export const VOUCHER_STATES = ['Active', 'Ended', 'Disabled'] as const
+export type VoucherState = (typeof VOUCHER_STATES)[number]
+
+/** What a voucher list is narrowed to (specs/133). */
+export interface VoucherFilter {
+  search?: string
+  state?: VoucherState | ''
+}

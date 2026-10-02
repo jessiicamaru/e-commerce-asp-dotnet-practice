@@ -1,6 +1,6 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `107a7511`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `44b984c8`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 

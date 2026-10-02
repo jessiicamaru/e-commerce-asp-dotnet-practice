@@ -7,6 +7,7 @@ import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
+import { TabStrip } from '@/components/shared/tab-strip'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,11 +29,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { PAGE_SIZE } from '@/constants/shared'
 import { useAuth } from '@/context/auth/useAuth'
 import { useAccountActions, useAccounts } from '@/hooks/accounts'
-import { MODERATOR_MAX_LOCK_DAYS, type Account } from '@/services/accounts/types'
+import { MODERATOR_MAX_LOCK_DAYS, type Account, ACCOUNT_ROLES, ACCOUNT_STATES, type AccountFilter } from '@/services/accounts/types'
 import { HistoryDialog } from './history-dialog'
 import { StopDialog, type Stop } from './stop-dialog'
 
@@ -58,23 +60,30 @@ export function AdminUsersPage() {
   const search = params.get('search') ?? ''
   const page = Number(params.get('page') ?? '1') || 1
   const showDeleted = params.get('deleted') === '1'
+  // By role and by state (specs/133, #249) - a 34-page list had only a name search.
+  const role = (ACCOUNT_ROLES as readonly string[]).includes(params.get('role') ?? '') ? (params.get('role') as AccountFilter['role']) : ''
+  const state = (ACCOUNT_STATES as readonly string[]).includes(params.get('state') ?? '') ? (params.get('state') as AccountFilter['state']) : ''
   const [draft, setDraft] = useState(search)
   const [stopping, setStopping] = useState<{ kind: Stop; account: Account } | null>(null)
   const [reading, setReading] = useState<Account | null>(null)
   // When the page opened: what "days still to run" is measured from, fixed rather than read in render.
   const [now] = useState(() => Date.now())
 
-  const accounts = useAccounts(search, page, PAGE_SIZE, showDeleted)
+  const accounts = useAccounts(search, page, PAGE_SIZE, showDeleted, { role, state })
   const act = useAccountActions()
   const failed = [act.grant, act.revoke, act.lock, act.unlock, act.ban, act.liftBan, act.resetTwoFactor].find((m) => m.isError)?.error
   const [resetting, setResetting] = useState<Account | null>(null)
 
-  const go = (next: { search?: string; page?: number; deleted?: boolean }) => {
+  const go = (next: { search?: string; page?: number; deleted?: boolean; role?: string; state?: string }) => {
     const merged = new URLSearchParams()
     const q = next.search ?? search
     // Not "q": the header's catalogue search reads that one, and would echo the name typed here.
     if (q) merged.set('search', q)
     if (next.deleted ?? showDeleted) merged.set('deleted', '1')
+    const r = next.role ?? role
+    const s = next.state ?? state
+    if (r) merged.set('role', r)
+    if (s) merged.set('state', s)
     if (next.page && next.page > 1) merged.set('page', String(next.page))
     setParams(merged)
   }
@@ -120,10 +129,34 @@ export function AdminUsersPage() {
         </InputGroup>
       </form>
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
-        <Checkbox checked={showDeleted} onCheckedChange={(checked) => go({ deleted: !!checked, page: 1 })} />
-        {t('users.showDeleted')}
-      </label>
+      <div className="flex flex-wrap items-center gap-3">
+        <Select
+          items={[{ value: '', label: t('users.filter.anyRole') }, ...ACCOUNT_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`, { defaultValue: r }) }))]}
+          value={role}
+          onValueChange={(value) => go({ role: String(value ?? ''), page: 1 })}
+        >
+          <SelectTrigger className="bg-card h-9! w-44 rounded-xl" aria-label={t('users.filter.role')}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">{t('users.filter.anyRole')}</SelectItem>
+            {ACCOUNT_ROLES.map((r) => (
+              <SelectItem key={r} value={r}>
+                {t(`roles.${r}`, { defaultValue: r })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <TabStrip
+          tabs={(['', ...ACCOUNT_STATES] as const).map((value) => ({ value, label: t(`users.filter.state.${value || 'All'}`) }))}
+          current={state ?? ''}
+          onChange={(next) => go({ state: next, page: 1 })}
+        />
+        <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
+          <Checkbox checked={showDeleted} onCheckedChange={(checked) => go({ deleted: !!checked, page: 1 })} />
+          {t('users.showDeleted')}
+        </label>
+      </div>
 
       <ServerError error={failed} fallback={t('users.loadFailed')} />
 

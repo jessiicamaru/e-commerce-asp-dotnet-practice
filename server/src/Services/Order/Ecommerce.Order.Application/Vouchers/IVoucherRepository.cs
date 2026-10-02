@@ -66,7 +66,10 @@ public interface IVoucherRepository
     Task<bool> TrySaveNewAsync(CancellationToken cancellationToken = default);
 
     /// <summary>The platform's vouchers (<paramref name="sellerId"/> null) or one seller's, newest first.</summary>
-    Task<(List<VoucherSummary> Items, int TotalCount)> GetPageAsync(Guid? sellerId, int page, int pageSize, CancellationToken cancellationToken = default);
+    /// <remarks><paramref name="search"/> matches the code or the name; <paramref name="state"/> is a <see cref="VoucherListState"/> (specs/133).</remarks>
+    Task<(List<VoucherSummary> Items, int TotalCount)> GetPageAsync(
+        Guid? sellerId, int page, int pageSize, CancellationToken cancellationToken = default,
+        string? search = null, string? state = null, DateTime? now = null);
 
     /// <summary>
     /// One guarded statement from Active to Disabled. <paramref name="ownerSellerId"/> limits it to that seller's

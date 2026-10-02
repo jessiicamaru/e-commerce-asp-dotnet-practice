@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BanIcon, TicketPercentIcon } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { BanIcon, TicketPercentIcon, SearchIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
+import { TabStrip } from '@/components/shared/tab-strip'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { ServerError } from '@/components/shared/server-error'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
 import { VoucherEdit } from '@/components/voucher/voucher-edit'
 import { VoucherForm } from '@/components/voucher/voucher-form'
 import {
@@ -22,7 +25,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PAGE_SIZE } from '@/constants/shared'
-import { useDisableVoucher, useMyVouchers } from '@/hooks/voucher'
+import { useDisableVoucher, useMyVouchers, useMyVoucherCounts } from '@/hooks/voucher'
+import { VOUCHER_STATES, type VoucherState } from '@/services/voucher/types'
 import type { VoucherSummary } from '@/services/voucher/types'
 import { cn } from '@/utils/shared'
 import { describeBenefit, describeRules, describeUses } from '@/utils/voucher/describe'
@@ -30,11 +34,30 @@ import { describeBenefit, describeRules, describeUses } from '@/utils/voucher/de
 /**
  * The caller's vouchers (specs/070): a seller's shop's in their console, the platform's in the administrator's -
  * one page, because the server answers "mine" for both and the list is the same list (research D2).
+ *
+ * <p>
+ * Searched by code or name and filtered by state, each tab counting what it holds for the search (specs/133, #249) -
+ * the administrator's list was 58 tall cards with no way to find one. Both live in the address.
+ * </p>
  */
 export function VoucherPage({ platform }: { platform: boolean }) {
   const { t } = useTranslation('vouchers')
-  const [page, setPage] = useState(1)
-  const vouchers = useMyVouchers(page, PAGE_SIZE)
+  const [params, setParams] = useSearchParams()
+  const page = Number(params.get('page') ?? '1') || 1
+  const search = params.get('q') ?? ''
+  const state = (VOUCHER_STATES as readonly string[]).includes(params.get('state') ?? '') ? (params.get('state') as VoucherState) : ''
+  const [draft, setDraft] = useState(search)
+  const vouchers = useMyVouchers(page, PAGE_SIZE, { search, state })
+  const counts = useMyVoucherCounts(search)
+  const go = (next: { page?: number; q?: string; state?: string }) => {
+    const merged = new URLSearchParams()
+    const q = next.q ?? search
+    const s = next.state ?? state
+    if (q) merged.set('q', q)
+    if (s) merged.set('state', s)
+    if (next.page && next.page > 1) merged.set('page', String(next.page))
+    setParams(merged)
+  }
   const disable = useDisableVoucher()
 
   return (
@@ -42,6 +65,37 @@ export function VoucherPage({ platform }: { platform: boolean }) {
       <PageTitle title={t('title')} subtitle={t(platform ? 'subtitlePlatform' : 'subtitleShop')} />
       <VoucherForm platform={platform} />
       <ServerError error={disable.error} fallback={t('loadFailed')} />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            go({ q: draft.trim(), page: 1 })
+          }}
+          className="min-w-56 flex-1"
+        >
+          <InputGroup className="h-10 rounded-full">
+            <InputGroupAddon>
+              <SearchIcon />
+            </InputGroupAddon>
+            <InputGroupInput
+              aria-label={t('filter.search')}
+              placeholder={t('filter.search')}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+          </InputGroup>
+        </form>
+        <TabStrip
+          tabs={(['', ...VOUCHER_STATES] as const).map((value) => {
+            const label = t(`filter.state.${value || 'All'}`)
+            const count = counts[value || 'All']
+            return { value, label: count === undefined ? label : `${label} ${count}` }
+          })}
+          current={state}
+          onChange={(next) => go({ state: next, page: 1 })}
+        />
+      </div>
 
       {vouchers.isError ? (
         <ErrorMessage>{t('loadFailed')}</ErrorMessage>
@@ -56,7 +110,7 @@ export function VoucherPage({ platform }: { platform: boolean }) {
               <VoucherRow key={voucher.id} voucher={voucher} onDisable={() => disable.mutate(voucher.id, { onSuccess: () => toast.success(t('disabled')) })} busy={disable.isPending} />
             ))}
           </ul>
-          <Pager page={page} pageSize={PAGE_SIZE} totalCount={vouchers.data.totalCount} onChange={setPage} />
+          <Pager page={page} pageSize={PAGE_SIZE} totalCount={vouchers.data.totalCount} onChange={(next) => go({ page: next })} />
         </>
       )}
     </section>

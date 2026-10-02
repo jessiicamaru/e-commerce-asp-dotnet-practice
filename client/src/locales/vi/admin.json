@@ -328,7 +328,17 @@
     "resetTwoFactorConfirm": "Đặt lại",
     "twoFactorReset": "Đã đặt lại xác thực hai bước cho {{email}}.",
     "showDeleted": "Hiện tài khoản đã xoá",
-    "deletedName": "Tài khoản đã xoá"
+    "deletedName": "Tài khoản đã xoá",
+    "filter": {
+      "role": "Vai trò",
+      "anyRole": "Mọi vai trò",
+      "state": {
+        "All": "Tất cả",
+        "Active": "Đang hoạt động",
+        "Locked": "Bị khoá",
+        "Banned": "Bị cấm"
+      }
+    }
   },
   "roles": {
     "Admin": "Quản trị viên",
@@ -679,7 +689,9 @@
     "english": "Tiếng Anh",
     "noEnglish": "Chưa có tiếng Anh",
     "none": "Chưa có danh mục nào.",
-    "loadFailed": "Không tải được danh mục."
+    "loadFailed": "Không tải được danh mục.",
+    "search": "Tên hoặc địa chỉ",
+    "noneFound": "Không có danh mục nào khớp."
   },
   "deliverySettings": {
     "title": "Giao hàng",

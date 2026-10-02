@@ -156,6 +156,10 @@ has run out is shown as no lock. The row menu offers each person only the action
 and never an action on one's own account or on an administrator's; the server refuses the same things
 on its own.
 
+**By role and by state** (specs/133, #249): a role select (any, Customer, Seller, Moderator, Admin) and tabs All /
+Active / Locked / Banned, sent as `role=` and `state=` and kept in the address. **Locked** is a lock still running and
+not banned; **Banned** wins over a lock; **Active** is neither. A list of 34 pages had only the name search.
+
 **A deleted account** (specs/112) is an emptied row the books still point at. Since specs/123 (#241) the list leaves it
 out unless staff tick "Show deleted accounts" (`includeDeleted=true`); then it reads **Deleted** with its date
 (`deletedAt` on the response) and offers only its history. Every moderation command on it - lock, unlock, ban, lift,
@@ -258,7 +262,7 @@ Full list in [api.md](../reference/api.md).
 
 | Method | Path | Who |
 | :-- | :-- | :-- |
-| `GET` | `/api/users?search=&page=&pageSize=&includeDeleted=` | Admin, Moderator - deleted accounts only when asked (specs/123) |
+| `GET` | `/api/users?search=&role=&state=&page=&pageSize=&includeDeleted=` | Admin, Moderator - deleted accounts only when asked (specs/123); `role` one of the four, `state` `Active`/`Locked`/`Banned`, anything else 400 (specs/133) |
 | `POST` | `/api/users/{id}/lock` (`days`, `reason`) | Admin, Moderator |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |
 | `POST` | `/api/users/{id}/ban` (`reason`) | Admin |
@@ -310,6 +314,7 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | Where | Proves |
 | :-- | :-- |
 | `Ecommerce.Identity.Tests/ModerationTests` | A grant arrives at the next refresh; only `Moderator` can be granted; a locked account cannot sign in or refresh until unlocked; the 30-day cap; nobody stops themselves or an administrator and a moderator does not stop a moderator; a ban holds until lifted and unlocking does not lift it; nobody unlocks themselves, only an administrator unlocks a moderator, and a moderator lifts only a lock of 30 days or fewer still to run (a refused unlock records nothing); a moderator does not shorten a longer lock by locking again, may extend a lock or shorten one within reach, and an administrator shortens any (specs/088); the refusal carries `code`, `until` and `reason`; every action is recorded with its diff and a grant notifies; search by part of an email. |
+| `Ecommerce.Identity.Tests/UserFilterTests` | A role lists only those holding it; Locked, Banned and Active each hold exactly theirs, a lock run out counting as Active; an unknown role or state is 400 (specs/133). |
 | `Ecommerce.Identity.Tests/ShopApplicationTests` | Approval and rejection, two simultaneous approvals open one shop, the queue order. |
 | `Ecommerce.Identity.Tests/AuthErrorTests` | Unknown email and wrong password give the same 401. |
 | `Ecommerce.Identity.Tests/ForbiddenProblemTests` | A 403's facts reach the response body in Production, a date as ISO 8601 UTC, and never hide `traceId`. |
@@ -321,6 +326,7 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | client `pages/sign-in` | A locked person is told why and until when in their language and time; a banned one why; a wrong password only "wrong"; another 403 its sentence; no sentence the generic one. |
 | client `pages/admin-users`, `admin-shops`, `admin-moderation`, `admin-products`, `admin-reviews`, `layouts/admin-layout`, `components/auth/require-role` | What each role is offered and what each action sends. |
 | Bruno `admin-users/` | Grant, sign in holding the role, a moderator cannot grant, ban or lock beyond 30 days, lock, locked sign-in refused with its `code`, `until` and `reason`, a moderator cannot unlock their own account (409), unlock, sign in again, the audit log records it, a moderator cannot shorten an administrator's 300-day lock by locking again (403, specs/088), revoke. |
+| Bruno `admin-users/` 41-44 | The 300-day lock is listed as Locked and not as Active; the moderator is found by role; an unknown state is 400 (specs/133). |
 | Bruno `seller/`, `reviews/`, `security-checks/` | Shop and product decisions, a second approval is 409, review hiding, 401 and 403 cases. |
 
 ## Known limits
@@ -351,4 +357,5 @@ No message is specific to moderation. Staff actions publish, through the acting 
 | [100-moderation-history](../../specs/100-moderation-history/) | [#207](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/207) | A person's moderation history in the lock dialog and from the users page; `AboutUserId` on audit entries; `GET /api/audit/people/{userId}` (#198). |
 | [123-deleted-accounts-staff](../../specs/123-deleted-accounts-staff/) | [#262](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/262) | A deleted account reads Deleted, is listed only with `includeDeleted=true`, and every moderation command on it is 409 `AccountDeleted` (#241). |
 | [101-content-reports](../../specs/101-content-reports/) | [#208](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/208) | Shoppers report reviews, questions and products; `content_reports`; `/admin/reports`; hide and take-down close the reports (#199). |
+| [133-staff-list-filters](../../specs/133-staff-list-filters/) | [#273](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/273) | The users page by role and state (#249). |
 | [110-staff-two-factor](../../specs/110-staff-two-factor/) | #230 | Staff sign in with a second factor (TOTP); staff roles only in a verified session; recovery codes; an administrator's reset (#218). |

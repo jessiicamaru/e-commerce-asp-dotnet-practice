@@ -111,3 +111,26 @@ describe('slugOf', () => {
     expect(slugOf('  Ống kính  rời / Đà Nẵng ')).toBe('ong-kinh-roi-da-nang')
   })
 })
+
+describe('categories searched and paged (specs/133, #249)', () => {
+  it('narrows by a name in either language or the address', async () => {
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminCategoriesPage />, '/admin/categories')
+    await screen.findByText('Máy ảnh')
+
+    await user.type(screen.getByRole('textbox', { name: 'Name or address' }), 'lenses')
+
+    expect(screen.queryByText('Máy ảnh')).not.toBeInTheDocument()
+    expect(screen.getByText('Ống kính')).toBeInTheDocument()
+  })
+
+  it('shows twelve to a page', async () => {
+    vi.mocked(Category.listIn).mockImplementation(async () =>
+      Array.from({ length: 14 }, (_, i) => ({ ...lenses, id: `c-${i}`, name: `Danh mục ${String(i).padStart(2, '0')}`, slug: `dm-${i}` })),
+    )
+    renderAsAdmin(<AdminCategoriesPage />, '/admin/categories')
+
+    expect(await screen.findByText('Danh mục 11')).toBeInTheDocument()
+    expect(screen.queryByText('Danh mục 12')).not.toBeInTheDocument()
+  })
+})

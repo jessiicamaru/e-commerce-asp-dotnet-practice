@@ -49,3 +49,12 @@ export interface ModerationHistoryPage {
 
 /** The longest lock a moderator may set; an administrator may go to a year (specs/043). */
 export const MODERATOR_MAX_LOCK_DAYS = 30
+
+/** The roles and states the people list is filtered by (specs/133). */
+export const ACCOUNT_ROLES = ['Customer', 'Seller', 'Moderator', 'Admin'] as const
+export const ACCOUNT_STATES = ['Active', 'Locked', 'Banned'] as const
+
+export interface AccountFilter {
+  role?: (typeof ACCOUNT_ROLES)[number] | ''
+  state?: (typeof ACCOUNT_STATES)[number] | ''
+}
