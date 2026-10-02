@@ -10,7 +10,7 @@ import { ProductDetailsCard } from '@/components/seller/product-details'
 import { ProductTranslationsCard } from '@/components/seller/product-translations'
 import { VariantEditor } from '@/components/seller/variant-editor'
 import { ImageDropzone } from '@/components/shared/image-dropzone'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import {
   AlertDialog,

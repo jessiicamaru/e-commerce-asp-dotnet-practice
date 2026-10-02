@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @ecommerce/storefront",
-    "build": "tsc -b && npm run build -w @ecommerce/storefront",
+    "dev:back-office": "npm run dev -w @ecommerce/back-office",
+    "build": "tsc -b && npm run build -w @ecommerce/storefront && npm run build -w @ecommerce/back-office",
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",

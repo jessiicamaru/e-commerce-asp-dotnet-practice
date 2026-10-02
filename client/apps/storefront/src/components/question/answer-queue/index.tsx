@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { AnswerForm } from '@/components/question/answer-form'
 import { QuestionItem } from '@/components/question/question-item'
 import { Pager } from '@/components/shared/pager'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { PAGE_SIZE } from '@ecommerce/core/constants/shared'
 import { useQuestionQueue } from '@ecommerce/core/hooks/question'
 

@@ -13,6 +13,7 @@ import viAdmin from '@ecommerce/core/locales/vi/admin.json'
 import viNotifications from '@ecommerce/core/locales/vi/notifications.json'
 import viStatus from '@ecommerce/core/locales/vi/status.json'
 import viVouchers from '@ecommerce/core/locales/vi/vouchers.json'
+import viBackOffice from '@ecommerce/core/locales/vi/backOffice.json'
 
 import enAuth from '@ecommerce/core/locales/en/auth.json'
 import enCart from '@ecommerce/core/locales/en/cart.json'
@@ -25,6 +26,7 @@ import enAdmin from '@ecommerce/core/locales/en/admin.json'
 import enNotifications from '@ecommerce/core/locales/en/notifications.json'
 import enStatus from '@ecommerce/core/locales/en/status.json'
 import enVouchers from '@ecommerce/core/locales/en/vouchers.json'
+import enBackOffice from '@ecommerce/core/locales/en/backOffice.json'
 
 /** The languages this shop speaks. The server's list has to match (specs/021). */
 export const LANGUAGES = ['vi', 'en'] as const
@@ -64,6 +66,7 @@ void i18n
         auth: viAuth,
         status: viStatus,
         vouchers: viVouchers,
+        backOffice: viBackOffice,
       },
       en: {
         common: enCommon,
@@ -77,6 +80,7 @@ void i18n
         auth: enAuth,
         status: enStatus,
         vouchers: enVouchers,
+        backOffice: enBackOffice,
       },
     },
     supportedLngs: LANGUAGES,

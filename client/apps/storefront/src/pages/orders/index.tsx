@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { Pager } from '@/components/shared/pager'
 import { OrderRow } from '@/components/order/order-row'
 import { PAGE_SIZE } from '@ecommerce/core/constants/shared'

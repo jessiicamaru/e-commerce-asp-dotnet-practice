@@ -1,0 +1,18 @@
+{
+  "name": "Trang quản trị",
+  "checking": "Đang kiểm tra phiên đăng nhập…",
+  "signOut": "Đăng xuất",
+  "home": {
+    "greeting": "Đã đăng nhập: {{name}}",
+    "asAdmin": "Bạn là quản trị viên.",
+    "asModerator": "Bạn là kiểm duyệt viên."
+  },
+  "notStaff": {
+    "title": "Trang này dành cho nhân viên",
+    "body": "{{email}} không phải quản trị viên hay kiểm duyệt viên. Trang quản trị là nơi nhân viên vận hành cửa hàng; mua và bán diễn ra trên trang mua sắm."
+  },
+  "setupRequired": {
+    "title": "Hãy bật xác thực hai lớp trước",
+    "body": "Nhân viên đăng nhập bằng mã từ ứng dụng xác thực. Hãy bật nó trong tài khoản của bạn trên trang mua sắm, rồi đăng nhập lại ở đây."
+  }
+}

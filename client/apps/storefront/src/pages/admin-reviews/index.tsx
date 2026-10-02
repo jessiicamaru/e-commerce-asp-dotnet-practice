@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { StarRating } from '@/components/product/star-rating'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
-import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
+import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@/components/shared/server-error'
 import { Button } from '@ecommerce/ui/button'
 import {

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '@ecommerce/core/config/axios'
-import { ErrorMessage } from '@/components/shared/query-state'
+import { ErrorMessage } from '@ecommerce/core/components/query-state'
 import { SearchableSelect } from '@/components/shared/searchable-select'
 import { Button } from '@ecommerce/ui/button'
 import { Input } from '@ecommerce/ui/input'
