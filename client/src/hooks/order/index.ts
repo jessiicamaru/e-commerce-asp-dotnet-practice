@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CART_SETTLE_RECHECK_MS, ORDER_POLL_LIMIT_MS, ORDER_POLL_MS, isSettling } from '@/constants/order'
 import { queryKeys } from '@/constants/query-keys'
 import { Order } from '@/services/order'
+import { Questions } from '@/services/question'
+import { Seller } from '@/services/seller'
 import type { CheckoutChoice } from '@/services/order/types'
 
 export function useShippingOptions() {
@@ -225,5 +227,40 @@ export function useReceiveParcel(orderId: string) {
       await queryClient.invalidateQueries({ queryKey: queryKeys.order(orderId) })
       await queryClient.invalidateQueries({ queryKey: ['orders'] })
     },
+  })
+}
+
+/** What waits for a seller (specs/131), by the place it is done. `payoutAccount` is false when none is given. */
+export interface SellerWaiting {
+  toPrepare?: number
+  questions?: number
+  returns?: number
+  payoutAccount?: boolean
+}
+
+/**
+ * What needs the seller, for their home and their menu (specs/131, #247): sales whose part waits to be prepared,
+ * questions not answered, returns requested, and whether a payout account is given - each from its owner's own list,
+ * a page of one, under keys of its own (specs/130). Read again every minute and on focus.
+ */
+export function useSellerWaiting(enabled: boolean): SellerWaiting {
+  const reads = [
+    { name: 'toPrepare', read: async () => (await Order.sales(1, 1, 'Paid')).totalCount },
+    { name: 'questions', read: async () => (await Questions.toAnswer(false, 1, 1)).totalCount },
+    { name: 'returns', read: async () => (await Order.saleReturns('Requested', 1, 1)).totalCount },
+    { name: 'payoutAccount', read: async () => (await Seller.payoutAccount()) !== null },
+  ] as const
+
+  return useQueries({
+    queries: reads.map((r) => ({
+      queryKey: queryKeys.sellerWaiting(r.name),
+      queryFn: r.read,
+      enabled,
+      refetchInterval: 60_000,
+    })),
+    combine: (results) =>
+      Object.fromEntries(
+        reads.flatMap((r, index) => (results[index].data === undefined ? [] : [[r.name, results[index].data]])),
+      ) as SellerWaiting,
   })
 }

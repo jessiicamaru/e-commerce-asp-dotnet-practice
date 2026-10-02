@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { AlertTriangleIcon, ArrowRightIcon, PackageIcon, ReceiptTextIcon, WalletIcon } from 'lucide-react'
 import { ProductImage } from '@/components/product/product-image'
 import { PageTitle } from '@/components/seller/page-title'
+import { NeedsYou } from '@/components/seller/needs-you'
 import { ShopStateCard } from '@/components/seller/shop-state'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/context/auth/useAuth'
-import { useMySales } from '@/hooks/order'
+import { useMySales, useSellerWaiting } from '@/hooks/order'
 import { useMyProducts } from '@/hooks/product'
 import { describeSaleStatus } from '@/pages/shop-sales/status'
 import { summariseSales } from '@/utils/seller'
@@ -33,6 +34,8 @@ export function ShopPage() {
 
   const listings = useMyProducts({ pageNumber: 1, pageSize: OVERVIEW_WINDOW }, isSeller)
   const sales = useMySales(1, OVERVIEW_WINDOW, isSeller)
+  // What waits for them, counted across every page by its owner (specs/131).
+  const waiting = useSellerWaiting(isSeller)
 
   if (listings.isError || sales.isError) {
     return <ErrorMessage>{t('listing.loadFailed')}</ErrorMessage>
@@ -52,6 +55,7 @@ export function ShopPage() {
       <section className="grid gap-6">
         <PageTitle title={t('menu.overview')} />
         <ShopStateCard />
+        <NeedsYou waiting={waiting} />
         <div className="bg-card ring-border/60 grid justify-items-start gap-3 rounded-3xl p-8 ring-1">
           <h2 className="text-lg font-semibold">{t('empty.title')}</h2>
           <p className="text-muted-foreground max-w-prose text-sm">{t('empty.body')}</p>
@@ -67,6 +71,7 @@ export function ShopPage() {
     <section className="grid gap-6">
       <PageTitle title={t('menu.overview')} subtitle={t('overview.subtitle')} />
       <ShopStateCard />
+      <NeedsYou waiting={waiting} />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat icon={PackageIcon} label={t('overview.listings')} value={String(listings.data.totalCount)} />

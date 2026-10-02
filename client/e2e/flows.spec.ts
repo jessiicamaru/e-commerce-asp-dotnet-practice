@@ -96,6 +96,10 @@ test.describe.serial('the storefront, end to end', () => {
 
   test('the seller prepares the parcel and ships it', async ({ page }) => {
     await signIn(page, seller.email)
+    // The home says the paid sale is waiting for them, and the menu counts it (specs/131, #247).
+    await page.goto('/shop')
+    await expect(page.getByRole('region', { name: 'Needs you' }).getByRole('link', { name: /1 sale to prepare/ })).toBeVisible()
+    await expect(page.getByTestId('seller-sidebar').getByLabel('1 waiting')).toBeVisible()
     await page.goto('/shop/sales')
     await page.getByRole('link', { name: /^Placed / }).first().click()
     await expect(page).toHaveURL(new RegExp(`/shop/sales/${orderId}$`))

@@ -16,6 +16,7 @@ import { DescribeShopDialog } from '@/components/seller/describe-shop-dialog'
 import { RenameShopDialog } from '@/components/seller/rename-shop-dialog'
 import { buttonVariants } from '@/components/ui/button'
 import { useAuth } from '@/context/auth/useAuth'
+import { useSellerWaiting } from '@/hooks/order'
 import { useMyShop } from '@/hooks/seller'
 import { cn } from '@/utils/shared'
 
@@ -37,14 +38,16 @@ export function SellerLayout() {
   const { t } = useTranslation('seller')
   const { isSeller } = useAuth()
   const shop = useMyShop(isSeller)
+  // What waits behind Sales, Questions and Returns (specs/131) - the home's panel reads the same counts.
+  const waiting = useSellerWaiting(isSeller)
 
   const links = [
     { to: '/shop', end: true, icon: LayoutDashboardIcon, label: t('menu.overview') },
     { to: '/shop/insights', end: false, icon: ChartColumnIcon, label: t('menu.insights') },
     { to: '/shop/products', end: false, icon: PackageIcon, label: t('menu.products') },
-    { to: '/shop/sales', end: false, icon: ReceiptTextIcon, label: t('menu.sales') },
-    { to: '/shop/returns', end: false, icon: Undo2Icon, label: t('menu.returns') },
-    { to: '/shop/questions', end: false, icon: MessageCircleQuestionIcon, label: t('menu.questions') },
+    { to: '/shop/sales', end: false, icon: ReceiptTextIcon, label: t('menu.sales'), count: waiting.toPrepare },
+    { to: '/shop/returns', end: false, icon: Undo2Icon, label: t('menu.returns'), count: waiting.returns },
+    { to: '/shop/questions', end: false, icon: MessageCircleQuestionIcon, label: t('menu.questions'), count: waiting.questions },
     { to: '/shop/payouts', end: false, icon: WalletIcon, label: t('menu.payouts') },
     { to: '/shop/vouchers', end: false, icon: TicketPercentIcon, label: t('menu.vouchers') },
   ]
@@ -83,19 +86,27 @@ export function SellerLayout() {
         {/* Four equal columns on a phone, icon over label, so every destination is on screen - a row
             that scrolled sideways hid the fourth, "Payouts", past the edge at 390px. */}
         <nav className="bg-card ring-border/60 grid grid-cols-4 gap-1 rounded-3xl p-2 ring-1 lg:grid-cols-1">
-          {links.map(({ to, end, icon: Icon, label }) => (
+          {links.map(({ to, end, icon: Icon, label, count }: { to: string; end: boolean; icon: typeof PackageIcon; label: string; count?: number }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-center text-xs font-medium transition-colors lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm',
+                  'relative flex flex-col items-center gap-1 rounded-2xl px-1 py-2 text-center text-xs font-medium transition-colors lg:flex-row lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left lg:text-sm',
                   isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
                 )
               }
             >
-              <Icon className="size-4.5" /> {label}
+              <Icon className="size-4.5" /> <span className="lg:flex-1">{label}</span>
+              {!!count && (
+                <span
+                  className="bg-foreground text-background absolute top-1 right-1 rounded-full px-1.5 text-[10px] leading-4 font-semibold tabular-nums lg:static lg:px-2 lg:py-0.5 lg:text-xs"
+                  aria-label={t('menuWaiting', { count })}
+                >
+                  {count}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
