@@ -5,7 +5,7 @@ evidence it was found with (a search of the code, a request against the running 
 acceptance criteria. This page is the summary; the issue is the source of truth - close the issue and
 update this page in the same change.
 
-Last reviewed: 2026-10-01 (after the screen review, #237-#254).
+Last reviewed: 2026-10-02 (the staff portal, #275-#280).
 
 ## Deliberately deferred
 
@@ -51,6 +51,22 @@ things hidden, clipped, untranslated or wrong), then #246-#254 (usability).
 | Issue | Title |
 | :-- | :-- |
 
+
+## Priority 2a - the staff portal
+
+Decided with the user on 2026-10-02: the admin and moderator console leaves the shop for its own app,
+`portal.ecommerce.com`. Staff do not shop, and a staff session should not share an origin with user-written content.
+Two SPAs in one monorepo, not module federation. In order - #278 must follow #277. #279 and #280 are recorded but
+deferred.
+
+| Issue | Title |
+| :-- | :-- |
+| [#275](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/275) | Split the storefront into npm workspaces |
+| [#276](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/276) | A portal app for staff, with its own sign-in |
+| [#277](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/277) | The admin and moderator console moves to the portal |
+| [#278](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/278) | Staff roles only in a portal session |
+| [#279](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/279) | One-time handoff from the shop to the portal - deferred until signing in twice proves a nuisance |
+| [#280](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/280) | A separate token audience for the portal - deferred, the stricter second line |
 
 ## Priority 3 - technical debt
 
