@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from 'lucide-react'
 import { PageTitle } from '@/components/seller/page-title'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
-import { useMyDecisions, useReviewQueue } from '@/hooks/moderation'
-import { useShopApplications } from '@/hooks/shop-applications'
+import { useAuth } from '@/context/auth/useAuth'
+import { useStaffWaiting } from '@/hooks/admin'
+import { useMyDecisions } from '@/hooks/moderation'
 
 /** How many of their own decisions a moderator sees here; the rest are in the audit log. */
 export const RECENT_DECISIONS = 8
@@ -12,12 +13,13 @@ export const RECENT_DECISIONS = 8
 /**
  * A moderator's home (specs/045): how much is waiting in each queue, and what they decided lately. The
  * counts are the queues' own totals - one page of one row each - so the dashboard never disagrees with
- * the queue it links to.
+ * the queue it links to; since specs/130 (#268) the sidebar's (`useStaffWaiting`), under keys of their own - read
+ * under the lists' keys, the one-row page stood in for the queue's first page.
  */
 export function AdminModerationPage() {
   const { t, i18n } = useTranslation('admin')
-  const products = useReviewQueue('Pending', 1, 1)
-  const shops = useShopApplications('Pending', 1, 1)
+  const { isAdmin } = useAuth()
+  const waiting = useStaffWaiting({ isAdmin })
   const recent = useMyDecisions(RECENT_DECISIONS)
 
   return (
@@ -25,8 +27,8 @@ export function AdminModerationPage() {
       <PageTitle title={t('moderation.title')} subtitle={t('moderation.subtitle')} />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Waiting label={t('moderation.productsWaiting')} count={products.data?.totalCount} to="/admin/products" />
-        <Waiting label={t('moderation.shopsWaiting')} count={shops.data?.totalCount} to="/admin/shops" />
+        <Waiting label={t('moderation.productsWaiting')} count={waiting.products} to="/admin/products" />
+        <Waiting label={t('moderation.shopsWaiting')} count={waiting.shops} to="/admin/shops" />
       </div>
 
       <div className="grid gap-3">

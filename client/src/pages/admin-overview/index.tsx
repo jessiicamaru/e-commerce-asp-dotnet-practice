@@ -9,8 +9,7 @@ import { PageTitle } from '@/components/seller/page-title'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { useInsights } from '@/hooks/insights'
 import { useOutgoingEmails } from '@/hooks/outgoing-email'
-import { useReviewQueue } from '@/hooks/moderation'
-import { useShopApplications } from '@/hooks/shop-applications'
+import { useStaffWaiting } from '@/hooks/admin'
 import type { Period } from '@/services/insights/types'
 import { cn, money } from '@/utils/shared'
 import { periodDays, periodRange } from '@/utils/insights'
@@ -32,8 +31,8 @@ export function AdminOverviewPage() {
   const [currency, setCurrency] = useState('VND')
 
   const data = useInsights(from, to, currency)
-  const products = useReviewQueue('Pending', 1, 1)
-  const shops = useShopApplications('Pending', 1, 1)
+  // The sidebar's counts (specs/130): one cache, never the lists'.
+  const waiting = useStaffWaiting({ isAdmin: true })
   // How many emails failed for good (specs/115) - the email log's own total, one definition.
   const failedEmails = useOutgoingEmails('Failed', '', 1, 1)
   const stats = data.stats.data
@@ -50,8 +49,8 @@ export function AdminOverviewPage() {
         <Stat label={t('overview.people.sellers')} value={stats?.sellers} />
         <Stat label={t('overview.people.moderators')} value={stats?.moderators} />
         <Stat label={t('overview.people.stopped')} value={stats ? stats.locked + stats.banned : undefined} />
-        <Stat label={t('overview.waiting.products')} value={products.data?.totalCount} to="/admin/products" />
-        <Stat label={t('overview.waiting.shops')} value={shops.data?.totalCount} to="/admin/shops" />
+        <Stat label={t('overview.waiting.products')} value={waiting.products} to="/admin/products" />
+        <Stat label={t('overview.waiting.shops')} value={waiting.shops} to="/admin/shops" />
         <Stat label={t('overview.waiting.failedEmails')} value={failedEmails.data?.totalCount} to="/admin/email-delivery" />
       </div>
 

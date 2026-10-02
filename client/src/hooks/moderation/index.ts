@@ -6,7 +6,7 @@ import type { ReviewStatus } from '@/services/product/types'
 /** A page of one review status. Keeps the previous page on screen while the next loads. */
 export function useReviewQueue(status: ReviewStatus, page: number, pageSize: number) {
   return useQuery({
-    queryKey: queryKeys.reviewQueue(status, page),
+    queryKey: queryKeys.reviewQueue(status, page, pageSize),
     queryFn: () => Moderation.products(status, page, pageSize),
     placeholderData: (previous) => previous,
   })
@@ -25,6 +25,8 @@ export function useReviewDecision() {
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['review-queue'] })
     await queryClient.invalidateQueries({ queryKey: queryKeys.myDecisions })
+    // The counts on the sidebar, the dashboard and the overview (specs/130).
+    await queryClient.invalidateQueries({ queryKey: ['staff-waiting'] })
   }
 
   return {

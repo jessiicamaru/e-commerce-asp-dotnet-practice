@@ -48,7 +48,8 @@ export const queryKeys = {
   questionQueue: (answered: boolean, page: number) => ['questions', 'queue', answered, page] as const,
   staffQuestions: (hidden: boolean, page: number) => ['questions', 'staff', hidden, page] as const,
   emailTemplates: () => ['email-templates'] as const,
-  outgoingEmails: (status: string, search: string, page: number) => ['outgoing-emails', status, search, page] as const,
+  outgoingEmails: (status: string, search: string, page: number, pageSize: number) =>
+    ['outgoing-emails', status, search, page, pageSize] as const,
   notificationWording: () => ['notification-wording', 'current'] as const,
   wordingOverview: () => ['notification-wording', 'all'] as const,
   wordingVersions: (key: string, language: string) => ['notification-wording', key, language, 'versions'] as const,
@@ -59,7 +60,8 @@ export const queryKeys = {
   staffWaiting: (queue: string) => ['staff-waiting', queue] as const,
   personHistory: (id: string, page: number, pageSize: number) => ['person-history', id, page, pageSize] as const,
   myShopApplications: ['shop-applications', 'mine'] as const,
-  reviewQueue: (status: string, page: number) => ['review-queue', status, page] as const,
+  // The page size is part of the key (specs/130): a page of one, read for a count, once stood in for the list's page.
+  reviewQueue: (status: string, page: number, pageSize: number) => ['review-queue', status, page, pageSize] as const,
   myDecisions: ['my-decisions'] as const,
   insights: (part: string, from: string) => ['insights', part, from] as const,
   people: (ids: string[]) => ['people', ...ids] as const,
@@ -67,7 +69,7 @@ export const queryKeys = {
   myReview: (productId: string) => ['reviews', productId, 'mine'] as const,
   staffReviews: (hidden: boolean, page: number) => ['staff-reviews', hidden, page] as const,
   reportQueue: (page: number) => ['reports', page] as const,
-  shopApplications: (status: string, page: number) => ['shop-applications', status, page] as const,
+  shopApplications: (status: string, page: number, pageSize: number) => ['shop-applications', status, page, pageSize] as const,
   auditEntry: (id: string) => ['audit-entry', id] as const,
   auditSummary: (from: string) => ['audit-summary', from] as const,
   unreadCount: () => ['notifications', 'unread-count'] as const,
