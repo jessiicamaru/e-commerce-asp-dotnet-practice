@@ -91,7 +91,7 @@ strings, and an optional `Link` into the storefront. Order builds its notices in
 the same transaction.
 
 The storefront words each notice with `describeNotification`
-(`client/src/utils/notifications`), looking up `notifications:kind.<Kind>` in the reader's current
+(`client/packages/core/src/utils/notifications`), looking up `notifications:kind.<Kind>` in the reader's current
 language and interpolating the data. A kind it has no words for is shown as "You have a new update."
 rather than hidden, and so is a notice missing a value its sentence needs (specs/048): the sentence's
 raw form is read first, and any placeholder that would come out empty means the generic sentence

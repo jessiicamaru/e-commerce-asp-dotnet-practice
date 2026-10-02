@@ -1,7 +1,7 @@
 # Decision log
 
 The design decisions that shape the system, one line each, with where the reasoning is recorded. Each
-design record (`specs/NNN/research.md`) also lists the alternatives that were rejected and why; the two
+design record (`specs/NNN/research.md`) also lists the alternatives that were rejected and why; the three
 formal ADRs are in [architecture](../architecture/). A decision here is only reversed by a later design
 record that says so.
 
@@ -17,6 +17,7 @@ record that says so.
 | 6 | No new enum value a previous image cannot parse; delivered, review status and shipments as columns or text | A rollback must not take a service down | [specs/035](../../specs/035-seller-shipments/), [specs/040](../../specs/040-delivery-confirmation/), [specs/045](../../specs/045-product-review/) |
 | 7 | Schema changes expand then contract | An earlier image must run against the newer schema | [specs/006](../../specs/006-release-and-rollback/) |
 | 8 | Released images are named by commit, and a name never changes | "The previous version" must mean one thing | [specs/008](../../specs/008-immutable-release-tags/) |
+| 69 | The staff console leaves the shop: a storefront and a back office, two apps on two origins in one npm workspace, sharing packages at build time - not a micro-frontend | Staff do not shop, and a staff session should not share an origin with what the public writes; run-time composition would cost a shell and shared-runtime contracts for nothing | [ADR-003](../architecture/adr-003-storefront-and-back-office.md), [specs/135](../../specs/135-client-workspaces/) |
 
 ## Money and orders
 

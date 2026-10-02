@@ -9,7 +9,7 @@ works is a test that fails when it does not.
 | Layer | Tool | Where | How many | Catches |
 | :-- | :-- | :-- | :-- | :-- |
 | Service integration tests | xUnit, real PostgreSQL | `server/tests/Ecommerce.<Service>.Tests/` | 809 test cases in 9 projects | Business rules, locking, guarded updates, unique constraints, idempotence, what is published |
-| Storefront unit tests | Vitest, jsdom, Testing Library | `client/src/**/*.test.ts(x)` | 466 tests in 83 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
+| Storefront unit tests | Vitest, jsdom, Testing Library | `client/apps/storefront/src/**/*.test.ts(x)` | 466 tests in 83 files | What a page asks for, what a form sends, what a guard lets through, how a server refusal is shown |
 | API collection | Bruno CLI | `bruno/` | 272 requests, 444 assertions | Every public endpoint through the gateway, with real tokens, including 401/403/404/409 cases |
 | Browser end to end | Playwright (Edge locally, Chromium in CI) | `client/e2e/` | 4 flows | A page and the API it calls drifting apart: a gateway route missing, a field renamed, a toast that never shows |
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
@@ -72,9 +72,9 @@ DB_PASSWORD=<your password> dotnet test
 
 ## Storefront unit tests
 
-`npm test` in `client/`. `src/test/setup.ts` makes any test that reaches the network fail, and each test
+`npm test` in `client/` (one Vitest project per workspace, specs/135). `packages/core/src/test/setup.ts` makes any test that reaches the network fail, and each test
 pins its language (`i18n.changeLanguage('en')`) so it asserts the same words on every machine. Services
-are stubbed with `vi.spyOn(Service, 'method')`; `src/test/render.tsx` renders a page signed in as a
+are stubbed with `vi.spyOn(Service, 'method')`; `packages/core/src/test/render.tsx` renders a page signed in as a
 customer, seller, moderator or administrator. The rule is to test the logic that can be wrong - what a
 hook asks for, what a form sends, what a guard lets through, how a server refusal is shown - not that a
 `div` rendered.

@@ -204,17 +204,17 @@ See [messages reference](../reference/messages.md).
 
 | Path | What it does |
 | :-- | :-- |
-| `client/src/pages/catalog/` | The listing. Search, category and sort live in the URL so a result can be shared. Pages of `PAGE_SIZE` = 12. |
-| `client/src/components/catalog/catalog-filters/`, `catalog-hero/` | Search box, category combobox and sort select; the landing banner. |
-| `client/src/components/product/product-card/` | A listing card: the product's photograph, "from" price, availability and star average. |
-| `client/src/pages/product/` | The product page. Variant chooser, price, add to cart, reviews, and one `recordView` per product opened (guarded by a ref). |
-| `client/src/components/product/variant-chooser/`, `product-image/`, `availability/`, `stock-badge/` | Choosing a shape; the photograph or a tinted placeholder; the in-stock flag; Inventory's real count. |
-| `client/src/components/shared/price/`, `components/layout/currency-switcher/`, `language-switcher/` | Price formatting with `Intl.NumberFormat(language, { currency })`; choosing currency and language independently (both stored in `localStorage`, sent as headers). |
-| `client/src/pages/shop-products/`, `shop-product-new/`, `shop-product/` | A seller's listings, the create form (price labelled in the default currency), and the product editor (prices read once per currency, stock, photographs, withdraw). |
-| `client/src/components/seller/variant-editor/`, `components/shared/image-dropzone/` | One variant's prices, stock and photograph; drag-and-drop upload that refuses SVG and files over 2 MB before sending. |
-| `client/src/components/product/review-badge/`, `components/seller/review-banner/` | Where a listing stands with the moderators; the reason for a rejection and "send back for review". |
-| `client/src/pages/admin-products/`, `admin-moderation/` | The review queue with a tab per status and a reason dialog; a moderator's dashboard (waiting counts and their own decisions from `GET /api/audit/mine`). |
-| `client/src/services/product/`, `hooks/product/`, `services/moderation/`, `hooks/moderation/`, `services/category/` | The axios classes and TanStack Query hooks behind the pages. |
+| `client/apps/storefront/src/pages/catalog/` | The listing. Search, category and sort live in the URL so a result can be shared. Pages of `PAGE_SIZE` = 12. |
+| `client/apps/storefront/src/components/catalog/catalog-filters/`, `catalog-hero/` | Search box, category combobox and sort select; the landing banner. |
+| `client/apps/storefront/src/components/product/product-card/` | A listing card: the product's photograph, "from" price, availability and star average. |
+| `client/apps/storefront/src/pages/product/` | The product page. Variant chooser, price, add to cart, reviews, and one `recordView` per product opened (guarded by a ref). |
+| `client/apps/storefront/src/components/product/variant-chooser/`, `product-image/`, `availability/`, `stock-badge/` | Choosing a shape; the photograph or a tinted placeholder; the in-stock flag; Inventory's real count. |
+| `client/apps/storefront/src/components/shared/price/`, `components/layout/currency-switcher/`, `language-switcher/` | Price formatting with `Intl.NumberFormat(language, { currency })`; choosing currency and language independently (both stored in `localStorage`, sent as headers). |
+| `client/apps/storefront/src/pages/shop-products/`, `shop-product-new/`, `shop-product/` | A seller's listings, the create form (price labelled in the default currency), and the product editor (prices read once per currency, stock, photographs, withdraw). |
+| `client/apps/storefront/src/components/seller/variant-editor/`, `components/shared/image-dropzone/` | One variant's prices, stock and photograph; drag-and-drop upload that refuses SVG and files over 2 MB before sending. |
+| `client/apps/storefront/src/components/product/review-badge/`, `components/seller/review-banner/` | Where a listing stands with the moderators; the reason for a rejection and "send back for review". |
+| `client/apps/storefront/src/pages/admin-products/`, `admin-moderation/` | The review queue with a tab per status and a reason dialog; a moderator's dashboard (waiting counts and their own decisions from `GET /api/audit/mine`). |
+| `client/packages/core/src/services/product/`, `hooks/product/`, `services/moderation/`, `hooks/moderation/`, `services/category/` | The axios classes and TanStack Query hooks behind the pages. |
 
 ## Tests
 

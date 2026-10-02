@@ -1,0 +1,31 @@
+{
+  // Shared by every app and package (specs/135). Paths here resolve from client/; an app that adds "@/" repeats them
+  // relative to itself, because "paths" in an extending file replaces these rather than merging.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client", "vitest/globals"],
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@ecommerce/core/*": ["./packages/core/src/*"],
+      "@ecommerce/ui/*": ["./packages/ui/src/*"],
+      "cn": ["./packages/ui/src/cn.ts"]
+    },
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

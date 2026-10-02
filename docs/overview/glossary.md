@@ -45,6 +45,11 @@ given in `code style`.
 
 | Term | Meaning |
 | :-- | :-- |
+| **Storefront** | The web app where people shop and sell (`client/apps/storefront`, `ecommerce.com`). |
+| **Back office** | The web app where staff - administrators and moderators - run the shop (`portal.ecommerce.com`, #276-#278). A separate app on its own origin, not a part of the storefront ([ADR-003](../architecture/adr-003-storefront-and-back-office.md)). |
+| **Workspace, package** | `client/` is an npm workspace: apps (`apps/*`) and the packages they share (`packages/ui`, the component kit; `packages/core`, everything else that is not a page). A package never imports an app. |
+| **Origin isolation** | Keeping a privileged session on an origin of its own, away from pages that show content the public wrote. The reason the back office is a separate app. |
+| **Micro-frontend** | One product assembled at run time from separately deployed pieces. *Not* what the storefront and back office are: they are two apps sharing code at build time (ADR-003, section 3). |
 | **Service** | One deployable process owning one database: Identity, Catalog, Cart, Order, Inventory, Payment, Orchestrator, Activity. |
 | **Gateway** | The YARP reverse proxy on port 5000; the only address the storefront uses. |
 | **Saga** | The checkout's multi-service workflow, driven by the Orchestrator's state machine: reserve stock, take payment, complete or compensate. |

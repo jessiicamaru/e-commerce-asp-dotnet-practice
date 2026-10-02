@@ -87,22 +87,22 @@ declared in `notification-kinds.json` and worded in both languages:
 
 | Path | What it does |
 | :-- | :-- |
-| `client/src/components/product/product-questions/` | The **Questions** section under the reviews: the list, the ask form for a customer who is not the seller, and an answer box for whoever answers this product. The box is drawn from `product.sellerId` and the roles, and is for drawing only. |
-| `client/src/components/question/question-item/` | One question and its answer, with the shop's name. The product page and both queues use it. |
-| `client/src/components/question/answer-form/` | Answer or rewrite. It is folded to a button until opened, and a refusal is shown in the server's words. |
-| `client/src/components/question/answer-queue/` | The caller's queue, unanswered or answered. |
-| `client/src/pages/shop-questions/` | `/shop/questions`, linked in the seller menu. |
-| `client/src/pages/admin-questions/` | `/admin/questions`, with the tabs *To answer*, *Visible* and *Hidden*. `moderation-actions.tsx` beside it hides with a reason through `TextPrompt`. |
-| `client/src/components/shared/tab-strip/` | The pill tabs both pages use. |
+| `client/apps/storefront/src/components/product/product-questions/` | The **Questions** section under the reviews: the list, the ask form for a customer who is not the seller, and an answer box for whoever answers this product. The box is drawn from `product.sellerId` and the roles, and is for drawing only. |
+| `client/apps/storefront/src/components/question/question-item/` | One question and its answer, with the shop's name. The product page and both queues use it. |
+| `client/apps/storefront/src/components/question/answer-form/` | Answer or rewrite. It is folded to a button until opened, and a refusal is shown in the server's words. |
+| `client/apps/storefront/src/components/question/answer-queue/` | The caller's queue, unanswered or answered. |
+| `client/apps/storefront/src/pages/shop-questions/` | `/shop/questions`, linked in the seller menu. |
+| `client/apps/storefront/src/pages/admin-questions/` | `/admin/questions`, with the tabs *To answer*, *Visible* and *Hidden*. `moderation-actions.tsx` beside it hides with a reason through `TextPrompt`. |
+| `client/apps/storefront/src/components/shared/tab-strip/` | The pill tabs both pages use. |
 
 ## Tests
 
 | Where | What it proves |
 | :-- | :-- |
 | `Ecommerce.Catalog.Tests/ProductQuestionTests` (10) | Asking needs a product on sale, and a seller does not ask about their own. The seller is told and the question is signed with the first name. Only the product's seller answers, and another seller, an administrator and a made-up id are the same 404. Staff answer the shop's own. A rewrite tells nobody. Ten first answers at once tell the asker once. The public list is newest first, and a hidden question leaves it until restored, with its asker told. A hidden answer reads as unanswered and is locked until restored. A hidden question cannot be answered. The queues. |
-| `client/src/components/product/product-questions/index.test.tsx` | The answer is named after the shop. A customer asks with only the words. The product's seller gets an answer box and no ask form, and another seller does not. Staff answer only the shop's own. A refusal is shown in the server's words. |
-| `client/src/pages/shop-questions/index.test.tsx`, `pages/admin-questions/index.test.tsx` | The queues ask for the right list. Hiding an answer asks why. The reasons are shown and both parts can be put back. |
-| `client/src/services/question/index.test.ts` | Every address, with no user or seller id. |
+| `client/apps/storefront/src/components/product/product-questions/index.test.tsx` | The answer is named after the shop. A customer asks with only the words. The product's seller gets an answer box and no ask form, and another seller does not. Staff answer only the shop's own. A refusal is shown in the server's words. |
+| `client/apps/storefront/src/pages/shop-questions/index.test.tsx`, `pages/admin-questions/index.test.tsx` | The queues ask for the right list. Hiding an answer asks why. The reasons are shown and both parts can be put back. |
+| `client/packages/core/src/services/question/index.test.ts` | Every address, with no user or seller id. |
 | `bruno/seller/` 67-77 | Ask, the public list, the seller's queue, an administrator answering for a seller (404), the seller answering, a seller asking about their own product (403), staff hiding the answer, the rewrite refused (409), a customer on the staff list (403), and asking without a token (401). |
 
 Mutation checks (specs/076): each of these turns `ProductQuestionTests` red.

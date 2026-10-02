@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../node_modules/.tmp/ui.tsbuildinfo",
+    // Repeated here, relative to this file, for the shadcn CLI, which reads the aliases from this directory - and
+    // matches an alias against a key literally, so "@ecommerce/ui" needs a key of its own besides "@ecommerce/ui/*".
+    "paths": {
+      "@ecommerce/ui": ["./src"],
+      "@ecommerce/ui/*": ["./src/*"],
+      "cn": ["./src/cn.ts"]
+    }
+  },
+  "include": ["src"]
+}

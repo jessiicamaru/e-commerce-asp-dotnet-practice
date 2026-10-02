@@ -82,11 +82,11 @@ The existing `/api/products/*` gateway route carries all four. No new message is
 
 | Path | What it does |
 | :-- | :-- |
-| `client/src/components/product/save-button/` | The heart, `aria-pressed` when saved. It sits beside the card's link rather than inside it, because a button inside a link is invalid HTML. |
-| `client/src/pages/saved/` | `/saved`: the cards, newest first. One that cannot be bought is dimmed and says so. It shows `PAGE_SIZE` per page. |
-| `client/src/hooks/saved-product/` | `useSavedIds`, which makes one request shared by every heart and is off while signed out. It also holds `useToggleSaved` and `useSavedProducts`. |
-| `client/src/services/saved-product/` | `SavedProduct.save`, `unsave`, `list` and `ids`. |
-| `client/src/components/layout/user-menu/` | **Saved** in the account menu. |
+| `client/apps/storefront/src/components/product/save-button/` | The heart, `aria-pressed` when saved. It sits beside the card's link rather than inside it, because a button inside a link is invalid HTML. |
+| `client/apps/storefront/src/pages/saved/` | `/saved`: the cards, newest first. One that cannot be bought is dimmed and says so. It shows `PAGE_SIZE` per page. |
+| `client/packages/core/src/hooks/saved-product/` | `useSavedIds`, which makes one request shared by every heart and is off while signed out. It also holds `useToggleSaved` and `useSavedProducts`. |
+| `client/packages/core/src/services/saved-product/` | `SavedProduct.save`, `unsave`, `list` and `ids`. |
+| `client/apps/storefront/src/components/layout/user-menu/` | **Saved** in the account menu. |
 
 The words are in `catalog` (`saved.*`), `common` (`nav.saved`) and `notifications` (`kind.SavedBackInStock`).
 
@@ -95,9 +95,9 @@ The words are in `catalog` (`saved.*`), `common` (`nav.saved`) and `notification
 | Where | What it proves |
 | :-- | :-- |
 | `Ecommerce.Catalog.Tests/SavedProductTests` (11) | Saving twice, or twenty times at once, keeps one entry. Unsaving is idempotent. A product not on sale cannot be saved, and a made-up id cannot either. The list is the caller's own, newest first, in the listing's words. A product taken down stays in the list as unavailable, and a deleted one goes. Back in stock tells each saver once per flip: two shoppers and two flips give four notices. A product off the shelf tells nobody. A variant reactivated tells; an approval while in stock tells, one with nothing in stock does not; an edit, a price or a new variant that leaves it on sale tells nobody again (specs/091). |
-| `client/src/components/product/save-button/index.test.tsx` | The heart reads the saved ids. Tapping it saves or unsaves. Signed out, it goes to sign in. |
-| `client/src/pages/saved/index.test.tsx` | The list, and a product that is no longer available. |
-| `client/src/services/saved-product/index.test.ts` | The URLs, with no shopper id. |
+| `client/apps/storefront/src/components/product/save-button/index.test.tsx` | The heart reads the saved ids. Tapping it saves or unsaves. Signed out, it goes to sign in. |
+| `client/apps/storefront/src/pages/saved/index.test.tsx` | The list, and a product that is no longer available. |
+| `client/packages/core/src/services/saved-product/index.test.ts` | The URLs, with no shopper id. |
 | `bruno/product/` 61-66 | Save (204), save again (204), the ids hold it once, the list's shape, unsave (204), and 401 without a token. |
 
 Mutation checks (specs/075): each of these turns `SavedProductTests` red.

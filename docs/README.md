@@ -45,6 +45,8 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
   role.
 - [**ADR-001: UUID v7 primary keys**](architecture/adr-001-uuidv7-primary-keys.md)
 - [**ADR-002: Prices exclude tax**](architecture/adr-002-tax-exclusive-prices.md)
+- [**ADR-003: A storefront and a back office**](architecture/adr-003-storefront-and-back-office.md) - why the staff
+  console leaves the shop for an app of its own, and why that is not called a micro-frontend
 
 ## Features
 

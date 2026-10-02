@@ -1,4 +1,4 @@
-# Storefront
+# Client: the storefront (and, next, the back office)
 
 A deliberately thin web client for this backend (issue [#23](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/23)).
 Its job is to exercise the API the way a person would and to surface what the backend lacks — not to
@@ -7,6 +7,38 @@ be polished.
 **React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui + axios + TanStack Query.** It talks
 **only to the gateway**, under `/api`.
 
+## Layout: apps and packages
+
+`client/` is an **npm workspace** (specs/135, [ADR-003](../docs/architecture/adr-003-storefront-and-back-office.md)).
+The **storefront** is where people shop and sell. The staff console is moving out of it into a **back office** of its
+own (#276, #277). The two apps share everything that is not a page, through packages:
+
+```text
+client/
+├── apps/storefront/      the shop - index.html, public/, src/{components,pages,layouts,routes}
+├── packages/ui/          the component kit (shadcn) and `cn`
+├── packages/core/        config, context, services, hooks, utils, constants, locales, test helpers
+├── e2e/                  Playwright flows (Vitest never reads them)
+├── workspace.aliases.ts  the import names, for Vite and Vitest
+└── tsconfig.base.json    the same names for TypeScript
+```
+
+**How things are imported:**
+
+| Name | Means | Used from |
+| :-- | :-- | :-- |
+| `@/...` | the app's own `src/` | that app only |
+| `@ecommerce/core/...` | `packages/core/src/...` | apps and core |
+| `@ecommerce/ui/...` | `packages/ui/src/...` | apps and core |
+| `cn` | the kit's class helper | anywhere |
+
+⚠️ **A package never imports an app**, and the kit never imports the core. `packages/core/src/test/layering.test.ts`
+fails if one does. If `@/` appeared in a package, it would resolve into whichever app happened to compile it.
+
+The packages are source, with no build of their own: the app that imports them bundles them. ⚠️ **Tailwind does not
+see them by itself.** The app's `index.css` names them with `@source`. Without it, the build passes and the page is
+unstyled (measured: the stylesheet halves).
+
 ## Run it
 
 ```bash
@@ -14,8 +46,8 @@ be polished.
 cd server && docker compose -f docker-compose.yml -f docker-compose.app.yml up -d
 
 cd client
-npm install
-npm run dev          # http://localhost:5173 ; /api is proxied to http://localhost:5000
+npm install          # every workspace, one lock file
+npm run dev          # the storefront on http://localhost:5173 ; /api is proxied to http://localhost:5000
 ```
 
 Point the proxy elsewhere with `GATEWAY_URL=http://host:port npm run dev`.
@@ -23,19 +55,22 @@ Point the proxy elsewhere with `GATEWAY_URL=http://host:port npm run dev`.
 ## Check it
 
 ```bash
-npm run lint         # oxlint
-npm run build        # tsc -b, then vite build - what CI runs
+npm run lint         # oxlint, every workspace
+npm test             # Vitest, one project per workspace
+npm run build        # tsc -b (every workspace), then the storefront's vite build - what CI runs
 ```
 
 ## Conventions
 
 **A folder per thing, with an `index.tsx` (or `index.ts`) as its entry**, imported by the folder's
-name: `@/pages/checkout`, `@/hooks/order`. A file that only supports that one folder sits **beside**
+name: `@/pages/checkout`, `@ecommerce/core/hooks/order`. A file that only supports that one folder sits **beside**
 the index instead of getting a folder of its own — `context/auth/useAuth.ts`,
 `services/order/types.ts`.
 
 Folder names are kebab-case, matching `components/ui/` as shadcn generates it. What they export is
 PascalCase for components, camelCase for everything else.
+
+The table names each folder; the first four live in an app, the rest in `packages/core`, and `ui/` is `packages/ui`.
 
 | Folder | Holds | Notes |
 | :-- | :-- | :-- |
@@ -53,11 +88,13 @@ PascalCase for components, camelCase for everything else.
 Two rules that come out of the structure:
 
 - **A service class and its model types cannot share a name**, so the types live in
-  `services/<entity>/types.ts` and are imported from there: `import { Product } from '@/services/product'`
-  is the class, `import type { Product } from '@/services/product/types'` is the shape of a product.
-- **`ui/` is generated.** `npx shadcn@latest add <component>` writes it, oxlint ignores it, and its
-  components import `{ cn } from "cn"`, an alias mapped in `vite.config.ts` and `tsconfig.app.json` to
-  `utils/shared/cn.ts`, so a freshly added component needs no editing.
+  `services/<entity>/types.ts` and are imported from there: `import { Product } from '@ecommerce/core/services/product'`
+  is the class, `import type { Product } from '@ecommerce/core/services/product/types'` is the shape of a product.
+- **`ui/` is generated.** It is `packages/ui/src`. Run `npx shadcn@latest add <component>` **in `packages/ui`**, which
+  has its own `components.json`; oxlint ignores the folder. Its components import `{ cn } from "cn"`, an alias mapped
+  in `workspace.aliases.ts` and the tsconfigs to `packages/ui/src/cn.ts`, so a freshly added component needs no
+  editing. ⚠️ The CLI matches an alias against a tsconfig key literally, which is why `packages/ui/tsconfig.json` has
+  `@ecommerce/ui` besides `@ecommerce/ui/*`.
   ⚠️ **Four files in it ARE edited, on purpose, and `shadcn add --overwrite` would undo it:**
   `select.tsx`, `combobox.tsx`, `dropdown-menu.tsx` and `alert-dialog.tsx`. Their items were `py-1 pl-1.5` inside a popup
   this theme rounds to 1rem, so the text sat against the edge; they are now `py-2 pl-3`, with the
@@ -109,7 +146,7 @@ The rules, each of which exists because of a way a front-end suite rots:
   happens to be running on the machine. Stub the **service class** (`vi.spyOn(Product, 'mine')`),
   not axios: the service is the seam, and a test written against axios asserts the shape of a
   library rather than the shape of a request.
-- **Shared render helpers live in `src/test/`**, never in a `.test.tsx`: importing from a test file
+- **Shared render helpers live in `packages/core/src/test/`**, never in a `.test.tsx`: importing from a test file
   runs that file's suites again inside the importing one. `renderAsSeller` is there.
 - **Pin the language.** i18next's detector reads `navigator.language`, so a suite that does not set
   one asserts English on one machine and Vietnamese on another. `await i18n.changeLanguage('en')` in
@@ -118,9 +155,10 @@ The rules, each of which exists because of a way a front-end suite rots:
   how a server refusal reaches a person. Not that a `div` rendered. The tests worth having here are
   the ones naming a defect: *the price field must say VND while the shop is being read in USD*.
 - **Some tests read the server.** Words the storefront must have for something the server decides are held to the
-  server's own source (specs/121): `src/locales/audit-actions.test.ts` reads every `audit.RecordAsync(` call and fails
-  on an action with no label in either language, and `src/services/health/index.test.ts` holds `/status` to the
-  gateway's health routes. A new action recorded through a variable must be declared in that test's `INDIRECT`.
+  server's own source (specs/121): `packages/core/src/locales/audit-actions.test.ts` reads every `audit.RecordAsync(`
+  call and fails on an action with no label in either language, and `packages/core/src/services/health/index.test.ts`
+  holds `/status` to the gateway's health routes. They find `server/` from their own place, not from the directory the
+  tests were started in. A new action recorded through a variable must be declared in that test's `INDIRECT`.
 
 **In a real browser too** (specs/080): `npm run e2e` runs `e2e/` with Playwright against the running compose
 stack, in the Edge Windows already has - see "Browser end to end" in

@@ -19,5 +19,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["workspace.aliases.ts", "vitest.config.ts", "apps/*/vite.config.ts", "apps/*/vitest.config.ts", "packages/*/vitest.config.ts"]
 }

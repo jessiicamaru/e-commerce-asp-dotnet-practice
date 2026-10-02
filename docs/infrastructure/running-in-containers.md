@@ -214,6 +214,7 @@ docker run -p 8088:8080 -e GATEWAY_URL=http://gateway:8080 ecommerce-storefront
 | `index.html`: `Cache-Control: no-cache`; `/assets/*`: a year, `immutable` | assets are named by content hash, so a new release is picked up at the next load |
 | `client_max_body_size 3m` | Catalog accepts a 2 MB photograph (`ProductImageKey.MaxBytes`); nginx's default 1 MB would answer 413 before Catalog saw it. Keep it above `MaxBytes` |
 | Build context `client/`, and the image runs `vite build` only | `npm run build` also type-checks the tests, one of which imports a file from `server/` (specs/048). Tests and type-checking are CI's `client` job, which `publish` waits for |
+| Every workspace's `package.json` is copied before `npm ci`, and the bundle is `apps/storefront/dist` | `client/` is an npm workspace since specs/135 ([ADR-003](../architecture/adr-003-storefront-and-back-office.md)): `npm ci` refuses a lock file naming workspaces it cannot see. `.dockerignore` says `**/node_modules/` for the same reason |
 
 ⚠️ **Open it on `localhost`.** Identity's refresh cookie is `Secure`, and browsers accept a `Secure`
 cookie over plain HTTP only from `localhost`. From another machine by IP, signing in works until the first
