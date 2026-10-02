@@ -6,7 +6,7 @@ import type { OutgoingEmailStatus } from '@/services/outgoing-email/types'
 /** The emails in one state, a page at a time (specs/087). Keeps the previous page on screen while the next loads. */
 export function useOutgoingEmails(status: OutgoingEmailStatus, search: string, page: number, pageSize: number) {
   return useQuery({
-    queryKey: queryKeys.outgoingEmails(status, search, page),
+    queryKey: queryKeys.outgoingEmails(status, search, page, pageSize),
     queryFn: () => OutgoingEmails.list(status, search, page, pageSize),
     placeholderData: (previous) => previous,
   })

@@ -18,7 +18,7 @@ export function useApplyForShop() {
 /** A page of the queue or the history. Keeps the previous page on screen while the next loads. */
 export function useShopApplications(status: ShopApplicationStatus, page: number, pageSize: number) {
   return useQuery({
-    queryKey: queryKeys.shopApplications(status, page),
+    queryKey: queryKeys.shopApplications(status, page, pageSize),
     queryFn: () => ShopApplications.list(status, page, pageSize),
     placeholderData: (previous) => previous,
   })
@@ -27,7 +27,11 @@ export function useShopApplications(status: ShopApplicationStatus, page: number,
 /** Approve or reject; every list is re-read, since the application has moved between them. */
 export function useDecideShopApplication() {
   const queryClient = useQueryClient()
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['shop-applications'] })
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['shop-applications'] })
+    // The counts on the sidebar, the dashboard and the overview (specs/130).
+    await queryClient.invalidateQueries({ queryKey: ['staff-waiting'] })
+  }
   return {
     approve: useMutation({ mutationFn: (id: string) => ShopApplications.approve(id), onSettled: refresh }),
     reject: useMutation({
