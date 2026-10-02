@@ -16,10 +16,11 @@ own (#276, #277). The two apps share everything that is not a page, through pack
 ```text
 client/
 ├── apps/storefront/      the shop - index.html, public/, src/{components,pages,layouts,routes}
-├── apps/back-office/     the staff's app (specs/136) - sign-in, a staff guard; the console moves here in #277
+├── apps/back-office/     the staff's app (specs/136) - sign-in, a staff guard, and the console (specs/137)
 ├── packages/ui/          the component kit (shadcn), `cn`, and `theme.css` - the look both apps share
 ├── packages/core/        config, context, services, hooks, utils, constants, locales, test helpers, and
-│                         components/ that need the core (the sign-in form, the query-state messages)
+│                         components/ that need the core - the sign-in form, the query-state messages and
+│                         the 36 components both apps draw (specs/137), in their <area>/<thing> folders
 ├── e2e/                  Playwright flows (Vitest never reads them)
 ├── workspace.aliases.ts  the import names, for Vite and Vitest
 └── tsconfig.base.json    the same names for TypeScript

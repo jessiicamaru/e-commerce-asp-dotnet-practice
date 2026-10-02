@@ -1,6 +1,6 @@
 import { expect, request, test, type APIRequestContext } from '@playwright/test'
 import { Api, type Listed, type Person } from './support/api'
-import { findOnPages, signIn } from './support/ui'
+import { BACK_OFFICE, findOnPages, signIn, signInToBackOffice } from './support/ui'
 
 /**
  * The storefront in a browser against the real stack (specs/080, #117). Four flows a person takes, in order, each
@@ -46,9 +46,10 @@ test.describe.serial('the storefront, end to end', () => {
     await context?.dispose()
   })
 
+  // In the back office since specs/137 - the console left the storefront.
   test('a moderator approves a product waiting for review', async ({ page }) => {
-    await signIn(page, moderator)
-    await page.goto('/admin/products')
+    await signInToBackOffice(page, moderator)
+    await page.goto(`${BACK_OFFICE}/products`)
 
     const card = await findOnPages(page, page.getByRole('article').filter({ hasText: waiting.name }))
     await card.getByRole('button', { name: 'Approve' }).click()

@@ -4,14 +4,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ChevronRightIcon, ExternalLinkIcon, Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Availability } from '@/components/product/availability'
-import { ProductImage } from '@/components/product/product-image'
+import { ProductImage } from '@ecommerce/core/components/product/product-image'
 import { AddVariantForm } from '@/components/seller/add-variant'
 import { ProductDetailsCard } from '@/components/seller/product-details'
 import { ProductTranslationsCard } from '@/components/seller/product-translations'
 import { VariantEditor } from '@/components/seller/variant-editor'
 import { ImageDropzone } from '@/components/shared/image-dropzone'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
-import { ServerError } from '@/components/shared/server-error'
+import { ServerError } from '@ecommerce/core/components/shared/server-error'
 import {
   AlertDialog,
   AlertDialogAction,

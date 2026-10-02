@@ -344,6 +344,9 @@ services:
     environment:
       # Read when the container starts, so one image runs against any gateway.
       GATEWAY_URL: http://gateway:8080
+      # Where each app is, for the links between them (specs/137).
+      STOREFRONT_URL: http://localhost:8088
+      BACK_OFFICE_URL: http://portal.localhost:8089
     ports:
       - "8088:8080"
     # A fixed address, because the gateway trusts X-Forwarded-For from exactly this one (specs/062).
@@ -373,6 +376,9 @@ services:
     restart: unless-stopped
     environment:
       GATEWAY_URL: http://gateway:8080
+      # Where each app is, for the links between them (specs/137).
+      STOREFRONT_URL: http://localhost:8088
+      BACK_OFFICE_URL: http://portal.localhost:8089
     ports:
       - "8089:8080"
     # Fixed, and trusted by the gateway, for the same reason as the storefront's address (specs/062).

@@ -24,6 +24,15 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
+    # Where the other app is (specs/137): the storefront links staff to the back office and the back office links to
+    # products on the storefront. Written from the container's STOREFRONT_URL and BACK_OFFICE_URL, so one image runs
+    # anywhere; never cached, so a changed address is read at the next load.
+    location = /app-config.js {
+        default_type application/javascript;
+        add_header Cache-Control "no-cache";
+        return 200 'window.__APP_CONFIG__ = { "storefrontUrl": "${STOREFRONT_URL}", "backOfficeUrl": "${BACK_OFFICE_URL}" }\n';
+    }
+
     # Named by content hash, so a file never changes under its name: cache it for good. A missing one is
     # a 404 - never index.html, which a browser would try to run as JavaScript.
     location /assets/ {

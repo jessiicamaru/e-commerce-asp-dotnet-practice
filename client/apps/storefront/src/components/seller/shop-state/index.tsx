@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { PauseIcon, PlayIcon, StoreIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { ServerError } from '@/components/shared/server-error'
+import { ServerError } from '@ecommerce/core/components/shared/server-error'
 import {
   AlertDialog,
   AlertDialogAction,

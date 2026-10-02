@@ -1,12 +1,13 @@
 import { useTranslation } from 'react-i18next'
+import { openNoticeLink } from '@ecommerce/core/utils/notifications/open-link'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCheckIcon } from 'lucide-react'
-import { Pager } from '@/components/shared/pager'
+import { Pager } from '@ecommerce/core/components/shared/pager'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { Button } from '@ecommerce/ui/button'
 import { useMarkRead, useNotifications, useUnreadCount } from '@ecommerce/core/hooks/notifications'
 import { PAGE_SIZE } from '@ecommerce/core/constants/shared'
-import { NoticeText } from '@/components/shared/notice-text'
+import { NoticeText } from '@ecommerce/core/components/shared/notice-text'
 import { describeNotification } from '@ecommerce/core/utils/notifications'
 import { cn } from 'cn'
 
@@ -63,7 +64,7 @@ export function NotificationsPage() {
                   type="button"
                   onClick={() => {
                     if (!n.readAt) mark.one.mutate(n.id)
-                    if (n.link) navigate(n.link)
+                    if (n.link) openNoticeLink(n.link, navigate)
                   }}
                   className={cn(
                     'bg-card ring-border/60 hover:ring-primary/60 grid w-full gap-1 rounded-3xl p-4 text-left ring-1 transition-all',

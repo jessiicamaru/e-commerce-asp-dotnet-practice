@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ProductImage } from '@/components/product/product-image'
-import { Price } from '@/components/shared/price'
+import { ProductImage } from '@ecommerce/core/components/product/product-image'
+import { Price } from '@ecommerce/core/components/shared/price'
 import type { Category } from '@ecommerce/core/services/category/types'
 import type { Product } from '@ecommerce/core/services/product/types'
 

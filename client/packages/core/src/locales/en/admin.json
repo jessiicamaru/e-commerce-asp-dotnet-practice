@@ -338,7 +338,8 @@
         "Locked": "Locked",
         "Banned": "Banned"
       }
-    }
+    },
+    "closeShop": "Close shop"
   },
   "roles": {
     "Admin": "Administrator",
@@ -713,5 +714,6 @@
     "optionSaved": "“{{name}}” saved.",
     "minDays": "Soonest (days)",
     "maxDays": "Latest (days)"
-  }
+  },
+  "goToBackOffice": "Management platform"
 }

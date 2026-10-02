@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Label } from '@ecommerce/ui/label'
 import { RadioGroup, RadioGroupItem } from '@ecommerce/ui/radio-group'
 import type { ShippingOption } from '@ecommerce/core/services/order/types'
-import { Price } from '@/components/shared/price'
+import { Price } from '@ecommerce/core/components/shared/price'
 import { cn } from 'cn'
 
 /**

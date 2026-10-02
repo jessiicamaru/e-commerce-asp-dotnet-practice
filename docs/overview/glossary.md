@@ -46,6 +46,7 @@ given in `code style`.
 | Term | Meaning |
 | :-- | :-- |
 | **Storefront** | The web app where people shop and sell (`client/apps/storefront`, `ecommerce.com`). |
+| **Console** | What staff use to run the shop: fulfilment, payouts, moderation, people, emails... It was `/admin` in the storefront until specs/137 and is the back office now; a page named `/admin/x` in an older document is the back office's `/x`. |
 | **Back office** | The web app where staff - administrators and moderators - run the shop (`portal.ecommerce.com`, #276-#278). A separate app on its own origin, not a part of the storefront ([ADR-003](../architecture/adr-003-storefront-and-back-office.md)). |
 | **Workspace, package** | `client/` is an npm workspace: apps (`apps/*`) and the packages they share (`packages/ui`, the component kit; `packages/core`, everything else that is not a page). A package never imports an app. |
 | **Origin isolation** | Keeping a privileged session on an origin of its own, away from pages that show content the public wrote. The reason the back office is a separate app. |

@@ -50,3 +50,25 @@ export async function findOnPages(page: Page, item: Locator): Promise<Locator> {
   }
   throw new Error(`Not found on any page of the list (looked at: ${seen.join('; ')}).`)
 }
+
+/**
+ * The back office (specs/136, 137), against compose at portal.localhost - a different HOST from the storefront's
+ * localhost, because cookies ignore the port.
+ */
+export const BACK_OFFICE = process.env.E2E_BACK_OFFICE_URL ?? 'http://portal.localhost:8089'
+
+/** Signs in to the back office as a person does: the password, then - for staff - the code. */
+export async function signInToBackOffice(page: Page, person: Person): Promise<void> {
+  await page.addInitScript(() => localStorage.setItem('language', 'en'))
+  await page.goto(BACK_OFFICE)
+  await expect(page).toHaveURL(/\/sign-in$/)
+  await page.getByLabel('Email').fill(person.email)
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  if (person.totpSecret) {
+    const { code, step } = await freshCode(person.totpSecret, person.lastStep)
+    await page.getByLabel('Code').fill(code)
+    await page.getByRole('button', { name: 'Verify' }).click()
+    person.lastStep = step
+  }
+}

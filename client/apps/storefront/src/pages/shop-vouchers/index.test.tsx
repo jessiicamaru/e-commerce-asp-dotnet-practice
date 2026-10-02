@@ -6,8 +6,7 @@ import { Product } from '@ecommerce/core/services/product'
 import { Voucher } from '@ecommerce/core/services/voucher'
 import type { VoucherSummary } from '@ecommerce/core/services/voucher/types'
 import { refusal } from '@ecommerce/core/test/refusal'
-import { renderAsAdmin, renderAsSeller } from '@ecommerce/core/test/render'
-import { AdminVouchersPage } from '@/pages/admin-vouchers'
+import { renderAsSeller } from '@ecommerce/core/test/render'
 import { ShopVouchersPage } from '.'
 
 const sale: VoucherSummary = {
@@ -93,90 +92,48 @@ describe('ShopVouchersPage (specs/070)', () => {
   })
 })
 
-describe('AdminVouchersPage (specs/070)', () => {
-  it('offers free delivery and new customers, and picks from the whole catalogue', async () => {
-    vi.spyOn(Voucher, 'mine').mockResolvedValue(page([]))
-    const create = vi.spyOn(Voucher, 'create').mockResolvedValue({ ...sale, isPlatform: true })
+describe('ShopVouchersPage, editing (specs/113)', () => {
+  it('opens with the terms as they are and sends the corrected ones', async () => {
+    vi.spyOn(Voucher, 'mine').mockResolvedValue(page([sale]))
+    const edit = vi.spyOn(Voucher, 'edit').mockResolvedValue({ ...sale, totalLimit: 200 })
     const user = userEvent.setup()
-    renderAsAdmin(<AdminVouchersPage />, '/admin/vouchers')
+    renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
 
-    await user.click(await screen.findByRole('button', { name: /New voucher/ }))
+    await user.click(await screen.findByRole('button', { name: /Edit/ }))
     const dialog = await screen.findByRole('dialog')
-    expect(await within(dialog).findByText('Sony A7 IV')).toBeInTheDocument()
-    expect(within(dialog).queryByText('First order in my shop only')).not.toBeInTheDocument()
+    const total = within(dialog).getByLabelText('Uses in all')
+    expect(total).toHaveValue(100)
+    expect(within(dialog).getByLabelText('Orders from (VND)')).toHaveValue(500_000)
+    expect(within(dialog).queryByLabelText('At least this many items')).not.toBeInTheDocument()
+    await user.clear(total)
+    await user.type(total, '200')
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
 
-    await user.type(within(dialog).getByLabelText('Code'), 'FREESHIP')
-    await user.type(within(dialog).getByLabelText('Name'), 'Free delivery')
-    await user.click(within(dialog).getByText('Free delivery', { selector: 'label' }))
-    await user.click(within(dialog).getByText('New customers only'))
-    await user.click(within(dialog).getByRole('button', { name: 'Create voucher' }))
-
-    await waitFor(() => expect(create).toHaveBeenCalled())
-    expect(create.mock.calls[0][0]).toMatchObject({ benefit: 'FreeShipping', percent: null, conditions: [{ type: 'NewCustomer', value: null }], targets: [] })
-    expect(Product.mine).not.toHaveBeenCalled()
+    await waitFor(() => expect(edit).toHaveBeenCalled())
+    expect(edit.mock.calls[0]).toEqual(['v-1', {
+      name: 'Mai ten', endsAt: null, totalLimit: 200, perCustomerLimit: 1,
+      minSubtotals: [{ currency: 'VND', minSubtotal: 500_000 }], minQuantity: null, isPublic: false,
+    }])
   })
 
-  describe('editing (specs/113)', () => {
-    it('opens with the terms as they are and sends the corrected ones', async () => {
-      vi.spyOn(Voucher, 'mine').mockResolvedValue(page([sale]))
-      const edit = vi.spyOn(Voucher, 'edit').mockResolvedValue({ ...sale, totalLimit: 200 })
-      const user = userEvent.setup()
-      renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
-
-      await user.click(await screen.findByRole('button', { name: /Edit/ }))
-      const dialog = await screen.findByRole('dialog')
-      const total = within(dialog).getByLabelText('Uses in all')
-      expect(total).toHaveValue(100)
-      expect(within(dialog).getByLabelText('Orders from (VND)')).toHaveValue(500_000)
-      expect(within(dialog).queryByLabelText('At least this many items')).not.toBeInTheDocument()
-      await user.clear(total)
-      await user.type(total, '200')
-      await user.click(within(dialog).getByRole('button', { name: 'Save' }))
-
-      await waitFor(() => expect(edit).toHaveBeenCalled())
-      expect(edit.mock.calls[0]).toEqual(['v-1', {
-        name: 'Mai ten', endsAt: null, totalLimit: 200, perCustomerLimit: 1,
-        minSubtotals: [{ currency: 'VND', minSubtotal: 500_000 }], minQuantity: null, isPublic: false,
-      }])
-    })
-
-    it("shows the server's refusal and keeps the dialog open", async () => {
-      vi.spyOn(Voucher, 'mine').mockResolvedValue(page([sale]))
-      vi.spyOn(Voucher, 'edit').mockRejectedValue(refusal(409, 'The total limit cannot be lower than the uses already made.'))
-      const user = userEvent.setup()
-      renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
-
-      await user.click(await screen.findByRole('button', { name: /Edit/ }))
-      const dialog = await screen.findByRole('dialog')
-      await user.click(within(dialog).getByRole('button', { name: 'Save' }))
-
-      expect(await within(dialog).findByText('The total limit cannot be lower than the uses already made.')).toBeInTheDocument()
-    })
-
-    it('offers no edit on a disabled voucher', async () => {
-      vi.spyOn(Voucher, 'mine').mockResolvedValue(page([{ ...sale, status: 'Disabled' }]))
-      renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
-
-      expect(await screen.findByText('MAI10')).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
-    })
-  })
-})
-
-describe('vouchers searched and filtered (specs/133, #249)', () => {
-  it('asks for the code or name typed, and the state chosen, each tab saying how many', async () => {
-    const mine = vi.spyOn(Voucher, 'mine').mockImplementation(async (_page, size, filter = {}) =>
-      size === 1 ? ({ items: [], page: 1, pageSize: 1, totalCount: filter.state === 'Ended' ? 4 : filter.state ? 1 : 6 }) : page([sale]),
-    )
+  it("shows the server's refusal and keeps the dialog open", async () => {
+    vi.spyOn(Voucher, 'mine').mockResolvedValue(page([sale]))
+    vi.spyOn(Voucher, 'edit').mockRejectedValue(refusal(409, 'The total limit cannot be lower than the uses already made.'))
     const user = userEvent.setup()
-    renderAsAdmin(<AdminVouchersPage />, '/admin/vouchers')
+    renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
 
-    expect(await screen.findByRole('tab', { name: 'Ended 4' })).toBeInTheDocument()
-    await user.type(screen.getByRole('textbox', { name: 'Code or name' }), 'mai{Enter}')
-    await waitFor(() => expect(mine).toHaveBeenCalledWith(1, 12, { search: 'mai', state: '' }))
+    await user.click(await screen.findByRole('button', { name: /Edit/ }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
 
-    await user.click(screen.getByRole('tab', { name: /Ended/ }))
-    await waitFor(() => expect(mine).toHaveBeenCalledWith(1, 12, { search: 'mai', state: 'Ended' }))
-    expect(mine).toHaveBeenCalledWith(1, 1, { search: 'mai', state: 'Ended' })
+    expect(await within(dialog).findByText('The total limit cannot be lower than the uses already made.')).toBeInTheDocument()
+  })
+
+  it('offers no edit on a disabled voucher', async () => {
+    vi.spyOn(Voucher, 'mine').mockResolvedValue(page([{ ...sale, status: 'Disabled' }]))
+    renderAsSeller(<ShopVouchersPage />, '/shop/vouchers')
+
+    expect(await screen.findByText('MAI10')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
   })
 })

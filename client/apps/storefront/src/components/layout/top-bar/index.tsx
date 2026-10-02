@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { backOfficeUrl } from '@ecommerce/core/config/apps'
 import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ApertureIcon,
@@ -102,7 +103,7 @@ export function TopBar() {
                   </IconLink>
                 )}
                 {isStaff && (
-                  <IconLink to="/admin" label={t('admin:nav')}>
+                  <IconLink to={backOfficeUrl()} label={t('admin:goToBackOffice')}>
                     <ShieldCheckIcon />
                   </IconLink>
                 )}

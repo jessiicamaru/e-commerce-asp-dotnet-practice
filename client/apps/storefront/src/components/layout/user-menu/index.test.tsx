@@ -36,14 +36,21 @@ describe('UserMenu', () => {
   })
 
   /** specs/038: the console is drawn for an administrator only - again courtesy, not the permission. */
-  it('offers the console to an administrator and nobody else', async () => {
+  /** The console is the back office now (specs/137): another application, at its own address. */
+  it('offers the back office to staff and nobody else, as another application', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, assign })
     await open(false, vi.fn(), true)
-    expect(screen.getByRole('menuitem', { name: /Admin/ })).toBeInTheDocument()
+
+    await userEvent.setup().click(screen.getByRole('menuitem', { name: /Management platform/ }))
+
+    expect(assign).toHaveBeenCalledWith('http://portal.localhost:5174/')
+    vi.unstubAllGlobals()
   })
 
   it('does not offer the console to a customer', async () => {
     await open(true)
-    expect(screen.queryByRole('menuitem', { name: /Admin/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: /Management platform/ })).not.toBeInTheDocument()
   })
 
   /** Drawn for a seller only - and that is courtesy: the endpoints refuse anybody else on their own. */

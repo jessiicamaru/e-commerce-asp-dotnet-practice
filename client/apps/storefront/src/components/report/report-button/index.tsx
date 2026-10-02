@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { FlagIcon } from 'lucide-react'
-import { ServerError } from '@/components/shared/server-error'
+import { ServerError } from '@ecommerce/core/components/shared/server-error'
 import { Button } from '@ecommerce/ui/button'
 import {
   Dialog,

@@ -5,6 +5,9 @@ administrator uses. It exists to exercise the API the way a person would - and t
 backend lacks - rather than as a polished product. How to run it and the folder conventions are in the
 [client README](../../client/README.md); this page describes how it fits the system.
 
+**The staff console is not here any more.** It moved to the [back office](back-office.md) in specs/137: staff are
+linked there from the header and their account page, and an old `/admin/...` address is redirected.
+
 Since specs/135 the client is a **workspace**: the storefront is `client/apps/storefront`, and what it shares with
 the coming **back office** (the staff console in an app of its own, [ADR-003](adr-003-storefront-and-back-office.md))
 lives in `client/packages/ui` and `client/packages/core`.
@@ -75,16 +78,7 @@ never imports an app; a test checks it.
 | `/shop/products`, `/shop/products/new`, `/shop/products/:id` | Seller | Listings: create, variants, prices per currency, photographs, stock, review status |
 | `/shop/sales`, `/shop/sales/:id` | Seller | Sales and preparing/shipping their own parcel |
 | `/shop/payouts` | Seller | Balance and payouts |
-| `/admin` | Admin (moderators are sent to Moderation) | Fulfilment queue for the shop's own parcels |
-| `/admin/overview` | Admin | Insights: revenue per currency, top selling, top viewed, top buyers |
-| `/admin/orders/:id` | Admin | One order as staff see it |
-| `/admin/payouts` | Admin | What is due to each seller; record a payout |
-| `/admin/moderation` | Staff | What is waiting, and the moderator's own recent decisions |
-| `/admin/products` | Staff | Product review queue: approve, reject, take down |
-| `/admin/shops` | Staff | Shop applications: approve, reject |
-| `/admin/reviews` | Staff | Ratings and reviews: hide, restore |
-| `/admin/users` | Staff | Find people; lock/unlock (staff), grant/revoke Moderator and ban (admin) |
-| `/admin/audit` | Admin | The audit log with diffs |
+| `/admin/*` | - | The console moved to the [back office](back-office.md) (specs/137): the storefront sends any such address to the same page there |
 
 ## Known limits
 

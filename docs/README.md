@@ -13,7 +13,7 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 | Folder | What is in it | Read it to |
 | :-- | :-- | :-- |
 | [`overview/`](overview/) | What the project is, who uses it, its scope and status; a glossary | Understand the project in ten minutes |
-| [`architecture/`](architecture/) | How the system is put together: services, communication, the saga, messaging, errors, the storefront; ADRs | Understand the design |
+| [`architecture/`](architecture/) | How the system is put together: services, communication, the saga, messaging, errors, the storefront and the back office; ADRs | Understand the design |
 | [`features/`](#features) | One document per business area: what people can do, how it works, the rules and why, data, API, tests | Understand or change a feature |
 | [`reference/`](reference/) | Every endpoint, message, gRPC call, table and gateway route - **generated from the code** | Look something up exactly |
 | [`testing/`](testing/) | The testing strategy, what each layer catches, the numbers | Trust a change, or add a test |
@@ -21,6 +21,10 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 | [`guides/`](guides/) | Running the system, observability, troubleshooting | Get it running, or unstuck |
 | [`infrastructure/`](infrastructure/) | Databases, the broker, containers | Operate the pieces underneath |
 | [`concepts/`](concepts/) | Study notes on designs that were **not** adopted | Learn the idea, not the code |
+
+> **Console addresses.** Feature pages name staff pages as `/admin/...`, their address in the storefront when they were
+> written. Since specs/137 the console is the [back office](architecture/back-office.md), where the same page is at the
+> same path without `/admin`, and the storefront redirects every old address there.
 
 ## Overview
 
