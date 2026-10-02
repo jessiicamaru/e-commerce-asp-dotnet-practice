@@ -47,6 +47,8 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 - [**ADR-002: Prices exclude tax**](architecture/adr-002-tax-exclusive-prices.md)
 - [**ADR-003: A storefront and a back office**](architecture/adr-003-storefront-and-back-office.md) - why the staff
   console leaves the shop for an app of its own, and why that is not called a micro-frontend
+- [**Back office**](architecture/back-office.md): the staff's app - its place in the system, its own session, signing
+  in with a code, development on `portal.localhost`
 
 ## Features
 

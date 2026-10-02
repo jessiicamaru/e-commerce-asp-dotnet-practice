@@ -285,10 +285,10 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:8080
       OTLP_ENDPOINT: http://seq:5341/ingest/otlp
-      # The one proxy whose X-Forwarded-For is believed (specs/062): the storefront's nginx, at its fixed
-      # address on the edge network. Without it every browser behind the storefront would share nginx's
-      # address, and one person's sign-in attempts would use up everybody's.
-      GATEWAY_TRUSTED_PROXIES: 172.30.10.10
+      # The proxies whose X-Forwarded-For is believed (specs/062): the storefront's nginx and, since specs/136, the
+      # back office's, each at its fixed address on the edge network. Without them every browser behind either would
+      # share nginx's address, and one person's sign-in attempts would use up everybody's.
+      GATEWAY_TRUSTED_PROXIES: 172.30.10.10,172.30.10.11
     networks:
       - default
       - edge
@@ -360,8 +360,36 @@ services:
       gateway:
         condition: service_healthy
 
+  # The back office (specs/136, ADR-003): the staff's app, the same image recipe built with APP=back-office.
+  # http://portal.localhost:8089 - a different HOST from the storefront's localhost, not only a different port:
+  # cookies ignore the port, so on one host the two apps' refresh cookies would be one (specs/136 research D1).
+  back-office:
+    container_name: ecommerce-back-office
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+      args:
+        APP: back-office
+    restart: unless-stopped
+    environment:
+      GATEWAY_URL: http://gateway:8080
+    ports:
+      - "8089:8080"
+    # Fixed, and trusted by the gateway, for the same reason as the storefront's address (specs/062).
+    networks:
+      edge:
+        ipv4_address: 172.30.10.11
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    depends_on:
+      gateway:
+        condition: service_healthy
+
 networks:
-  # Between the storefront and the gateway only (specs/062): a subnet of our choosing, so the storefront's
+  # Between the client apps and the gateway only (specs/062, specs/136): a subnet of our choosing, so the storefront's
   # address - the one proxy the gateway believes - is known before either starts.
   edge:
     ipam:

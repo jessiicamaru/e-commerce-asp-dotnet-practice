@@ -22,7 +22,7 @@ set -euo pipefail
 OWNER="${1:?owner}"
 KEEP="${2:?how many to keep}"
 DRY_RUN="${3:-}"
-SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront"
+SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront back-office"
 
 total_deleted=0
 for service in $SERVICES; do

@@ -28,8 +28,9 @@ cd server
 docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 
-The overlay, [`docker-compose.app.yml`](../../server/docker-compose.app.yml), runs ten containers - the
-eight services, the gateway and the storefront. Open **http://localhost:8088** for the storefront:
+The overlay, [`docker-compose.app.yml`](../../server/docker-compose.app.yml), runs eleven containers - the
+eight services, the gateway, the storefront and the back office. Open **http://localhost:8088** for the storefront
+and **http://portal.localhost:8089** for the back office:
 
 | Container | Host port(s) | Inside | Health check | Waits for |
 | :--- | :--- | :--- | :--- | :--- |
@@ -43,6 +44,7 @@ eight services, the gateway and the storefront. Open **http://localhost:8088** f
 | `ecommerce-cart` | `5062` REST, `6062` gRPC | `8080`, `8081` | `/health` | its database, RabbitMQ |
 | `ecommerce-activity` | `5063` | `8080` | `/health` | its database, RabbitMQ |
 | `ecommerce-storefront` | `8088` | `8080` | `/` answers | the gateway healthy |
+| `ecommerce-back-office` | `8089` | `8080` | `/` answers | the gateway healthy |
 
 Ports are unchanged from the host path for REST. Inside their containers every service binds `8080`,
 and the three that serve gRPC also bind `8081`; callers inside the network use `http://catalog:8081`,
@@ -220,9 +222,16 @@ docker run -p 8088:8080 -e GATEWAY_URL=http://gateway:8080 ecommerce-storefront
 cookie over plain HTTP only from `localhost`. From another machine by IP, signing in works until the first
 refresh and then the session is lost - that needs TLS in front, which is deployment and out of scope.
 
+**The back office is the same recipe** (specs/136, [back office](../architecture/back-office.md)):
+`docker build --build-arg APP=back-office -t ecommerce-back-office client`. `APP` picks the app and defaults to the
+storefront, so a plain `docker build client` builds what it always built. An unknown `APP` stops the build with
+"no such app". Open it at **`portal.localhost`**, not `localhost`: cookies ignore the port, and the two apps' sessions
+must not share one.
+
 `verify-storefront-image.sh` starts the image against a stand-in gateway and asks what a browser would:
 the app, a deep link, a missing asset, `/api` forwarded with its path and query, a 2 MB upload, and the
-cache headers. CI runs it on every change, in the `client` job.
+cache headers. CI runs it on every change, in the `client` job, for both images (`... ecommerce-back-office:ci
+back-office`).
 
 ### `.dockerignore` is not optional
 
@@ -286,8 +295,9 @@ address, nginx's, for everybody. The limits on sign-in would then be shared by e
 
 - the storefront sits on a small network of its own, `edge` (`172.30.10.0/24`), at a **fixed** address,
   `172.30.10.10`;
-- the gateway joins both `edge` and the default network, and `GATEWAY_TRUSTED_PROXIES=172.30.10.10`
-  makes it believe that address's `X-Forwarded-For`, and nobody else's;
+- the gateway joins both `edge` and the default network, and `GATEWAY_TRUSTED_PROXIES=172.30.10.10,172.30.10.11`
+  makes it believe those addresses' `X-Forwarded-For`, and nobody else's. The second is the back office's nginx
+  (specs/136);
 - nginx appends `$remote_addr` to `X-Forwarded-For`, and the gateway takes only that last hop, so whatever
   a browser wrote into the header itself is ignored.
 

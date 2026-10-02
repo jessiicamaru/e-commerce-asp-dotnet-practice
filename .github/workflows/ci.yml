@@ -320,6 +320,14 @@ jobs:
         working-directory: .
         run: .github/scripts/verify-storefront-image.sh ecommerce-storefront:ci
 
+      # The back office (specs/136): the same recipe with APP=back-office, asked the same questions.
+      - name: Build the back-office image
+        run: docker build --build-arg APP=back-office -t ecommerce-back-office:ci .
+
+      - name: The image serves the back office
+        working-directory: .
+        run: .github/scripts/verify-storefront-image.sh ecommerce-back-office:ci back-office
+
   publish:
     name: Publish images
     runs-on: ubuntu-latest
@@ -414,6 +422,12 @@ jobs:
           .github/scripts/verify-image-has-no-secrets.sh "$IMAGE_PREFIX-storefront:sha-$SHORT_SHA"
           echo "::endgroup::"
 
+          # The back office (specs/136): the same context, APP=back-office.
+          echo "::group::back-office"
+          docker build --build-arg APP=back-office -t "$IMAGE_PREFIX-back-office:sha-$SHORT_SHA" -t "$IMAGE_PREFIX-back-office:main" client
+          .github/scripts/verify-image-has-no-secrets.sh "$IMAGE_PREFIX-back-office:sha-$SHORT_SHA"
+          echo "::endgroup::"
+
       - name: Log in to GHCR
         # No stored secret: GITHUB_TOKEN is minted per run, scoped by the permissions
         # block above, and expires with the job. The constitution requires that secrets
@@ -444,7 +458,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront"
+          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront back-office"
 
           # Does this name already refer to something?
           #
@@ -554,7 +568,7 @@ jobs:
           # Counted from the list rather than written down as a number. "7" was hardcoded
           # here and in three messages, and went stale the moment an eighth service arrived -
           # the same drift the Dockerfile's COPY list and this job's other two lists suffer.
-          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront"
+          SERVICES="identity catalog order orchestrator inventory payment cart activity gateway storefront back-office"
           total=$(set -- $SERVICES; echo $#)
 
           for service in $SERVICES; do
