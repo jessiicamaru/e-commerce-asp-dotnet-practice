@@ -5,8 +5,9 @@ The web app where staff - administrators and moderators - run the shop, apart fr
 [ADR-003](adr-003-storefront-and-back-office.md). This page describes how it is built and how it fits the system.
 
 **State:** the console lives here (specs/137, #277). Every page staff used at `/admin/...` in the storefront is at the
-same path without the prefix, and the storefront sends its old addresses here. #278 then keeps staff roles out of
-storefront sessions.
+same path without the prefix, and the storefront sends its old addresses here. **Staff roles exist only here**
+(specs/138, #278): a session made on the storefront never carries `Admin` or `Moderator`, whatever the person verified
+with.
 
 **Reading older pages:** a feature page that names a console page as `/admin/x` means the back office's `/x`. The old
 address still works, because the storefront redirects it here, query and all.
@@ -27,6 +28,11 @@ flowchart LR
 - **Its own session.** Identity's refresh cookie is host-only, so the back office's cookie belongs to `portal.*` and
   the storefront's to the shop's host. A person signed in to both has two sessions, and signing out of one leaves the
   other.
+- **The only place staff are staff** (specs/138). Identity records which app made each session
+  (`refresh_tokens.Client`, from the request's `Origin` against `BackOffice:Origins`) and writes staff roles only into a
+  back-office session verified with a code. On the storefront the same person is a customer, and `staffAccount` on the
+  auth response is what draws their link here. How it works:
+  [two-factor sign-in, section 7](../features/auth/totp-two-factor.md#7-how-this-project-uses-it).
 - **Trusted like the storefront.** The gateway reads `X-Forwarded-For` only from known proxies (specs/062). The back
   office's nginx is one of them, at `172.30.10.11` on the `edge` network. Without that, every member of staff would
   share one address, and the sign-in rate limit would refuse them all together.

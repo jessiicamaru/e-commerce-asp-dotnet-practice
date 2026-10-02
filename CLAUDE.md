@@ -705,8 +705,13 @@ reasons - a lifted ban never reopens a paused shop - and by approval (a product 
 seller never reopens what staff closed (`"ClosedAt" IS NULL` guards their moves).
 **Staff sign in with a second factor** (specs/110, #218): TOTP from an authenticator app (how it works:
 [docs/features/auth/totp-two-factor.md](docs/features/auth/totp-two-factor.md)). ⚠️ `Admin`/`Moderator` are written into
-a token **only for a session verified with a code** (`SessionRoles.Of`, `refresh_tokens.TwoFactorVerified`), so every
-service refuses an unverified staff session with no change of its own; staff without it are told `SetupRequired`. The
+a token **only for a session verified with a code** (`SessionRoles.Of`, `refresh_tokens.TwoFactorVerified`) **and made
+in the back office** (specs/138, #278: `refresh_tokens.Client` from the request's `Origin` against `BackOffice:Origins`,
+carried across rotation; null = storefront), so every service refuses an unverified or storefront staff session with no
+change of its own; staff without it are told `SetupRequired`. ⚠️ Anything that acts as staff - the verify scripts, the
+seed scripts, Bruno, Playwright's `Api` - sends the back office's `Origin` when it exchanges the code
+(`BACK_OFFICE_ORIGIN`, `backOfficeOrigin`); the storefront offers the back office from `staffAccount`, never from
+`roles`. The
 right password for a 2FA account answers only a challenge (hashed, 5 minutes, 5 tries); a code works once (a guarded
 `TwoFactorLastStep`), and the password alone never clears the email pause. `TWO_FACTOR_KEY` (AES-GCM for the secrets) is
 required at startup. ⚠️ `ADMIN_TOTP_SECRET` seeds the administrator's secret **for development and CI only**, and every

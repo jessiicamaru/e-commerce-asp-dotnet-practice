@@ -161,6 +161,25 @@ an unverified staff session is refused by every staff endpoint in every service,
 staff member without it signs in with `twoFactor: "SetupRequired"`, holding their other roles, and the storefront sends
 them to `/account/two-factor`.
 
+**And only in the back office** ([specs/138](../../../specs/138-staff-roles-back-office/), #278,
+[ADR-003](../../architecture/adr-003-storefront-and-back-office.md)). A code is not enough on its own: the session must
+also have been made for the back office. `refresh_tokens.Client` records which app a session belongs to. It is
+`Storefront` or `BackOffice`, and null for sessions from before, which read as `Storefront`. Identity takes it from the
+`Origin` of the request that creates the session, matched against `BackOffice:Origins` by scheme, host and port, and
+carries it across every rotation. So:
+
+| Session | Staff roles in the token |
+| :-- | :-- |
+| No code (staff without 2FA) | none, in either app |
+| Verified, made on the storefront | **none**: a staff member there is a customer like anybody else |
+| Verified, made in the back office | yes |
+
+*Why the `Origin`:* a browser writes it on every `POST` and no script can change it. A page on the storefront, where the
+public's words are shown, therefore cannot ask for a back-office session. The back office's own refresh cookie belongs
+to another host, so such a page cannot present that either. A tool that is not a browser can send any `Origin`; it
+still has to know the password and the code. The auth response's `staffAccount` tells the storefront to offer the back
+office to staff whose session there holds no staff role. It draws a link and grants nothing.
+
 **Signing in.**
 
 ```mermaid
@@ -170,7 +189,7 @@ sequenceDiagram
     B->>I: POST /api/auth/login {email, password}
     I-->>B: {twoFactor: "Required", challenge} - no token, no cookie
     B->>I: POST /api/auth/login/two-factor {challenge, code | recoveryCode}
-    I-->>B: the session (refresh cookie, TwoFactorVerified), staff roles in the token
+    I-->>B: the session (refresh cookie, TwoFactorVerified, Client from Origin), staff roles if the back office's
 ```
 
 The challenge is a random token stored only as its SHA-256 (`two_factor_challenges`). It lives 5 minutes, dies after 5
@@ -190,7 +209,9 @@ restart the count before every batch of guesses.
 | Losing the phone | a recovery code; else an administrator's reset (`DELETE /api/users/{id}/two-factor`, never one's own), which ends every session and emails the owner (`TwoFactorReset`) |
 
 **Development and CI.** `ADMIN_TOTP_SECRET` (base32) enrols the seeded administrator with a known secret, so
-`verify-auth.sh`, `verify-saga.sh`, the seed scripts, Bruno and Playwright compute its codes. It is for development and
+`verify-auth.sh`, `verify-saga.sh`, the seed scripts, Bruno and Playwright compute its codes - and, since specs/138,
+send the back office's `Origin` (`BACK_OFFICE_ORIGIN`, Bruno's `backOfficeOrigin`) when they exchange one, because they
+act as staff. It is for development and
 CI only. Because a code works once, two sign-ins within one 30-second window collide, and each of those tools waits
 for the next window when that happens.
 
