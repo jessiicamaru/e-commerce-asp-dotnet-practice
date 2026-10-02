@@ -232,7 +232,8 @@
       "VariantUpdated": "Sửa phiên bản",
       "VoucherCreated": "Tạo voucher",
       "VoucherDisabled": "Tắt voucher",
-      "VoucherEdited": "Sửa voucher"
+      "VoucherEdited": "Sửa voucher",
+      "BackOfficeHandoffIssued": "Chuyển sang trang quản trị"
     }
   },
   "reports": {

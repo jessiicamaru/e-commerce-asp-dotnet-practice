@@ -232,7 +232,8 @@
       "VariantUpdated": "Variant edited",
       "VoucherCreated": "Voucher created",
       "VoucherDisabled": "Voucher disabled",
-      "VoucherEdited": "Voucher edited"
+      "VoucherEdited": "Voucher edited",
+      "BackOfficeHandoffIssued": "Crossed to the back office"
     }
   },
   "reports": {

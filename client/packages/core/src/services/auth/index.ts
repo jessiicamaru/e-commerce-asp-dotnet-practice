@@ -96,6 +96,21 @@ export class Auth {
   }
 
   /** Trades the HttpOnly refresh cookie for a new pair. A replayed token ends every session (#29). */
+  /**
+   * A single-use code to cross to the back office without the password (#279, specs/140): staff with two-factor sign-in
+   * only. It lives 30 seconds.
+   */
+  static async handoff(): Promise<string> {
+    const { data } = await http.post<{ code: string }>('/auth/handoff')
+    return data.code
+  }
+
+  /** The back office redeems a handoff - for a two-factor challenge, never a session (specs/140). */
+  static async redeemHandoff(code: string): Promise<AuthResponse> {
+    const { data } = await http.post<AuthResponse>('/auth/handoff/redeem', { code }, { anonymous: true })
+    return data
+  }
+
   static async refresh(): Promise<AuthResponse> {
     const { data } = await http.post<AuthResponse>('/auth/refresh', undefined, { anonymous: true })
     return data

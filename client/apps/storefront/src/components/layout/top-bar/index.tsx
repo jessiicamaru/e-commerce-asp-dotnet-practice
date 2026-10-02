@@ -21,7 +21,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@ecommerce/ui/inpu
 import { Separator } from '@ecommerce/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@ecommerce/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@ecommerce/ui/tooltip'
-import { accountDestinations } from '@ecommerce/core/constants/account'
+import { accountDestinations, destinationClick } from '@ecommerce/core/constants/account'
 import { useAuth } from '@ecommerce/core/context/auth/useAuth'
 import { useCart } from '@ecommerce/core/hooks/cart'
 import { cn } from 'cn'
@@ -103,7 +103,7 @@ export function TopBar() {
                   </IconLink>
                 )}
                 {hasBackOffice && (
-                  <IconLink to={backOfficeUrl()} label={t('admin:goToBackOffice')}>
+                  <IconLink to={backOfficeUrl()} label={t('admin:goToBackOffice')} onClick={destinationClick(backOfficeUrl())}>
                     <ShieldCheckIcon />
                   </IconLink>
                 )}
@@ -138,12 +138,14 @@ function IconLink({
   label,
   badge = 0,
   end,
+  onClick,
   children,
 }: {
   to: string
   label: string
   badge?: number
   end?: boolean
+  onClick?: (event: { preventDefault(): void }) => void
   children: React.ReactNode
 }) {
   return (
@@ -153,6 +155,7 @@ function IconLink({
           <NavLink
             to={to}
             end={end}
+            onClick={onClick}
             aria-label={badge > 0 ? `${label} (${badge})` : label}
             className={({ isActive }) =>
               cn(
@@ -213,7 +216,7 @@ function MobileMenu() {
               </p>
               {/* The one list every account menu draws (specs/127): it was missing Saved, Notifications and Open a shop. */}
               {accountDestinations({ isSeller, isStaff: hasBackOffice }).map(({ to, icon: Icon, label }) => (
-                <NavLink key={to} to={to} end className={item}>
+                <NavLink key={to} to={to} end className={item} onClick={destinationClick(to)}>
                   <Icon /> {t(label)}
                 </NavLink>
               ))}

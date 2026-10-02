@@ -1,4 +1,5 @@
 import { BellIcon, HeartIcon, KeyRoundIcon, MapPinIcon, PackageIcon, ShieldCheckIcon, StoreIcon, UserIcon } from 'lucide-react'
+import { goToBackOffice } from '@ecommerce/core/utils/back-office'
 import { backOfficeUrl } from '@ecommerce/core/config/apps'
 import type { LucideIcon } from 'lucide-react'
 
@@ -42,6 +43,19 @@ export function accountDestinations({ isSeller, isStaff }: { isSeller: boolean; 
  * back office - reached by a full navigation. A router asked to navigate to "http://..." would treat it as a path.
  */
 export function followDestination(to: string, navigate: (to: string) => void) {
-  if (/^https?:\/\//.test(to)) window.location.assign(to)
+  if (to === backOfficeUrl()) void goToBackOffice()
+  else if (/^https?:\/\//.test(to)) window.location.assign(to)
   else navigate(to)
+}
+
+/**
+ * What a LINK to a destination does on a click (specs/140): the back office's is a handoff rather than the bare address,
+ * so staff are asked only for their code. Undefined for every other destination - an ordinary link.
+ */
+export function destinationClick(to: string): ((event: { preventDefault(): void }) => void) | undefined {
+  if (to !== backOfficeUrl()) return undefined
+  return (event) => {
+    event.preventDefault()
+    void goToBackOffice()
+  }
 }
