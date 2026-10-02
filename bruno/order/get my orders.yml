@@ -24,6 +24,15 @@ runtime:
         test("status 200", function() {
           expect(res.status).to.equal(200);
         });
+        // What is in each order, by name (specs/132): at most three lines.
+        test("each order names its lines", function() {
+          expect(res.body.items.length).to.be.above(0);
+          res.body.items.forEach(function(order) {
+            expect(order.lines).to.be.an("array");
+            expect(order.lines.length).to.be.within(1, 3);
+            expect(order.lines[0].productName).to.be.a("string");
+          });
+        });
 
 settings:
   encodeUrl: true

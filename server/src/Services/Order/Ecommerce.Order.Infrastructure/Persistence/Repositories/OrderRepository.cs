@@ -159,13 +159,17 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.Language,
                 // "1 of 2 parcels shipped" (specs/035) - in SQL, as correlated counts.
                 ShipmentCount = x.Shipments.Count,
-                ShipmentsShipped = x.Shipments.Count(s => s.Status == ShipmentStatus.Shipped)
+                ShipmentsShipped = x.Shipments.Count(s => s.Status == ShipmentStatus.Shipped),
+                // Up to three lines by name (specs/132), the biggest first - the camera, not its strap. Ids made in one
+                // millisecond do not keep the order bought, so there is none to keep.
+                Lines = x.Items.OrderByDescending(i => i.UnitPrice * i.Quantity).ThenBy(i => i.ProductName).Take(3)
+                    .Select(i => new OrderLinePreview(i.ProductId, i.VariantId, i.ProductName)).ToList()
             })
             .ToListAsync(cancellationToken);
 
         var orders = rows.Select(x => new OrderSummaryResponse(
             x.Id, x.TotalAmount, OrderMapping.Describe(x.Status), x.FailureReason, x.ItemCount, x.CreatedAt,
-            x.UpdatedAt, x.Currency ?? string.Empty, x.Language ?? string.Empty, x.ShipmentCount, x.ShipmentsShipped))
+            x.UpdatedAt, x.Currency ?? string.Empty, x.Language ?? string.Empty, x.ShipmentCount, x.ShipmentsShipped, x.Lines))
             .ToList();
 
         return (orders, totalCount);
@@ -217,13 +221,15 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.CreatedAt,
                 x.Currency,
                 ShipmentCount = x.Shipments.Count,
-                ShipmentsShipped = x.Shipments.Count(sh => sh.Status == ShipmentStatus.Shipped)
+                ShipmentsShipped = x.Shipments.Count(sh => sh.Status == ShipmentStatus.Shipped),
+                Lines = x.Items.OrderByDescending(i => i.UnitPrice * i.Quantity).ThenBy(i => i.ProductName).Take(3)
+                    .Select(i => new OrderLinePreview(i.ProductId, i.VariantId, i.ProductName)).ToList()
             })
             .ToListAsync(cancellationToken);
 
         return (rows.Select(x => new Application.Orders.Queries.GetOrdersForStaff.StaffOrderSummaryResponse(
             x.Id, x.UserId, x.TotalAmount, OrderMapping.Describe(x.Status), x.FailureReason, x.ItemCount, x.CreatedAt,
-            x.Currency ?? string.Empty, x.ShipmentCount, x.ShipmentsShipped)).ToList(), totalCount);
+            x.Currency ?? string.Empty, x.ShipmentCount, x.ShipmentsShipped, x.Lines)).ToList(), totalCount);
     }
 
     public async Task<bool> ExistsAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -271,7 +277,11 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.Language,
                 // "1 of 2 parcels shipped" (specs/035) - in SQL, as correlated counts.
                 ShipmentCount = x.Shipments.Count,
-                ShipmentsShipped = x.Shipments.Count(s => s.Status == ShipmentStatus.Shipped)
+                ShipmentsShipped = x.Shipments.Count(s => s.Status == ShipmentStatus.Shipped),
+                // Up to three lines by name (specs/132), the biggest first - the camera, not its strap. Ids made in one
+                // millisecond do not keep the order bought, so there is none to keep.
+                Lines = x.Items.OrderByDescending(i => i.UnitPrice * i.Quantity).ThenBy(i => i.ProductName).Take(3)
+                    .Select(i => new OrderLinePreview(i.ProductId, i.VariantId, i.ProductName)).ToList()
             })
             .ToListAsync(cancellationToken);
 
@@ -286,7 +296,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             x.Currency ?? string.Empty,
             x.Language ?? string.Empty,
             x.ShipmentCount,
-            x.ShipmentsShipped)).ToList();
+            x.ShipmentsShipped,
+            x.Lines)).ToList();
 
         return (orders, totalCount);
     }
@@ -351,7 +362,10 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
                 x.Currency,
                 LineCount = x.Items.Count(i => i.SellerId == sellerId),
                 Units = x.Items.Where(i => i.SellerId == sellerId).Sum(i => i.Quantity),
-                Subtotal = x.Items.Where(i => i.SellerId == sellerId).Sum(i => i.UnitPrice * i.Quantity)
+                Subtotal = x.Items.Where(i => i.SellerId == sellerId).Sum(i => i.UnitPrice * i.Quantity),
+                // Their own lines only (specs/132): another seller's goods on the order are none of theirs.
+                Lines = x.Items.Where(i => i.SellerId == sellerId).OrderByDescending(i => i.UnitPrice * i.Quantity).ThenBy(i => i.ProductName).Take(3)
+                    .Select(i => new OrderLinePreview(i.ProductId, i.VariantId, i.ProductName)).ToList()
             })
             .ToListAsync(cancellationToken);
 
@@ -374,7 +388,8 @@ public class OrderRepository(OrderDbContext context) : IOrderRepository
             x.PartCancelled ? null : x.Terms?.ShippingShare,
             x.PartCancelled ? null : Owed(x.Terms?.GoodsTotal, x.Terms?.Commission, x.Terms?.ShippingShare),
             x.Terms?.PaidOut ?? false,
-            x.Return?.ToString())).ToList();
+            x.Return?.ToString(),
+            x.Lines)).ToList();
 
         return (sales, totalCount);
     }

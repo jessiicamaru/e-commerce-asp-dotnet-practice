@@ -2,18 +2,17 @@ import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Pager } from '@/components/shared/pager'
-import { Card, CardContent } from '@/components/ui/card'
+import { OrderRow } from '@/components/order/order-row'
 import { PAGE_SIZE } from '@/constants/shared'
 import { useMyOrders } from '@/hooks/order'
 import { describeOrderStatus } from '@/utils/order'
-import { money } from '@/utils/shared'
 
 /**
  * The customer's orders, newest first (#39). Order scopes the list to the caller's token; there is no
  * user id anywhere in the request.
  */
 export function OrdersPage() {
-  const { t, i18n } = useTranslation('orders')
+  const { t } = useTranslation('orders')
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
   const { data: result, isPending, isError } = useMyOrders(page, PAGE_SIZE)
@@ -47,23 +46,25 @@ export function OrdersPage() {
       <ul className="grid gap-3">
         {result.items.map((order) => (
           <li key={order.orderId}>
-            <Card>
-              <CardContent className="flex flex-col gap-1 p-4">
-                <Link to={`/orders/${order.orderId}`} className="font-medium hover:underline">
-                  {new Date(order.createdAt).toLocaleString(i18n.language)}
-                </Link>
-                <span className="text-sm">
-                  {t('itemCount', { count: order.itemCount })} ·{' '}
-                  <span className="font-semibold">{money(order.totalAmount, order.currency)}</span>
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  {/* Partly sent says so (specs/035): "Preparing" alone reads as if nothing has left. */}
-                  {order.shipmentCount > 1 && order.shipmentsShipped > 0 && order.shipmentsShipped < order.shipmentCount
-                    ? t('parcels.partly', { shipped: order.shipmentsShipped, count: order.shipmentCount })
-                    : describeOrderStatus(t, order.status, order.failureReason)}
-                </span>
-              </CardContent>
-            </Card>
+            {/* One row per order, the whole of it the link (specs/132): reference, products, status chip. Partly sent
+                says so in the chip (specs/035). */}
+            <OrderRow
+              to={`/orders/${order.orderId}`}
+              orderId={order.orderId}
+              lines={order.lines}
+              lineCount={order.itemCount}
+              createdAt={order.createdAt}
+              status={order.status}
+              shipped={order.shipmentsShipped}
+              parcels={order.shipmentCount}
+              amount={order.totalAmount}
+              currency={order.currency}
+              detail={
+                order.status === 'Failed' ? (
+                  <span className="text-muted-foreground text-xs">{describeOrderStatus(t, order.status, order.failureReason)}</span>
+                ) : undefined
+              }
+            />
           </li>
         ))}
       </ul>

@@ -1,14 +1,13 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { OrderRow } from '@/components/order/order-row'
 import { PageTitle } from '@/components/seller/page-title'
 import { Pager } from '@/components/shared/pager'
-import { Price } from '@/components/shared/price'
 import { ErrorMessage, LoadingRows } from '@/components/shared/query-state'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/context/auth/useAuth'
 import { useMySales } from '@/hooks/order'
 import { PAGE_SIZE } from '@/constants/shared'
-import { describeSaleStatus } from './status'
 
 
 /**
@@ -24,7 +23,7 @@ import { describeSaleStatus } from './status'
  * </p>
  */
 export function ShopSalesPage() {
-  const { t, i18n } = useTranslation('seller')
+  const { t } = useTranslation('seller')
   const { isSeller } = useAuth()
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
@@ -51,24 +50,25 @@ export function ShopSalesPage() {
           <ul className="grid gap-3">
             {items.map((sale) => (
               <li key={sale.orderId}>
-                <Link
+                {/* Their own lines by name, the reference and the part's state as a chip (specs/132). */}
+                <OrderRow
                   to={`/shop/sales/${sale.orderId}`}
-                  className="bg-card ring-border/60 hover:ring-primary/60 grid gap-1 rounded-3xl p-4 ring-1 transition-all"
-                >
-                  <span className="font-medium">
-                    {t('sales.placedAt', { at: new Date(sale.createdAt).toLocaleString(i18n.language) })}
-                  </span>
-                  <span className="text-sm">
-                    {t('sales.lines', { count: sale.lineCount })} · {t('sales.units', { count: sale.units })} ·{' '}
-                    <Price value={sale.subtotal} currency={sale.currency} className="font-semibold" />
-                  </span>
-                  <span className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-                    {describeSaleStatus(t, sale.status)}
-                    {sale.returnStatus && (
-                      <Badge variant="outline">{t('returns.badge', { state: t(`returns.tab.${sale.returnStatus}`) })}</Badge>
-                    )}
-                  </span>
-                </Link>
+                  orderId={sale.orderId}
+                  lines={sale.lines}
+                  lineCount={sale.lineCount}
+                  createdAt={sale.createdAt}
+                  status={sale.status}
+                  amount={sale.subtotal}
+                  currency={sale.currency}
+                  detail={
+                    <span className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+                      {t('sales.lines', { count: sale.lineCount })} · {t('sales.units', { count: sale.units })}
+                      {sale.returnStatus && (
+                        <Badge variant="outline">{t('returns.badge', { state: t(`returns.tab.${sale.returnStatus}`) })}</Badge>
+                      )}
+                    </span>
+                  }
+                />
               </li>
             ))}
           </ul>

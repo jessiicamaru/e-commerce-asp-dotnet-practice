@@ -1,3 +1,5 @@
+import type { OrderLinePreview } from '@/services/order/types'
+
 /** What is due now to one seller in one currency (specs/037) - staff's worklist. */
 export interface PayoutDue {
   sellerId: string
@@ -34,6 +36,8 @@ export interface StaffOrderSummary {
   currency: string
   shipmentCount: number
   shipmentsShipped: number
+  /** Up to three lines, the biggest first (specs/132). */
+  lines?: OrderLinePreview[] | null
 }
 
 export interface StaffOrderPage {

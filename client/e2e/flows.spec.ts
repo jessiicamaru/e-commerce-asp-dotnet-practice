@@ -101,7 +101,8 @@ test.describe.serial('the storefront, end to end', () => {
     await expect(page.getByRole('region', { name: 'Needs you' }).getByRole('link', { name: /1 sale to prepare/ })).toBeVisible()
     await expect(page.getByTestId('seller-sidebar').getByLabel('1 waiting')).toBeVisible()
     await page.goto('/shop/sales')
-    await page.getByRole('link', { name: /^Placed / }).first().click()
+    // Each sale is named by the order's short reference (specs/132).
+    await page.getByRole('link', { name: new RegExp(orderId.slice(0, 8)) }).click()
     await expect(page).toHaveURL(new RegExp(`/shop/sales/${orderId}$`))
 
     // Nothing in the sidebar reaches into the page, however long the shop's name (specs/117, #238).

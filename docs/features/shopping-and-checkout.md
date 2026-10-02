@@ -183,7 +183,7 @@ All through the gateway at `:5000`. Full list: [../reference/api.md](../referenc
 | `GET` | `/api/orders/shipping-options` | anyone |
 | `GET` | `/api/orders/quote` | signed in |
 | `POST` | `/api/orders` | signed in |
-| `GET` | `/api/orders` | signed in |
+| `GET` | `/api/orders` | signed in - each row names up to three `lines`, the biggest first (specs/132) |
 | `GET` | `/api/orders/{id}` | signed in (own orders only; otherwise 404) |
 | `GET` | `/api/stock/{productId}` | anyone |
 | `GET` | `/api/reservations/{orderId}` | Admin |
@@ -298,6 +298,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 | [022-multi-currency-prices](../../specs/022-multi-currency-prices/) | #59 | Two price lists, no conversion; currency frozen and carried to the payment. |
 | [034-seller-sales](../../specs/034-seller-sales/) | #77 | The seller id frozen on each line at checkout. |
 | [035-seller-shipments](../../specs/035-seller-shipments/) | #79 | Checkout writes one shipment part per seller plus the shop's. |
+| [132-recognisable-orders](../../specs/132-recognisable-orders/) | #272 | Order lists name up to three lines; one short reference (eight characters, as the notices write it) and a status chip on every list and order page (#248). |
 | [036-parcel-shop-names](../../specs/036-parcel-shop-names/) | #80 | The shop name frozen on each line. |
 | [037-seller-payouts](../../specs/037-seller-payouts/) | #81 | Commission rate and each part's earnings frozen at checkout. |
 | [041-audit-log](../../specs/041-audit-log/) | #93 | Audit entries for placing, paying and failing an order. |

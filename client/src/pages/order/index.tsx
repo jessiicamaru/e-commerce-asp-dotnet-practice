@@ -1,4 +1,5 @@
 import { TrackingLink } from '@/components/order/tracking-link'
+import { OrderReference } from '@/components/order/order-reference'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { ApiError } from '@/config/axios'
@@ -52,8 +53,10 @@ export function OrderPage() {
       <h1 className="text-2xl font-bold">
         {justPlaced && !settling && order.status !== ORDER_STATUS.failed ? t('order.thanks') : t('order.title')}
       </h1>
-      <p className="text-muted-foreground mb-4 text-xs">
-        {t('order.placedAt', { id: order.orderId, at: new Date(order.createdAt).toLocaleString(i18n.language) })}
+      {/* The short reference the notices and lists use, with a copy button (specs/132) - not the 36-character id. */}
+      <p className="text-muted-foreground mb-4 flex flex-wrap items-center gap-2 text-xs">
+        <OrderReference orderId={order.orderId} />
+        <span>{t('order.placedOn', { at: new Date(order.createdAt).toLocaleString(i18n.language) })}</span>
       </p>
 
       <OrderStatus

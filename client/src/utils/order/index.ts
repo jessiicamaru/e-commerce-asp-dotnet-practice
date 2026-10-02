@@ -49,3 +49,11 @@ export function orderStatusTone(status: string): 'good' | 'bad' | 'waiting' {
   if (status === ORDER_STATUS.submitted) return 'waiting'
   return 'good'
 }
+
+/**
+ * The short reference of an order (specs/132, #248): the first eight characters of its id - what the notices already
+ * call it (specs/042) - so the bell, the list and the page name an order the same way. Links keep the full id.
+ */
+export function orderReference(orderId: string): string {
+  return orderId.slice(0, 8)
+}

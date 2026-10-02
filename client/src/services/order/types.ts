@@ -161,6 +161,15 @@ export interface OrderSummary {
   /** How many parcels it goes in, and how many have gone (specs/035). */
   shipmentCount: number
   shipmentsShipped: number
+  /** Up to three lines, the biggest first (specs/132). */
+  lines?: OrderLinePreview[] | null
+}
+
+/** One line of an order, as a list shows it (specs/132): which product and shape, and its frozen name. */
+export interface OrderLinePreview {
+  productId: string
+  variantId: string | null
+  productName: string
 }
 
 export interface OrderPage {
@@ -212,6 +221,8 @@ export interface SaleSummary {
   paidOut: boolean
   /** The state of the return of the seller's own parcel of this order, if any (specs/108). */
   returnStatus?: ReturnStatus | null
+  /** The seller's own lines, up to three, the biggest first (specs/132). */
+  lines?: OrderLinePreview[] | null
 }
 
 export interface SalePage {
