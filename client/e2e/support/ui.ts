@@ -71,4 +71,8 @@ export async function signInToBackOffice(page: Page, person: Person): Promise<vo
     await page.getByRole('button', { name: 'Verify' }).click()
     person.lastStep = step
   }
+
+  // Signed in only once the page has left sign-in: the code is exchanged after the click, and a navigation before it
+  // answers would abandon the exchange and land back here - which CI, slower than a laptop, did (specs/137).
+  await expect(page).not.toHaveURL(/\/sign-in/)
 }
