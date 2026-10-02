@@ -56,11 +56,10 @@ things hidden, clipped, untranslated or wrong), then #246-#254 (usability).
 
 Decided with the user on 2026-10-02: the admin and moderator console leaves the shop - now the **storefront** - for a
 **back office** of its own at `portal.ecommerce.com` ([ADR-003](../architecture/adr-003-storefront-and-back-office.md)). Staff do not shop, and a staff session should not share an origin with user-written content.
-Two SPAs in one monorepo, not module federation. In order - #278 must follow #277. #279 and #280 are recorded but
-deferred.
-
-| Issue | Title |
-| :-- | :-- |
+Two SPAs in one monorepo, not module federation. **All six are done** (2026-10-03): workspaces (#275), the back office
+and its sign-in (#276), the console moved (#277), staff roles only in a back-office session (#278), a separate token
+audience held by every service (#280) and a one-time handoff from the storefront (#279) - see Fixed below and the
+progress table in ADR-003.
 
 ## Priority 3 - technical debt
 
