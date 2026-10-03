@@ -60,7 +60,39 @@ public class MyDataTests(PaymentTestFixture fixture) : IDisposable
     public void A_deleted_account_leaves_payments_as_they_are_because_they_hold_nothing_personal()
     {
         Assert.Empty(PaymentPersonalData.Inventory.Erased);
-        Assert.Equal(["payments", "refunds"], PaymentPersonalData.Inventory.Kept.Keys.Order());
+        Assert.Equal(["paymentCheckouts", "payments", "refunds"], PaymentPersonalData.Inventory.Kept.Keys.Order());
+    }
+
+    [Fact]
+    public async Task A_person_gets_their_attempts_to_pay_at_a_gateway_and_nobody_else_s()
+    {
+        var mai = Guid.CreateVersion7();
+        var maiOrder = Guid.CreateVersion7();
+        var lanOrder = Guid.CreateVersion7();
+        await using (var seed = _fixture.NewScope())
+        {
+            var db = seed.ServiceProvider.GetRequiredService<PaymentDbContext>();
+            foreach (var (user, order) in new[] { (mai, maiOrder), (Guid.CreateVersion7(), lanOrder) })
+            {
+                db.Checkouts.Add(new PaymentCheckout
+                {
+                    Id = Guid.CreateVersion7(), OrderId = order, UserId = user, Amount = 990_000m, Currency = "VND",
+                    Provider = "VnPaySandbox", Reference = PaymentCheckout.ReferenceFor(order),
+                    OpenedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddMinutes(8),
+                });
+            }
+            await db.SaveChangesAsync();
+        }
+        _fixture.Caller.Id = mai;
+
+        await using var scope = _fixture.NewScope();
+        var export = await scope.ServiceProvider.GetRequiredService<ISender>().Send(new GetMyDataQuery());
+
+        Assert.Single(export.Sections["paymentCheckouts"]);
+        var json = JsonSerializer.Serialize(export);
+        Assert.Contains(maiOrder.ToString(), json);
+        Assert.Contains("VnPaySandbox", json);
+        Assert.DoesNotContain(lanOrder.ToString(), json);
     }
 
     private async Task<(Guid User, Guid Order)> PaidAndRefundedAsync()

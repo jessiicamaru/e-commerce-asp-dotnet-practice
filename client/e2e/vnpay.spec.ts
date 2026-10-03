@@ -26,11 +26,11 @@ test.describe.serial('paying at VNPay, end to end', () => {
 
     api = new Api(context)
     const categoryId = await api.category()
-    const seller = await api.seller('VnPay seller', 'E2e VNPay Camera Shop')
+    const seller = await api.seller('Vnpayseller', 'E2e VNPay Camera Shop')
     camera = await api.list(seller.token, categoryId, 'vnpay camera')
     await api.approve(camera.productId)
     await api.stock(seller.token, camera, 5)
-    customer = await api.customer('VnPay customer')
+    customer = await api.customer('Vnpaybuyer')
     await api.address(customer.token)
   })
 
@@ -53,7 +53,7 @@ test.describe.serial('paying at VNPay, end to end', () => {
 
   test('a customer pays at VNPay and the order is paid', async ({ page }) => {
     await placeOrder(page)
-    await expect(page.getByRole('status')).toHaveText(/Waiting for your payment/, { timeout: 60_000 })
+    await expect(page.getByText('Your items are reserved. Waiting for your payment.')).toBeVisible({ timeout: 60_000 })
 
     await page.getByRole('link', { name: /Pay with VNPay/ }).click()
     // The gateway's page - the simulator accepts only a link Payment signed correctly.
