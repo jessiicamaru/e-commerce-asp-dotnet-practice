@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `8b809b0b`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d8414bfe`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**204 endpoints** across 7 services.
+**206 endpoints** across 7 services.
 
 ## Identity (58)
 
@@ -216,12 +216,14 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `PUT` | `/api/stock/{productId}` | Seller, Admin | Sets stock for one sellable unit; the id is a variant id (specs/020). |
 | `PUT` | `/api/stock/{productId}/low-stock-threshold` | Seller, Admin | A variant's own low-stock line (specs/102): null is the shop default, 0 never tells. Same owners as stock. |
 
-## Payment (3)
+## Payment (5)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
 | `GET` | `/api/payments` | Admin |  |
 | `GET` | `/api/payments/my-data` | signed in |  |
+| `GET` | `/api/payments/orders/{orderId}/checkout` | signed in |  |
+| `GET` | `/api/payments/vnpay/ipn` | anyone |  |
 | `GET` | `/api/payments/{orderId}` | Admin |  |
 
 ## Activity (16)
