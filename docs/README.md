@@ -104,6 +104,8 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
   "what happened to order X".
 - [**Troubleshooting**](guides/troubleshooting.md): the traps this project has hit, each with its
   symptom, cause and fix.
+- [**ADR-004: paying through a redirect gateway**](architecture/adr-004-redirect-payment-gateway.md) - VNPay, the IPN
+  and the simulator (specs/143).
 - [**Production**](infrastructure/production.md): the HTTPS stack on a server - the overlay, Caddy, two hosts,
   the proxy chain, real email, secrets (specs/141).
 - [**Running in containers**](infrastructure/running-in-containers.md),

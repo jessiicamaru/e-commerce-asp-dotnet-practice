@@ -21,6 +21,6 @@ public class GetPaymentByOrderIdQueryHandler(IPaymentRepository paymentRepositor
         return new PaymentResponse(
             payment.Id, payment.OrderId, payment.UserId, payment.Amount,
             payment.Status.ToString(), payment.FailureReason, payment.Provider, payment.ProcessedAt,
-            refund?.Amount, refund?.RefundedAt);
+            refund?.Amount, refund?.RefundedAt, payment.ProviderReference);
     }
 }

@@ -25,7 +25,32 @@ public static class DependencyInjection
         services.Configure<PaymentOutcomeOptions>(
             configuration.GetSection(PaymentOutcomeOptions.SectionName));
 
-        services.AddSingleton<IPaymentGateway, StubPaymentGateway>();
+        services.Configure<VnPayOptions>(configuration.GetSection(VnPayOptions.SectionName));
+
+        // Always there, so an IPN reaching a service that is not using VNPay is refused (97) rather than unrouted -
+        // unconfigured, it believes nothing (specs/143).
+        services.AddSingleton<IVnPay, VnPaySignature>();
+
+        var provider = configuration[$"{PaymentOutcomeOptions.SectionName}:Provider"]?.Trim();
+        if (string.IsNullOrEmpty(provider) || string.Equals(provider, PaymentOutcomeOptions.StubProviderValue, StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IPaymentGateway, StubPaymentGateway>();
+        }
+        else if (string.Equals(provider, PaymentOutcomeOptions.VnPayProviderValue, StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IPaymentGateway, VnPayGateway>();
+
+            // Settings that could only fail at the first customer are refused at startup instead.
+            var sagaTimeout = int.TryParse(configuration["ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS"], out var seconds) ? seconds : (int?)null;
+            services.AddOptions<VnPayOptions>()
+                .Validate(o => o.Problems(sagaTimeout).Count == 0, "VNPay settings are invalid - see VnPayOptions.Problems.")
+                .ValidateOnStart();
+        }
+        else
+        {
+            // A typo silently read as the stub would let a stand-in fulfil orders somebody believed were paid.
+            throw new InvalidOperationException($"PAYMENT_PROVIDER is '{provider}', which is neither 'Stub' nor 'VnPay'.");
+        }
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<Ecommerce.Payment.Application.MyData.IPersonalDataReader, PersonalDataReader>();

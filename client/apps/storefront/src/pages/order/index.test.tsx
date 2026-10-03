@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import i18n from '@ecommerce/core/config/i18n'
 import { Order } from '@ecommerce/core/services/order'
+import { Payment } from '@ecommerce/core/services/payment'
 import type { Order as OrderModel, ParcelReturn, Shipment } from '@ecommerce/core/services/order/types'
 import { refusal } from '@ecommerce/core/test/refusal'
 import { renderAsSeller } from '@ecommerce/core/test/render'
@@ -38,6 +39,8 @@ function renderAt() {
 
 beforeEach(async () => {
   await i18n.changeLanguage('en')
+  // A waiting order asks Payment how its payment stands (specs/143); the stub's answer unless a test says otherwise.
+  vi.spyOn(Payment, 'checkout').mockResolvedValue({ provider: 'Stub', state: 'Preparing', payUrl: null, expiresAt: null })
 })
 
 describe('OrderPage cancelling (specs/039)', () => {
@@ -266,5 +269,52 @@ describe('OrderPage vouchers (specs/070)', () => {
     expect(screen.getByText('Voucher SALE5')).toBeInTheDocument()
     expect(screen.queryByText('Discount')).not.toBeInTheDocument()
     expect(screen.getByText('₫150,000')).toBeInTheDocument()   // the line's discount, under its price
+  })
+})
+
+describe('OrderPage paying at VNPay (specs/143)', () => {
+  const awaiting = {
+    provider: 'VnPaySandbox', state: 'AwaitingPayment' as const,
+    payUrl: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_TxnRef=abc&vnp_SecureHash=f00', expiresAt: '2026-10-03T03:08:00Z',
+  }
+
+  it('offers the signed link while the order waits for its payment, and stops spinning', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Submitted' }))
+    const checkout = vi.spyOn(Payment, 'checkout').mockResolvedValue(awaiting)
+    renderAt()
+
+    const link = await screen.findByRole('link', { name: /Pay with VNPay/ })
+    expect(link).toHaveAttribute('href', awaiting.payUrl)
+    expect(checkout).toHaveBeenCalledWith('o-1')
+    expect(screen.getByRole('status')).toHaveTextContent('Waiting for your payment')
+    expect(screen.getByRole('status').querySelector('.animate-spin')).toBeNull()
+  })
+
+  it('says the time to pay has passed, with no link', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Submitted' }))
+    vi.spyOn(Payment, 'checkout').mockResolvedValue({ ...awaiting, state: 'Expired', payUrl: null })
+    renderAt()
+
+    expect(await screen.findByText(/The time to pay has passed/)).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Pay with VNPay/ })).not.toBeInTheDocument()
+  })
+
+  it('asks Payment nothing once the order has settled', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Paid' }))
+    const checkout = vi.spyOn(Payment, 'checkout')
+    renderAt()
+
+    await screen.findByText('Ricoh GR III')
+    expect(checkout).not.toHaveBeenCalled()
+    expect(screen.queryByRole('link', { name: /Pay with VNPay/ })).not.toBeInTheDocument()
+  })
+
+  it('offers no link with the stub, which decides on its own', async () => {
+    vi.spyOn(Order, 'get').mockResolvedValue(order({ status: 'Submitted' }))
+    const checkout = vi.spyOn(Payment, 'checkout')
+    renderAt()
+
+    await waitFor(() => expect(checkout).toHaveBeenCalled())
+    expect(screen.queryByRole('link', { name: /Pay with VNPay/ })).not.toBeInTheDocument()
   })
 })

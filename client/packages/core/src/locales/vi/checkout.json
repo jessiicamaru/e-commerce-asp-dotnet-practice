@@ -43,6 +43,7 @@
     "charged": "Đơn hàng được thanh toán một lần, toàn bộ, ngay khi bạn đặt.",
     "refused": "Nếu thanh toán bị từ chối, bạn không mất gì và hàng được trả lại kho.",
     "refunded": "Đơn bị huỷ trước khi gửi đi được hoàn tiền toàn bộ.",
-    "stub": "Cửa hàng này là bản minh hoạ: thanh toán được một nhà cung cấp thử nghiệm duyệt, không có tiền thật nào được chuyển."
+    "stub": "Cửa hàng này là bản minh hoạ: thanh toán được một nhà cung cấp thử nghiệm duyệt, không có tiền thật nào được chuyển.",
+    "atGateway": "Sau khi đặt hàng, bạn thanh toán trên trang của VNPay. Đơn hàng chờ bạn thanh toán trong vài phút; nếu không thanh toán, bạn không bị trừ tiền và hàng được trả lại kho."
   }
 }

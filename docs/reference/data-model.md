@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `8b809b0b`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `d8414bfe`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -794,7 +794,26 @@ Entity `StockReservation`.
 | `SettlementReason` | character varying(512) | yes |
 | `Status` | character varying(16) |  |
 
-## Payment - `ecommerce_payment_db` (2 tables)
+## Payment - `ecommerce_payment_db` (3 tables)
+
+### `payment_checkouts`
+
+Entity `PaymentCheckout`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `Amount` | numeric(18,2) |  |
+| `CompletedAt` | timestamp with time zone | yes |
+| `Currency` | character varying(3) |  |
+| `ExpiresAt` | timestamp with time zone |  |
+| `OpenedAt` | timestamp with time zone |  |
+| `OrderId` | uuid |  |
+| `Provider` | character varying(32) |  |
+| `ProviderReference` | character varying(64) | yes |
+| `Reference` | character varying(64) |  |
+| `ResponseCode` | character varying(8) | yes |
+| `UserId` | uuid |  |
 
 ### `payments`
 
@@ -809,6 +828,7 @@ Entity `Payment`.
 | `OrderId` | uuid |  |
 | `ProcessedAt` | timestamp with time zone |  |
 | `Provider` | character varying(32) |  |
+| `ProviderReference` | character varying(64) | yes |
 | `Status` | character varying(16) |  |
 | `UserId` | uuid |  |
 

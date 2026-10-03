@@ -135,5 +135,13 @@
   },
   "reference": "Order {{reference}}",
   "copy": "Copy the order reference",
-  "copied": "Order reference copied."
+  "copied": "Order reference copied.",
+  "pay": {
+    "status": "Your items are reserved. Waiting for your payment.",
+    "waiting": "Pay on VNPay's page before {{time}}.",
+    "button": "Pay with VNPay",
+    "expired": "The time to pay has passed. Nothing was charged; the order will close shortly.",
+    "returnUnknown": "That payment does not name one of your orders.",
+    "toOrders": "Your orders"
+  }
 }

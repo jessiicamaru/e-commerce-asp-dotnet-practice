@@ -19,7 +19,13 @@ public class ProcessPaymentConsumer(ISender mediator, ILogger<ProcessPaymentCons
             new ChargeOrderCommand(message.OrderId, message.UserId, message.Amount, message.Currency),
             context.CancellationToken);
 
-        if (result.Approved)
+        if (result.AwaitingCustomer)
+        {
+            _logger.LogInformation(
+                "Order {OrderId} waits for its customer to pay {Amount} {Currency} at the gateway.",
+                message.OrderId, message.Amount, message.Currency);
+        }
+        else if (result.Approved)
         {
             _logger.LogInformation(
                 "Approved payment {PaymentId} for order {OrderId} of {Amount} {Currency} — no money was moved.",

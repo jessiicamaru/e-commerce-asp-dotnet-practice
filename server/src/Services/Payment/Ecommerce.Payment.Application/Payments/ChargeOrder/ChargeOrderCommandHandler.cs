@@ -1,5 +1,6 @@
 using Ecommerce.Contracts.Payment;
 using Ecommerce.Payment.Application.Common.Interfaces;
+using Ecommerce.Payment.Domain.Entities;
 using Ecommerce.Payment.Domain.Enums;
 using Ecommerce.Shared.Money;
 using MassTransit;
@@ -76,9 +77,23 @@ public class ChargeOrderCommandHandler(
             return;
         }
 
-        var (status, failureReason) = request.Amount <= 0
-            ? (PaymentStatus.Rejected, $"Invalid amount {request.Amount} for order {request.OrderId}")
-            : _gateway.Charge(request.OrderId, request.UserId, request.Amount);
+        // The currency the saga handed down, resolved here and written with the amount. An empty
+        // one means the shop's default, which on the day this deploys is the truth rather than a
+        // guess: every order placed until now was priced in it (specs/022 research D4).
+        var currency = string.IsNullOrEmpty(request.Currency) ? _money.DefaultCurrency : request.Currency;
+
+        var decision = request.Amount <= 0
+            ? GatewayDecision.Decided(PaymentStatus.Rejected, $"Invalid amount {request.Amount} for order {request.OrderId}")
+            : _gateway.Begin(request.OrderId, request.UserId, request.Amount, currency);
+
+        if (decision.AwaitsCustomer)
+        {
+            // A redirect gateway (specs/143): nothing is decided and nothing is published. The saga keeps waiting for
+            // its reply, which the gateway's signed notification will cause - or its payment timeout ends the order.
+            await OpenCheckoutAsync(request, currency, decision.PaymentWindow!.Value, ct);
+            capture(new ChargeOrderResult(Guid.Empty, false, null, AwaitingCustomer: true));
+            return;
+        }
 
         var payment = new Domain.Entities.Payment
         {
@@ -86,13 +101,9 @@ public class ChargeOrderCommandHandler(
             OrderId = request.OrderId,
             UserId = request.UserId,
             Amount = request.Amount,
-
-            // The currency the saga handed down, resolved here and written with the amount. An empty
-            // one means the shop's default, which on the day this deploys is the truth rather than a
-            // guess: every order placed until now was priced in it (specs/022 research D4).
-            Currency = string.IsNullOrEmpty(request.Currency) ? _money.DefaultCurrency : request.Currency,
-            Status = status,
-            FailureReason = failureReason,
+            Currency = currency,
+            Status = decision.Status!.Value,
+            FailureReason = decision.FailureReason,
             Provider = _gateway.ProviderName,
             ProcessedAt = DateTime.UtcNow
         };
@@ -119,14 +130,59 @@ await _audit.RecordAsync(
         capture(ToResult(payment));
     }
 
+    /// <summary>
+    /// One checkout per order: a redelivered request finds it and does nothing more (the customer's link is built when
+    /// they ask for it, so there is nothing to send again).
+    /// </summary>
+    private async Task OpenCheckoutAsync(ChargeOrderCommand request, string currency, TimeSpan window, CancellationToken ct)
+    {
+        if (await _paymentRepository.GetCheckoutByOrderIdAsync(request.OrderId, ct) is not null)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var checkout = new PaymentCheckout
+        {
+            Id = Guid.CreateVersion7(),
+            OrderId = request.OrderId,
+            UserId = request.UserId,
+            Amount = request.Amount,
+            Currency = currency,
+            Provider = _gateway.ProviderName,
+            Reference = PaymentCheckout.ReferenceFor(request.OrderId),
+            OpenedAt = now,
+            ExpiresAt = now + window,
+        };
+        await _paymentRepository.AddCheckoutAsync(checkout, ct);
+
+        await _audit.RecordAsync(
+            AuditCategory.Payment, "PaymentCheckoutOpened", "Order", request.OrderId.ToString(),
+            $"Waiting for the customer to pay {checkout.Amount} {checkout.Currency} through {checkout.Provider}",
+            after: new { checkout.Id, checkout.Amount, checkout.Currency, checkout.Provider, checkout.Reference, checkout.ExpiresAt },
+            cancellationToken: ct);
+
+        await _paymentRepository.SaveChangesAsync(ct);
+    }
+
     private async Task ReplyWithExistingAsync(
         Guid orderId,
         Action<ChargeOrderResult> capture,
         CancellationToken ct)
     {
-        var existing = await _paymentRepository.GetByOrderIdAsync(orderId, ct)
-            ?? throw new InvalidOperationException(
+        var existing = await _paymentRepository.GetByOrderIdAsync(orderId, ct);
+        if (existing is null)
+        {
+            // The race was over the checkout (specs/143): another delivery opened it first, and there is still nothing to say.
+            if (await _paymentRepository.GetCheckoutByOrderIdAsync(orderId, ct) is not null)
+            {
+                capture(new ChargeOrderResult(Guid.Empty, false, null, AwaitingCustomer: true));
+                return;
+            }
+
+            throw new InvalidOperationException(
                 $"A unique violation was raised for order {orderId} but no payment could be read back.");
+        }
 
         await PublishAsync(existing, ct);
         await _paymentRepository.SaveChangesAsync(ct);

@@ -197,6 +197,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [140](../../specs/140-back-office-handoff/) | A one-time handoff from the storefront to the back office | #286 | #279: staff cross with a single-use code in the URL fragment, redeemed for a two-factor challenge - never a session; ADR-003 complete |
 | [141](../../specs/141-production-https/) | Production over HTTPS | #296 | #287: the production overlay - published sha- images, no published ports but Caddy's, HTTPS for the storefront and back office hosts, two trusted proxy hops, SMTP over STARTTLS with an account |
 | [142](../../specs/142-deploy-rollback/) | Deploy and roll back | #297 | #288: a hand-run deploy workflow ships a release's own files over SSH (host key pinned) and runs deploy.sh: registry check, lock, up --wait, smoke checks through Caddy, releases.log, automatic rollback, previous; a CI dry run renders and asserts the production overlay |
+| [143](../../specs/143-vnpay-sandbox/) | Pay with VNPay | #298 | #289: VNPay as a redirect gateway behind Payment's seam: a checkout per order, a signed pay link, the IPN deciding once (signature, merchant, amount, guarded claim), a simulator for development and CI, Pay with VNPay and the return page (ADR-004) |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

@@ -257,8 +257,20 @@ test says so.
 
 **The orchestrator publishes through the transactional outbox, like everything else** (`AddEntityFrameworkOutbox<OrchestratorDbContext>` + `UseBusOutbox()`, with `AddTransactionalOutboxEntities()` in its `OnModelCreating`). It did not until `20260921104437_AddTransactionalOutbox`, and the consequence was that the first order after a cold start never settled — see the gotcha below. Principle III applies to the state machine exactly as it applies to a command handler.
 
-⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. The checkout's payment card reads that `provider` (specs/134)
-and says "no money is moved" only while it starts with `Stub` - keep the prefix. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
+⚠️ **Payment is a stand-in that moves no money.** It approves without contacting any provider. Three signals guard against mistaking it for the real thing, and all three must survive any refactor: `Provider = "Stub"` on every payment row, a warning logged at startup, and `/health` reporting both `provider` and `configuredOutcome`. The checkout's payment card reads `movesMoney` (specs/143;
+before it, the `provider`'s `Stub` prefix - keep the prefix) and says "no money is moved" while it is false. `Infrastructure/Gateway/StubPaymentGateway.cs` is the seam a real integration replaces — everything around it already behaves as though money were real.
+
+**VNPay is the second provider** (specs/143, [ADR-004](docs/architecture/adr-004-redirect-payment-gateway.md)): with
+`PAYMENT_PROVIDER=VnPay` Payment opens a **checkout** (`payment_checkouts`) when the saga asks and decides nothing; the
+customer pays on VNPay's page (`GET /api/payments/orders/{id}/checkout`, owner-only, a freshly signed HMAC-SHA512 link)
+and VNPay's **IPN** (`GET /api/payments/vnpay/ipn`, anonymous) decides once: signature first in fixed time, merchant,
+amount, then a guarded claim + the one `payments` row + the saga's reply in one transaction, answered in VNPay's codes
+(`00/01/02/04/97`). ⚠️ A payment stays immutable - a checkout is a separate table, never a `Pending` status. ⚠️ The return
+page reads only `vnp_TxnRef` (the order id, `N` format), never the outcome. ⚠️ Dong only - never handed to the stub. The
+link expires before the saga's payment timeout; Payment refuses to start otherwise. `/health`'s `configuredOutcome` is
+`Customer` and `movesMoney` false for the sandbox. Development and CI pay through **`src/Tools/Ecommerce.VnPaySimulator`**
+(`:5064`, its own signing code - an independent check), never in production (profile `simulator`); `verify-saga.sh`
+runs `vnpay-pay` / `vnpay-cancel` against it as the saga job's scenarios 3 and 4. Refunds are still recorded, not sent.
 
 Inventory also consumes `OrderCompletedEvent` as its confirmation signal: there is no `ConfirmInventoryCommand` in the contracts, and the saga finalizes without telling Inventory anything. Without that consumer a successful order would keep its units held until the sweeper returned them to the shelf.
 

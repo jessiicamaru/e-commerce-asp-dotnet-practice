@@ -37,13 +37,18 @@ public class StubPaymentGateway : IPaymentGateway
 
     public string ProviderName => Domain.Entities.Payment.StubProvider;
 
-    public PaymentStatus ConfiguredOutcome => _configuredOutcome;
+    public string Description => "Stub";
 
-    public (PaymentStatus Status, string? FailureReason) Charge(Guid orderId, Guid userId, decimal amount)
+    public bool MovesMoney => false;
+
+    // "Approved"/"Rejected", as /health has always said it: verify-saga.sh and CI read exactly these words.
+    public string HealthOutcome => _configuredOutcome.ToString();
+
+    public GatewayDecision Begin(Guid orderId, Guid userId, decimal amount, string currency)
     {
         return _configuredOutcome == PaymentStatus.Approved
-            ? (PaymentStatus.Approved, null)
-            : (PaymentStatus.Rejected,
+            ? GatewayDecision.Decided(PaymentStatus.Approved)
+            : GatewayDecision.Decided(PaymentStatus.Rejected,
                "Payment declined by the stub gateway (PAYMENT_OUTCOME=Reject)");
     }
 }

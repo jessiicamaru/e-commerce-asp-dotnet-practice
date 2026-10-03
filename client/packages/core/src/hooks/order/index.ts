@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CART_SETTLE_RECHECK_MS, ORDER_POLL_LIMIT_MS, ORDER_POLL_MS, isSettling } from '@ecommerce/core/constants/order'
+import { PAYMENT_CHECKOUT_POLL_MS } from '@ecommerce/core/constants/payment'
+import type { PaymentCheckout } from '@ecommerce/core/services/payment/types'
 import { queryKeys } from '@ecommerce/core/constants/query-keys'
 import { Order } from '@ecommerce/core/services/order'
 import { Questions } from '@ecommerce/core/services/question'
@@ -68,6 +70,13 @@ export function useOrder(id: string) {
       const order = query.state.data
       if (!order || !isSettling(order.status)) {
         return false
+      }
+
+      // The customer is paying at the gateway, or has just paid there (specs/143): that takes minutes, not the saga's two
+      // seconds, so the order is asked about for as long as Payment says so rather than until the usual limit.
+      const payment = queryClient.getQueryData<PaymentCheckout>(queryKeys.paymentCheckout(id))?.state
+      if (payment === 'AwaitingPayment' || payment === 'Paid' || payment === 'Failed') {
+        return PAYMENT_CHECKOUT_POLL_MS
       }
 
       startedAt.current ??= Date.now()

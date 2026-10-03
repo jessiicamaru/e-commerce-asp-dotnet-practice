@@ -32,5 +32,18 @@ public interface IPaymentRepository
     /// <summary>Everything refunded for an order so far, whole or by parcel - never more than was paid.</summary>
     Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken cancellationToken = default);
 
+    /// <summary>An order's checkout at a redirect gateway, if one was opened (specs/143).</summary>
+    Task<PaymentCheckout?> GetCheckoutByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    Task<PaymentCheckout?> GetCheckoutByReferenceAsync(string reference, CancellationToken cancellationToken = default);
+
+    Task AddCheckoutAsync(PaymentCheckout checkout, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records the gateway's answer on a checkout still waiting, in one guarded statement - true for the one caller that
+    /// changed it, false for every later copy of the same notification.
+    /// </summary>
+    Task<bool> ClaimCheckoutAsync(Guid checkoutId, string responseCode, string? providerReference, DateTime at, CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

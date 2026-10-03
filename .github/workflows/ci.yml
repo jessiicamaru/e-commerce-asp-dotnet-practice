@@ -1127,12 +1127,64 @@ jobs:
       - name: Scenario 2 - payment refuses
         run: ../.github/scripts/verify-saga.sh
 
+      # VNPay (specs/143), through the simulator: Payment decides nothing when the saga asks, the customer pays - or
+      # cancels - on the gateway's page, and the gateway's signed IPN decides. Payment is restarted once more for it,
+      # and the simulator started beside it with the same merchant code and secret (CI-only values, not VNPay's).
+      - name: Restart Payment with VNPay, and start the simulator
+        env:
+          VNPAY_TMN_CODE: CISHOP01
+          VNPAY_HASH_SECRET: ci-only-vnpay-simulator-secret-0123456789
+        run: |
+          set -euo pipefail
+          pkill -f 'Ecommerce.Payment.WebApi' || true
+          for _ in $(seq 1 30); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://localhost:5061/health || true)" = "000" ] && break
+            sleep 1
+          done
+
+          VNPAY_SIMULATOR_IPN_URL=http://localhost:5061/api/payments/vnpay/ipn dotnet run \
+            --project src/Tools/Ecommerce.VnPaySimulator/ \
+            --configuration Release --no-build --no-launch-profile \
+            > /tmp/vnpay-simulator.log 2>&1 &
+
+          PAYMENT_PROVIDER=VnPay \
+          VNPAY_PAY_URL=http://localhost:5064/paymentv2/vpcpay.html \
+          VNPAY_RETURN_URL=http://localhost:5173/payment/vnpay-return \
+          dotnet run \
+            --project src/Services/Payment/Ecommerce.Payment.WebApi/ \
+            --configuration Release --no-build --no-launch-profile \
+            > /tmp/payment-vnpay.log 2>&1 &
+
+          for _ in $(seq 1 60); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://localhost:5061/health || true)" = "200" ] \
+              && [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://localhost:5064/health || true)" = "200" ] && break
+            sleep 1
+          done
+
+          # As for scenario 2: the restart must have taken, or the scenarios below would run against the stub.
+          outcome="$(curl -s --max-time 5 http://localhost:5061/health \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("configuredOutcome",""))')"
+          [ "$outcome" = "Customer" ] || { echo "::error::Payment restarted reporting '$outcome', expected 'Customer' (VNPay)."; exit 1; }
+          [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://localhost:5064/health || true)" = "200" ] \
+            || { echo "::error::The VNPay simulator did not start."; exit 1; }
+          echo "Payment takes payments through VNPay's simulator."
+
+      - name: Scenario 3 - paid at VNPay (simulator)
+        env:
+          SAGA_E2E_SCENARIO: vnpay-pay
+        run: ../.github/scripts/verify-saga.sh
+
+      - name: Scenario 4 - cancelled at VNPay (simulator)
+        env:
+          SAGA_E2E_SCENARIO: vnpay-cancel
+        run: ../.github/scripts/verify-saga.sh
+
       # Startup lines matter most, and a retrying transport can push them far out
       # of a plain tail, so show both ends of each log.
       - name: Dump service logs on failure
         if: failure()
         run: |
-          for service in identity catalog order orchestrator inventory payment payment-reject cart; do
+          for service in identity catalog order orchestrator inventory payment payment-reject payment-vnpay vnpay-simulator cart; do
             echo "::group::$service (first 60 lines)"
             head -60 "/tmp/$service.log" 2>/dev/null || echo "(no log)"
             echo "::endgroup::"

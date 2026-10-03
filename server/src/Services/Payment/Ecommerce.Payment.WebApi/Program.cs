@@ -71,6 +71,32 @@ if (!string.IsNullOrEmpty(paymentOutcome))
     builder.Configuration["Payment:Outcome"] = paymentOutcome;
 }
 
+// Which provider takes payments, and VNPay's settings (specs/143). The return address follows the storefront unless set.
+foreach (var (variable, key) in new[]
+{
+    ("PAYMENT_PROVIDER", "Payment:Provider"),
+    ("VNPAY_TMN_CODE", "VnPay:TmnCode"),
+    ("VNPAY_HASH_SECRET", "VnPay:HashSecret"),
+    ("VNPAY_PAY_URL", "VnPay:PayUrl"),
+    ("VNPAY_RETURN_URL", "VnPay:ReturnUrl"),
+    ("VNPAY_PAYMENT_WINDOW_MINUTES", "VnPay:PaymentWindowMinutes"),
+    ("VNPAY_LIVE", "VnPay:Live"),
+    ("ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS", "ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS"),
+})
+{
+    var value = Environment.GetEnvironmentVariable(variable);
+    if (!string.IsNullOrEmpty(value))
+    {
+        builder.Configuration[key] = value;
+    }
+}
+
+if (string.IsNullOrEmpty(builder.Configuration["VnPay:ReturnUrl"]))
+{
+    var storefront = (Environment.GetEnvironmentVariable("STOREFRONT_URL") ?? "http://localhost:8088").TrimEnd('/');
+    builder.Configuration["VnPay:ReturnUrl"] = $"{storefront}/payment/vnpay-return";
+}
+
 // Override Configurations from Environment Variables for Payment Database (Port 5438)
 var dbUser = Environment.GetEnvironmentVariable("DB_USER") ?? "postgres";
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "123456";
@@ -157,14 +183,22 @@ var app = builder.Build();
 
 // One of three independent signals that this service is a stand-in. A stub mistaken for the real
 // thing fulfils every order without anyone being charged, so saying it once in a code comment is
-// not enough: it is also on every payment row and in every health response.
+// not enough: it is also on every payment row and in every health response. VNPay's sandbox is a
+// stand-in too, and says so the same way (specs/143).
 var gateway = app.Services.GetRequiredService<IPaymentGateway>();
 
-app.Logger.LogWarning(
-    "Payment service started with the {Provider} gateway: NO MONEY IS MOVED. "
-    + "Configured outcome is {Outcome}.",
-    gateway.ProviderName,
-    gateway.ConfiguredOutcome);
+if (gateway.MovesMoney)
+{
+    app.Logger.LogInformation("Payment service started with the {Provider} gateway: money moves.", gateway.Description);
+}
+else
+{
+    app.Logger.LogWarning(
+        "Payment service started with the {Provider} gateway: NO MONEY IS MOVED. "
+        + "Configured outcome is {Outcome}.",
+        gateway.Description,
+        gateway.HealthOutcome);
+}
 
 app.UseExceptionHandler();
 
@@ -192,8 +226,9 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 
             // Reported so that a service deliberately set to reject is never mistaken for a broken
             // one, and a healthy stub is never mistaken for a gateway that is really charging.
-            provider = $"{gateway.ProviderName} - no money is moved",
-            configuredOutcome = gateway.ConfiguredOutcome.ToString(),
+            provider = gateway.MovesMoney ? gateway.Description : $"{gateway.Description} - no money is moved",
+            movesMoney = gateway.MovesMoney,
+            configuredOutcome = gateway.HealthOutcome,
 
             checks = report.Entries.Select(e => new
             {

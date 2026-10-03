@@ -24,9 +24,15 @@ public static class PaymentPersonalData
         {
             ["payments"] = "The shop's books: kept for accounting, without your name, email, phone or address.",
             ["refunds"] = "The shop's books: kept for accounting, without your name, email, phone or address.",
+            ["paymentCheckouts"] = "The shop's books: each attempt to pay at a gateway, kept for accounting, without your name, email, phone or address.",
         },
         Service = "payment",
-        Exported = new Dictionary<string, string> { ["payments"] = "payments", ["refunds"] = "refunds" },
+        Exported = new Dictionary<string, string>
+        {
+            ["payments"] = "payments",
+            ["refunds"] = "refunds",
+            ["payment_checkouts"] = "paymentCheckouts",
+        },
     };
 }
 

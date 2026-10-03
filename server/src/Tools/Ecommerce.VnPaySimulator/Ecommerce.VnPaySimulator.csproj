@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    A stand-in for VNPay's payment page (specs/143), for development, CI and Bruno - never production. It deliberately
+    references nothing of Payment's: its signing is written separately, so a link Payment signs wrongly is refused here
+    the way the real gateway would refuse it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

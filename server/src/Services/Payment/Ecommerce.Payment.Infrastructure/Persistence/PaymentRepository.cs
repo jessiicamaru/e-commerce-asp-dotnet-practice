@@ -76,6 +76,30 @@ public class PaymentRepository(PaymentDbContext context) : IPaymentRepository
     public async Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken cancellationToken = default) =>
         await _context.Refunds.AsNoTracking().Where(x => x.OrderId == orderId).SumAsync(x => (decimal?)x.Amount, cancellationToken) ?? 0m;
 
+    public Task<Domain.Entities.PaymentCheckout?> GetCheckoutByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) =>
+        _context.Checkouts.AsNoTracking().FirstOrDefaultAsync(x => x.OrderId == orderId, cancellationToken);
+
+    public Task<Domain.Entities.PaymentCheckout?> GetCheckoutByReferenceAsync(string reference, CancellationToken cancellationToken = default) =>
+        _context.Checkouts.AsNoTracking().FirstOrDefaultAsync(x => x.Reference == reference, cancellationToken);
+
+    public async Task AddCheckoutAsync(Domain.Entities.PaymentCheckout checkout, CancellationToken cancellationToken = default)
+    {
+        await _context.Checkouts.AddAsync(checkout, cancellationToken);
+    }
+
+    public async Task<bool> ClaimCheckoutAsync(
+        Guid checkoutId, string responseCode, string? providerReference, DateTime at, CancellationToken cancellationToken = default)
+    {
+        // Guarded: of every copy of one notification, exactly one finds the checkout still waiting.
+        var changed = await _context.Checkouts
+            .Where(x => x.Id == checkoutId && x.CompletedAt == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(x => x.CompletedAt, at)
+                .SetProperty(x => x.ResponseCode, responseCode)
+                .SetProperty(x => x.ProviderReference, providerReference), cancellationToken);
+        return changed == 1;
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

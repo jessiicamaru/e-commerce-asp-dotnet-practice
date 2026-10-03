@@ -164,6 +164,7 @@
       "PasswordReset": "Password reset",
       "PasswordResetRequested": "Password reset requested",
       "PaymentCharged": "Payment charged",
+      "PaymentCheckoutOpened": "Waiting for payment at the gateway",
       "PaymentRefused": "Payment refused",
       "PayoutAccountSet": "Payout account set",
       "PayoutRecorded": "Payout recorded",
