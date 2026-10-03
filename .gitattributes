@@ -1,0 +1,2 @@
+# Shell scripts run on Linux (CI, the server) and in Git Bash: always LF, whatever core.autocrlf says (specs/142).
+*.sh text eol=lf
