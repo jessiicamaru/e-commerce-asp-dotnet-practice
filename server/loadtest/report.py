@@ -116,29 +116,36 @@ def main():
         lines += latency_rows(race[-1])
         lines.append('')
 
-    for r in [r for r in runs if r['scenario'] == 'checkout']:
-        v = readings(r)
-        s = r['settings']
-        settle = metric(r, 'order_settle_ms')
-        orders = metric(r, 'iterations').get('count')
+    checkout = [r for r in runs if r['scenario'] == 'checkout']
+    if checkout:
+        s = checkout[0]['settings']
         lines += [
             '## Customers check out at a steady rate',
             '',
             f"Checkouts started at a constant **{s['rate_per_second']} per second for {s['duration']}**, each by one of "
             f"{s['customers']} customers: add to cart, ask for a quote, place the order, follow it until it settles "
-            f"([`checkout.js`](../../server/loadtest/checkout.js)). Run {r['_when']}.",
+            "([`checkout.js`](../../server/loadtest/checkout.js)). Every checkout is of the same product, so every "
+            'reservation and confirmation takes the lock on the same stock row - the hardest case for the shop.',
             '',
-            f"- **{orders} checkouts**, {v['paid']} paid, {v['failed']} failed, {v['stuck']} stuck; stock "
-            f"{v['starting_stock']:,} → {v['on_hand']:,}, so exactly {v['starting_stock'] - v['on_hand']} units deducted for "
-            f"{v['paid']} paid orders; {v['reserved']} held. Invariants: **{'held' if held(r) else 'BROKEN'}**.",
-            f"- Unexpected responses: {metric(r, 'http_req_failed').get('rate', 0):.2%}.",
-            f"- Settle time (placed → Paid): median {ms(settle.get('med'))}, p95 {ms(settle.get('p(95)'))}, "
-            f"p99 {ms(settle.get('p(99)'))}, slowest {ms(settle.get('max'))}.",
+            '| Run | Checkouts | Paid | Units deducted | Held after | Unexpected responses | Settle p50 | p95 | p99 | Slowest | Invariants |',
+            '| :-- | --: | --: | --: | --: | --: | --: | --: | --: | --: | :-- |',
+        ]
+        for r in checkout:
+            v = readings(r)
+            settle = metric(r, 'order_settle_ms')
+            lines.append(
+                f"| {r['_when']} | {metric(r, 'iterations').get('count')} | {v['paid']} | {v['starting_stock'] - v['on_hand']} "
+                f"| {v['reserved']} | {metric(r, 'http_req_failed').get('rate', 0):.2%} | {ms(settle.get('med'))} "
+                f"| {ms(settle.get('p(95)'))} | {ms(settle.get('p(99)'))} | {ms(settle.get('max'))} | {'held' if held(r) else '**BROKEN**'} |")
+        lines += [
+            '',
+            'Settle time is from placing the order to reading it Paid, polled every half second, so it includes up to',
+            '0.5 s of polling. Request latency, last run:',
             '',
             '| Step | Median | p95 | p99 | Slowest |',
             '| :-- | --: | --: | --: | --: |',
         ]
-        lines += latency_rows(r)
+        lines += latency_rows(checkout[-1])
         lines.append('')
 
     for r in [r for r in runs if r['scenario'] == 'browse']:
@@ -161,6 +168,22 @@ def main():
         lines.append('')
 
     lines += [
+        '## What the load tests found',
+        '',
+        'The first runs of these scenarios found two things no test had (specs/145, specs/146):',
+        '',
+        "1. **A paid order's stock confirmation was lost under load** ([#299](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/299)).",
+        '   The EF outbox consumes at `REPEATABLE READ`. Concurrent confirmations of one stock row were aborted with a',
+        '   serialization failure (`40001`), and no service retried a message, so one `OrderCompletedEvent` went to the',
+        '   error queue: 301 paid, 300 units deducted, 1 held for the expiry sweeper to resell. Fixed by a transient retry',
+        '   on every consumer, before the outbox.',
+        '2. **Every concurrent consume of a popular product was aborted and retried** ([#301](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/301)):',
+        '   1,710-5,610 `40001` per run. Inventory now consumes at `READ COMMITTED`, where a waiter re-reads the row and',
+        '   proceeds - zero aborts, the same median, a tighter tail over eight warm runs. The runs above are on that code.',
+        '',
+        'A corrected claim belongs here too: a run straight after rebuilding every container was first read as the cost',
+        'of the retry. It was a cold start - see below.',
+        '',
         '## How to read it',
         '',
         '- **The guarantee is the result that matters.** Under 100 simultaneous checkouts for 20 units the shop sold',
@@ -169,6 +192,11 @@ def main():
         '  through the gateway, the cart, Order, the broker and the saga together.',
         '- **Settle time under contention is queueing, not work.** One stock row takes one lock at a time, so 100',
         '  reservations of it are served one after another; the slowest order in a race waits for the 99 before it.',
+        "- **One run proves little about speed on this machine.** A breakdown by stage, from each service's own",
+        '  timestamps, shows the same code with a 0.3 s median in one run and 10 s in the next; the time goes to',
+        "  Inventory's reservation and confirmation, waiting on the one stock row every checkout of one product shares,",
+        '  whose lock hold time grows whenever the laptop is busy. Runs right after a rebuild are slower still (a cold',
+        '  start). Judge over several warm runs - which is why checkout has several above.',
         '- **Latencies are not thresholds.** A run fails on an unexpected response or a broken invariant, never on speed',
         '  (specs/144 research D5): on a laptop running two dozen containers, a latency limit would fail for reasons',
         '  that have nothing to do with the code.',
