@@ -1,0 +1,12 @@
+{
+  "fault": "orchestrator",
+  "fault_for_seconds": 5,
+  "load_started_at": "2026-10-03T14:10:35.108Z",
+  "fault_at": "2026-10-03T14:10:50.235Z",
+  "recovered_at": "2026-10-03T14:10:56.859Z",
+  "healthy_at": "2026-10-03T14:11:04.928Z",
+  "k6_exit": 0,
+  "error_queues": "",
+  "passed": true,
+  "orders": {"before": {"orders": 49, "paid": 49, "settle_p50_s": 0.2, "settle_p95_s": 0.28, "settle_max_s": 0.31}, "during": {"orders": 19, "paid": 19, "settle_p50_s": 13.16, "settle_p95_s": 17.41, "settle_max_s": 17.41}, "after": {"orders": 293, "paid": 293, "settle_p50_s": 0.77, "settle_p95_s": 7.01, "settle_max_s": 11.49}, "backlog_cleared_after_recovery_s": 12.15}
+}

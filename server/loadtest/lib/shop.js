@@ -16,6 +16,8 @@ const PASSWORD = 'Load-Passw0rd!1'
 export const brokenInvariants = new Counter('broken_invariants')
 /** Placing an order to its saga's outcome (Paid or Failed), in milliseconds. */
 export const settleTime = new Trend('order_settle_ms', true)
+/** When the consistency check saw every order settled, epoch milliseconds (specs/147). */
+export const settledAt = new Gauge('check_settled_at_ms')
 
 // A JSON request's body and parameters, spread into http.post/put: k6 takes the body as its own argument.
 const json = (body) => [JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } }]
@@ -175,9 +177,16 @@ function statusesOf(people) {
  * zero fails the run.
  */
 export function checkConsistency(listed, people, expectedPaid) {
-  // Orders settle within seconds of the run's last request; give the stragglers time before calling one stuck.
+  // Orders settle within seconds of the run's last request; give the stragglers time before calling one stuck. After a
+  // fault (specs/147) they may wait for a service to return, so the wait is a setting: SETTLE_TIMEOUT seconds.
+  const settleSeconds = Number(__ENV.SETTLE_TIMEOUT || 120)
   let statuses = statusesOf(people)
-  for (let i = 0; i < 60 && statuses.some((s) => s === 'Submitted'); i++) { sleep(2); statuses = statusesOf(people) }
+  for (let waited = 0; waited < settleSeconds && statuses.some((s) => s === 'Submitted'); waited += 2) {
+    sleep(2)
+    statuses = statusesOf(people)
+  }
+  // When the last order was seen settled: a fault's recovery time is measured to here (specs/147 research D3).
+  settledAt.add(Date.now())
   const paid = statuses.filter((s) => s === 'Paid').length
   const failed = statuses.filter((s) => s === 'Failed').length
   const stuck = statuses.length - paid - failed
@@ -220,7 +229,8 @@ export function reporting(steps, thresholds) {
 /** The summary k6 keeps, with what the scenario adds: the machine, the settings, the invariants. */
 export function summary(scenario, settings) {
   return (data) => {
-    const file = `/results/${scenario}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+    // A run id from the caller names the file, so a driver can keep its own notes beside it (specs/147's timeline).
+    const file = `/results/${scenario}-${__ENV.RUN_ID || new Date().toISOString().replace(/[:.]/g, '-')}.json`
     const kept = { scenario, machine: __ENV.MACHINE || 'unknown', settings, ...data }
     return {
       [file]: JSON.stringify(kept, null, 2),

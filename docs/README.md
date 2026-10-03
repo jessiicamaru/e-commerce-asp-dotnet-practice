@@ -89,6 +89,8 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
   storefront unit tests, the Bruno collection, the end-to-end scripts, load tests, mutation checks and CI.
 - [**Load-test results**](testing/load-test-results.md) - the race, steady checkouts and browsing, measured with k6;
   generated from the kept summaries (specs/144).
+- [**Resilience results**](testing/resilience-results.md) - checkout through Payment, the broker or the orchestrator
+  going down and Inventory hanging: nothing lost, and how long each took to recover (specs/147).
 
 ## Project
 

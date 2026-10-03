@@ -26,10 +26,11 @@ Found on 2026-09-27 while the design records were rebuilt from the code:
 
 Found on 2026-09-27 in an audit of the management features and delivery: #193, done - see Fixed below.
 
-Found on 2026-10-03 by the load test of #290 - measurement finding what the tests could not:
+Found on 2026-10-03 by the load test of #290 and the resilience runs of #291 - measurement finding what the tests could not:
 
 | Issue | Title |
 | :-- | :-- |
+| [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | After a broker outage, new orders wait a minute behind the outbox backlog |
 
 ## Priority 1 - accounts and security
 

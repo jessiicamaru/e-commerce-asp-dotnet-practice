@@ -16,6 +16,7 @@ works is a test that fails when it does not.
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
 | Mutation checks | by hand, per change | recorded in each PR | 2-4 per feature | That a new test fails when the rule it guards is removed |
 | Load tests | k6 in its container, on the compose network | `server/loadtest/` | 3 scenarios: race, checkout, browse | Whether the guarantees hold under real concurrency through the gateway and the saga, and how fast; [results](load-test-results.md) (specs/144) |
+| Resilience | `fault.sh` + k6 | `server/loadtest/` | 4 faults: Payment, the broker, the orchestrator, Inventory hung | That nothing is lost while a part of the system is down, and how long recovery takes; [results](resilience-results.md) (specs/147) |
 
 ## Service integration tests
 
@@ -170,6 +171,19 @@ identical code swings between a 0.3 s and a 10 s median from one run to the next
 Their first runs found two defects no test had:
 - a paid order's stock confirmation lost to an unretried serialization failure (#299, specs/145);
 - thousands of serialization aborts per run on a popular product (#301, specs/146).
+
+## Resilience
+
+`server/loadtest/fault.sh payment|broker|orchestrator|inventory` runs steady checkouts and, 15 s in, takes one thing away:
+- Payment or RabbitMQ is stopped for 60 s;
+- the orchestrator is stopped and started;
+- Inventory is paused for 30 s.
+
+It then brings it back. Afterwards every order must be terminal, units sold must equal units deducted, nothing may be
+held, and no message may sit in an error queue. Customer-facing errors are counted, not thresholds. Each run keeps a
+timeline beside its summary, and `python server/loadtest/resilience_report.py` writes [the results](resilience-results.md).
+
+All four pass. The broker outage is the slowest to recover, and #304 investigates why.
 
 ## Mutation checks
 
