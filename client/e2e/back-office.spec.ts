@@ -14,7 +14,7 @@ test.describe.serial('the back office', () => {
   let customer: Person
 
   test.beforeAll(async ({ baseURL }) => {
-    context = await request.newContext({ baseURL })
+    context = await request.newContext({ baseURL, ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS_ERRORS === '1' })
     api = new Api(context)
     moderator = await api.moderator('Office')
     customer = await api.customer('Shopper')

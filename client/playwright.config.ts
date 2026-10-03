@@ -29,6 +29,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     locale: 'en-US',
+    // The production overlay verified on a laptop (specs/141): Caddy's own CA signs *.localhost, which the browser does
+    // not know. Opt-in, so a real certificate error anywhere else still fails.
+    ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS_ERRORS === '1',
   },
   projects: [
     {

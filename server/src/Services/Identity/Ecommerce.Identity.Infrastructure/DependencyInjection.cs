@@ -66,11 +66,11 @@ public static class DependencyInjection
         // Email (specs/060): kept in outgoing_emails, sent by a sweeper over SMTP - Mailpit in development.
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
-        services.PostConfigure<SmtpOptions>(o =>
-        {
-            o.SmtpHost = Environment.GetEnvironmentVariable("SMTP_HOST") ?? o.SmtpHost;
-            if (int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT"), out var port)) o.SmtpPort = port;
-        });
+        services.PostConfigure<SmtpOptions>(o => SmtpSettings.Apply(o, Environment.GetEnvironmentVariable));
+        // A mail server that will refuse every email is found at startup, not by the first person waiting for one.
+        services.AddOptions<SmtpOptions>()
+            .Validate(o => o.Problems().Count == 0, "SMTP settings are invalid - see SmtpOptions.Problems.")
+            .ValidateOnStart();
         services.PostConfigure<EmailOptions>(o =>
             o.StorefrontUrl = Environment.GetEnvironmentVariable("STOREFRONT_URL") ?? o.StorefrontUrl);
         services.AddScoped<IOutgoingEmailRepository, OutgoingEmailRepository>();

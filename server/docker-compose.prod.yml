@@ -1,0 +1,162 @@
+# The production stack (specs/141, #287): an OVERLAY on the two files every environment shares, never a copy of them -
+#
+#   RELEASE=sha-1a2b3c4 docker compose --env-file /etc/ecommerce/.env \
+#     -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.prod.yml up -d
+#
+# What it changes, and only that:
+#   - every service and both apps run their PUBLISHED image, named by an immutable sha- tag (never :main - specs/008);
+#   - nothing is built here, and nothing publishes a port but Caddy: no database, broker, service, gateway or Seq;
+#   - Caddy terminates HTTPS for the two hosts ADR-003 designed - SHOP_DOMAIN and PORTAL_DOMAIN - and obtains and renews
+#     their certificates itself (for *.localhost, from its own CA - how this file is verified on a laptop);
+#   - the addresses everything derives from the two domains, and email through a real mail server.
+#
+# Requires Docker Compose v2.24+ for !reset. Secrets come from the --env-file, kept outside the repository; every
+# variable it must hold, and how to make each secret, is in deploy/production.env.example.
+
+services:
+  postgres-identity:
+    ports: !reset []
+  postgres-catalog:
+    ports: !reset []
+  postgres-orchestrator:
+    ports: !reset []
+  postgres-inventory:
+    ports: !reset []
+  postgres-cart:
+    ports: !reset []
+  postgres-payment:
+    ports: !reset []
+  postgres-activity:
+    ports: !reset []
+  postgres-order:
+    ports: !reset []
+  rabbitmq:
+    ports: !reset []
+
+  # Logs and traces stay inside; reach the UI with an SSH tunnel (docs/infrastructure/production.md).
+  seq:
+    ports: !reset []
+
+  seaweedfs:
+    ports: !reset []
+
+  # Development's mail catcher: off in production, where email goes to a real server. COMPOSE_PROFILES=mail-catcher
+  # turns it on to verify the stack on a laptop.
+  mailpit:
+    profiles: ["mail-catcher"]
+    ports: !reset []
+
+  # Never in production: a database console on the internet.
+  pgadmin:
+    profiles: ["tools"]
+    ports: !reset []
+
+  identity:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-identity:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+    environment:
+      # Never seeded in production (specs/110): the first administrator sets up two-factor sign-in themselves.
+      ADMIN_TOTP_SECRET: ""
+      # Email through a real mail server (specs/141): an account, STARTTLS, and the shop's own sender.
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_TLS: ${SMTP_TLS:-true}
+      SMTP_FROM: ${SMTP_FROM:?SMTP_FROM is required, e.g. Shop <no-reply@example.com>}
+      # Links in emails open the storefront; staff roles only for sessions made in the back office (specs/138).
+      STOREFRONT_URL: https://${SHOP_DOMAIN:?SHOP_DOMAIN is required}
+      BackOffice__Origins: https://${PORTAL_DOMAIN:?PORTAL_DOMAIN is required}
+
+  catalog:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-catalog:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  orchestrator:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-orchestrator:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  order:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-order:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  inventory:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-inventory:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  payment:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-payment:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  activity:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-activity:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  cart:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-cart:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+
+  gateway:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-gateway:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+    environment:
+      # Caddy in front of the apps' nginx (specs/141): both are trusted, and two hops of X-Forwarded-For are read, so
+      # sign-in limits count each visitor rather than Caddy. Caddy discards any X-Forwarded-For a visitor sends.
+      GATEWAY_TRUSTED_PROXIES: 172.30.10.10,172.30.10.11,172.30.10.2
+      GATEWAY_FORWARD_LIMIT: "2"
+
+  storefront:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-storefront:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+    environment:
+      STOREFRONT_URL: https://${SHOP_DOMAIN}
+      BACK_OFFICE_URL: https://${PORTAL_DOMAIN}
+
+  back-office:
+    image: ${IMAGE_PREFIX:-ghcr.io/jessiicamaru/ecommerce}-back-office:${RELEASE:?RELEASE must name a published sha- tag, e.g. sha-1a2b3c4}
+    build: !reset null
+    ports: !reset []
+    environment:
+      STOREFRONT_URL: https://${SHOP_DOMAIN}
+      BACK_OFFICE_URL: https://${PORTAL_DOMAIN}
+
+  # The only door (specs/141): HTTPS for both hosts, certificates obtained and renewed by Caddy itself.
+  caddy:
+    image: caddy:2.10-alpine
+    container_name: ecommerce-caddy
+    restart: unless-stopped
+    environment:
+      SHOP_DOMAIN: ${SHOP_DOMAIN}
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    # A fixed address: the gateway believes X-Forwarded-For from exactly the proxies it knows (specs/062).
+    networks:
+      edge:
+        ipv4_address: 172.30.10.2
+    depends_on:
+      storefront:
+        condition: service_healthy
+      back-office:
+        condition: service_healthy
+
+volumes:
+  # Caddy's certificates and, for *.localhost, its own CA - kept so a restart does not ask Let's Encrypt again.
+  caddy_data:
+  caddy_config:

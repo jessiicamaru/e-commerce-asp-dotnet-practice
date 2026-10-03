@@ -1,0 +1,13 @@
+# The production entrance (specs/141, ADR-003): one host for the storefront, one for the back office, HTTPS for both.
+# Caddy obtains and renews the certificates; for *.localhost it uses its own CA, which is how the overlay is verified on
+# a laptop. Everything behind it is the apps' nginx, which forwards /api to the gateway - one origin per app, no CORS.
+
+{$SHOP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy storefront:8080
+}
+
+{$PORTAL_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy back-office:8080
+}
