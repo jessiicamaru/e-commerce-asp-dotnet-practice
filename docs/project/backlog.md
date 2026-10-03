@@ -5,17 +5,14 @@ evidence it was found with (a search of the code, a request against the running 
 acceptance criteria. This page is the summary; the issue is the source of truth - close the issue and
 update this page in the same change.
 
-Last reviewed: 2026-10-02 (the back office, #275-#280).
+Last reviewed: 2026-10-03 (ready to defend, #287-#295).
 
 ## Deliberately deferred
 
 Not issues, by decision:
 
-- **A real payment provider.** Payment is a stub that approves without moving money
-  (`Provider = "Stub"` on every row, a startup warning, `/health` says so). `StubPaymentGateway` is the
-  seam a real integration replaces.
-- **Deployment to an environment.** Images are published to GHCR with immutable tags; nothing deploys
-  them.
+- **A real payment provider** - no longer deferred: #289 (VNPay sandbox), 2026-10-03.
+- **Deployment to an environment** - no longer deferred: #287, #288, 2026-10-03.
 
 ## Priority 0 - defects in what is built
 
@@ -60,6 +57,24 @@ Two SPAs in one monorepo, not module federation. **All six are done** (2026-10-0
 and its sign-in (#276), the console moved (#277), staff roles only in a back-office session (#278), a separate token
 audience held by every service (#280) and a one-time handoff from the storefront (#279) - see Fixed below and the
 progress table in ADR-003.
+
+## Priority 2b - ready to defend
+
+Planned with the user on 2026-10-03, once the backlog was empty: what a graduation thesis still needs - a running
+deployment over HTTPS, a real payment flow (VNPay sandbox, replacing the stub), measured evidence for the evaluation
+(load, resilience, metrics), automated security checks, and the report's top-down documents. In this order.
+
+| Issue | Title |
+| :-- | :-- |
+| [#287](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/287) | A production stack served over HTTPS |
+| [#288](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/288) | Deploy and roll back from CI |
+| [#289](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/289) | Pay with VNPay (sandbox) instead of the stub |
+| [#290](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/290) | Load-test checkout and measure it |
+| [#291](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/291) | Resilience: checkout survives a service or the broker going down |
+| [#292](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/292) | Metrics: Prometheus and Grafana dashboards |
+| [#293](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/293) | Automated security scanning in CI |
+| [#294](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/294) | Security headers on both apps |
+| [#295](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/295) | The report's architecture overview, deployment guide and evaluation |
 
 ## Priority 3 - technical debt
 
