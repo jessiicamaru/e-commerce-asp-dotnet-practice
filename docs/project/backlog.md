@@ -72,7 +72,6 @@ deployment over HTTPS, a real payment flow (VNPay sandbox, replacing the stub), 
 
 | Issue | Title |
 | :-- | :-- |
-| [#291](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/291) | Resilience: checkout survives a service or the broker going down |
 | [#292](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/292) | Metrics: Prometheus and Grafana dashboards |
 | [#293](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/293) | Automated security scanning in CI |
 | [#294](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/294) | Security headers on both apps |
@@ -144,6 +143,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#299](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/299) | A paid order's stock confirmation is lost to a serialization failure under load | [#300](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/300) (specs/145) |
 | [#301](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/301) | Checkouts of one product queue behind serialization retries | [#302](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/302) (specs/146) |
 | [#290](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/290) | Load-test checkout and measure it | [#303](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/303) (specs/144) |
+| [#291](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/291) | Resilience: checkout survives a service or the broker going down | [#305](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/305) (specs/147) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |
