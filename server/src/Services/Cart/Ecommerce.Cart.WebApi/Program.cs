@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Observability;
@@ -137,6 +138,9 @@ builder.Services.AddGrpcReflection();
 
 builder.Services.AddMassTransit(x =>
 {
+    // A transient database failure in a consumer is retried in a new transaction (specs/145, #299).
+    x.AddConfigureEndpointsCallback((_, _, cfg) => cfg.UseTransientRetry());
+
     // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
     // seconds, on every instance (specs/065).
     x.AddAccessTokenRevocations("cart");

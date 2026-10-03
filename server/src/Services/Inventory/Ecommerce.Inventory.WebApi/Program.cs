@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Inventory.Application.Common;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Observability;
@@ -135,8 +136,13 @@ builder.Services.AddMassTransit(x =>
     // Transport-level duplicate suppression, applied to every receive endpoint. The unique
     // (OrderId, ProductId) constraint is the actual guarantee; this keeps the common case from
     // having to reach it.
+    // A transient database failure (a serialization failure under load) is retried in a new transaction - first,
+    // so it wraps the outbox (specs/145, #299).
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
-        cfg.UseEntityFrameworkOutbox<InventoryDbContext>(context));
+    {
+        cfg.UseTransientRetry();
+        cfg.UseEntityFrameworkOutbox<InventoryDbContext>(context);
+    });
 
     x.AddEntityFrameworkOutbox<InventoryDbContext>(o =>
     {

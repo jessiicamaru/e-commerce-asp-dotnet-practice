@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
@@ -224,8 +225,13 @@ builder.Services.AddMassTransit(x =>
     // ProductRepository.TryRecordAvailabilityAsync is the actual guarantee — this only keeps the
     // ordinary redelivery from having to reach the database. No migration was needed: InboxState
     // has been in this database since 20260902161405_AddMassTransitOutbox.
+    // A transient database failure (a serialization failure under load) is retried in a new transaction - first,
+    // so it wraps the outbox (specs/145, #299).
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
-        cfg.UseEntityFrameworkOutbox<CatalogDbContext>(context));
+    {
+        cfg.UseTransientRetry();
+        cfg.UseEntityFrameworkOutbox<CatalogDbContext>(context);
+    });
 
     x.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
     {

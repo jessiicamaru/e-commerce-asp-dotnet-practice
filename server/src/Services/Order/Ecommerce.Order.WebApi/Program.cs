@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Shared.Email;
 using Ecommerce.Shared.Notifications;
 using Ecommerce.Shared.Audit;
@@ -177,8 +178,13 @@ builder.Services.AddMassTransit(x =>
     // redelivery from having to reach the database. No migration was needed: InboxState and
     // OutboxState have been in this database since 20260903142425_InitialOrderSchema, because
     // OrderDbContext has always called AddTransactionalOutboxEntities().
+    // A transient database failure (a serialization failure under load) is retried in a new transaction - first,
+    // so it wraps the outbox (specs/145, #299).
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
-        cfg.UseEntityFrameworkOutbox<OrderDbContext>(context));
+    {
+        cfg.UseTransientRetry();
+        cfg.UseEntityFrameworkOutbox<OrderDbContext>(context);
+    });
 
     x.AddEntityFrameworkOutbox<OrderDbContext>(o =>
     {
