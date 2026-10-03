@@ -195,6 +195,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [138](../../specs/138-staff-roles-back-office/) | Staff roles only in a back-office session | #284 | #278: refresh_tokens.Client from Origin; Admin/Moderator only in a verified back-office session; tools sign in as the back office (ADR-003 step 4) |
 | [139](../../specs/139-back-office-audience/) | A separate token audience for the back office | #285 | #280: back-office tokens for their own audience; every service drops staff roles from any other token (ADR-003, second line) |
 | [140](../../specs/140-back-office-handoff/) | A one-time handoff from the storefront to the back office | #286 | #279: staff cross with a single-use code in the URL fragment, redeemed for a two-factor challenge - never a session; ADR-003 complete |
+| [141](../../specs/141-production-https/) | Production over HTTPS | #296 | #287: the production overlay - published sha- images, no published ports but Caddy's, HTTPS for the storefront and back office hosts, two trusted proxy hops, SMTP over STARTTLS with an account |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
