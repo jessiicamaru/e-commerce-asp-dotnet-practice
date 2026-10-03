@@ -86,7 +86,9 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 ## Testing
 
 - [**Testing strategy**](testing/testing-strategy.md) - integration tests against real PostgreSQL,
-  storefront unit tests, the Bruno collection, the end-to-end scripts, mutation checks and CI.
+  storefront unit tests, the Bruno collection, the end-to-end scripts, load tests, mutation checks and CI.
+- [**Load-test results**](testing/load-test-results.md) - the race, steady checkouts and browsing, measured with k6;
+  generated from the kept summaries (specs/144).
 
 ## Project
 
