@@ -184,7 +184,41 @@ public class AuthRateLimitTests
             (await ForgotAsync(client, "172.30.10.10", forwardedFor: "198.51.100.8, 203.0.113.1")).StatusCode);
     }
 
+    /// <summary>
+    /// Production puts Caddy in front of nginx (specs/141): two trusted hops, and each visitor still has their own
+    /// allowance - with one hop, everybody would be Caddy.
+    /// </summary>
+    [Fact]
+    public async Task Two_trusted_hops_reach_the_visitor()
+    {
+        using var gateway = Gateway(("RateLimits:email:PermitLimit", "1"), ("GATEWAY_TRUSTED_PROXIES", "172.30.10.10,172.30.10.2"),
+            ("GATEWAY_FORWARD_LIMIT", "2"));
+        var client = gateway.CreateClient();
+
+        await ForgotAsync(client, "172.30.10.10", forwardedFor: "203.0.113.1, 172.30.10.2");
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await ForgotAsync(client, "172.30.10.10", forwardedFor: "203.0.113.1, 172.30.10.2")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.BadGateway, (await ForgotAsync(client, "172.30.10.10", forwardedFor: "203.0.113.2, 172.30.10.2")).StatusCode);
+    }
+
+    /// <summary>A hop nobody trusts stops the walk: entries a visitor writes further left are never believed.</summary>
+    [Fact]
+    public async Task Two_hops_believe_nothing_behind_an_untrusted_one()
+    {
+        using var gateway = Gateway(("RateLimits:email:PermitLimit", "1"), ("GATEWAY_TRUSTED_PROXIES", "172.30.10.10,172.30.10.2"),
+            ("GATEWAY_FORWARD_LIMIT", "2"));
+        var client = gateway.CreateClient();
+
+        await ForgotAsync(client, "172.30.10.10", forwardedFor: "198.51.100.7, 203.0.113.9");
+
+        Assert.Equal(HttpStatusCode.TooManyRequests,
+            (await ForgotAsync(client, "172.30.10.10", forwardedFor: "198.51.100.8, 203.0.113.9")).StatusCode);
+    }
+
     [Theory]
+    [InlineData("GATEWAY_FORWARD_LIMIT", "0")]
+    [InlineData("GATEWAY_FORWARD_LIMIT", "6")]
+    [InlineData("GATEWAY_FORWARD_LIMIT", "two")]
     [InlineData("RateLimits:sign-in:PermitLimit", "0")]
     [InlineData("RateLimits:email:WindowSeconds", "-1")]
     [InlineData("GATEWAY_TRUSTED_PROXIES", "the-storefront")]

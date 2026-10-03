@@ -293,8 +293,10 @@ ProblemDetails, with `Retry-After` in seconds and the same number as `retryAfter
 pause is recorded below.
 
 **The client's IP comes from the connection.** `X-Forwarded-For` is believed only from the proxies in
-`GATEWAY_TRUSTED_PROXIES` (IPs or CIDRs), and only its last hop (`ForwardLimit = 1`). In compose that is
-the storefront's nginx, at a fixed address on the `edge` network (`172.30.10.10`). Without it every
+`GATEWAY_TRUSTED_PROXIES` (IPs or CIDRs), and only as many hops as `GATEWAY_FORWARD_LIMIT` allows (1 by default). In
+compose that is the storefront's nginx, at a fixed address on the `edge` network (`172.30.10.10`). In production Caddy
+stands in front of nginx (`172.30.10.2`, specs/141), so the limit is 2, and the walk still stops at the first address
+that is not a trusted proxy ([production](../../infrastructure/production.md) §3). Without it every
 browser would share nginx's address, and one person's attempts would use up everybody's. ⚠️ With **no**
 trusted proxy the header is not read at all (`ForwardedHeaders.None`). Leaving `KnownProxies` and
 `KnownIPNetworks` both empty does **not** mean "trust nobody": the middleware then trusts every peer, and

@@ -786,7 +786,9 @@ their review was hidden (specs/059).
 **Email** (specs/060): a service calls `IEmailSender.SendAsync(recipient, template, data, language)` from
 `Ecommerce.Shared/Email` - through the outbox like a notice, so **before the one save** or in a `stage` - and
 Identity, the one service that knows addresses, keeps it in `outgoing_emails` (idempotent on the email id)
-and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development). ⚠️ A mail
+and `EmailDispatchSweeper` sends it over SMTP (`SMTP_HOST`/`SMTP_PORT`, Mailpit in development; with
+`SMTP_USERNAME`/`SMTP_PASSWORD`/`SMTP_TLS`/`SMTP_FROM` a real provider over STARTTLS since specs/141, and Identity refuses
+to start on half an account, an empty host or a sender that is not an address). ⚠️ A mail
 server that is down **delays** email, never loses it: 1, 2, 4 ... minutes to an hour, `Failed` with its last
 error after 12 attempts. The first email is the order confirmation, in the order's own language. **Since specs/083 (#167) eleven, thirteen with specs/106's `PayoutAccountChanged` and specs/110's `TwoFactorReset`**: a parcel shipped, an order cancelled, a return accepted/refused/refunded (the order's language), back in stock and an account locked/banned - asked for with `EmailTemplate.ReadersLanguage` (empty), which Identity fills from `users.Language`, learnt from `Accept-Language` at sign-up, sign-in and every renewal. ⚠️ A new email is a constant in `EmailTemplate`, words + placeholders + sample data in `EmailTemplates`, and a label in the storefront's `admin.json` - `AccountEmailTests` and the admin-emails test fail on a missing piece.
 **An administrator edits the emails** (specs/077, #150): `/admin/emails`, a TipTap editor (lazy-loaded). The code's
@@ -834,7 +836,8 @@ never the moderation lock**. `forgot-password` sends one email a minute per addr
 ⚠️ `X-Forwarded-For` is read **only** from `GATEWAY_TRUSTED_PROXIES` (compose: the storefront at
 `172.30.10.10` and the back office at `172.30.10.11` on the `edge` network). With none configured the gateway sets `ForwardedHeaders.None`,
 because **empty `KnownProxies` + `KnownIPNetworks` means trust EVERY peer**, and a forged header per
-request then bypassed the limit.
+request then bypassed the limit. Behind Caddy in production (`172.30.10.2`, specs/141) there are two hops, and
+`GATEWAY_FORWARD_LIMIT=2` (1 to 5, default 1; anything else stops the gateway) walks both.
 **An address is confirmed by its link** (specs/063, #106). Both registrations stage a hashed, single-use,
 24-hour token plus an `EmailConfirmation` email **in the account's own save** (`EmailConfirmations.StageAsync`,
 through `IOutgoingEmailRepository.Stage`, never the broker). `POST /api/auth/confirm-email` is anonymous
@@ -980,6 +983,19 @@ address in `GATEWAY_TRUSTED_PROXIES`. Open it on `localhost` - the
 refresh cookie is `Secure`. `.github/scripts/verify-storefront-image.sh` asks the image what a browser
 would (app, deep link, `/api`, 2 MB upload, cache headers); nginx's `client_max_body_size` must stay
 above Catalog's `ProductImageKey.MaxBytes`.
+
+**Production is a third file on the same two** (specs/141, #287): [docker-compose.prod.yml](server/docker-compose.prod.yml)
+runs every published image at `RELEASE` (a `sha-` tag, required), builds nothing, publishes no port but **Caddy**'s
+(80/443, HTTPS for `SHOP_DOMAIN` and `PORTAL_DOMAIN`, certificates by itself; its own CA for `*.localhost`), puts Mailpit
+and pgAdmin behind profiles, and reads secrets from an env file outside the repository
+([deploy/production.env.example](server/deploy/production.env.example)). Needs Compose v2.24+ (`!reset`). Guide:
+[docs/infrastructure/production.md](docs/infrastructure/production.md). ⚠️ The `edge` network's `ip_range`
+(`172.30.10.128/25`) keeps the fixed proxy addresses out of the dynamic pool - the gateway once took `.2` and Caddy
+could not start; an existing `server_edge` keeps its old settings until removed.
+
+```bash
+RELEASE=sha-1a2b3c4 docker compose --env-file /etc/ecommerce/.env -f docker-compose.yml -f docker-compose.app.yml -f docker-compose.prod.yml up -d
+```
 
 Three traps, each of which cost time to find:
 

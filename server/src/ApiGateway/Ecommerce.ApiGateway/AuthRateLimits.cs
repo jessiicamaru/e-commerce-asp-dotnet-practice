@@ -100,6 +100,15 @@ public static class AuthRateLimits
             }
         }
 
+        // How many hops of X-Forwarded-For to read (specs/141): one behind the apps' nginx, two in production, where Caddy
+        // stands in front of nginx. Each must be a trusted proxy for the next hop left to be believed.
+        var limitSetting = configuration["GATEWAY_FORWARD_LIMIT"];
+        var forwardLimit = 1;
+        if (!string.IsNullOrWhiteSpace(limitSetting) && (!int.TryParse(limitSetting, out forwardLimit) || forwardLimit is < 1 or > 5))
+        {
+            throw new InvalidOperationException($"GATEWAY_FORWARD_LIMIT: '{limitSetting}' must be a whole number from 1 to 5 - the trusted proxies in front of the gateway.");
+        }
+
         services.Configure<ForwardedHeadersOptions>(options =>
         {
             // ⚠️ Empty KnownProxies AND KnownIPNetworks does not mean "trust nobody" - the middleware then
@@ -108,8 +117,9 @@ public static class AuthRateLimits
             options.ForwardedHeaders = proxies.Count + networks.Count == 0
                 ? ForwardedHeaders.None
                 : ForwardedHeaders.XForwardedFor;
-            // One hop: the address our trusted proxy saw. Anything further left was written by the client.
-            options.ForwardLimit = 1;
+            // As many hops as there are trusted proxies (one by default): the address the outermost one saw. Anything
+            // further left was written by the client, and a hop from a proxy nobody trusts stops the walk there.
+            options.ForwardLimit = forwardLimit;
             // The defaults trust loopback; here nothing is trusted unless configured.
             options.KnownProxies.Clear();
             options.KnownIPNetworks.Clear();

@@ -89,9 +89,10 @@ sequenceDiagram
    already sends its language on every request. A renewal every few minutes carries a switch to the emails, at
    the cost of one guarded `UPDATE` that writes nothing when the language is unchanged.
 6. **Nothing leaves a development machine.** Identity sends to `SMTP_HOST`:`SMTP_PORT`, which defaults
-   to Mailpit on `localhost:1025`, and the containers point at the `mailpit` service. `SmtpEmailTransport`
-   is plain SMTP with no authentication. It is the seam a real provider replaces, the way
-   `StubPaymentGateway` is for payments.
+   to Mailpit on `localhost:1025`, and the containers point at the `mailpit` service. Plain SMTP with no
+   authentication there; with an account and `SMTP_TLS=true`, the same `SmtpEmailTransport` signs in to a real
+   provider over STARTTLS (specs/141). Which of the two is configuration, not code, and Identity refuses to start on
+   settings that could only fail at the first email ([production](../infrastructure/production.md) §4).
 7. **A secret never crosses the broker, and is not kept once delivered** (specs/061). A reset link's token
    is a credential, and so is an address-confirmation token (specs/063). Identity asks for that email itself, so it writes
    the row straight into `outgoing_emails` in the transaction that stores the token's hash - no
@@ -198,6 +199,9 @@ on **Failed**, then Waiting (`Pending`) and Sent, and a search narrows the list 
 | Setting | Default | What |
 | :-- | :-- | :-- |
 | `SMTP_HOST`, `SMTP_PORT` | `localhost`, `1025` | The mail server: Mailpit in development |
+| `SMTP_USERNAME`, `SMTP_PASSWORD` | unset | A provider's account - both or neither (specs/141) |
+| `SMTP_TLS` | `false` | STARTTLS, which every hosted provider asks for |
+| `SMTP_FROM` | `Email:From` | The sender; must be an address |
 | `STOREFRONT_URL` | `http://localhost:8088` | Where links in emails point |
 | `Email:SweepSeconds` | 15 | How often due emails are sent |
 | `Email:MaxAttempts` | 12 | Attempts before an email is `Failed` |

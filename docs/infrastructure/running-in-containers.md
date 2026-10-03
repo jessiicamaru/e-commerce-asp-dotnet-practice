@@ -304,6 +304,11 @@ address, nginx's, for everybody. The limits on sign-in would then be shared by e
 Traffic from the host straight to `:5000` is counted by the address Docker gives it, and its
 `X-Forwarded-For` is ignored.
 
+Fixed addresses come from the lower half of `edge`: the network declares `ip_range: 172.30.10.128/25`, so a container
+without a fixed address (the gateway) draws from the upper half. Without it the gateway once took `172.30.10.2`, the
+address the production stack gives Caddy, and Caddy could not start. In production a second proxy, Caddy, stands in
+front of nginx, and the gateway reads two hops (`GATEWAY_FORWARD_LIMIT=2`). See [production](production.md) §3.
+
 ---
 
 ## 7. Published images

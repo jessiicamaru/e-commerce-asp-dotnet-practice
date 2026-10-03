@@ -23,7 +23,7 @@ test.describe.serial('the storefront, end to end', () => {
   let orderId: string
 
   test.beforeAll(async ({ baseURL }) => {
-    context = await request.newContext({ baseURL })
+    context = await request.newContext({ baseURL, ignoreHTTPSErrors: process.env.E2E_IGNORE_HTTPS_ERRORS === '1' })
     api = new Api(context)
 
     const categoryId = await api.category()

@@ -403,6 +403,10 @@ networks:
     ipam:
       config:
         - subnet: 172.30.10.0/24
+          # Containers without a fixed address take one from the upper half only (specs/141). Docker reserves nothing
+          # for a fixed ipv4_address, so the gateway - started first - took 172.30.10.2, the address Caddy must have.
+          # The trusted proxies (.2 Caddy, .10 storefront, .11 back office) live below this range.
+          ip_range: 172.30.10.128/25
 
 volumes:
   # Catalog product images (specs/019). Survives rebuilds and restarts, like the databases.
