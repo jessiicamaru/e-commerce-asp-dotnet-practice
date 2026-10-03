@@ -15,6 +15,7 @@ works is a test that fails when it does not.
 | Cross-service end to end | Bash + curl | `.github/scripts/verify-saga.sh` | 1 script, both saga branches | Stock, payment, cart and order agreeing after a real checkout; cancellation restocking and refunding |
 | Auth smoke | Bash + curl | `.github/scripts/verify-auth.sh` | 1 script | Anonymous 401, wrong role 403, right role through; order ownership with real signed tokens |
 | Mutation checks | by hand, per change | recorded in each PR | 2-4 per feature | That a new test fails when the rule it guards is removed |
+| Load tests | k6 in its container, on the compose network | `server/loadtest/` | 3 scenarios: race, checkout, browse | Whether the guarantees hold under real concurrency through the gateway and the saga, and how fast; [results](load-test-results.md) (specs/144) |
 
 ## Service integration tests
 
@@ -151,6 +152,24 @@ derived "available" alone - during an earlier bug "available" was right while th
 the cart afterwards, and - for a cancelled order - the stock back and one full refund. It needs all
 services running and reports "skipped" rather than passing when they are not. Payment decides its
 outcome once at startup, so CI runs it twice with Payment restarted in between to cover both branches.
+
+## Load tests
+
+`server/loadtest/run.sh race|checkout|browse` runs one k6 scenario from k6's container against the compose stack; each
+prepares its own data, ends with a consistency check through the API, and keeps its summary in
+`server/loadtest/results/`. `python server/loadtest/report.py` writes [the results](load-test-results.md) from them.
+
+- **race**: 100 customers check out the last 20 units at once. Exactly 20 must be paid, with nothing held and nothing
+  stuck.
+- **checkout**: 5 checkouts a second for a minute, all one product. Units sold must equal units deducted.
+- **browse**: anonymous listing, search and product pages, ramping to 50 shoppers.
+
+A run fails on a broken invariant or an unexpected response, never on latency: on a laptop running every container,
+identical code swings between a 0.3 s and a 10 s median from one run to the next.
+
+Their first runs found two defects no test had:
+- a paid order's stock confirmation lost to an unretried serialization failure (#299, specs/145);
+- thousands of serialization aborts per run on a popular product (#301, specs/146).
 
 ## Mutation checks
 

@@ -159,6 +159,26 @@ and exercising both means running it twice with Payment restarted between. `SAGA
 forces a branch and exists for the negative control. Background in
 [specs/007-saga-e2e-verification](specs/007-saga-e2e-verification/).
 
+### Load tests
+
+[server/loadtest/](server/loadtest/) holds three k6 scenarios, run from k6's own container on the compose network
+(specs/144, #290):
+
+```bash
+cd server
+./loadtest/run.sh race        # 100 customers, 20 units: exactly 20 paid, nothing held
+./loadtest/run.sh checkout    # 5 checkouts/s for 60 s of one product: units sold = units deducted
+./loadtest/run.sh browse      # anonymous reads, ramping to 50
+python loadtest/report.py     # docs/testing/load-test-results.md from the kept summaries
+```
+
+- Setup registers customers through **Identity directly**: the gateway limits registrations per address (specs/062).
+  The measured traffic goes through the gateway.
+- Staff sign-in computes the TOTP code and sends the back office's `Origin`.
+- A run fails on a broken invariant or an unexpected response, **never on latency**. ⚠️ Judge speed over several warm
+  runs, never one, and never right after a rebuild: medians swing from 0.3 s to 10 s on this laptop.
+- Their first runs found #299 and #301.
+
 ### Bruno collection
 
 [bruno/](bruno/) is a [Bruno](https://www.usebruno.com/) collection (OpenCollection YAML) covering

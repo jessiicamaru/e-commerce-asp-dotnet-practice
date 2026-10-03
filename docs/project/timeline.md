@@ -200,6 +200,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [143](../../specs/143-vnpay-sandbox/) | Pay with VNPay | #298 | #289: VNPay as a redirect gateway behind Payment's seam: a checkout per order, a signed pay link, the IPN deciding once (signature, merchant, amount, guarded claim), a simulator for development and CI, Pay with VNPay and the return page (ADR-004) |
 | [145](../../specs/145-transient-retry/) | Transient retry | #300 | #299: every consumer endpoint retries a transient database failure (40001, 40P01, a lost connection) in a fresh transaction before the EF outbox; found by the load test, which lost a paid order's stock confirmation without it |
 | [146](../../specs/146-inventory-read-committed/) | Inventory at READ COMMITTED | #302 | #301: Inventory consumes at READ COMMITTED: zero serialization aborts on a popular product's stock row (thousands per run before), the same median and a tighter tail over eight warm runs; the per-stage breakdown puts the remaining ceiling on that one row's lock |
+| [144](../../specs/144-load-tests/) | Load tests | #303 | #290: k6 scenarios against the compose stack - the race for the last units, steady checkouts of one product, browsing - each checking its invariants through the API, with a report generated from kept summaries; their first runs found #299 and #301 |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.
