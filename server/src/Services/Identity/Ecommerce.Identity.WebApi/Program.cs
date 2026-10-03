@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Infrastructure.Email;
 using Ecommerce.WebApi.Consumers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -192,6 +193,9 @@ builder.AddObservability("identity");
 // its passing is the check on that claim.
 builder.Services.AddMassTransit(x =>
 {
+    // A transient database failure in a consumer is retried in a new transaction (specs/145, #299).
+    x.AddConfigureEndpointsCallback((_, _, cfg) => cfg.UseTransientRetry());
+
     // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
     // seconds, on every instance (specs/065).
     x.AddAccessTokenRevocations("identity");

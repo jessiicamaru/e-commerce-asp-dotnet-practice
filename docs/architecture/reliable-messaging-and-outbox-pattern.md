@@ -208,13 +208,26 @@ When processing distributed transactions across multiple microservices, errors a
 
 | Layer | Status |
 | :--- | :--- |
-| Retry policy | **None configured** — there is no `UseMessageRetry` anywhere. A consumer that throws faults on its first attempt. |
+| Retry policy | **Transient database failures only, since specs/145 (#299)**: `TransientRetry.UseTransientRetry()` (`Ecommerce.Shared/Messaging`) on every receive endpoint of every service, before the EF outbox. A serialization failure (`40001`), a deadlock (`40P01`) or a connection Npgsql calls transient is tried again in a fresh transaction, up to ten more times with growing, jittered intervals. Anything else faults at once. |
 | Circuit breaker | **None configured.** |
 | Error queue | MassTransit's default: a faulted message moves to `<queue>_error`, where it stays until someone looks. Nothing replays it. |
 | Business compensation | The saga's only compensation is `ReleaseInventoryCommand`, sent when payment fails. A failed reservation holds nothing, so it needs none. After the saga, cancelling a paid order (specs/039) publishes `OrderCancelledEvent`: Inventory puts the units back and Payment records a refund (which moves no money - the provider is a stub). That is not a saga step; each service undoes its own part from its own rows. |
 
-**The retry gap is the one that matters.** A transient database blip today sends a message straight
-to an error queue. The diagram and §5.1–5.4 below are the **target**, not the current state.
+**The retry gap was the one that mattered, and measurement found it** (specs/145). Until 2026-10-03 a transient
+database failure sent a message straight to an error queue. The load test of #290 (5 checkouts a second for a minute)
+then left a paid order's `OrderCompletedEvent` in Inventory's `OrderCompleted_error`, faulted on
+`40001: could not serialize access due to concurrent update`.
+
+- **Why:** the EF outbox consumes in a `RepeatableRead` transaction, so concurrent confirmations of one stock row abort
+  all but one.
+- **What it costs:** the reservation stayed `Held`, and the expiry sweeper would have put a paid unit back on the
+  shelf.
+- **Why EF's `EnableRetryOnFailure` did not save it:** it cannot retry inside a user transaction, and the outbox's
+  consume is one.
+- **The fix:** retry the whole message, outside the outbox, so each attempt is a transaction of its own and a failed
+  attempt's outgoing messages are dropped with it.
+
+The diagram and §5.2–5.4 below are still partly the **target**: there is no circuit breaker.
 
 ```mermaid
 graph TD
@@ -233,8 +246,16 @@ graph TD
     Level4 --> Comp3["Refund: recorded, no money moves (stub provider)"]
 ```
 
-### 5.1 Retry Policy (Transient Errors) — *not configured*
-MassTransit can retry failed message handling using **Exponential Backoff** (e.g., retrying after 2s, 5s, 10s).
+### 5.1 Retry Policy (Transient Errors) — *configured since specs/145*
+`UseTransientRetry()` wraps every endpoint's outbox with `UseMessageRetry`:
+- it handles only `TransientRetry.IsTransient` exceptions;
+- it makes up to 10 more attempts, exponential from 20 ms to 2 s, with jitter, because the losers collided by running
+  together.
+
+⚠️ The order is load-bearing. Configured after the outbox, a retry would re-run inside the transaction that had
+already failed.
+`TransientRetryTests` (Inventory.Tests) hold a `40001` and a `40P01` consumer to success, and a non-transient one to
+an immediate fault.
 
 ### 5.2 Circuit Breaker (Infrastructure Isolation) — *not configured*
 If a microservice is unresponsive for extended periods, the Circuit Breaker trips, pausing message delivery to prevent Queue congestion.

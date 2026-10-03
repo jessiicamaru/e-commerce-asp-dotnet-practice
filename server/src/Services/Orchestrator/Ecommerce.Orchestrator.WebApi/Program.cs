@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Shared.Observability;
 using Ecommerce.Orchestrator.WebApi.StateMachines;
 using Ecommerce.Orchestrator.WebApi.Timeouts;
@@ -115,8 +116,13 @@ builder.Services.AddMassTransit(x =>
     // Constitution III is not a style preference: an entity change and the events it causes commit
     // as one unit. Catalog, Inventory, Order and Payment have always done this; the orchestrator,
     // which causes more events than any of them, did not. See issue #15.
+    // A transient database failure (a serialization failure under load) is retried in a new transaction - first,
+    // so it wraps the outbox (specs/145, #299).
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
-        cfg.UseEntityFrameworkOutbox<OrchestratorDbContext>(context));
+    {
+        cfg.UseTransientRetry();
+        cfg.UseEntityFrameworkOutbox<OrchestratorDbContext>(context);
+    });
 
     x.AddEntityFrameworkOutbox<OrchestratorDbContext>(o =>
     {

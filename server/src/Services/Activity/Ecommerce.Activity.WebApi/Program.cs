@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Activity.Application;
 using Ecommerce.Activity.Application.Retention;
 using Ecommerce.Activity.Infrastructure;
@@ -102,8 +103,13 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<RecordNotificationConsumer>();
     x.AddConsumer<EraseAccountFromActivityConsumer>();
 
+    // A transient database failure (a serialization failure under load) is retried in a new transaction - first,
+    // so it wraps the outbox (specs/145, #299).
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
-        cfg.UseEntityFrameworkOutbox<ActivityDbContext>(context));
+    {
+        cfg.UseTransientRetry();
+        cfg.UseEntityFrameworkOutbox<ActivityDbContext>(context);
+    });
 
     x.AddEntityFrameworkOutbox<ActivityDbContext>(o =>
     {

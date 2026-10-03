@@ -924,6 +924,13 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   check, and it was the one service nothing could wait for - while an order that never leaves `Submitted`
   usually means it. Compose now checks it and the gateway waits for it; CI's saga job and `verify-saga.sh`
   probe it with the rest. The disagreement with the constitution is resolved.
+- **A consumer's transaction can lose a serialization race, and it is retried since specs/145 (#299).** The EF
+  outbox consumes in `RepeatableRead`, so concurrent updates of one row abort the losers with `40001`. With no retry
+  anywhere, the first such failure faulted the message to `<queue>_error`. The load test of #290 found a paid order's
+  stock confirmation there, its units held for the expiry sweeper to resell. Every service's endpoint callback now
+  calls `cfg.UseTransientRetry()` (`Ecommerce.Shared/Messaging`) **before** `UseEntityFrameworkOutbox`. It handles
+  `40001`, `40P01` and transient connections only, with jittered backoff. Identity and Cart have a callback just for
+  it. ⚠️ A new service adds the same line, or its consumers lose messages under load.
 - **Validation silently skipped every command that returns nothing — until feature 010.** The
   shared `ValidationBehavior` was constrained to `where TRequest : IRequest<TResponse>`, and in
   MediatR 12 a void command implements `IRequest`, a *separate* interface. The pipeline asked for

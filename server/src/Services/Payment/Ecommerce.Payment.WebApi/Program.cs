@@ -1,3 +1,4 @@
+using Ecommerce.Shared.Messaging;
 using Ecommerce.Shared.Audit;
 using Ecommerce.Shared.Observability;
 using Microsoft.EntityFrameworkCore;
@@ -133,8 +134,13 @@ builder.Services.AddMassTransit(x =>
     // One part of an order cancelled on its own (specs/104).
     x.AddConsumer<RefundCancelledPartConsumer>();
 
+    // A transient database failure (a serialization failure under load) is retried in a new transaction - first,
+    // so it wraps the outbox (specs/145, #299).
     x.AddConfigureEndpointsCallback((context, _, cfg) =>
-        cfg.UseEntityFrameworkOutbox<PaymentDbContext>(context));
+    {
+        cfg.UseTransientRetry();
+        cfg.UseEntityFrameworkOutbox<PaymentDbContext>(context);
+    });
 
     x.AddEntityFrameworkOutbox<PaymentDbContext>(o =>
     {
