@@ -181,6 +181,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+      # A first boot on an empty volume, with everything else starting beside it, took over two minutes on the
+      # production overlay's first deploy (specs/142) - past 12 x 10s, so the deploy failed on a broker that came up
+      # moments later. Failures inside the start period do not count; the first success ends it.
+      start_period: 180s
     restart: unless-stopped
 
   # Logs and traces from every service, in one searchable place (feature 013). The services ship to it
