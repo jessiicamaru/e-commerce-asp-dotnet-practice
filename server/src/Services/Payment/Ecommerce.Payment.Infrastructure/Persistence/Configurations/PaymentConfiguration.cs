@@ -32,6 +32,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Domain.Entities.Pay
             .HasDefaultValue(Domain.Entities.Payment.StubProvider)
             .IsRequired();
 
+        // The gateway's own transaction number (specs/143); null for the stub.
+        builder.Property(x => x.ProviderReference).HasMaxLength(64);
+
         // The guarantee behind FR-005 and FR-006, not an optimisation: this is what stops two
         // simultaneous requests both inserting a payment for one order.
         builder.HasIndex(x => x.OrderId).IsUnique();

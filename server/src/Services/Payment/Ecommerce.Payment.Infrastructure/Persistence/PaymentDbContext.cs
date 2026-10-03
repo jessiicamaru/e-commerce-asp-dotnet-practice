@@ -7,6 +7,7 @@ public class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbCo
 {
     public DbSet<Domain.Entities.Payment> Payments => Set<Domain.Entities.Payment>();
     public DbSet<Domain.Entities.Refund> Refunds => Set<Domain.Entities.Refund>();
+    public DbSet<Domain.Entities.PaymentCheckout> Checkouts => Set<Domain.Entities.PaymentCheckout>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

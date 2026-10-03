@@ -181,6 +181,18 @@ public class RefundTests(PaymentTestFixture fixture)
         public Task<decimal> GetRefundedTotalAsync(Guid orderId, CancellationToken ct = default)
             => inner.GetRefundedTotalAsync(orderId, ct);
 
+        public Task<Domain.Entities.PaymentCheckout?> GetCheckoutByOrderIdAsync(Guid orderId, CancellationToken ct = default)
+            => inner.GetCheckoutByOrderIdAsync(orderId, ct);
+
+        public Task<Domain.Entities.PaymentCheckout?> GetCheckoutByReferenceAsync(string reference, CancellationToken ct = default)
+            => inner.GetCheckoutByReferenceAsync(reference, ct);
+
+        public Task AddCheckoutAsync(Domain.Entities.PaymentCheckout checkout, CancellationToken ct = default)
+            => inner.AddCheckoutAsync(checkout, ct);
+
+        public Task<bool> ClaimCheckoutAsync(Guid checkoutId, string responseCode, string? providerReference, DateTime at, CancellationToken ct = default)
+            => inner.ClaimCheckoutAsync(checkoutId, responseCode, providerReference, at, ct);
+
         public Task SaveChangesAsync(CancellationToken ct = default) => inner.SaveChangesAsync(ct);
     }
 

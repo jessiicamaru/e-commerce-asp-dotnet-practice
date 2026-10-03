@@ -34,13 +34,22 @@ public class Payment
     public string? FailureReason { get; set; }
 
     /// <summary>
-    /// What produced this outcome. Always "Stub" today. It is written into every row on purpose:
+    /// What produced this outcome: "Stub", or VNPay's sandbox or gateway (specs/143). It is written into every row on purpose:
     /// a record that does not say where its outcome came from is one somebody will later assume
     /// came from a bank.
     /// </summary>
     public string Provider { get; set; } = StubProvider;
 
     public const string StubProvider = "Stub";
+
+    /// <summary>VNPay's sandbox, or the simulator speaking its protocol (specs/143): no money moves.</summary>
+    public const string VnPaySandboxProvider = "VnPaySandbox";
+
+    /// <summary>VNPay's production gateway, only with <c>VNPAY_LIVE=true</c>.</summary>
+    public const string VnPayProvider = "VnPay";
+
+    /// <summary>The gateway's own transaction number (<c>vnp_TransactionNo</c>); null for the stub and every earlier row.</summary>
+    public string? ProviderReference { get; set; }
 
     public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
 }

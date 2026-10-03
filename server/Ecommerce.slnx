@@ -54,6 +54,9 @@
     <Project Path="src/Services/Payment/Ecommerce.Payment.Infrastructure/Ecommerce.Payment.Infrastructure.csproj" />
     <Project Path="src/Services/Payment/Ecommerce.Payment.WebApi/Ecommerce.Payment.WebApi.csproj" />
   </Folder>
+  <Folder Name="/src/Tools/">
+    <Project Path="src/Tools/Ecommerce.VnPaySimulator/Ecommerce.VnPaySimulator.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Ecommerce.ApiGateway.Tests/Ecommerce.ApiGateway.Tests.csproj" />
     <Project Path="tests/Ecommerce.Catalog.Tests/Ecommerce.Catalog.Tests.csproj" />
