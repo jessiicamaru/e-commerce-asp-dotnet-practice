@@ -34,14 +34,14 @@ description: "Task list for A consumer survives a transient database failure"
   - exit 0, every invariant held: 268 paid, 268 units deducted (100000 → 99732), 0 held, 0 stuck;
   - **every `_error` queue empty**;
   - Inventory logged 7,648 `40001` lines in the run: the conflicts still happen, and are now retried instead of lost.
-- The cost, measured, and filed as #301:
-
-  | Checkout run | Before | After |
-  | :-- | --: | --: |
-  | Settle time, median | 1.0 s | 8.3 s |
-  | Settle time, p99 | 14.3 s | 40.3 s |
-  | Checkouts completed | 301 | 268 (33 dropped, every VU busy) |
-
-  `RepeatableRead` aborts every consume that waits on the hot stock row. Retrying makes them queue where losing made
-  them fast and wrong. Making them fast and right (`ReadCommitted` for Inventory's consumes) needs its own design and
-  measurement.
+- Latency, measured and then **corrected**:
+  - The post-fix run above came straight after every container was rebuilt. It read median settle 8.3 s and p99
+    40.3 s, against 1.0 s and 14.3 s for the warm run that found the bug. That comparison was first read as the cost
+    of retrying (and filed as #301).
+  - It was not. Each service's own timestamps, broken into stages, show identical code swinging between a 0.3 s and
+    a 10 s median from run to run.
+  - The slow stages are always Inventory's: reserving, and confirming. Both take the lock on the one stock row that
+    every checkout of one product shares. Charging and settling stay at about 0.1-0.5 s.
+  - The throughput of one product is capped by that row's lock hold time, which falls whenever the machine is busy.
+    #301 records the investigation.
+  - What #299 changes is correctness: a conflict is retried rather than lost.
