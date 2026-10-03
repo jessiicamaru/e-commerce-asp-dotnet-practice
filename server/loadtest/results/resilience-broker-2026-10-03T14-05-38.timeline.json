@@ -1,0 +1,12 @@
+{
+  "fault": "broker",
+  "fault_for_seconds": 60,
+  "load_started_at": "2026-10-03T14:06:52.075Z",
+  "fault_at": "2026-10-03T14:07:07.295Z",
+  "recovered_at": "2026-10-03T14:08:10.071Z",
+  "healthy_at": "2026-10-03T14:08:19.573Z",
+  "k6_exit": 0,
+  "error_queues": "",
+  "passed": true,
+  "orders": {"before": {"orders": 48, "paid": 48, "settle_p50_s": 0.26, "settle_p95_s": 0.69, "settle_max_s": 0.79}, "during": {"orders": 188, "paid": 188, "settle_p50_s": 100.3, "settle_p95_s": 123.56, "settle_max_s": 127.46}, "after": {"orders": 124, "paid": 124, "settle_p50_s": 61.35, "settle_p95_s": 74.26, "settle_max_s": 77.86}, "backlog_cleared_after_recovery_s": 89.1}
+}

@@ -178,6 +178,13 @@ python loadtest/report.py     # docs/testing/load-test-results.md from the kept 
 - A run fails on a broken invariant or an unexpected response, **never on latency**. ⚠️ Judge speed over several warm
   runs, never one, and never right after a rebuild: medians swing from 0.3 s to 10 s on this laptop.
 - Their first runs found #299 and #301.
+- **Faults** (specs/147, #291): `./loadtest/fault.sh payment|broker|orchestrator|inventory` stops Payment or RabbitMQ,
+  restarts the orchestrator, or pauses Inventory during steady checkouts. It then checks every order terminal, stock
+  consistent, and error queues empty. `python loadtest/resilience_report.py` writes `docs/testing/resilience-results.md`.
+  - Nothing was lost under any fault.
+  - The broker outage drains slowest (#304).
+  - ⚠️ The harness gives each customer `rate × (fault + 20 s)` of room between orders. Cart removes ordered lines only
+    on completion (specs/010), so a re-order during a fault would lose its line to the earlier order's completion.
 
 ### Bruno collection
 

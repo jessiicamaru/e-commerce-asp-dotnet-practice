@@ -23,8 +23,13 @@ STEPS = {
 def load():
     runs = []
     for path in sorted(glob.glob(os.path.join(HERE, 'results', '*.json'))):
+        if path.endswith('.timeline.json'):
+            continue
         with open(path, encoding='utf-8') as f:
             data = json.load(f)
+        # The resilience runs (specs/147) keep their summaries here too; they have a report of their own.
+        if data.get('scenario') not in STEPS:
+            continue
         data['_file'] = os.path.basename(path)
         day, hour, minute = re.search(r'(\d{4}-\d\d-\d\d)T(\d\d)-(\d\d)', data['_file']).groups()
         data['_when'] = f'{day} {hour}:{minute} UTC'
