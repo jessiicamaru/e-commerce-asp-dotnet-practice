@@ -26,6 +26,12 @@ Found on 2026-09-27 while the design records were rebuilt from the code:
 
 Found on 2026-09-27 in an audit of the management features and delivery: #193, done - see Fixed below.
 
+Found on 2026-10-03 by the load test of #290 - measurement finding what the tests could not:
+
+| Issue | Title |
+| :-- | :-- |
+| [#301](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/301) | Checkouts of one product queue behind serialization retries |
+
 ## Priority 1 - accounts and security
 
 A person cannot recover or manage their own account, and sign-in can be guessed at freely.
@@ -136,6 +142,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#287](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/287) | A production stack served over HTTPS | [#296](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/296) (specs/141) |
 | [#288](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/288) | Deploy and roll back from CI | [#297](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/297) (specs/142) |
 | [#289](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/289) | Pay with VNPay (sandbox) instead of the stub | [#298](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/298) (specs/143) |
+| [#299](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/299) | A paid order's stock confirmation is lost to a serialization failure under load | [#300](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/300) (specs/145) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |
