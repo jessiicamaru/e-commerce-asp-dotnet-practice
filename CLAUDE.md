@@ -1092,6 +1092,14 @@ with `force_republish`, which no merge can reach. Details and the one remaining 
 `denied` cannot distinguish "no such package" from "no permission to read it" — are in
 [specs/008-immutable-release-tags/contracts/publish-behaviour.md](specs/008-immutable-release-tags/contracts/publish-behaviour.md).
 
+**A release is deployed by hand, never by a merge** (specs/142, #288): the `deploy` workflow (`workflow_dispatch`,
+dry run by default) takes a `sha-` tag or `previous`, ships **that commit's** compose files and `server/deploy/` over SSH
+(host key pinned in `DEPLOY_KNOWN_HOSTS`; `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_SSH_KEY` are the owner's), and runs
+[server/deploy/deploy.sh](server/deploy/deploy.sh) there: registry check before anything changes, lock, `up --wait`,
+smoke checks through Caddy, `releases.log`, and **the previous release put back by itself** when any of that fails.
+⚠️ One compose project name (`ecommerce`) for every release directory, or each release starts an empty stack. CI's
+`deploy-dry-run` (stubbed decisions + the overlay rendered from the shipped files) gates `publish`.
+
 **A schema change must not strand an earlier image.** Dropping, renaming or narrowing a column means
 redeploying a previous version takes the service down rather than restoring it — split it into expand
 then contract. The constitution states the rule; a `schema-compatibility` job comments on any pull

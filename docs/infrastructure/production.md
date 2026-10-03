@@ -107,8 +107,9 @@ the command that generates each secret (`openssl rand ...`). Every `*.env` file 
   (`ssh -L 5380:127.0.0.1:5380 <server>`) and browse `http://localhost:5380`. Nothing outside the server can reach it.
 - **The first administrator** is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` while no administrator exists. They sign
   in to the storefront, set up two-factor sign-in, and only then reach the back office.
-- **Upgrading** is the same command with a newer `RELEASE`. **Rolling back** is the same command with an earlier one.
-  The expand-then-contract rule for schema changes is what makes that safe.
+- **Upgrading and rolling back** go through `deploy.sh` and the deploy workflow (§8), which check, wait for health,
+  smoke-test, and put the previous release back by themselves. The expand-then-contract rule for schema changes is
+  what makes running an earlier release safe.
 
 ## 7. Verified locally
 
@@ -127,3 +128,84 @@ On 2026-10-03, with images tagged `local` from the compose build and `shop.local
 cd client
 E2E_IGNORE_HTTPS_ERRORS=1 E2E_BASE_URL=https://shop.localhost E2E_BACK_OFFICE_URL=https://portal.shop.localhost npm run e2e
 ```
+
+## 8. Deploying and rolling back (specs/142)
+
+A release reaches the server one way: the **deploy** workflow, run by hand from the Actions tab with a `sha-` tag. A
+merge publishes images; it never deploys them.
+
+```text
+Actions → deploy → Run workflow
+  release: sha-1a2b3c4     dry run ticked (the default): check and print, connect to nothing
+  release: sha-1a2b3c4     dry run unticked: deploy it
+  release: previous        dry run unticked: run what ran before the current release
+```
+
+### What happens, in order
+
+1. **The workflow** checks the release:
+   - finds the commit the tag names;
+   - checks that all eleven images are published;
+   - takes the compose files and `server/deploy/` **from that commit**, never from `main` (an image and the file that
+     runs it are built together);
+   - renders and checks them (`verify-production-overlay.sh`).
+2. It copies them to the server, into `$DEPLOY_PATH/releases/<tag>/`. It checks the server's host key against
+   `DEPLOY_KNOWN_HOSTS` and never trusts a host on first use.
+3. **On the server**, [`deploy.sh`](../../server/deploy/deploy.sh) runs from those files. It:
+   - refuses a name that is not a `sha-` tag, or files that would run any image of ours at another tag;
+   - asks the registry for every image before changing anything, so a release whose publish stopped halfway cannot
+     half-deploy;
+   - takes a lock, so two deploys never overlap;
+   - pulls, then runs `docker compose up -d --wait`, which waits for every container's health check;
+   - **smoke-tests through the front door**, as a customer arrives: both apps, `/app-config.js` naming the other app,
+     and each service's `/api/<svc>/health` through Caddy → nginx → gateway;
+   - appends the outcome to `$DEPLOY_PATH/releases.log`.
+4. **If the release does not come up healthy, or a smoke check fails**, the script puts the previous release back from
+   its own files. It logs `failed` and then `rolled-back`, and the run still fails. If that fails too, it logs
+   `rollback-failed` and says so: someone must look now.
+
+Every release uses the same compose project name (`ecommerce`), so each release's directory drives the same
+containers and volumes. Without that, every release would start a second, empty stack.
+
+### On the server, once
+
+```bash
+sudo mkdir -p /opt/ecommerce /etc/ecommerce
+sudo chown deploy: /opt/ecommerce                    # the DEPLOY_USER, in the docker group
+sudo install -m 600 production.env /etc/ecommerce/.env
+ssh-keyscan -t ed25519 <server>                      # check the fingerprint, then save the line as DEPLOY_KNOWN_HOSTS
+```
+
+| Secret (environment `production`) | What |
+| :-- | :-- |
+| `DEPLOY_HOST`, `DEPLOY_USER` | where, and as whom |
+| `DEPLOY_SSH_KEY` | a key for this account only |
+| `DEPLOY_KNOWN_HOSTS` | the server's host key line |
+
+Optional variables: `DEPLOY_PATH` (`/opt/ecommerce`), `DEPLOY_ENV_FILE` (`/etc/ecommerce/.env`), `DEPLOY_PORT` (22). A
+real deploy with any secret missing stops and names it. A dry run needs none.
+
+### Without GitHub
+
+`deploy.sh` is the whole procedure, so an operator with a shell on the server runs it directly:
+
+```bash
+/opt/ecommerce/releases/sha-1a2b3c4/server/deploy/deploy.sh sha-1a2b3c4
+/opt/ecommerce/releases/sha-1a2b3c4/server/deploy/deploy.sh previous
+```
+
+### How it is tested
+
+- `server/deploy/test-deploy.sh` drives every decision with stub `docker` and `curl`: the refusals, `previous`, the
+  log, a failing start, a failing smoke check, and a failing rollback.
+- `.github/scripts/verify-production-overlay.sh` renders the stack from the shipped files alone and asserts:
+  - only Caddy publishes ports;
+  - nothing is built;
+  - every image of ours carries the release tag;
+  - the tools are off;
+  - no seeded TOTP secret;
+  - two forwarded hops;
+  - the `edge` address range.
+
+CI's `deploy-dry-run` job runs both on every change, and publishing waits for it. The SSH hop itself is exercised
+only once the secrets exist.

@@ -1,0 +1,173 @@
+name: deploy
+
+# Puts one release on the server, or rolls back (specs/142, #288). Run by hand from the Actions tab: nothing deploys
+# because something was merged.
+#
+#   release: sha-1a2b3c4   that release, with the compose files of the commit it was built from
+#   release: previous      whatever ran before the current release, with its own files, already on the server
+#   dry_run: true          print every step and check the registry; connect to nothing
+#
+# The work happens on the server, in server/deploy/deploy.sh: check, pull, start, wait for health, smoke-test through
+# the front door, and put the previous release back by itself if any of that fails. This workflow only ships the files
+# and calls it.
+#
+# Secrets (Settings -> Environments -> production), never committed:
+#   DEPLOY_HOST          the server's address
+#   DEPLOY_USER          an account in the docker group
+#   DEPLOY_SSH_KEY       that account's private key, used for nothing else
+#   DEPLOY_KNOWN_HOSTS   the server's line from `ssh-keyscan`, checked by hand once - a host is never trusted on first use
+# Variables (optional): DEPLOY_PATH (/opt/ecommerce), DEPLOY_ENV_FILE (/etc/ecommerce/.env), DEPLOY_PORT (22).
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "A published sha- tag (sha-1a2b3c4), or previous to roll back"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run: print every step, connect to nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# One deploy at a time; a second one waits rather than racing the first.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  IMAGE_PREFIX: ghcr.io/jessiicamaru/ecommerce
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.release }}${{ inputs.dry_run && ' (dry run)' || '' }}
+    runs-on: ubuntu-latest
+    # Required reviewers, if wanted, are set on this environment in the repository's settings.
+    environment: production
+    env:
+      RELEASE_INPUT: ${{ inputs.release }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/ecommerce' }}
+      DEPLOY_ENV_FILE: ${{ vars.DEPLOY_ENV_FILE || '/etc/ecommerce/.env' }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The release names a commit by its short sha; finding it needs the history.
+          fetch-depth: 0
+
+      - name: The secrets a real deploy needs
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=()
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -eq 0 ]; then echo "all four secrets are set"; exit 0; fi
+          if [ "$DRY_RUN" = true ]; then
+            echo "::notice::Not set: ${missing[*]}. A dry run needs none of them; a real deploy stops here."
+          else
+            echo "::error::Not set: ${missing[*]}. Add them to the production environment (docs/infrastructure/production.md §8)."
+            exit 1
+          fi
+
+      - name: Which release, from which commit
+        id: release
+        run: |
+          set -euo pipefail
+          if [ "$RELEASE_INPUT" = previous ]; then
+            echo "tag=previous" >> "$GITHUB_OUTPUT"
+            echo "previous is read from the server's release log, and runs with that release's own files, already there"
+            exit 0
+          fi
+          [[ "$RELEASE_INPUT" =~ ^sha-[0-9a-f]{7,40}$ ]] || { echo "::error::'$RELEASE_INPUT' is not a sha- tag - only an immutable release is deployable"; exit 1; }
+          commit="$(git rev-parse --verify --quiet "${RELEASE_INPUT#sha-}^{commit}")" || { echo "::error::no commit in this repository is $RELEASE_INPUT"; exit 1; }
+          echo "tag=$RELEASE_INPUT" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "$RELEASE_INPUT is $(git log -1 --format='%h %s' "$commit")"
+
+      - name: Published, all of it
+        if: steps.release.outputs.tag != 'previous'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          missing=0
+          for name in identity catalog orchestrator order inventory payment activity cart gateway storefront back-office; do
+            if docker manifest inspect "$IMAGE_PREFIX-$name:$TAG" >/dev/null 2>&1; then echo "ok   $name"; else echo "::error::$IMAGE_PREFIX-$name:$TAG is not published"; missing=1; fi
+          done
+          exit $missing
+
+      - name: The release's files, rendered and checked
+        if: steps.release.outputs.tag != 'previous'
+        env:
+          COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
+          set -euo pipefail
+          bash .github/scripts/bundle-release.sh "$RUNNER_TEMP/bundle" "$COMMIT"
+          # The checks of the release's own commit when it has them; a release from before specs/142 is checked by today's.
+          if git cat-file -e "$COMMIT:.github/scripts/verify-production-overlay.sh" 2>/dev/null; then
+            bash .github/scripts/verify-production-overlay.sh "$COMMIT"
+          fi
+
+      - name: Dry run - what a real deploy would do
+        if: inputs.dry_run
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          if [ "$TAG" = previous ]; then
+            echo "+ ssh <server> bash \$DEPLOY_PATH/releases/<current>/server/deploy/deploy.sh previous"
+          else
+            echo "+ ssh <server> mkdir -p $DEPLOY_PATH/releases/$TAG"
+            echo "+ tar server/ | ssh <server> tar -x -C $DEPLOY_PATH/releases/$TAG"
+            echo "+ ssh <server> ENV_FILE=$DEPLOY_ENV_FILE DEPLOY_PATH=$DEPLOY_PATH bash $DEPLOY_PATH/releases/$TAG/server/deploy/deploy.sh $TAG"
+          fi
+          echo "### Dry run of $RELEASE_INPUT - nothing was touched" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: SSH, to a host we already know
+        if: ${{ !inputs.dry_run }}
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy
+        if: ${{ !inputs.dry_run }}
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -uo pipefail
+          on_server() { ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes "$DEPLOY_USER@$DEPLOY_HOST" "$@"; }
+          if [ "$TAG" = previous ]; then
+            # The current release's own script resolves previous from the log and runs it from that release's files.
+            script="$(on_server "awk '\$3==\"deployed\"||\$3==\"rolled-back\"{t=\$2} END{print t}' '$DEPLOY_PATH/releases.log'")"
+            [ -n "$script" ] || { echo "::error::the server's release log names no current release"; exit 1; }
+            script="$DEPLOY_PATH/releases/$script/server/deploy/deploy.sh"
+          else
+            on_server "mkdir -p '$DEPLOY_PATH/releases/$TAG'"
+            tar -C "$RUNNER_TEMP/bundle" -cz server | on_server "tar -xz -C '$DEPLOY_PATH/releases/$TAG'"
+            script="$DEPLOY_PATH/releases/$TAG/server/deploy/deploy.sh"
+          fi
+          on_server "ENV_FILE='$DEPLOY_ENV_FILE' DEPLOY_PATH='$DEPLOY_PATH' bash '$script' '$TAG'" 2>&1 | tee "$RUNNER_TEMP/deploy.log"
+          status=${PIPESTATUS[0]}
+          {
+            if [ "$status" = 0 ]; then echo "### Deployed $(grep -o 'DEPLOYED sha-[0-9a-f]*' "$RUNNER_TEMP/deploy.log" | tail -1 | cut -d' ' -f2)"; else echo "### Deploy of $TAG failed"; fi
+            echo '```'; tail -40 "$RUNNER_TEMP/deploy.log"; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

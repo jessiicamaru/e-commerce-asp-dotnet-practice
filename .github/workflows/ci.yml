@@ -225,6 +225,21 @@ jobs:
       - name: Assert no credential in any layer
         run: .github/scripts/verify-image-has-no-secrets.sh ecommerce-catalog:ci
 
+  # The deploy, without a server (specs/142). The deploy itself runs rarely, by hand, and a deploy that is broken is
+  # found on the day it is needed - so every change runs its decisions (stub docker and curl) and renders the
+  # production stack from exactly the files a server would receive, asserting what it exposes.
+  deploy-dry-run:
+    name: Deploy dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The deploy script's decisions
+        run: bash server/deploy/test-deploy.sh
+
+      - name: The production overlay, as shipped
+        run: bash .github/scripts/verify-production-overlay.sh "$(git rev-parse HEAD)"
+
   schema-compatibility:
     name: Schema compatibility
     runs-on: ubuntu-latest
@@ -338,7 +353,8 @@ jobs:
     # push AND pull_request to main.
     # `client` since specs/051: the storefront is published too, and must not be if its tests failed.
     # `browser-e2e` since specs/080: a storefront whose pages cannot reach the API is not a release.
-    needs: [build, auth-smoke, saga-e2e, client, browser-e2e]
+    # `deploy-dry-run` since specs/142: a release the production stack cannot run is not one either.
+    needs: [build, auth-smoke, saga-e2e, client, browser-e2e, deploy-dry-run]
     # A merge, or a deliberate manual run. Never a pull request - which is what this
     # guard was protecting against in the first place, and adding a third trigger is
     # exactly how that kind of guard gets loosened by accident.
