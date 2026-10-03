@@ -1,4 +1,4 @@
-# Implementation Plan: Checkouts of one product do not queue behind retries
+# Implementation Plan: Inventory consumes without serialization aborts
 
 **Branch**: `fix/301-inventory-read-committed` | **Date**: 2026-10-03 | **Spec**: [spec.md](spec.md) | **Issue**: #301
 

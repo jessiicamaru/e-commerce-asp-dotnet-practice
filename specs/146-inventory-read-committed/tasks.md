@@ -1,8 +1,8 @@
 ---
-description: "Task list for Checkouts of one product do not queue behind retries"
+description: "Task list for Inventory consumes without serialization aborts"
 ---
 
-# Tasks: Checkouts of one product do not queue behind retries
+# Tasks: Inventory consumes without serialization aborts
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [contracts/](contracts/)
 

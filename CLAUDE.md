@@ -930,7 +930,12 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   stock confirmation there, its units held for the expiry sweeper to resell. Every service's endpoint callback now
   calls `cfg.UseTransientRetry()` (`Ecommerce.Shared/Messaging`) **before** `UseEntityFrameworkOutbox`. It handles
   `40001`, `40P01` and transient connections only, with jittered backoff. Identity and Cart have a callback just for
-  it. ⚠️ A new service adds the same line, or its consumers lose messages under load.
+  it. ⚠️ A new service adds the same line, or its consumers lose messages under load. **Inventory consumes at
+  `READ COMMITTED`** (specs/146, #301): its reservations lock the hot stock row `FOR UPDATE`, which `REPEATABLE READ`
+  turned into thousands of aborts a run; `READ COMMITTED` gives zero, with the same median and a tighter tail. The
+  other services stay at the default until measured. ⚠️ A single product's checkout throughput is capped by that one
+  row's lock: load-test variance on this laptop is large (0.3-10 s medians for identical code), so judge latency over
+  several warm runs, never one, and never right after a rebuild.
 - **Validation silently skipped every command that returns nothing — until feature 010.** The
   shared `ValidationBehavior` was constrained to `where TRequest : IRequest<TResponse>`, and in
   MediatR 12 a void command implements `IRequest`, a *separate* interface. The pipeline asked for

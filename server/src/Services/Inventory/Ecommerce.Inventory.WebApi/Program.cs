@@ -150,9 +150,9 @@ builder.Services.AddMassTransit(x =>
 
         // READ COMMITTED, not MassTransit's default REPEATABLE READ (specs/146, #301). A reservation locks the stock
         // row FOR UPDATE; under REPEATABLE READ every consume that waited for that lock was aborted with 40001 once
-        // the one ahead of it committed, so one popular product queued every checkout behind retries (median settle
-        // 1 s -> 8.3 s in the load test). Under READ COMMITTED the waiter re-reads the row and proceeds - the isolation
-        // every Inventory handler already runs in, and is tested in, outside a consumer.
+        // the one ahead of it committed - thousands of aborts in a two-minute load run on one popular product, each a
+        // transaction's work thrown away and retried. Under READ COMMITTED the waiter re-reads the row and proceeds -
+        // the isolation every Inventory handler already runs in, and is tested in, outside a consumer.
         o.IsolationLevel = System.Data.IsolationLevel.ReadCommitted;
 
         // Outbox for the replies this service publishes; the inbox below deduplicates the

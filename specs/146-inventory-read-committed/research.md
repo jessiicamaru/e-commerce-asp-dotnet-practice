@@ -1,4 +1,4 @@
-# Research: Checkouts of one product do not queue behind retries
+# Research: Inventory consumes without serialization aborts
 
 ## D1. Why RepeatableRead aborts the hot row
 

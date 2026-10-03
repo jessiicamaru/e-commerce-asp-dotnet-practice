@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Checkouts of one product do not queue behind retries
+# Specification Quality Checklist: Inventory consumes without serialization aborts
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-03

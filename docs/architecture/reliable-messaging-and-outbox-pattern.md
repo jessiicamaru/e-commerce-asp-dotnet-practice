@@ -254,6 +254,21 @@ graph TD
 
 ⚠️ The order is load-bearing. Configured after the outbox, a retry would re-run inside the transaction that had
 already failed.
+
+**Inventory consumes at `READ COMMITTED`** (specs/146, #301): `o.IsolationLevel = ReadCommitted` on its EF outbox.
+- **Why:** a reservation locks the stock row `FOR UPDATE`. Under MassTransit's default `REPEATABLE READ`, every consume
+  that waited for that lock was aborted (`40001`) once the one ahead committed: 1,710-5,610 aborts per two-minute run on
+  one popular product, each a transaction's work thrown away and retried.
+- **Why `READ COMMITTED` is safe:** the waiter re-reads the row and proceeds. Every Inventory handler already runs at
+  that isolation outside a consumer, and every Inventory concurrency test proves it there.
+- **Measured** over eight warm runs:
+  - zero aborts;
+  - the same median;
+  - in 4 of 5 runs the slowest order at most 4.4 s, against at least 22 s in every `REPEATABLE READ` run.
+- **The ceiling that remains:** one product's checkouts all take that one row's lock in turn, so its throughput is
+  capped by the lock's hold time ([the SKIP LOCKED study](../concepts/shopify-inventory-skip-locked-pattern.md) is the
+  known way past it).
+- The other services stay at the default until they are measured.
 `TransientRetryTests` (Inventory.Tests) hold a `40001` and a `40P01` consumer to success, and a non-transient one to
 an immediate fault.
 

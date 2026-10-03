@@ -1,4 +1,4 @@
-# Contracts: Checkouts of one product do not queue behind retries
+# Contracts: Inventory consumes without serialization aborts
 
 No HTTP, message or gRPC change. Configuration only:
 

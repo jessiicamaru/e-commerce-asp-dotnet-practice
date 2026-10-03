@@ -1,4 +1,4 @@
-# Data Model: Checkouts of one product do not queue behind retries
+# Data Model: Inventory consumes without serialization aborts
 
 No table, column or migration. What changes is how a consume's transaction sees the stock row:
 
