@@ -43,6 +43,7 @@
     "charged": "Your order is charged once, in full, when you place it.",
     "refused": "If the payment is refused, nothing is taken and the items go back on sale.",
     "refunded": "An order cancelled before it ships is refunded in full.",
-    "stub": "This shop is a demonstration: payments are approved by a test provider, and no money is moved."
+    "stub": "This shop is a demonstration: payments are approved by a test provider, and no money is moved.",
+    "atGateway": "After you place your order, you pay on VNPay's page. The order waits a few minutes for your payment; if none arrives, nothing is charged and the items go back on sale."
   }
 }

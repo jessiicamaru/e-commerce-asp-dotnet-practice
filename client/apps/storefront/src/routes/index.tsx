@@ -10,6 +10,7 @@ import { CartPage } from '@/pages/cart'
 import { CatalogPage } from '@/pages/catalog'
 import { CheckoutPage } from '@/pages/checkout'
 import { OrderPage } from '@/pages/order'
+import { PaymentReturnPage } from '@/pages/payment-return'
 import { OrdersPage } from '@/pages/orders'
 import { SavedPage } from '@/pages/saved'
 import { ShopInsightsPage } from '@/pages/shop-insights'
@@ -121,6 +122,15 @@ export function AppRoutes() {
             element={
               <RequireAuth>
                 <SavedPage />
+              </RequireAuth>
+            }
+          />
+          {/* Where VNPay sends the customer back (specs/143): it only names the order to show. */}
+          <Route
+            path="/payment/vnpay-return"
+            element={
+              <RequireAuth>
+                <PaymentReturnPage />
               </RequireAuth>
             }
           />

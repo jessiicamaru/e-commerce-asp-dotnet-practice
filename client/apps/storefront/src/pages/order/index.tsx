@@ -1,78 +1,114 @@
-import { TrackingLink } from '@ecommerce/core/components/order/tracking-link'
-import { OrderReference } from '@ecommerce/core/components/order/order-reference'
-import { useTranslation } from 'react-i18next'
-import { Link, useLocation, useParams } from 'react-router-dom'
-import { ApiError } from '@ecommerce/core/config/axios'
-import { CancelOrder } from '@ecommerce/core/components/order/cancel-order'
-import { OrderLines } from '@ecommerce/core/components/order/order-lines'
-import { OrderShipments } from '@ecommerce/core/components/order/order-shipments'
-import { ParcelReturn } from '@ecommerce/core/components/order/parcel-return'
-import { ReceiveParcel } from '@ecommerce/core/components/order/receive-parcel'
-import { OrderStatus } from '@/components/order/order-status'
-import { OrderTotals } from '@ecommerce/core/components/order/order-totals'
-import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
-import { ORDER_STATUS, isSettling } from '@ecommerce/core/constants/order'
-import { useCancelOrder, useOrder, useReceiveParcel } from '@ecommerce/core/hooks/order'
-import { allDelivered } from '@ecommerce/core/utils/order/delivery'
-import { customerCanCancel } from '@ecommerce/core/utils/order/cancel'
-import { describeAddress } from '@ecommerce/core/utils/address'
+import { TrackingLink } from "@ecommerce/core/components/order/tracking-link";
+import { OrderReference } from "@ecommerce/core/components/order/order-reference";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { ApiError } from "@ecommerce/core/config/axios";
+import { CancelOrder } from "@ecommerce/core/components/order/cancel-order";
+import { OrderLines } from "@ecommerce/core/components/order/order-lines";
+import { OrderShipments } from "@ecommerce/core/components/order/order-shipments";
+import { ParcelReturn } from "@ecommerce/core/components/order/parcel-return";
+import { ReceiveParcel } from "@ecommerce/core/components/order/receive-parcel";
+import { OrderStatus } from "@/components/order/order-status";
+import { OrderTotals } from "@ecommerce/core/components/order/order-totals";
+import {
+  ErrorMessage,
+  LoadingRows,
+} from "@ecommerce/core/components/query-state";
+import { ORDER_STATUS, isSettling } from "@ecommerce/core/constants/order";
+import {
+  useCancelOrder,
+  useOrder,
+  useReceiveParcel,
+} from "@ecommerce/core/hooks/order";
+import { usePaymentCheckout } from "@ecommerce/core/hooks/payment";
+import { PayAtGateway } from "@/components/order/pay-at-gateway";
+import { allDelivered } from "@ecommerce/core/utils/order/delivery";
+import { customerCanCancel } from "@ecommerce/core/utils/order/cancel";
+import { describeAddress } from "@ecommerce/core/utils/address";
 
 /**
  * One order (#38, #39). Right after checkout it is still `Submitted` while the saga reserves the stock
  * and takes payment, so the hook polls until it settles and the page says what is happening.
  */
 export function OrderPage() {
-  const { t, i18n } = useTranslation('orders')
-  const { id = '' } = useParams()
-  const justPlaced = (useLocation().state as { justPlaced?: boolean } | null)?.justPlaced ?? false
-  const { data: order, isPending, error, isRefetching } = useOrder(id)
-  const cancel = useCancelOrder(id)
-  const receive = useReceiveParcel(id)
+  const { t, i18n } = useTranslation("orders");
+  const { id = "" } = useParams();
+  const justPlaced =
+    (useLocation().state as { justPlaced?: boolean } | null)?.justPlaced ??
+    false;
+  const { data: order, isPending, error, isRefetching } = useOrder(id);
+  const cancel = useCancelOrder(id);
+  const receive = useReceiveParcel(id);
+  // While the order waits, how its payment stands - a link to VNPay's page when the customer pays there (specs/143).
+  const checkout = usePaymentCheckout(
+    id,
+    order ? isSettling(order.status) : false,
+  );
 
   if (error) {
     // Another customer's order is simply not found (#39): the page cannot tell the two apart either.
-    const status = ApiError.from(error).status
-    return <ErrorMessage>{status === 404 ? t('order.notFound') : t('order.loadFailed')}</ErrorMessage>
+    const status = ApiError.from(error).status;
+    return (
+      <ErrorMessage>
+        {status === 404 ? t("order.notFound") : t("order.loadFailed")}
+      </ErrorMessage>
+    );
   }
 
   if (isPending || !order) {
-    return <LoadingRows rows={2} />
+    return <LoadingRows rows={2} />;
   }
 
-  const settling = isSettling(order.status)
+  const settling = isSettling(order.status);
+  const awaitingPayment =
+    settling && checkout.data?.state === "AwaitingPayment";
   // The hook stops polling at its limit; when it has and the order is still Submitted, say so.
-  const gaveUp = settling && !isRefetching
+  const gaveUp = settling && !isRefetching && !awaitingPayment;
 
   return (
     <section>
       <p className="mb-4">
         <Link to="/orders" className="text-sm underline">
-          {t('order.back')}
+          {t("order.back")}
         </Link>
       </p>
       <h1 className="text-2xl font-bold">
-        {justPlaced && !settling && order.status !== ORDER_STATUS.failed ? t('order.thanks') : t('order.title')}
+        {justPlaced && !settling && order.status !== ORDER_STATUS.failed
+          ? t("order.thanks")
+          : t("order.title")}
       </h1>
       {/* The short reference the notices and lists use, with a copy button (specs/132) - not the 36-character id. */}
       <p className="text-muted-foreground mb-4 flex flex-wrap items-center gap-2 text-xs">
         <OrderReference orderId={order.orderId} />
-        <span>{t('order.placedOn', { at: new Date(order.createdAt).toLocaleString(i18n.language) })}</span>
+        <span>
+          {t("order.placedOn", {
+            at: new Date(order.createdAt).toLocaleString(i18n.language),
+          })}
+        </span>
       </p>
 
       <OrderStatus
         status={order.status}
         failureReason={order.failureReason}
-        showSpinner={settling && !gaveUp}
+        showSpinner={settling && !gaveUp && !awaitingPayment}
         overrideMessage={
-          gaveUp
-            ? t('order.taking')
-            : order.status === ORDER_STATUS.cancelled
-              ? t(order.cancelledBy === 'Customer' ? 'cancel.byYou' : 'cancel.byShop')
-              : allDelivered(order)
-                ? t('status.delivered')
-                : undefined
+          awaitingPayment
+            ? t("pay.status")
+            : gaveUp
+              ? t("order.taking")
+              : order.status === ORDER_STATUS.cancelled
+                ? t(
+                    order.cancelledBy === "Customer"
+                      ? "cancel.byYou"
+                      : "cancel.byShop",
+                  )
+                : allDelivered(order)
+                  ? t("status.delivered")
+                  : undefined
         }
       />
+
+      {settling && <PayAtGateway checkout={checkout.data} />}
 
       {customerCanCancel(order) && (
         <div className="mt-3">
@@ -83,20 +119,25 @@ export function OrderPage() {
       {order.status === ORDER_STATUS.failed && (
         <p className="mt-3">
           <Link to="/cart" className="underline">
-            {t('order.backToCart')}
+            {t("order.backToCart")}
           </Link>
         </p>
       )}
       {order.trackingReference && (
         <p className="mt-3 text-sm">
-          {t('parcels.tracking')} <TrackingLink reference={order.trackingReference} />
+          {t("parcels.tracking")}{" "}
+          <TrackingLink reference={order.trackingReference} />
         </p>
       )}
       {/* One parcel: the list below is not drawn, so its "received" lives here (specs/040). */}
       {order.shipments?.length === 1 && (
         <div className="mt-3 grid gap-3">
           <ReceiveParcel shipment={order.shipments[0]} receive={receive} />
-          <ParcelReturn orderId={order.orderId} shipment={order.shipments[0]} currency={order.currency} />
+          <ParcelReturn
+            orderId={order.orderId}
+            shipment={order.shipments[0]}
+            currency={order.currency}
+          />
         </div>
       )}
 
@@ -118,10 +159,11 @@ export function OrderPage() {
 
       {order.shippingAddress && (
         <p className="text-sm">
-          <span className="font-medium">{t('order.deliveringTo')}</span> {order.shippingAddress.recipientName},{' '}
+          <span className="font-medium">{t("order.deliveringTo")}</span>{" "}
+          {order.shippingAddress.recipientName},{" "}
           {describeAddress(order.shippingAddress)}
         </p>
       )}
     </section>
-  )
+  );
 }

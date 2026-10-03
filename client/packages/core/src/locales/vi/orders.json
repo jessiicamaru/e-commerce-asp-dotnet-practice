@@ -135,5 +135,13 @@
   },
   "reference": "Đơn {{reference}}",
   "copy": "Sao chép mã đơn",
-  "copied": "Đã sao chép mã đơn."
+  "copied": "Đã sao chép mã đơn.",
+  "pay": {
+    "status": "Hàng của bạn đã được giữ. Đang chờ bạn thanh toán.",
+    "waiting": "Hãy thanh toán trên trang VNPay trước {{time}}.",
+    "button": "Thanh toán qua VNPay",
+    "expired": "Đã hết thời gian thanh toán. Bạn chưa bị trừ tiền; đơn hàng sẽ sớm được đóng.",
+    "returnUnknown": "Giao dịch này không thuộc đơn hàng nào của bạn.",
+    "toOrders": "Đơn hàng của bạn"
+  }
 }

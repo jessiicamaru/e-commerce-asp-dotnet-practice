@@ -21,7 +21,7 @@ The existing Payment tests pass unchanged.
 ```bash
 cd server
 PAYMENT_PROVIDER=VnPay dotnet run --project src/Services/Payment/Ecommerce.Payment.WebApi/   # with the other five
-dotnet run --project tools/Ecommerce.VnPaySimulator/
+dotnet run --project src/Tools/Ecommerce.VnPaySimulator/
 ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... SAGA_E2E_SCENARIO=vnpay ../.github/scripts/verify-saga.sh
 ```
 

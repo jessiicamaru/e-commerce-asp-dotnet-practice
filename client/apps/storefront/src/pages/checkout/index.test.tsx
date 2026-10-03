@@ -21,7 +21,7 @@ beforeEach(async () => {
   await i18n.changeLanguage('en')
   vi.spyOn(Order, 'shippingOptions').mockResolvedValue([{ code: 'standard', name: 'Standard', price: 30000, currency: 'VND' }])
   vi.spyOn(Order, 'quote').mockRejectedValue(new Error('not under test'))
-  vi.spyOn(Payment, 'isStub').mockResolvedValue(null)
+  vi.spyOn(Payment, 'about').mockResolvedValue({ movesMoney: null, atGateway: false })
 })
 
 describe('CheckoutPage without an address', () => {
@@ -163,7 +163,7 @@ describe('CheckoutPage: delivery time and payment (specs/134, #253)', () => {
 
   it('says how payment works, and that no money moves while Payment says it is the stand-in', async () => {
     vi.spyOn(Address, 'list').mockResolvedValue([saved])
-    vi.spyOn(Payment, 'isStub').mockResolvedValue(true)
+    vi.spyOn(Payment, 'about').mockResolvedValue({ movesMoney: false, atGateway: false })
     renderAsSeller(<CheckoutPage />, '/checkout')
 
     expect(await screen.findByText('Your order is charged once, in full, when you place it.')).toBeInTheDocument()
@@ -172,11 +172,21 @@ describe('CheckoutPage: delivery time and payment (specs/134, #253)', () => {
 
   it('says nothing about the provider when Payment is a real one or cannot be asked', async () => {
     vi.spyOn(Address, 'list').mockResolvedValue([saved])
-    const stub = vi.spyOn(Payment, 'isStub').mockResolvedValue(false)
+    const stub = vi.spyOn(Payment, 'about').mockResolvedValue({ movesMoney: true, atGateway: false })
     renderAsSeller(<CheckoutPage />, '/checkout')
 
     expect(await screen.findByText('Your order is charged once, in full, when you place it.')).toBeInTheDocument()
     await waitFor(() => expect(stub).toHaveBeenCalled())
     expect(screen.queryByText(/no money is moved/)).not.toBeInTheDocument()
+  })
+
+  it("says the customer pays at VNPay after placing the order, when Payment sends them there (specs/143)", async () => {
+    vi.spyOn(Address, 'list').mockResolvedValue([saved])
+    vi.spyOn(Payment, 'about').mockResolvedValue({ movesMoney: false, atGateway: true })
+    renderAsSeller(<CheckoutPage />, '/checkout')
+
+    expect(await screen.findByText(/pay on VNPay's page/)).toBeInTheDocument()
+    expect(screen.queryByText('Your order is charged once, in full, when you place it.')).not.toBeInTheDocument()
+    expect(await screen.findByRole('note')).toHaveTextContent('no money is moved')
   })
 })

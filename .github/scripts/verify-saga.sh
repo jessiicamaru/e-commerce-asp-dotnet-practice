@@ -153,6 +153,9 @@ SCENARIO=""
 case "$PAYMENT_OUTCOME_REPORTED" in
   Approved) SCENARIO="approve" ;;
   Rejected) SCENARIO="reject" ;;
+  # VNPay (specs/143): the customer decides at the gateway, so this script pays - or cancels - there itself, through
+  # the simulator, the way a customer would. Paying is the default; cancelling is asked for by name.
+  Customer) SCENARIO="vnpay-pay" ;;
 esac
 
 # The override exists for the negative control: forcing "approve" against a
@@ -160,11 +163,44 @@ esac
 # assertions are doing anything at all.
 if [ -n "$SAGA_E2E_SCENARIO" ]; then
   case "$SAGA_E2E_SCENARIO" in
-    approve|reject) SCENARIO="$SAGA_E2E_SCENARIO" ;;
-    *) fail "SAGA_E2E_SCENARIO is '$SAGA_E2E_SCENARIO', which is neither 'approve' nor 'reject'." ;;
+    approve|reject|vnpay-pay|vnpay-cancel) SCENARIO="$SAGA_E2E_SCENARIO" ;;
+    *) fail "SAGA_E2E_SCENARIO is '$SAGA_E2E_SCENARIO', which is none of approve, reject, vnpay-pay, vnpay-cancel." ;;
   esac
   note "scenario forced to '$SCENARIO' (Payment reports '${PAYMENT_OUTCOME_REPORTED:-nothing}')"
 fi
+
+# What the order should end as. The VNPay scenarios end exactly as the stub's do - paid, or refused with the stock
+# released - and every assertion below is about that outcome, whoever decided it.
+case "$SCENARIO" in
+  approve|vnpay-pay) OUTCOME="approve" ;;
+  *) OUTCOME="reject" ;;
+esac
+GATEWAY_CHOICE=""
+case "$SCENARIO" in
+  vnpay-pay) GATEWAY_CHOICE="pay" ;;
+  vnpay-cancel) GATEWAY_CHOICE="cancel" ;;
+esac
+SIMULATOR_URL="${SIMULATOR_URL:-http://localhost:5064}"
+
+# Pays for (or cancels) one order at the gateway, as its customer: waits for Payment's signed link, opens it - the
+# simulator checks the signature as VNPay would - and answers the page. The simulator then tells the shop by a signed
+# IPN; the order's status is read from the shop afterwards, never from the gateway.
+pay_at_gateway() {
+  local order="$1" choice="$2" link="" i code
+  for i in $(seq 1 30); do
+    link="$(get_json "$PAYMENT_URL/api/payments/orders/$order/checkout" "$CUSTOMER_TOKEN" | json_field payUrl 2>/dev/null || true)"
+    [ -n "$link" ] && [ "$link" != "None" ] && [ "$link" != "null" ] && break
+    link=""
+    sleep 1
+  done
+  [ -n "$link" ] || fail "Payment never offered a link to pay for order $order (waited 30s). Is PAYMENT_PROVIDER=VnPay, and did the saga ask Payment to charge it?"
+  code="$(status "$link")"
+  [ "$code" = "200" ] || fail "The simulator refused Payment's link for order $order (HTTP $code): it is signed or built wrongly - the real gateway would refuse it too."
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST "$SIMULATOR_URL/paymentv2/complete" \
+    -H 'Content-Type: application/x-www-form-urlencoded' --data "${link#*\?}&choice=$choice" || true)"
+  [ "$code" = "302" ] || fail "The simulator did not complete the payment of order $order (HTTP $code)."
+  pass "order $order: '$choice' at the gateway (the link verified at the simulator)"
+}
 
 # ---------------------------------------------------------------- reachability
 
@@ -477,6 +513,10 @@ print("ok" if parts[0] + parts[1] + parts[2] - parts[3] == parts[4] else "subtot
 [ "$PARTS" = "ok" ] || fail "The order total's parts do not add up: $PARTS."
 pass "subtotal + delivery + tax - discount = total"
 
+if [ -n "$GATEWAY_CHOICE" ]; then
+  pay_at_gateway "$ORDER_ID" "$GATEWAY_CHOICE"
+fi
+
 # ---------------------------------------------------------------- settle
 
 FINAL_STATUS=""
@@ -567,7 +607,7 @@ assert_eq() {
   fi
 }
 
-if [ "$SCENARIO" = "approve" ]; then
+if [ "$OUTCOME" = "approve" ]; then
   assert_eq "$FINAL_STATUS" "Paid" \
     "status is Paid" \
     "Order $ORDER_ID ended '$FINAL_STATUS', expected 'Paid'. The flow ran to a terminal state and reached the wrong one - this is not a stall."
@@ -624,7 +664,7 @@ print(next((l["quantity"] for l in lines if l["productId"] == sys.argv[1]), 0))
 ' "$PRODUCT_ID"
 }
 
-if [ "$SCENARIO" = "approve" ]; then
+if [ "$OUTCOME" = "approve" ]; then
   CART_AFTER=""
   for i in $(seq 1 20); do
     CART_AFTER="$(cart_qty)"
@@ -649,7 +689,7 @@ fi
 #
 # Feature 011. The order row says items + delivery; what matters is what PAYMENT
 # was asked to take, which comes from the saga, which comes from the event.
-if [ "$SCENARIO" = "approve" ]; then
+if [ "$OUTCOME" = "approve" ]; then
   CHARGED="$(get_json "$PAYMENT_URL/api/payments/$ORDER_ID" "$ADMIN_TOKEN" | "$PYTHON" -c '
 import json, sys
 print("%.2f" % float(json.load(sys.stdin).get("amount", 0)))
@@ -657,6 +697,17 @@ print("%.2f" % float(json.load(sys.stdin).get("amount", 0)))
   assert_eq "$CHARGED" "$EXPECTED_TOTAL" \
     "Payment was asked for items plus delivery ($CHARGED)" \
     "Payment was asked for $CHARGED, but the order is $EXPECTED_TOTAL including delivery. The total travels in OrderSubmittedEvent; if delivery is missing here it was left out of TotalAmount."
+
+  if [ -n "$GATEWAY_CHOICE" ]; then
+    # Decided by VNPay's notification, and the record says so: the sandbox's name and the gateway's own number.
+    BY="$(get_json "$PAYMENT_URL/api/payments/$ORDER_ID" "$ADMIN_TOKEN" | "$PYTHON" -c '
+import json, sys
+p = json.load(sys.stdin)
+print("%s %s" % (p.get("provider"), "with a reference" if p.get("providerReference") else "without a reference"))
+')"
+    assert_eq "$BY" "VnPaySandbox with a reference" "the payment was recorded from VNPay's notification ($BY)" \
+      "The payment reads '$BY', expected VnPaySandbox with the gateway's transaction number."
+  fi
 
   # Staff move it on: Paid -> Preparing -> Shipped. The customer sees each step.
   TRACKING="E2E-$RUN_ID"
@@ -713,6 +764,9 @@ print((json.load(sys.stdin).get("shippingAddress") or {}).get("recipientName", "
   CANCEL_ORDER_ID="$(post_json "$ORDER_URL/api/orders" \
     "$(json_object addressId "$ADDRESS_ID" shippingOption "$SHIPPING_OPTION")" "$CUSTOMER_TOKEN" | json_field orderId)"
   [ -n "$CANCEL_ORDER_ID" ] || fail "The second order, for the cancellation, was not accepted (add-to-cart HTTP $add_code)."
+  if [ -n "$GATEWAY_CHOICE" ]; then
+    pay_at_gateway "$CANCEL_ORDER_ID" pay
+  fi
 
   CANCEL_STATUS=""
   for i in $(seq 1 "$SAGA_TIMEOUT_SECONDS"); do

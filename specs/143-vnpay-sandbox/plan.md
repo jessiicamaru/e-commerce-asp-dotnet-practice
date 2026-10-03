@@ -72,7 +72,7 @@ server/src/Services/Payment/
   Infrastructure/Gateway/{VnPayGateway.cs, VnPaySignature.cs, VnPayOptions.cs, StubPaymentGateway.cs}
   Infrastructure/Migrations/<ts>_AddPaymentCheckouts
   WebApi/Controllers/{PaymentCheckoutsController.cs, VnPayController.cs}
-server/tools/Ecommerce.VnPaySimulator/      pay page, IPN call, redirect
+server/src/Tools/Ecommerce.VnPaySimulator/      pay page, IPN call, redirect
 server/tests/Ecommerce.Payment.Tests/VnPay*Tests.cs
 client/packages/core/src/{services,hooks}/payment, apps/storefront/src/pages/{order,payment-return}
 .github/scripts/verify-saga.sh (vnpay scenario), .github/workflows/ci.yml (third Payment restart)

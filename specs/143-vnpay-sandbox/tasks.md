@@ -24,7 +24,7 @@ description: "Task list for Pay with VNPay (sandbox)"
 
 ## Phase 2: The simulator (US4)
 
-- [ ] T010 `server/tools/Ecommerce.VnPaySimulator`: pay page, complete (IPN + redirect), own signing; slnx, Dockerfile, compose (app overlay; profile in prod)
+- [ ] T010 `server/src/Tools/Ecommerce.VnPaySimulator`: pay page, complete (IPN + redirect), own signing; slnx, Dockerfile, compose (app overlay; profile in prod)
 
 ## Phase 3: Storefront (US1)
 

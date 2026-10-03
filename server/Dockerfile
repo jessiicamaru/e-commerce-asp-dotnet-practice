@@ -68,6 +68,8 @@ COPY src/Services/Payment/Ecommerce.Payment.WebApi/*.csproj             src/Serv
 
 COPY src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/*.csproj   src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 
+COPY src/Tools/Ecommerce.VnPaySimulator/*.csproj             src/Tools/Ecommerce.VnPaySimulator/
+
 RUN dotnet restore "${PROJECT}/$(basename ${PROJECT}).csproj"
 
 # Now the source. Only src/ - the test projects are not needed to run a service,

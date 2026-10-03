@@ -26,7 +26,8 @@ public class GetPaymentsQueryHandler(IPaymentRepository paymentRepository)
                 x.Id, x.OrderId, x.UserId, x.Amount,
                 x.Status.ToString(), x.FailureReason, x.Provider, x.ProcessedAt,
                 refunds.GetValueOrDefault(x.OrderId)?.Amount,
-                refunds.GetValueOrDefault(x.OrderId)?.RefundedAt))
+                refunds.GetValueOrDefault(x.OrderId)?.RefundedAt,
+                x.ProviderReference))
             .ToList();
 
         return new PaginatedList<PaymentResponse>(responses, totalCount, pageNumber, pageSize);

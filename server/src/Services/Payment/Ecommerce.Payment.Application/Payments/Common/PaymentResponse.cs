@@ -10,5 +10,7 @@ public record PaymentResponse(
     string Provider,
     DateTime ProcessedAt,
     decimal? RefundedAmount = null,
-    DateTime? RefundedAt = null
+    DateTime? RefundedAt = null,
+    // The gateway's own transaction number (specs/143) - what to search for in VNPay's merchant portal; null for the stub.
+    string? ProviderReference = null
 );

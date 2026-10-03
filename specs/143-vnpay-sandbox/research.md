@@ -91,7 +91,7 @@ Follow-up noted in the backlog.
 
 ## D8. A simulator, written separately
 
-**Decision**: `server/tools/Ecommerce.VnPaySimulator`, a minimal ASP.NET Core app:
+**Decision**: `server/src/Tools/Ecommerce.VnPaySimulator`, a minimal ASP.NET Core app:
 - `GET /paymentv2/vpcpay.html` verifies the URL's signature, merchant and expiry, then shows the amount with **Pay** and
   **Cancel**;
 - `POST /paymentv2/complete` signs the IPN parameters, calls the configured IPN address server-to-server, then

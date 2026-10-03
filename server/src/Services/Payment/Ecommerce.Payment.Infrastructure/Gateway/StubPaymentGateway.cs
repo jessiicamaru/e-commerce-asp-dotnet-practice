@@ -41,9 +41,8 @@ public class StubPaymentGateway : IPaymentGateway
 
     public bool MovesMoney => false;
 
-    public string HealthOutcome => _configuredOutcome == PaymentStatus.Approved
-        ? PaymentOutcomeOptions.ApproveValue
-        : PaymentOutcomeOptions.RejectValue;
+    // "Approved"/"Rejected", as /health has always said it: verify-saga.sh and CI read exactly these words.
+    public string HealthOutcome => _configuredOutcome.ToString();
 
     public GatewayDecision Begin(Guid orderId, Guid userId, decimal amount, string currency)
     {

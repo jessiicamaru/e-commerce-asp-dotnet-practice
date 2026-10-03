@@ -78,7 +78,7 @@ The response gains `movesMoney` (boolean).
 | `VNPAY_PAYMENT_WINDOW_MINUTES` | 8 | must be shorter than the saga's payment timeout |
 | `VNPAY_LIVE` | `false` | true only for the production gateway: the rows say `VnPay` and `movesMoney` is true |
 
-The simulator (`server/tools/Ecommerce.VnPaySimulator`, port 5064) reads `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` and
+The simulator (`server/src/Tools/Ecommerce.VnPaySimulator`, port 5064) reads `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET` and
 `VNPAY_SIMULATOR_IPN_URL`.
 
 ## Storefront

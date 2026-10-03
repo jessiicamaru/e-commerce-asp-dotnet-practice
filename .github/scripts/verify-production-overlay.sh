@@ -8,7 +8,7 @@
 # - only Caddy publishes a port;
 # - nothing is built;
 # - every image of ours runs at the release;
-# - Mailpit and pgAdmin are off;
+# - Mailpit, pgAdmin and the VNPay simulator are off, and Payment never has the simulator's codes;
 # - no TOTP secret is seeded;
 # - the gateway reads two hops from known proxies.
 # Then it runs deploy.sh --dry-run against the same bundle.
@@ -56,7 +56,13 @@ if len(ours) != 11:
     problems.append(f"expected 11 images of ours, found {len(ours)}: {sorted(ours)}")
 problems += [f"{name} runs {image}, not the release" for name, image in ours.items() if not image.endswith(":" + release)]
 
-for tool in ("mailpit", "pgadmin"):
+payment = services["payment"]["environment"]
+if payment.get("VNPAY_TMN_CODE") == "SIMULATR" or "simulator" in payment.get("VNPAY_HASH_SECRET", ""):
+    problems.append("Payment must never carry the VNPay simulator's development codes in production")
+if not payment.get("VNPAY_RETURN_URL", "").startswith("https://"):
+    problems.append("VNPay must send customers back to the storefront's https address")
+
+for tool in ("mailpit", "pgadmin", "vnpay-simulator"):
     if tool in services:
         problems.append(f"{tool} must stay behind its profile")
 
