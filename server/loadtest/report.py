@@ -40,6 +40,11 @@ def ms(value):
     return '-' if value is None else (f'{value:,.0f}' if value >= 100 else f'{value:,.1f}')
 
 
+def machine(text):
+    """Docker reports memory in bytes; a reader wants GiB."""
+    return re.sub(r'(\d+) bytes', lambda m: f'{int(m.group(1)) / 2**30:.1f} GiB memory', text)
+
+
 def latency_rows(run):
     rows = []
     for step in STEPS[run['scenario']]:
@@ -75,7 +80,7 @@ def main():
         '',
         '## What was measured, and on what',
         '',
-        f"Every run below used the same machine, as Docker reported it: **{runs[0]['machine']}**. The whole stack - 8",
+        f"Every run below used the same machine, as Docker reported it: **{machine(runs[0]['machine'])}**. The whole stack - 8",
         'services, the gateway, both apps, 8 PostgreSQL databases, RabbitMQ, Seq, Mailpit and SeaweedFS - ran on it as',
         'containers, and so did k6. These are therefore numbers for a laptop sharing itself between the load and the',
         'system under it: they show the shape (which step is slow, whether the guarantees hold under contention), not what',
