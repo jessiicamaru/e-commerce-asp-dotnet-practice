@@ -192,7 +192,7 @@ services:
   # The admin password comes from .env and is REQUIRED - Seq refuses to start with an empty one, and
   # running it without authentication is not an option this file offers.
   seq:
-    image: datalust/seq:2024.3
+    image: datalust/seq:2026.1.17182
     container_name: e-commerce-seq
     environment:
       ACCEPT_EULA: "Y"
