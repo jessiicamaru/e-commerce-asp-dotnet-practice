@@ -4,6 +4,21 @@ Documentation for a camera marketplace built as a .NET 10 microservices system -
 a YARP gateway, one PostgreSQL database each, RabbitMQ between them, a saga orchestrating checkout - with
 a React storefront. Start with the [project overview](overview/project-overview.md).
 
+## Read first
+
+Four documents that read from the top, for the report and for anyone new (specs/152). Each summarises and links down
+into the pages below:
+
+- [**Architecture overview**](overview/architecture-overview.md) - the whole system on one page: one diagram, how a
+  request travels, how the checkout saga's messages travel, and the rules that hold it together.
+- [**Deployment**](guides/deployment.md) - from a bare server to a running shop: secrets, the first deploy, the first
+  administrator, watching it, rolling back, and what is not exercised yet.
+- [**Evaluation**](testing/evaluation.md) - what was measured and what it showed: tests and mutations, the
+  last-unit race, latency, resilience under faults, security scanning, the defects measurement found, and the
+  limitations.
+- [**Demo script**](guides/demo-script.md) - a 30-minute walk through every role, from a seller's application to a
+  customer's review, ending on traces, metrics and a live broker outage.
+
 Everything here describes the system **as it runs**. The reasoning behind each feature - what was
 decided, what was rejected and why - is in its design record under [`specs/`](../specs/); the
 [decision log](project/decisions.md) indexes the important ones.

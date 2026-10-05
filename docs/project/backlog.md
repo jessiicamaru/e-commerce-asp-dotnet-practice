@@ -72,7 +72,6 @@ deployment over HTTPS, a real payment flow (VNPay sandbox, replacing the stub), 
 
 | Issue | Title |
 | :-- | :-- |
-| [#295](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/295) | The report's architecture overview, deployment guide and evaluation |
 
 ## Priority 3 - technical debt
 
@@ -145,6 +144,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#306](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/306) | A message redelivered mid-consume faults on the inbox's unique key (found 2026-10-05 by #292's broker-fault run) | [#308](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/308) (specs/149) |
 | [#293](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/293) | Automated security scanning in CI | [#309](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/309) (specs/150) |
 | [#294](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/294) | Security headers on both apps | [#325](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/325) (specs/151) |
+| [#295](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/295) | The report's architecture overview, deployment guide and evaluation | [#327](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/327) (specs/152) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |
