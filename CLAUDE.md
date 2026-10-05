@@ -111,8 +111,8 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (57 tests, PostgreSQL on 5437),
-`Ecommerce.Payment.Tests` (26 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (83 tests, PostgreSQL on 5437),
+`Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (221 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (260 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (36 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
@@ -966,7 +966,9 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   anywhere, the first such failure faulted the message to `<queue>_error`. The load test of #290 found a paid order's
   stock confirmation there, its units held for the expiry sweeper to resell. Every service's endpoint callback now
   calls `cfg.UseTransientRetry()` (`Ecommerce.Shared/Messaging`) **before** `UseEntityFrameworkOutbox`. It handles
-  `40001`, `40P01` and transient connections only, with jittered backoff. Identity and Cart have a callback just for
+  `40001`, `40P01`, transient connections and - since specs/149 (#306) - a `23505` on the inbox's own key
+  `AK_InboxState_MessageId_ConsumerId` (a message delivered twice at once, as after a broker outage: retried, the inbox
+  drops the duplicate; any other `23505` still faults), with jittered backoff. Identity and Cart have a callback just for
   it. ⚠️ A new service adds the same line, or its consumers lose messages under load. **Inventory consumes at
   `READ COMMITTED`** (specs/146, #301): its reservations lock the hot stock row `FOR UPDATE`, which `REPEATABLE READ`
   turned into thousands of aborts a run; `READ COMMITTED` gives zero, with the same median and a tighter tail. The

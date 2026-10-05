@@ -15,9 +15,10 @@ public class TransientRetryTests
     public record Confirm(Guid Id);
 
     /// <summary>Shaped like Npgsql's PostgresException: what the policy reads is the SqlState, by name.</summary>
-    public class FakePostgresException(string sqlState) : Exception($"{sqlState}: could not serialize access due to concurrent update")
+    public class FakePostgresException(string sqlState, string? constraintName = null) : Exception($"{sqlState}: could not serialize access due to concurrent update")
     {
         public string SqlState { get; } = sqlState;
+        public string? ConstraintName { get; } = constraintName;
     }
 
     public class Flaky : IConsumer<Confirm>
@@ -104,11 +105,15 @@ public class TransientRetryTests
     }
 
     [Fact]
-    public void Only_serialization_failures_deadlocks_and_transient_connections_count()
+    public void Only_serialization_failures_deadlocks_inbox_duplicates_and_transient_connections_count()
     {
         Assert.True(TransientRetry.IsTransient(new FakePostgresException("40001")));
         Assert.True(TransientRetry.IsTransient(new Exception("outer", new FakePostgresException("40P01"))));
         Assert.False(TransientRetry.IsTransient(new FakePostgresException("23505")));   // a unique violation is a decision
+        Assert.False(TransientRetry.IsTransient(new FakePostgresException("23505", "IX_payments_OrderId")));
+        // ... except on the inbox's own key, where it is a duplicate delivery racing its twin (specs/149, #306).
+        Assert.True(TransientRetry.IsTransient(new Exception("outer", new FakePostgresException("23505", "AK_InboxState_MessageId_ConsumerId"))));
+        Assert.False(TransientRetry.IsTransient(new FakePostgresException("23503", "AK_InboxState_MessageId_ConsumerId")));
         Assert.False(TransientRetry.IsTransient(new TimeoutException()));
         Assert.False(TransientRetry.IsTransient(new InvalidOperationException("outer", new ArgumentException())));
     }
