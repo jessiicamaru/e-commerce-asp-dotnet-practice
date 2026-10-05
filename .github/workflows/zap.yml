@@ -1,0 +1,80 @@
+name: ZAP baseline
+
+# OWASP ZAP's passive baseline against the storefront and the back office, served by their own nginx images in the
+# compose stack (specs/150, #293). It sees what the code scans cannot: headers, cache rules, cookies, version banners.
+# Each rule's decision is in .zap/rules.tsv - FAIL fails this job, WARN is tracked by the issue it names.
+# On main, on demand, and on a pull request that changes what it checks - the nginx configuration and image, or the rules
+# themselves (#294's headers land that way). Not on every pull request: the stack takes minutes to start (research D3).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - .zap/**
+      - .github/workflows/zap.yml
+      - client/nginx/**
+      - client/Dockerfile
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: ZAP baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      # CI-only values, thrown away with the runner - the same as the browser end-to-end job's.
+      - name: Write a throwaway .env
+        working-directory: server
+        run: |
+          cat > .env <<'ENV'
+          DB_USER=postgres
+          DB_PASSWORD=ci-postgres
+          PGADMIN_EMAIL=ci@ci.local
+          PGADMIN_PASSWORD=ci-pgadmin
+          JWT_SECRET=ci-only-jwt-secret-at-least-32-bytes-long
+          RABBITMQ_USER=ci
+          RABBITMQ_PASSWORD=ci-password
+          RABBITMQ_PASS=ci-password
+          ADMIN_EMAIL=admin@ci.local
+          ADMIN_PASSWORD=ci-admin-password
+          TWO_FACTOR_KEY=Y2ktb25seS10d28tZmFjdG9yLWtleS0zMi1ieXRlcyE=
+          ADMIN_TOTP_SECRET=MNUS233ONR4S25DPORYC243FMNZGK5BB
+          SEQ_ADMIN_PASSWORD=ci-seq-password
+          GRAFANA_ADMIN_PASSWORD=ci-grafana-password
+          PAYMENT_OUTCOME=Approve
+          INVENTORY_RESERVATION_TTL_MINUTES=15
+          ORCHESTRATOR_PAYMENT_TIMEOUT_SECONDS=600
+          STOREFRONT_URL=http://localhost:8088
+          SEAWEEDFS_ACCESS_KEY=ci-catalog
+          SEAWEEDFS_SECRET_KEY=ci-catalog-secret
+          ENV
+
+      - name: Build and start the stack
+        working-directory: server
+        run: docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build --wait --wait-timeout 600
+
+      # -I: only rules marked FAIL in the rules file fail the step. ZAP never files issues by itself.
+      - name: Scan the storefront
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: http://localhost:8088
+          rules_file_name: .zap/rules.tsv
+          cmd_options: -I
+          allow_issue_writing: false
+          artifact_name: zap-storefront
+
+      - name: Scan the back office
+        if: success() || failure()
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: http://localhost:8089
+          rules_file_name: .zap/rules.tsv
+          cmd_options: -I
+          allow_issue_writing: false
+          artifact_name: zap-back-office

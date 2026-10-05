@@ -1,0 +1,57 @@
+name: CodeQL
+
+# Static analysis of the code's data flow (specs/150, #293): user input reaching a query, a path, a redirect or a log
+# line. Alerts appear under Security -> Code scanning, triaged in docs/testing/security-scanning.md.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Weekly as well: new queries find old code.
+  schedule:
+    - cron: '23 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Built by hand, as the build job builds it, so CodeQL sees the resolved types (research D1).
+          - language: csharp
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      - name: Set up .NET
+        if: matrix.language == 'csharp'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build the solution
+        if: matrix.language == 'csharp'
+        working-directory: server
+        run: dotnet build Ecommerce.slnx --configuration Release
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}

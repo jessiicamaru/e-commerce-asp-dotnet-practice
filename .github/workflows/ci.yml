@@ -170,6 +170,16 @@ jobs:
       - name: Build
         run: dotnet build Ecommerce.slnx --configuration Release --no-restore
 
+      # No package with a published advisory, direct or transitive (specs/150). The listing says "has the following
+      # vulnerable packages" for each project that has one; any such line fails the build, naming the package.
+      - name: No vulnerable NuGet package
+        run: |
+          dotnet list Ecommerce.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::a NuGet package with a known vulnerability - see the listing above"
+            exit 1
+          fi
+
       # The suites need a real PostgreSQL: every guarantee they assert — no overselling under
       # concurrency, a unique constraint stopping a duplicate payment, a guarded UPDATE refusing
       # to re-settle an order — is the database's behaviour, and an in-memory provider would pass
@@ -315,6 +325,11 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      # No runtime package with a high or critical advisory (specs/150): the bundle is what a browser runs. Build tools
+      # (devDependencies) run on our own machines with our own inputs, and are left to Dependabot (research D2).
+      - name: No vulnerable runtime package
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Lint
         run: npm run lint

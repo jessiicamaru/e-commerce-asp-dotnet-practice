@@ -1,0 +1,51 @@
+# Dependency updates for every ecosystem the project uses (specs/150, #293). Weekly; minor and patch updates grouped into
+# one pull request per ecosystem, majors one at a time - those are the ones that break (research D5). Each pull request
+# is tested by CI like any other and merged by a person.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /server
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      nuget-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /client
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  # Base images: server/Dockerfile (the nine services) and client/Dockerfile (storefront, back office).
+  - package-ecosystem: docker
+    directories: [/server, /client]
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      docker-minor-and-patch:
+        update-types: [minor, patch]
+
+  # The infrastructure images pinned in compose: PostgreSQL, RabbitMQ, Seq, Prometheus, Grafana, SeaweedFS, Caddy ...
+  - package-ecosystem: docker-compose
+    directory: /server
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      compose-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
