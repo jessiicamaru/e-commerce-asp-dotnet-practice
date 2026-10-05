@@ -2,12 +2,26 @@
 # Caddy obtains and renews the certificates; for *.localhost it uses its own CA, which is how the overlay is verified on
 # a laptop. Everything behind it is the apps' nginx, which forwards /api to the gateway - one origin per app, no CORS.
 
+#
+# HSTS is set here (specs/151, #294), the one place that speaks HTTPS: a browser that has seen it never tries plain HTTP
+# for that host again for a year, so a first-request downgrade cannot strip TLS. Not includeSubDomains and not preload:
+# the shop does not own what other names under its domain serve. Caddy's own Server header goes too - the apps' nginx
+# sends none with a version, and neither should the entrance. Every other security header is the apps' own.
+(security) {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}
+
 {$SHOP_DOMAIN} {
+	import security
 	encode zstd gzip
 	reverse_proxy storefront:8080
 }
 
 {$PORTAL_DOMAIN} {
+	import security
 	encode zstd gzip
 	reverse_proxy back-office:8080
 }

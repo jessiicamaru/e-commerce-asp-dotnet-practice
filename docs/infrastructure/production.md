@@ -20,7 +20,7 @@ Docker Compose **v2.24 or later** is required: the overlay removes ports and bui
 | `build: !reset null` | Nothing is compiled on the server. What runs is the bytes CI built and scanned. |
 | `ports: !reset []` on every database, the broker, Seq, SeaweedFS, every service and the gateway | One door. A published database port on a server is one firewall mistake from the internet. |
 | Mailpit only with the `mail-catcher` profile, pgAdmin only with `tools` | A mail catcher would swallow customers' email; a database console has no place on a server. |
-| **Caddy** on 80/443, at `172.30.10.2` on the `edge` network | Terminates HTTPS and obtains and renews certificates itself. |
+| **Caddy** on 80/443, at `172.30.10.2` on the `edge` network | Terminates HTTPS and obtains and renews certificates itself. It adds `Strict-Transport-Security: max-age=31536000` and drops its own `Server` header (specs/151). Every other security header - the CSP and the rest - is the apps' own nginx's, the same in every environment. |
 | Identity: `ADMIN_TOTP_SECRET: ""`, the `SMTP_*` account, `STOREFRONT_URL`, `BackOffice__Origins` | A production administrator enrols their own authenticator (specs/110); email goes to a real mail server; links and the back office's origin come from the domains. |
 | The gateway: `GATEWAY_TRUSTED_PROXIES` adds Caddy, `GATEWAY_FORWARD_LIMIT: "2"` | Two proxies now stand in front of it (§3). |
 | The apps: `STOREFRONT_URL` and `BACK_OFFICE_URL` as `https://` addresses | `/app-config.js` hands them to the browser for the handoff between the two apps (ADR-003). |

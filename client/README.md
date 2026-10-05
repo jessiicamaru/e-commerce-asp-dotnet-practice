@@ -132,6 +132,12 @@ Two rules that come out of the structure:
 - **Server state belongs to TanStack Query.** A mutation invalidates what it affected rather than
   editing a local copy, because prices, availability and totals are the server's to decide. Signing
   out clears the cache: whose cart is held has to change with who is signed in.
+- **The images send security headers** (specs/151): `nginx/security-headers.conf`, included in every
+  `location`. The Content-Security-Policy allows scripts, fonts, connections and images from the app's
+  own origin only, so nothing may be loaded from a CDN, no inline `<script>` may be added, and no
+  `eval` may be used. Inline styles are allowed, because Sonner and TipTap inject them. COEP
+  `require-corp` means a cross-origin resource needs CORP. Every Playwright test fails on a
+  violation, so a change that breaks the policy fails in the browser run, not in production.
 
 ## Tests
 

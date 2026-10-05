@@ -126,6 +126,26 @@ else
   fail "index.html names no /assets/*.js"
 fi
 
+# --- the security headers (specs/151, #294), on every kind of answer ---------------------------------
+# nginx drops a server's add_header in a location that sets its own, so each location includes the snippet; asking
+# each kind of answer is what catches a location that forgot it. The policy is pinned EXACTLY: loosening it - a
+# script-src 'unsafe-inline', a wildcard - must fail here, not pass because the header is still present.
+CSP="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+for where in "/" "/orders/1" "${asset:-/favicon.svg}" "/app-config.js" "/api/products"; do
+  bad=""
+  [ "$(header "$BASE$where" 'content-security-policy')" = "$CSP" ] || bad="$bad CSP='$(header "$BASE$where" 'content-security-policy')'"
+  [ "$(header "$BASE$where" 'x-content-type-options')" = "nosniff" ] || bad="$bad nosniff"
+  [ "$(header "$BASE$where" 'x-frame-options')" = "DENY" ] || bad="$bad X-Frame-Options"
+  [ "$(header "$BASE$where" 'referrer-policy')" = "strict-origin-when-cross-origin" ] || bad="$bad Referrer-Policy"
+  header "$BASE$where" 'permissions-policy' | grep -q 'camera=()' || bad="$bad Permissions-Policy"
+  [ "$(header "$BASE$where" 'cross-origin-opener-policy')" = "same-origin" ] || bad="$bad COOP"
+  [ "$(header "$BASE$where" 'cross-origin-embedder-policy')" = "require-corp" ] || bad="$bad COEP"
+  [ "$(header "$BASE$where" 'cross-origin-resource-policy')" = "same-origin" ] || bad="$bad CORP"
+  if [ -z "$bad" ]; then pass "security headers on $where"; else fail "security headers on $where:$bad"; fi
+done
+server="$(header "$BASE/" 'server')"
+if printf '%s' "$server" | grep -q '[0-9]'; then fail "the Server header gives a version away: '$server'"; else pass "no version in the Server header ('$server')"; fi
+
 echo
 if [ "$failures" -gt 0 ]; then
   echo "::error::$failures $WHAT image check(s) failed for $IMAGE"

@@ -221,8 +221,19 @@ until #28 stopped Identity throwing bare `Exception`s.
 - `dependabot.yml` covers five ecosystems, weekly and grouped.
 - `zap.yml` runs OWASP ZAP's passive baseline on both images: on main, and on pull requests touching `client/nginx`,
   `client/Dockerfile` or `.zap/`.
-- ⚠️ Every ZAP rule is FAIL in `.zap/rules.tsv` except the decided ones: WARN names the issue fixing it (#294's
-  headers - move them to FAIL in that change), IGNORE says why not.
+- ⚠️ Every ZAP rule is FAIL in `.zap/rules.tsv` except the decided ones: WARN names its reason, IGNORE says why not.
+
+**Both apps send security headers** (specs/151, #294): `client/nginx/security-headers.conf`, carrying the CSP, nosniff,
+`X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP/COEP/CORP and `server_tokens off`; HSTS is Caddy's.
+- ⚠️ **Every `location` includes the snippet**: nginx drops a server's `add_header` in any location that sets its own,
+  and they all set `Cache-Control`. A new location includes it too, or `verify-storefront-image.sh` fails. That script
+  pins the CSP character for character.
+- The CSP is `script-src 'self'` strictly, and `style-src 'self' 'unsafe-inline'`: Sonner and TipTap inject `<style>`,
+  and sanitised HTML carries `style` attributes. The first strict attempt silently unstyled every toast.
+- ⚠️ **Every Playwright test fails on a CSP, COEP or CORP violation** (`e2e/support/test.ts`). Import `test`/`expect`
+  from there, never from `@playwright/test`. A context made by hand calls `watchContentSecurityPolicy` itself.
+- ⚠️ COEP `require-corp`: anything loaded from another origin (a CDN, an embed) must send CORP, or the policy is
+  revisited.
 
 CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then **two smoke jobs side
 by side** — `auth-smoke` (three services) and `saga-e2e` (six services plus RabbitMQ, both branches,

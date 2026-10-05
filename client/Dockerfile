@@ -35,6 +35,8 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 ARG APP=storefront
 
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+# Included by every location of the template (specs/151). Not a template: it has no variable to fill.
+COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /src/apps/${APP}/dist /usr/share/nginx/html
 
 # Where /api goes. Compose sets it; the default is the gateway's name in docker-compose.app.yml.

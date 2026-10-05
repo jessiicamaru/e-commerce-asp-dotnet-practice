@@ -1,7 +1,8 @@
-import { expect, request, test, type APIRequestContext } from '@playwright/test'
+import { request, type APIRequestContext } from '@playwright/test'
 import { Api, type Person } from './support/api'
 import { freshCode } from './support/totp'
 import { BACK_OFFICE, signIn, signInToBackOffice } from './support/ui'
+import { expect, test } from './support/test'
 
 /**
  * The back office in a browser (specs/136, 137, ADR-003): staff sign in on an origin of their own, with the code, and

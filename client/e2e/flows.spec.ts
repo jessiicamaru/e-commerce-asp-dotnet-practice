@@ -1,6 +1,7 @@
-import { expect, request, test, type APIRequestContext } from '@playwright/test'
+import { request, type APIRequestContext } from '@playwright/test'
 import { Api, type Listed, type Person } from './support/api'
 import { BACK_OFFICE, findOnPages, signIn, signInToBackOffice } from './support/ui'
+import { expect, test, watchContentSecurityPolicy } from './support/test'
 
 /**
  * The storefront in a browser against the real stack (specs/080, #117). Four flows a person takes, in order, each
@@ -158,6 +159,8 @@ test.describe.serial('the storefront, end to end', () => {
    */
   test('a shopper on a phone sees the catalogue two to a row', async ({ browser, baseURL }) => {
     const context = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+    // A context of its own, so the fixture's watch does not reach it: watched here instead (specs/151).
+    const violations = watchContentSecurityPolicy(context)
     const page = await context.newPage()
     await page.addInitScript(() => localStorage.setItem('language', 'en'))
     await page.goto('/')
@@ -169,6 +172,7 @@ test.describe.serial('the storefront, end to end', () => {
     const top = await cards.nth(0).evaluate((card) => card.getBoundingClientRect().top + window.scrollY)
     expect(top, 'the first product starts within 1.3 screens').toBeLessThan(1100)
     expect(await page.evaluate(() => document.documentElement.scrollWidth), 'nothing scrolls sideways').toBeLessThanOrEqual(390)
+    expect(violations, 'Content-Security-Policy violations').toEqual([])
     await context.close()
   })
 })
