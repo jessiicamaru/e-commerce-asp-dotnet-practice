@@ -60,17 +60,31 @@ not applicable, with why. When #294 adds the security headers, their rules move 
 
 ### CodeQL
 
-Triaged on the pull request that added it. See the table below.
+**No alerts** on the first analysis (pull request #309, 2026-10-05). C# ran 63 queries over the built solution and
+TypeScript 103 queries, both at `security-extended`. The data-flow paths CodeQL looks for are the ones the codebase
+already closes:
+- every query is LINQ or parameterised SQL, and the `LIKE` escape is named (`SearchFunctions.Escape`);
+- redirects are within the app;
+- untrusted HTML goes through DOMPurify (`NoticeText`).
+
+Zero is only worth reporting if the scan can find something, so a deliberate vulnerability was planted on the same
+pull request and then reverted. CodeQL raised both:
+
+| Planted | Alert |
+| :-- | :-- |
+| a Catalog action building `SELECT ... WHERE "Name" = '` + a query-string value + `'` | `cs/sql-injection`, high: SQL query built from user-controlled sources |
+| a storefront function writing a URL parameter into `document.body.innerHTML` | `js/xss`, high: client-side cross-site scripting |
 
 ## Proving the gates bite
 
-Each package check was shown failing on a planted vulnerable package, then restored:
+Each check was shown failing on something planted, then restored:
 
 | Planted | Result |
 | :-- | :-- |
 | `System.Text.Json` 8.0.0 in a test project | listed with GHSA-hh2w-p6rv-4g7w and GHSA-8g4q-xg66-9fp4 (High): the build job's check fails |
 | `lodash` 4.17.20 in the storefront | `npm audit --omit=dev --audit-level=high` exits 1, naming the command-injection advisory |
 | ZAP rule 10021 switched to FAIL | `zap-baseline.py` exits 1 with `FAIL-NEW: 1` |
+| a SQL injection and a DOM XSS (above) | CodeQL raises `cs/sql-injection` and `js/xss`, both high |
 
 ## Run them yourself
 

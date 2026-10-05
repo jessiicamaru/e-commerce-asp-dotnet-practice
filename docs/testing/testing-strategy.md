@@ -185,6 +185,12 @@ timeline beside its summary, and `python server/loadtest/resilience_report.py` w
 
 All four pass. The broker outage is the slowest to recover, and #304 investigates why.
 
+## Security scanning
+
+CodeQL (C# and TypeScript) on every pull request; vulnerable NuGet packages and runtime npm advisories fail the build;
+Dependabot proposes updates weekly; OWASP ZAP's passive baseline scans both apps' images on main. What each sees, and
+the first round's triage: [security scanning](security-scanning.md) (specs/150).
+
 ## Mutation checks
 
 When code is written before its tests, or a test might pass for the wrong reason, the rule it guards is
@@ -205,6 +211,9 @@ mutated binary - `touch` the restored file.
 | Image carries no secret | Checks every layer of every image for credentials |
 | Auth smoke test | `verify-auth.sh` against three services |
 | Saga end-to-end | All services and RabbitMQ in containers; `verify-saga.sh` on both branches |
+| No vulnerable package | Steps in the build and client jobs: `dotnet list package --vulnerable --include-transitive` and `npm audit --omit=dev --audit-level=high` (specs/150) |
+| CodeQL | Its own workflow, `codeql.yml`: C# and TypeScript, `security-extended` (specs/150) |
+| ZAP baseline | Its own workflow, `zap.yml`: on main and on pull requests touching nginx or `.zap/` (specs/150) |
 | Publish images | On `main` only, after the checks (the storefront's included): eleven images - nine server images, the storefront and the back office (specs/136) - with immutable `sha-` tags to GHCR |
 
 A pull request is squash-merged only when every job is green.

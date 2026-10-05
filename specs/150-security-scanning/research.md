@@ -76,8 +76,10 @@ nested patterns. It reaches us through `shadcn` → `fast-glob` → `micromatch`
 
 **NuGet, 2026-10-05**: `dotnet list package --vulnerable --include-transitive` lists nothing.
 
-**CodeQL**: triaged on this feature's pull request (SC-001). The alerts and their decisions are added here and in the
-docs page.
+**CodeQL** (pull request #309): **no alerts** from 63 C# and 103 TypeScript `security-extended` queries. To show the
+zero means something, a planted SQL injection (a Catalog action concatenating a query-string value into `CommandText`)
+and a planted DOM XSS (a URL parameter into `innerHTML`) were pushed to the same pull request. CodeQL raised
+`cs/sql-injection` and `js/xss`, both high, and the plant was reverted.
 
 ## D5. Dependabot, grouped and weekly
 
