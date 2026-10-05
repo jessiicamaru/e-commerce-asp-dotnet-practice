@@ -113,11 +113,11 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (83 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (221 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
-(19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (260 tests, PostgreSQL on 5435) and
-`Ecommerce.Activity.Tests` (36 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (268 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+(19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
+`Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
-5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (13 tests, no database - the
+5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (22 tests, no database - the
 gateway's real pipeline through WebApplicationFactory, specs/062). They run against a **real PostgreSQL** — the guarantees under test are the
 database's row locking, unique constraints and guarded updates, so an in-memory provider would pass
 against code that oversells or re-settles a finished order. Run them with `DB_PASSWORD` set:
@@ -1225,7 +1225,10 @@ A small feature gets short files, never missing ones; a section that does not ap
 ## Documentation
 
 [docs/](docs/) is substantial and kept current — [docs/README.md](docs/README.md) is the index, and it
-will be the basis of a written project report, so treat it as a deliverable. It is organised as
+will be the basis of a written project report, so treat it as a deliverable. Four documents read from the top
+(specs/152): the [architecture overview](docs/overview/architecture-overview.md), [deployment](docs/guides/deployment.md),
+the [evaluation](docs/testing/evaluation.md) and the [demo script](docs/guides/demo-script.md). ⚠️ The evaluation's
+numbers each link to a run. A new load, fault or security run that changes them updates it too. It is organised as
 `overview/` (project, glossary), `architecture/`, `features/` (one page per business area: rules and
 why, data, API, tests, history), `reference/` (**generated**), `testing/`, `project/` (timeline, decision
 log, backlog), `guides/`, `infrastructure/` and `concepts/`. Consult the architecture docs before design
