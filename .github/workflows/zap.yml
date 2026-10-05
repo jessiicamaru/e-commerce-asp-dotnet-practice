@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # CI-only values, thrown away with the runner - the same as the browser end-to-end job's.
       - name: Write a throwaway .env

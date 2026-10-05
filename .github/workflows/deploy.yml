@@ -55,7 +55,7 @@ jobs:
       DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The release names a commit by its short sha; finding it needs the history.
           fetch-depth: 0
