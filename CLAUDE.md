@@ -213,6 +213,17 @@ with a status test, and the gateway route it goes through. `security-checks/` ho
 cases (401, 403, 400, 404, 409). The whole collection passes; `duplicate registration is 409` was red
 until #28 stopped Identity throwing bare `Exception`s.
 
+**Security scanning** (specs/150, #293; [docs/testing/security-scanning.md](docs/testing/security-scanning.md)):
+- `codeql.yml` (C# built, TypeScript; `security-extended`) runs on every pull request.
+- The build job fails on any vulnerable NuGet package, transitive included.
+- The client job runs `npm audit --omit=dev --audit-level=high`. Runtime packages only, which is why `shadcn`, a
+  build-time tool, is a devDependency.
+- `dependabot.yml` covers five ecosystems, weekly and grouped.
+- `zap.yml` runs OWASP ZAP's passive baseline on both images: on main, and on pull requests touching `client/nginx`,
+  `client/Dockerfile` or `.zap/`.
+- ⚠️ Every ZAP rule is FAIL in `.zap/rules.tsv` except the decided ones: WARN names the issue fixing it (#294's
+  headers - move them to FAIL in that change), IGNORE says why not.
+
 CI is [.github/workflows/ci.yml](.github/workflows/ci.yml): a `build` job, then **two smoke jobs side
 by side** — `auth-smoke` (three services) and `saga-e2e` (six services plus RabbitMQ, both branches,
 Payment restarted in between). They depend only on `build`, so they run concurrently, and `publish`
