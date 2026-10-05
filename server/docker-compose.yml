@@ -225,7 +225,7 @@ services:
   # provisioned from server/observability/grafana, read-only - a change is made in the repository, not clicked in.
   # The admin password is REQUIRED, as Seq's is.
   grafana:
-    image: grafana/grafana:12.1.1
+    image: grafana/grafana:13.2.3
     container_name: e-commerce-grafana
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in server/.env - see .env.example}
