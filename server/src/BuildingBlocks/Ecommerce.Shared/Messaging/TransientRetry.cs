@@ -16,18 +16,33 @@ public static class TransientRetry
 {
     private const string SerializationFailure = "40001";
     private const string DeadlockDetected = "40P01";
+    private const string UniqueViolation = "23505";
 
     /// <summary>
-    /// Whether anything in the chain is a failure worth trying again: PostgreSQL's serialization failure or deadlock,
-    /// or an Npgsql exception that marks itself transient (a lost connection). Read by property name, as Payment does,
-    /// so this building block takes no dependency on Npgsql.
+    /// The inbox's own key (MassTransit's <c>AddTransactionalOutboxEntities</c>, the same name in every service). Two
+    /// deliveries of one message consumed at once both insert it, and the second fails on it (specs/149, #306); tried
+    /// again, it finds the row consumed and the inbox drops the duplicate.
+    /// </summary>
+    private const string InboxKey = "AK_InboxState_MessageId_ConsumerId";
+
+    /// <summary>
+    /// Whether anything in the chain is a failure worth trying again: PostgreSQL's serialization failure or deadlock, a
+    /// duplicate on the inbox's key, or an Npgsql exception that marks itself transient (a lost connection). Read by
+    /// property name, as Payment does, so this building block takes no dependency on Npgsql. Any other unique violation
+    /// is a decision about the shop's own data, never retried.
     /// </summary>
     public static bool IsTransient(Exception exception)
     {
         for (var current = exception; current is not null; current = current.InnerException)
         {
             var type = current.GetType();
-            if (type.GetProperty("SqlState")?.GetValue(current) is SerializationFailure or DeadlockDetected)
+            var sqlState = type.GetProperty("SqlState")?.GetValue(current) as string;
+            if (sqlState is SerializationFailure or DeadlockDetected)
+            {
+                return true;
+            }
+
+            if (sqlState == UniqueViolation && type.GetProperty("ConstraintName")?.GetValue(current) as string == InboxKey)
             {
                 return true;
             }

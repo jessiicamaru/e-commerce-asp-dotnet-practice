@@ -208,7 +208,7 @@ When processing distributed transactions across multiple microservices, errors a
 
 | Layer | Status |
 | :--- | :--- |
-| Retry policy | **Transient database failures only, since specs/145 (#299)**: `TransientRetry.UseTransientRetry()` (`Ecommerce.Shared/Messaging`) on every receive endpoint of every service, before the EF outbox. A serialization failure (`40001`), a deadlock (`40P01`) or a connection Npgsql calls transient is tried again in a fresh transaction, up to ten more times with growing, jittered intervals. Anything else faults at once. |
+| Retry policy | **Transient database failures only, since specs/145 (#299)**: `TransientRetry.UseTransientRetry()` (`Ecommerce.Shared/Messaging`) on every receive endpoint of every service, before the EF outbox. A serialization failure (`40001`), a deadlock (`40P01`), a duplicate on the inbox's own key (`23505` on `AK_InboxState_MessageId_ConsumerId`, specs/149) or a connection Npgsql calls transient is tried again in a fresh transaction, up to ten more times with growing, jittered intervals. Anything else faults at once. |
 | Circuit breaker | **None configured.** |
 | Error queue | MassTransit's default: a faulted message moves to `<queue>_error`, where it stays until someone looks. Nothing replays it. |
 | Business compensation | The saga's only compensation is `ReleaseInventoryCommand`, sent when payment fails. A failed reservation holds nothing, so it needs none. After the saga, cancelling a paid order (specs/039) publishes `OrderCancelledEvent`: Inventory puts the units back and Payment records a refund (which moves no money - the provider is a stub). That is not a saga step; each service undoes its own part from its own rows. |
@@ -271,6 +271,22 @@ already failed.
 - The other services stay at the default until they are measured.
 `TransientRetryTests` (Inventory.Tests) hold a `40001` and a `40P01` consumer to success, and a non-transient one to
 an immediate fault.
+
+**A message delivered twice at once** (specs/149, #306). After a broker outage the same message can be in flight
+twice: a delivery never acknowledged comes again on the new connection, or an outbox repeats a send it never marked
+done.
+- **What goes wrong:** both consumes find no inbox row and both insert one. The second waits on the unique index until
+  the first commits, then fails with `23505` on `AK_InboxState_MessageId_ConsumerId`. That is a *receive* fault: the
+  inbox runs before the consumer, so no consumer can catch it, and the message lands in its `_error` queue. #292's
+  broker-fault run left a `ProcessPaymentCommand` there for an order its twin had paid.
+- **The fix:** that one constraint is transient. Tried again, the delivery finds the row consumed and the inbox drops
+  it, which is the inbox's job.
+- **What stays the same:** every other `23505` still faults at once. One payment per order, one review per customer:
+  those are decisions about the shop's data, not races.
+- **The test:** `InboxRedeliveryTests` (Payment.Tests) delivers one message twice at once through the real EF inbox on
+  PostgreSQL. With the policy it is consumed once with no fault; without it, the production fault appears. It counts
+  faults with a receive observer, because the harness keeps one record per message id and a duplicate would hide
+  behind its twin.
 
 ### 5.2 Circuit Breaker (Infrastructure Isolation) — *not configured*
 If a microservice is unresponsive for extended periods, the Circuit Breaker trips, pausing message delivery to prevent Queue congestion.

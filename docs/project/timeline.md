@@ -203,6 +203,7 @@ Committed directly to `main`, before the feature-cycle process. In order:
 | [144](../../specs/144-load-tests/) | Load tests | #303 | #290: k6 scenarios against the compose stack - the race for the last units, steady checkouts of one product, browsing - each checking its invariants through the API, with a report generated from kept summaries; their first runs found #299 and #301 |
 | [147](../../specs/147-resilience/) | Resilience | #305 | #291: fault.sh stops Payment or the broker, restarts the orchestrator or hangs Inventory during steady checkouts: nothing lost under any, no customer error, recovery times measured; the slow drain after a broker outage filed as #304 |
 | [148](../../specs/148-metrics/) | Metrics | #307 | #292: every service pushes OpenTelemetry metrics to Prometheus's OTLP receiver, RabbitMQ scraped, Grafana's provisioned E-commerce overview; orders, settle percentiles and outbox backlogs are gauges from committed rows; the broker-fault run found #306 |
+| [149](../../specs/149-inbox-redelivery/) | Inbox redelivery | #308 | #306: a message delivered twice at once (as after a broker outage) faulted on the inbox's unique key into an _error queue; the transient policy now retries that one constraint and the inbox drops the duplicate; reproduced on the real inbox |
 
 Specs 023, 024, 025, 026 and 030 were built without a design record. Theirs were written on 2026-09-27, from the
 code at each merge and its pull request, when every record was brought to the standard of specs/001.

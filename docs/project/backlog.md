@@ -31,7 +31,6 @@ Found on 2026-10-03 by the load test of #290 and the resilience runs of #291 - m
 | Issue | Title |
 | :-- | :-- |
 | [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | After a broker outage, new orders wait a minute behind the outbox backlog |
-| [#306](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/306) | A message redelivered mid-consume faults on the inbox's unique key (found 2026-10-05 by #292's broker-fault run) |
 
 ## Priority 1 - accounts and security
 
@@ -145,6 +144,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#290](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/290) | Load-test checkout and measure it | [#303](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/303) (specs/144) |
 | [#291](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/291) | Resilience: checkout survives a service or the broker going down | [#305](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/305) (specs/147) |
 | [#292](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/292) | Metrics: Prometheus and Grafana dashboards | [#307](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/307) (specs/148) |
+| [#306](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/306) | A message redelivered mid-consume faults on the inbox's unique key (found 2026-10-05 by #292's broker-fault run) | [#308](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/308) (specs/149) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
 | [#194](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/194) | Staff cannot find an order outside the fulfilment queue | [#203](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/203) (specs/096) |
 | [#193](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/193) | A banned seller's products stay on sale | [#202](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/202) (specs/095) |
