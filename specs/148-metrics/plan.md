@@ -8,7 +8,9 @@
   - ASP.NET Core, HttpClient and runtime instrumentation;
   - the `MassTransit` and `Npgsql` meters;
   - the shop's own meters.
-- **Shared:** `AddOutboxBacklogGauge<TDbContext>()` samples `OutboxMessage` rows on a schedule.
+- **Shared:** `AddSampledGauge(name, unit, description, sample)` - one sampler for every gauge read from the database,
+  on a schedule. Each service with an outbox registers its `OutboxMessage` count with it. (Planned as a dedicated
+  `AddOutboxBacklogGauge<TDbContext>()`; built as the general method once Order's gauges needed the same machinery.)
 - **Order:** samples its orders by status and its settle-time percentiles.
 - **Compose:** Prometheus (OTLP receiver, scraping RabbitMQ) and Grafana (provisioned datasource and dashboard) join
   the infrastructure file. The app overlay points every service at Prometheus. The production overlay keeps both
@@ -50,11 +52,13 @@
 
 ```text
 specs/148-metrics/                                         the record
-server/src/BuildingBlocks/Ecommerce.Shared/Observability/   metrics in AddObservability; OutboxBacklogGauge
-server/src/Services/Order/Ecommerce.Order.Infrastructure/   OrderMetricsSampler
+server/src/BuildingBlocks/Ecommerce.Shared/Observability/   metrics in AddObservability; SampledGauges (AddSampledGauge)
+server/src/Services/*/WebApi/Program.cs                      each outbox's backlog gauge
+server/src/Services/Order/Ecommerce.Order.Infrastructure/   Persistence/OrderMetrics (AddOrderMetrics)
 server/observability/prometheus.yml                         RabbitMQ scrape; OTLP receiver flags in compose
 server/observability/grafana/provisioning/                  datasource, dashboard provider
 server/observability/grafana/dashboards/ecommerce.json      the dashboard
+server/observability/grafana/generate_dashboard.py          writes it
 server/docker-compose.yml, docker-compose.app.yml, docker-compose.prod.yml
 ```
 

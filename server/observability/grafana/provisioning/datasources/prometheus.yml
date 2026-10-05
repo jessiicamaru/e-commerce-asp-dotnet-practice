@@ -1,0 +1,10 @@
+# Grafana's one datasource (specs/148), provisioned so a fresh stack shows the dashboard with no clicking.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

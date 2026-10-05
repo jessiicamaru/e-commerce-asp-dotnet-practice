@@ -178,6 +178,11 @@ builder.Services.AddHealthChecks()
 
 // Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
 builder.AddObservability("payment");
+// What waits in this service's outbox, as a gauge (specs/148), when metrics are on.
+builder.Services.AddSampledGauge(
+    "ecommerce.outbox.pending_messages", "{message}", "Messages written to this service's outbox, not yet delivered",
+    async (sp, ct) => [new GaugeReading(await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+        sp.GetRequiredService<Ecommerce.Payment.Infrastructure.Persistence.PaymentDbContext>().Set<MassTransit.EntityFrameworkCoreIntegration.OutboxMessage>(), ct))]);
 
 // What an amount with no stated currency means (specs/022). Payment has no request to negotiate
 // from: it records the currency the saga handed it, and falls back to this when that is empty -

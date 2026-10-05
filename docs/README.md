@@ -105,7 +105,7 @@ decided, what was rejected and why - is in its design record under [`specs/`](..
 - [**Getting started**](guides/getting-started.md): run the system - in containers or on your machine -
   check it is up, seed a demo catalogue, place an order end to end, run the tests.
 - [**Observability**](guides/observability.md): Seq, one trace per checkout, the queries that answer
-  "what happened to order X".
+  "what happened to order X" - and Prometheus and Grafana, the dashboard that answers "how is the shop doing now".
 - [**Troubleshooting**](guides/troubleshooting.md): the traps this project has hit, each with its
   symptom, cause and fix.
 - [**ADR-004: paying through a redirect gateway**](architecture/adr-004-redirect-payment-gateway.md) - VNPay, the IPN

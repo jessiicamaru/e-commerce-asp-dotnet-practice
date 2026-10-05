@@ -183,6 +183,11 @@ builder.Services.AddHealthChecks()
 
 // Logs and traces over OTLP to Seq when OTLP_ENDPOINT is set; nothing otherwise (feature 013).
 builder.AddObservability("identity");
+// What waits in this service's outbox, as a gauge (specs/148), when metrics are on.
+builder.Services.AddSampledGauge(
+    "ecommerce.outbox.pending_messages", "{message}", "Messages written to this service's outbox, not yet delivered",
+    async (sp, ct) => [new GaugeReading(await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+        sp.GetRequiredService<Ecommerce.Infrastructure.Persistence.ApplicationDbContext>().Set<MassTransit.EntityFrameworkCoreIntegration.OutboxMessage>(), ct))]);
 
 // Identity's first broker connection (specs/027). This service published nothing until sellers
 // existed - it was the one service in the system with no MassTransit at all.

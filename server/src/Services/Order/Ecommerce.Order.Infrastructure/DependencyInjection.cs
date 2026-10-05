@@ -95,6 +95,9 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddHostedService<DeliveryConfirmationSweeper>();
 
+        // Checkout's outcomes and the outbox backlog as gauges (specs/148), when metrics are on.
+        services.AddOrderMetrics();
+
         return services;
     }
 }

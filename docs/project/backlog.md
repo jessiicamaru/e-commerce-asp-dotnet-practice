@@ -31,6 +31,7 @@ Found on 2026-10-03 by the load test of #290 and the resilience runs of #291 - m
 | Issue | Title |
 | :-- | :-- |
 | [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | After a broker outage, new orders wait a minute behind the outbox backlog |
+| [#306](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/306) | A message redelivered mid-consume faults on the inbox's unique key (found 2026-10-05 by #292's broker-fault run) |
 
 ## Priority 1 - accounts and security
 
