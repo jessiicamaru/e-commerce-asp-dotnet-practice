@@ -1,0 +1,11 @@
+# The dashboards in the repository (specs/148), loaded at start and kept read-only: a change is made in the JSON file and
+# reviewed, not clicked into one Grafana.
+apiVersion: 1
+providers:
+  - name: ecommerce
+    folder: E-commerce
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards

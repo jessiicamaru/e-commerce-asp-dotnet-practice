@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -38,6 +39,8 @@ public static class ObservabilityExtensions
 {
     public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder, string serviceName)
     {
+        AddMetrics(builder, serviceName);
+
         var endpoint = Environment.GetEnvironmentVariable("OTLP_ENDPOINT")?.TrimEnd('/');
 
         if (string.IsNullOrWhiteSpace(endpoint))
@@ -83,5 +86,40 @@ public static class ObservabilityExtensions
                 .AddOtlpExporter(e => Configure(e, "traces")));
 
         return builder;
+    }
+
+    /// <summary>
+    /// Metrics over OTLP to <c>METRICS_ENDPOINT</c> - Prometheus's OTLP receiver, <c>/v1/metrics</c> appended (specs/148).
+    /// Seq takes logs and traces, not metrics, so they have their own endpoint; unset, nothing is exported, as with traces.
+    /// </summary>
+    /// <remarks>
+    /// What is measured: requests (ASP.NET Core) and outgoing calls (HttpClient, so gRPC too), the runtime (GC, thread
+    /// pool, memory), MassTransit's consumes, faults and durations by message type, Npgsql's connections and commands, and
+    /// the shop's own gauges (<see cref="SampledGauges"/>). Labels are routes, status codes, message types and statuses -
+    /// never an id, a user or a token.
+    /// </remarks>
+    private static void AddMetrics(WebApplicationBuilder builder, string serviceName)
+    {
+        var endpoint = Environment.GetEnvironmentVariable("METRICS_ENDPOINT")?.TrimEnd('/');
+
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            return;
+        }
+
+        builder.Services.AddOpenTelemetry()
+            .ConfigureResource(r => r.AddService($"ecommerce-{serviceName}"))
+            .WithMetrics(m => m
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddMeter("MassTransit", "Npgsql", SampledGauges.MeterName)
+                .AddOtlpExporter((e, reader) =>
+                {
+                    e.Endpoint = new Uri($"{endpoint}/v1/metrics");
+                    e.Protocol = OtlpExportProtocol.HttpProtobuf;
+                    // Every 15 s, like the gauges' sampling: a dashboard refreshing faster would show nothing new.
+                    reader.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 15_000;
+                }));
     }
 }

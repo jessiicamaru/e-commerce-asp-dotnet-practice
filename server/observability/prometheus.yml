@@ -1,0 +1,24 @@
+# Prometheus for the shop (specs/148). The services PUSH their metrics over OTLP (the receiver is switched on by a flag
+# in compose); the only thing scraped is RabbitMQ, through the prometheus plugin its management image already runs.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# OTLP series: keep the service's name as `job` and the instance as `instance`, and promote nothing else - a label per
+# resource attribute would multiply series for no question the dashboard asks.
+otlp:
+  promote_resource_attributes: []
+
+scrape_configs:
+  # The broker as a whole: connections, channels, publishes and deliveries.
+  - job_name: rabbitmq
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+
+  # Each queue's depth and consumers - the plugin keeps per-queue numbers off /metrics, on /metrics/detailed.
+  - job_name: rabbitmq-queues
+    metrics_path: /metrics/detailed
+    params:
+      family: [queue_coarse_metrics, queue_consumer_count]
+    static_configs:
+      - targets: ["rabbitmq:15692"]

@@ -40,6 +40,13 @@ services:
   seaweedfs:
     ports: !reset []
 
+  # Metrics and dashboards stay inside, like Seq: reach Grafana through an SSH tunnel (specs/148).
+  prometheus:
+    ports: !reset []
+
+  grafana:
+    ports: !reset []
+
   # Development's mail catcher: off in production, where email goes to a real server. COMPOSE_PROFILES=mail-catcher
   # turns it on to verify the stack on a laptop.
   mailpit:

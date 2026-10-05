@@ -204,6 +204,43 @@ services:
       - seq_data:/data
     restart: unless-stopped
 
+  # Metrics (specs/148): every service PUSHES OpenTelemetry metrics here over OTLP (the receiver below), and
+  # RabbitMQ's own plugin is scraped. The UI and API are on http://localhost:9090.
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: e-commerce-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-otlp-receiver
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  # The dashboards (specs/148): http://localhost:3000, "E-commerce overview". Datasource and dashboard are
+  # provisioned from server/observability/grafana, read-only - a change is made in the repository, not clicked in.
+  # The admin password is REQUIRED, as Seq's is.
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: e-commerce-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in server/.env - see .env.example}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/ecommerce.json
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
   # Every email the stack sends lands here (specs/060) and nothing leaves the machine: SMTP on 1025, the
   # inbox at http://localhost:8025. Identity's dispatcher sends to it by default.
   mailpit:
@@ -254,4 +291,6 @@ volumes:
   rabbitmq_data:
   mailpit_data:
   seq_data:
+  prometheus_data:
+  grafana_data:
   seaweedfs_data:

@@ -141,6 +141,11 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<ActivityDbContext>(name: "activity_postgres_db");
 
 builder.AddObservability("activity");
+// What waits in this service's outbox, as a gauge (specs/148), when metrics are on.
+builder.Services.AddSampledGauge(
+    "ecommerce.outbox.pending_messages", "{message}", "Messages written to this service's outbox, not yet delivered",
+    async (sp, ct) => [new GaugeReading(await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+        sp.GetRequiredService<Ecommerce.Activity.Infrastructure.Persistence.ActivityDbContext>().Set<MassTransit.EntityFrameworkCoreIntegration.OutboxMessage>(), ct))]);
 
 var app = builder.Build();
 

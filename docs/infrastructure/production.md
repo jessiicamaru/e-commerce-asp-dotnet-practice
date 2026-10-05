@@ -105,6 +105,10 @@ the command that generates each secret (`openssl rand ...`). Every `*.env` file 
 - **Seq** publishes no port. To read it, add a fourth file on the server that publishes its UI on the loopback address
   only (`services: { seq: { ports: ["127.0.0.1:5380:80"] } }`), then open an SSH tunnel from your machine
   (`ssh -L 5380:127.0.0.1:5380 <server>`) and browse `http://localhost:5380`. Nothing outside the server can reach it.
+- **Grafana and Prometheus** (specs/148) publish no port either. Reach Grafana the same way - publish
+  `127.0.0.1:3000:3000` in that fourth file, `ssh -L 3000:127.0.0.1:3000 <server>`, browse `http://localhost:3000` -
+  and sign in as `admin` with `GRAFANA_ADMIN_PASSWORD`. The dashboard ships with the release (`server/observability` is
+  in the bundle), so a rollback rolls it back too. Prometheus keeps 15 days.
 - **The first administrator** is seeded from `ADMIN_EMAIL` / `ADMIN_PASSWORD` while no administrator exists. They sign
   in to the storefront, set up two-factor sign-in, and only then reach the back office.
 - **Upgrading and rolling back** go through `deploy.sh` and the deploy workflow (§8), which check, wait for health,

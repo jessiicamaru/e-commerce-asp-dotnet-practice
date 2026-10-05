@@ -10,7 +10,8 @@ set -euo pipefail
 out="${1:?usage: bundle-release.sh <out-dir> [<commit>]}"
 commit="${2:-}"
 root="$(git rev-parse --show-toplevel)"
-files=(server/docker-compose.yml server/docker-compose.app.yml server/docker-compose.prod.yml server/deploy)
+# server/observability since specs/148: Prometheus's configuration and Grafana's provisioning are mounted from it.
+files=(server/docker-compose.yml server/docker-compose.app.yml server/docker-compose.prod.yml server/deploy server/observability)
 
 mkdir -p "$out"
 if [ -n "$commit" ]; then
