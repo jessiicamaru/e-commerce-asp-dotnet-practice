@@ -1,6 +1,7 @@
-import { expect, request, test, type APIRequestContext } from '@playwright/test'
+import { request, type APIRequestContext } from '@playwright/test'
 import { Api, type Listed, type Person } from './support/api'
 import { signIn } from './support/ui'
+import { expect, test } from './support/test'
 
 /**
  * Paying at VNPay, in a browser (specs/143): the customer leaves the shop for the gateway's page - the simulator in

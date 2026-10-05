@@ -32,16 +32,19 @@ not applicable, with why. When #294 adds the security headers, their rules move 
 
 ### ZAP baseline (both apps)
 
-58 rules passed and none failed. Nine findings, the same on both apps:
+58 rules passed and none failed. Nine findings, the same on both apps. **The six header findings were fixed by #294
+(specs/151)** and are FAIL from then on. Fixing them raised one new finding, 10055 `style-src 'unsafe-inline'`, which is
+WARN as an accepted trade-off (specs/151 research D2). Since #294: `FAIL-NEW: 0`, `WARN-NEW: 1`, 63 rules passing.
 
 | Rule | Finding | Decision |
 | :-- | :-- | :-- |
-| 10020 | No anti-clickjacking header | **#294** |
-| 10021 | No `X-Content-Type-Options: nosniff` | **#294** |
-| 10038 | No Content-Security-Policy | **#294** |
-| 10063 | No Permissions-Policy | **#294** |
-| 90004 | No Cross-Origin-Embedder-Policy | **#294** decides it: `require-corp` would block cross-origin images that send no CORP header |
-| 10036 | `Server: nginx/1.27.5` gives the version away | **#294**: `server_tokens off` |
+| 10020 | No anti-clickjacking header | **Fixed, #294**: `frame-ancestors 'none'`, `X-Frame-Options: DENY` |
+| 10021 | No `X-Content-Type-Options: nosniff` | **Fixed, #294** |
+| 10038 | No Content-Security-Policy | **Fixed, #294**: scripts `'self'` only |
+| 10063 | No Permissions-Policy | **Fixed, #294** |
+| 90004 | No Cross-Origin-Embedder-Policy | **Fixed, #294**: COOP, COEP `require-corp` and CORP. Everything the apps load is their own origin |
+| 10036 | `Server: nginx/1.27.5` gives the version away | **Fixed, #294**: `server_tokens off` |
+| 10055 | CSP: `style-src 'unsafe-inline'` (raised by the fix) | **Accepted**: Sonner and TipTap inject `<style>`, and sanitised HTML carries `style` attributes. Scripts stay `'self'`, and the image check pins the exact policy |
 | 10027 | "Suspicious comments" | **Not applicable**: the matches are the words `admin` and `db` in minified code (a route pattern, a variable), not comments |
 | 10049 | Storable and cacheable content | **Intended**: hashed `/assets/*` are cached for a year, while `index.html` and `/app-config.js` are `no-cache`, as `verify-storefront-image.sh` asserts |
 | 10109 | Modern web application | **Informational**: a single-page app has no links for a spider; it says nothing about security |
