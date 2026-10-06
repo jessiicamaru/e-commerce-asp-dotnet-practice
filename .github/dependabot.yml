@@ -4,7 +4,9 @@
 #
 # Two majors are never proposed (specs/153 research D1):
 #   - MassTransit 9: 8.x is Apache-2.0, 9.x is a commercial licence (massient.com/license). Moving is the owner's
-#     licensing decision, not a bump.
+#     licensing decision, not a bump. Its minors are not proposed either (specs/155, #353): on 8.5.11 a broker outage
+#     under load left receive endpoints stopped for good (3 runs of 3; 0 of 7 on 8.3.6), which CI cannot see. 8.3.x
+#     stays until that is understood and a newer minor passes `loadtest/fault.sh broker` several times.
 #   - PostgreSQL 17/18: a new major cannot start on the previous major's data directory. Upgrading is a dump and
 #     restore of eight databases, planned with its own record - CI would pass it on empty test databases while
 #     production's volumes refused to start.
@@ -17,7 +19,7 @@ updates:
     open-pull-requests-limit: 5
     ignore:
       - dependency-name: "MassTransit*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       nuget-minor-and-patch:
         update-types: [minor, patch]
