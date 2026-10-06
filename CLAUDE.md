@@ -218,7 +218,9 @@ until #28 stopped Identity throwing bare `Exception`s.
 - The build job fails on any vulnerable NuGet package, transitive included.
 - The client job runs `npm audit --omit=dev --audit-level=high`. Runtime packages only, which is why `shadcn`, a
   build-time tool, is a devDependency.
-- `dependabot.yml` covers five ecosystems, weekly and grouped.
+- `dependabot.yml` covers five ecosystems, weekly, with one minor-and-patch and one major group each (specs/153).
+  ⚠️ It ignores MassTransit majors (9.x is a commercial licence) and PostgreSQL majors (a new major cannot read the
+  old data directory: a dump and restore, never a bump). Never merge either from a pull request.
 - `zap.yml` runs OWASP ZAP's passive baseline on both images: on main, and on pull requests touching `client/nginx`,
   `client/Dockerfile` or `.zap/`.
 - ⚠️ Every ZAP rule is FAIL in `.zap/rules.tsv` except the decided ones: WARN names its reason, IGNORE says why not.
