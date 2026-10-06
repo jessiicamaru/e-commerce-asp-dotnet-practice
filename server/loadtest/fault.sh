@@ -81,6 +81,10 @@ fi
 wait "$k6"; k6_exit=$?
 
 reconnect="{}"
+# Which reconnect schedule the services ran (specs/154): Messaging__ReconnectQuickly=false is MassTransit's own 3-30 s.
+schedule=quick
+docker inspect ecommerce-order --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
+  | grep -qi '^Messaging__ReconnectQuickly=false$' && schedule=default
 if [ -n "$ready_at" ]; then
   addresses="$(docker ps --format '{{.Names}}' | grep '^ecommerce-' | xargs docker inspect --format '{{.Name}} {{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' | sed 's#^/##')"
   accepted="$(docker logs --timestamps --since "$ready_at" e-commerce-rabbitmq 2>&1 | grep 'accepting AMQP connection' | sed -E 's/^([^ ]+) .*\(([0-9.]+):[0-9]+ ->.*/\1 \2/')"
@@ -149,6 +153,7 @@ cat > "$here/results/resilience-$fault-$run_id.timeline.json" <<JSON
   "healthy_at": "$healthy_at",
   "ready_at": "${ready_at}",
   "reconnected_after_ready_s": ${reconnect},
+  "reconnect_schedule": "${schedule}",
   "k6_exit": $k6_exit,
   "error_queues": "$error_queues",
   "passed": $passed,

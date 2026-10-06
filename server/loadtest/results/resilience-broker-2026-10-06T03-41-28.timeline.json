@@ -1,0 +1,24 @@
+{
+  "fault": "broker",
+  "fault_for_seconds": 60,
+  "load_started_at": "2026-10-06T03:43:51.234Z",
+  "fault_at": "2026-10-06T03:44:06.348Z",
+  "recovered_at": "2026-10-06T03:45:13.065Z",
+  "healthy_at": "2026-10-06T03:46:36.570Z",
+  "ready_at": "2026-10-06T03:46:33.365770180Z",
+  "reconnected_after_ready_s": {
+    "ecommerce-activity": 25.58,
+    "ecommerce-cart": 24.69,
+    "ecommerce-catalog": 21.71,
+    "ecommerce-identity": 22.0,
+    "ecommerce-inventory": 24.54,
+    "ecommerce-orchestrator": 28.64,
+    "ecommerce-order": 0.06,
+    "ecommerce-payment": 28.79
+  },
+  "reconnect_schedule": "default",
+  "k6_exit": 0,
+  "error_queues": "",
+  "passed": true,
+  "orders": null
+}

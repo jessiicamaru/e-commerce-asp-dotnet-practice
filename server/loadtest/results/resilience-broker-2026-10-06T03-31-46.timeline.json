@@ -1,0 +1,48 @@
+{
+  "fault": "broker",
+  "fault_for_seconds": 60,
+  "load_started_at": "2026-10-06T03:33:12.613Z",
+  "fault_at": "2026-10-06T03:33:27.734Z",
+  "recovered_at": "2026-10-06T03:34:33.535Z",
+  "healthy_at": "2026-10-06T03:35:37.259Z",
+  "ready_at": "2026-10-06T03:35:07.605974747Z",
+  "reconnected_after_ready_s": {
+    "ecommerce-activity": 3.0,
+    "ecommerce-cart": 3.24,
+    "ecommerce-catalog": 2.77,
+    "ecommerce-identity": 3.41,
+    "ecommerce-inventory": 2.94,
+    "ecommerce-orchestrator": 3.65,
+    "ecommerce-order": 0.32,
+    "ecommerce-payment": 3.85
+  },
+  "reconnect_schedule": "quick",
+  "k6_exit": 0,
+  "error_queues": "",
+  "passed": true,
+  "orders": {
+    "before": {
+      "orders": 49,
+      "paid": 49,
+      "settle_p50_s": 8.43,
+      "settle_p95_s": 129.64,
+      "settle_max_s": 130.92
+    },
+    "during": {
+      "orders": 199,
+      "paid": 199,
+      "settle_p50_s": 111.27,
+      "settle_p95_s": 128.14,
+      "settle_max_s": 130.43
+    },
+    "after": {
+      "orders": 112,
+      "paid": 112,
+      "settle_p50_s": 94.56,
+      "settle_p95_s": 117.07,
+      "settle_max_s": 133.54
+    },
+    "backlog_cleared_after_recovery_s": 127.81,
+    "backlog_cleared_after_ready_s": 93.74
+  }
+}
