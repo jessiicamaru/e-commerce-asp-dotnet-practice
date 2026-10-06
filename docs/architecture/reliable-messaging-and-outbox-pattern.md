@@ -290,14 +290,20 @@ done.
 
 **Reconnecting to the broker** (specs/154, #304). Nothing is lost while RabbitMQ is down, but MassTransit's own
 reconnect schedule made recovery slow:
-- **What MassTransit 8.3 does**:
+- **What MassTransit 8.3-8.5 does** (read from 8.3.6; `BrokerReconnectTests` asserts the same 30 s default on 8.5.11):
   - its RabbitMQ host retries a lost connection on a policy fixed in its constructor: exponential from 3 s to **30 s**,
     with no setter;
   - the bus outbox delivers nothing until **every** receive endpoint has reconnected
     (`BusOutboxDeliveryService` waits for `BusHealthStatus.Healthy` before each batch).
 - **The consequence**: after a minute down, every endpoint retried every 30 s. One attempt landing a few seconds
-  before the broker was ready stalled the whole service for another 30 s. The backlog took 51-99 s to clear across
-  four recorded runs.
+  before the broker was ready stalled the whole service for another 30 s.
+- **Measured from the port opening, A/B on one stack** (`Messaging:ReconnectQuickly=false` gives MassTransit's
+  schedule):
+  - with MassTransit's schedule, every service was back after 28.8, 28.4, 30.7 and 6.4 s;
+  - with the fix, after 6.0, 4.3 and 3.9 s.
+  - The old "51-99 s to clear the backlog" also counted RabbitMQ's own boot (27-80 s from `docker start` to its port)
+    and the drain itself. The broker's health check is now `check_port_connectivity`, because `ping` passed before the
+    port opened.
 - **The fix**: `cfg.ReconnectQuickly(context)`, first in every service's `UsingRabbitMq`, puts the transport's own
   filters on a 1-5 s schedule. It still ignores `AuthenticationFailureException`.
 - **How it is applied**: it replaces the policy through the host configuration's backing field. That happens once,

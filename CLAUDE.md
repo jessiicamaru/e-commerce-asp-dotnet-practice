@@ -111,7 +111,7 @@ dotnet ef database update      --project src/Services/Order/Ecommerce.Order.Infr
 dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/     --startup-project src/Services/Orchestrator/Ecommerce.Orchestrator.WebApi/
 ```
 
-Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (83 tests, PostgreSQL on 5437),
+Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (268 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
@@ -987,10 +987,14 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   probe it with the rest. The disagreement with the constitution is resolved.
 - **Every service reconnects to RabbitMQ within 5 s of its return** (specs/154, #304): `cfg.ReconnectQuickly(context)`,
   first in `UsingRabbitMq`. MassTransit 8.3 retries up to 30 s apart (hard-coded), and the bus outbox delivers nothing
-  until every endpoint is back. The backlog took 51-99 s to clear after a broker outage.
+  until every endpoint is back.
+  - Measured from the broker's port opening: every service back within 6 s, against up to 31 s.
   - ⚠️ It sets a private field, falling back to the default with a log line if MassTransit's internals change.
-    `BrokerReconnectTests` fails then.
+    `BrokerReconnectTests` fails then (it passes on 8.5.11).
+  - `Messaging__ReconnectQuickly=false` restores MassTransit's schedule.
   - ⚠️ A new service adds the line.
+  - ⚠️ RabbitMQ opens its port 27-80 s after `docker start`. Its health check is `check_port_connectivity`, because
+    `ping` passes before that. `fault.sh broker` measures from the port opening (`ready_at`).
 - **A consumer's transaction can lose a serialization race, and it is retried since specs/145 (#299).** The EF
   outbox consumes in `RepeatableRead`, so concurrent updates of one row abort the losers with `40001`. With no retry
   anywhere, the first such failure faulted the message to `<queue>_error`. The load test of #290 found a paid order's

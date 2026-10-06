@@ -183,7 +183,13 @@ It then brings it back. Afterwards every order must be terminal, units sold must
 held, and no message may sit in an error queue. Customer-facing errors are counted, not thresholds. Each run keeps a
 timeline beside its summary, and `python server/loadtest/resilience_report.py` writes [the results](resilience-results.md).
 
-All four pass. The broker outage is the slowest to recover, and #304 investigates why.
+All four pass. The broker outage is the slowest to recover:
+- RabbitMQ itself takes 27-80 s to open its port after it starts;
+- the services then reconnected up to 31 s later, under MassTransit's schedule, before specs/154 (#304) made it at most
+  6 s.
+
+Since then `fault.sh broker` records when the port opened and each service's reconnect lag, from the broker's own log.
+The broker's health check (`check_port_connectivity`) passes only once the broker accepts connections.
 
 ## Security scanning
 
