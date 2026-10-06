@@ -44,6 +44,9 @@ updates:
     ignore:
       - dependency-name: postgres
         update-types: ["version-update:semver-major"]
+      # Node moves from one LTS to the next by hand (#344): the newest major is often a Current release, not an LTS.
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
     groups:
       docker-minor-and-patch:
         update-types: [minor, patch]
