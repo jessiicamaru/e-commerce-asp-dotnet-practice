@@ -152,6 +152,9 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
+        // Back within seconds of the broker's return, not up to 30 s later (specs/154).
+        cfg.ReconnectQuickly(context);
+
         var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
         var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
