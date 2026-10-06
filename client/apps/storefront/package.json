@@ -11,10 +11,10 @@
   "dependencies": {
     "@tanstack/react-query": "^5.103.2",
     "axios": "^1.20.0",
-    "cn": "^0.3.2",
+    "cn": "^0.4.0",
     "dompurify": "^3.4.16",
     "i18next": "^26.4.2",
-    "lucide-react": "^1.47.0",
+    "lucide-react": "^1.50.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
