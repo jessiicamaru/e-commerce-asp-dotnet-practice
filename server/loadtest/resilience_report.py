@@ -28,7 +28,22 @@ WHAT = {
 
 
 def ms(iso):
+    # Docker's log stamps carry nanoseconds; datetime keeps microseconds.
+    iso = re.sub(r'(\.\d{6})\d+', r'\1', iso)
     return datetime.fromisoformat(iso.replace('Z', '+00:00'))
+
+
+def name_of(timeline):
+    """The fault's name, and for a broker outage which reconnect schedule the services ran (specs/154)."""
+    name = WHAT.get(timeline['fault'], (timeline['fault'],))[0]
+    if timeline['fault'] != 'broker':
+        return name
+    schedule = timeline.get('reconnect_schedule')
+    if schedule == 'default':
+        return f"{name} - MassTransit's 3-30 s reconnect"
+    if schedule == 'quick':
+        return f'{name} - 1-5 s reconnect'
+    return f'{name} - before specs/154'
 
 
 def load():
@@ -85,7 +100,7 @@ def main():
         '| :-- | --: | --: | --: | --: | --: | :-- | :-- |',
     ]
     for timeline, summary, _, _ in runs:
-        name = WHAT.get(timeline['fault'], (timeline['fault'],))[0]
+        name = name_of(timeline)
         down = (ms(timeline['recovered_at']) - ms(timeline['fault_at'])).total_seconds()
         placed = metric(summary, 'orders_placed').get('count', 0)
         errors = metric(summary, 'checkout_errors').get('count', 0)
@@ -109,11 +124,36 @@ def main():
         o = timeline.get('orders') or {}
         b, d, a = o.get('before', {}), o.get('during', {}), o.get('after', {})
         lines.append(
-            f"| {WHAT.get(timeline['fault'], (timeline['fault'],))[0]} "
+            f"| {name_of(timeline)} "
             f"| {s(b.get('settle_p50_s'))} / {s(b.get('settle_p95_s'))} "
             f"| {d.get('orders', '-')}: {s(d.get('settle_p50_s'))} / {s(d.get('settle_p95_s'))} / {s(d.get('settle_max_s'))} "
             f"| {s(a.get('settle_p50_s'))} / {s(a.get('settle_p95_s'))} "
             f"| {s(o.get('backlog_cleared_after_recovery_s'))} |")
+
+    returns = [t for t, _, _, _ in runs if t['fault'] == 'broker' and t.get('ready_at')]
+    if returns:
+        lines += [
+            '',
+            "## The broker's return, step by step",
+            '',
+            "From `docker start` to a drained backlog there are three steps, and only the middle one is the services'",
+            '(specs/154). **Port opened** is when RabbitMQ logged `started TCP listener on [::]:5672`; until then nothing can',
+            "connect, however fast it retries. **Every service back** is the slowest of the eight services' first",
+            "connection after that, read from the broker's log by the address it accepted. **Backlog cleared** is when the last",
+            'order placed during the outage was paid, counted from the port opening: the rest is draining the backlog.',
+            '',
+            '| Run | Reconnect schedule | Port opened after start | Every service back within | Slowest | Backlog cleared after the port opened |',
+            '| :-- | :-- | --: | --: | :-- | --: |',
+        ]
+        for t in returns:
+            lag = t.get('reconnected_after_ready_s') or {}
+            slowest = max(lag, key=lag.get) if lag else None
+            boot = (ms(t['ready_at']) - ms(t['recovered_at'])).total_seconds()
+            schedule = {'quick': '1-5 s', 'default': "MassTransit's 3-30 s"}.get(t.get('reconnect_schedule'), '-')
+            lines.append(
+                f"| {t['ready_at'][:16].replace('T', ' ')} | {schedule} | {boot:.1f} s "
+                f"| {s(max(lag.values())) if lag else '-'} ({len(lag)} services) | {(slowest or '-').replace('ecommerce-', '')} "
+                f"| {s((t.get('orders') or {}).get('backlog_cleared_after_ready_s'))} |")
 
     by_fault = {t['fault']: t.get('orders') or {} for t, _, _, _ in runs}
     broker = by_fault.get('broker', {})
@@ -129,8 +169,9 @@ def main():
         "  event to Order's own database, the transactional outbox - but once RabbitMQ returned, the backlog took",
         f"  {s(broker.get('backlog_cleared_after_recovery_s'))} to clear, and orders placed *after* recovery waited a median of",
         f"  {s((broker.get('after') or {}).get('settle_p50_s'))} behind it. Payment's outage, of the same length, cleared in",
-        f"  {s(payment.get('backlog_cleared_after_recovery_s'))}. Why the outbox drains this slowly is not yet established:",
-        '  [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304).',
+        f"  {s(payment.get('backlog_cleared_after_recovery_s'))}. Why is in the table above (specs/154, #304): RabbitMQ itself takes",
+        '  about half a minute to open its port after it starts, the services were then waiting up to 30 s between',
+        "  reconnect attempts (MassTransit's schedule, now 1-5 s), and the rest is draining the backlog.",
         '- **A hung service is not a dead one, and both recover.** Inventory frozen (connections open, nothing answered)',
         '  and the orchestrator restarted both resumed from their queues and their own databases.',
         '- **A harness lesson.** Cart removes what was ordered only when an order completes (specs/010), so a customer who',

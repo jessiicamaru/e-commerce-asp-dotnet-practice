@@ -123,11 +123,23 @@ each filed with its evidence:
 | :-- | :-- | :-- | :-- |
 | [#299](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/299) | checkout load test | Concurrent stock confirmations aborted with a serialization failure, and nothing retried them: 301 paid, 300 deducted, 1 held, 1 message in an error queue | **Fixed**: transient retry on every consumer ([specs/145](../../specs/145-transient-retry/)) |
 | [#301](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/301) | checkout load test | 1,710-5,610 aborted-and-retried consumes per run on one popular product | **Fixed**: Inventory consumes at `READ COMMITTED`, zero aborts ([specs/146](../../specs/146-inventory-read-committed/)) |
-| [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | broker fault | The backlog takes about 89 s to clear after a 63 s outage. The metrics and logs show the cause: each service waits for its next broker reconnect attempt, up to 30 s apart in MassTransit | **Open**, cause established |
+| [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | broker fault | The backlog took 51-99 s to clear after a 60 s outage. Two causes. MassTransit retries the broker up to 30 s apart, and its outbox waits for every endpoint. And the measure itself counted RabbitMQ's own boot, which takes 27-80 s to open its port after `docker start`, while its health check passed early | **Fixed**: every service back within 6 s of the port opening, against up to 31 s, A/B on one stack. The health check and the harness now measure from the port opening ([specs/154](../../specs/154-broker-reconnect/)) |
 | [#306](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/306) | broker fault, while verifying metrics | A message delivered twice at once faulted on the inbox's unique key into an error queue, although its twin had paid the order | **Fixed**: that key is retried, and the inbox drops the duplicate ([specs/149](../../specs/149-inbox-redelivery/)) |
 
-The fixes were all reproduced first, then verified by the same runs. #299 and #306 are now each covered by a test that
-fails without the fix.
+The fixes were all reproduced first, then verified by the same runs. #299, #304 and #306 are now each covered by a
+test that fails without the fix.
+
+#304 also corrected a measurement. Its first numbers counted "recovery" from `docker start`, but RabbitMQ only opens its
+port 27-80 s later, and its old health check (`ping`) said healthy before that. Re-measured from the moment the port
+opened, the services' part was clear:
+
+| Reconnect schedule | Every service back after the port opened (per run) |
+| :-- | :-- |
+| MassTransit's 3-30 s | 28.79 · 28.43 · 30.70 · 6.36 s: up to 31 s, depending on where a retry happens to land |
+| 1-5 s (specs/154) | 5.96 · 4.33 · 3.85 s: never more than 6 s |
+
+After that, the backlog drains at the laptop's pace, about a minute for 260 orders' worth of saga messages. That is
+throughput, not reconnecting ([resilience results](resilience-results.md)).
 
 One claim was **corrected**. A run straight after a full rebuild was first read as the retry's cost (median settle
 8.3 s against 1.0 s). It was a cold start, and the per-stage breakdown showed it. The records say so
@@ -143,4 +155,5 @@ One claim was **corrected**. A run straight after a full rebuild was first read 
   script is tested with stubs ([deployment](../guides/deployment.md)).
 - **No backups** of the databases or the image bucket.
 - **No active security scan.** ZAP's baseline is passive by design (specs/150 research D3).
-- **#304** remains open: recovery after a broker outage is slower than it needs to be, though nothing is lost.
+- **After a broker outage the backlog drains at one machine's pace**: about a minute for 260 orders' saga messages,
+  once every service is back (#304 fixed the reconnecting, not the throughput).
