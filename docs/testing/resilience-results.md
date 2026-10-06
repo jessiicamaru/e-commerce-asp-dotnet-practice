@@ -29,6 +29,11 @@ the stub approving every payment.
 | RabbitMQ stopped - MassTransit's 3-30 s reconnect | 67 s | 361 | 0 | 361 | 0 | empty | yes |
 | RabbitMQ stopped - MassTransit's 3-30 s reconnect | 68 s | 361 | 0 | 361 | 0 | empty | yes |
 | RabbitMQ stopped - MassTransit's 3-30 s reconnect | 66 s | 361 | 0 | 361 | 0 | empty | yes |
+| RabbitMQ stopped - 1-5 s reconnect | 67 s | 361 | 0 | 361 | 0 | empty | yes |
+| RabbitMQ stopped - 1-5 s reconnect | 62 s | 336 | 24 | 336 | 0 | empty | yes |
+| RabbitMQ stopped - 1-5 s reconnect | 62 s | 353 | 8 | 353 | 0 | empty | yes |
+| RabbitMQ stopped - 1-5 s reconnect | 62 s | 361 | 0 | 361 | 0 | empty | yes |
+| RabbitMQ stopped - 1-5 s reconnect | 62 s | 360 | 1 | 360 | 0 | empty | yes |
 | The orchestrator restarted | 7 s | 361 | 0 | 361 | 0 | empty | yes |
 | Inventory hung | 31 s | 361 | 0 | 361 | 0 | empty | yes |
 
@@ -49,6 +54,11 @@ during the fault was paid.
 | RabbitMQ stopped - MassTransit's 3-30 s reconnect | 204.79 s / 214.57 s | 203: 185.74 s / 206.03 s / 208.87 s | 147.86 s / 159.39 s | 170.16 s |
 | RabbitMQ stopped - MassTransit's 3-30 s reconnect | 1.09 s / 133.93 s | 205: 145.00 s / 162.07 s / 172.26 s | 125.96 s / 136.28 s | 146.85 s |
 | RabbitMQ stopped - MassTransit's 3-30 s reconnect | 9.18 s / 118.35 s | 217: 109.40 s / 123.60 s / 141.07 s | 81.06 s / 91.94 s | 101.60 s |
+| RabbitMQ stopped - 1-5 s reconnect | 102.31 s / 106.20 s | 203: 101.92 s / 121.98 s / 128.16 s | 76.45 s / 90.25 s | 95.92 s |
+| RabbitMQ stopped - 1-5 s reconnect | 0.50 s / 0.82 s | 186: 75.43 s / 91.70 s / 101.37 s | 35.79 s / 48.46 s | 53.80 s |
+| RabbitMQ stopped - 1-5 s reconnect | 0.33 s / 0.48 s | 187: 68.93 s / 84.84 s / 90.15 s | 24.94 s / 39.15 s | 45.96 s |
+| RabbitMQ stopped - 1-5 s reconnect | 0.15 s / 0.20 s | 185: 61.83 s / 79.66 s / 83.53 s | 18.69 s / 35.74 s | 45.05 s |
+| RabbitMQ stopped - 1-5 s reconnect | 0.15 s / 0.37 s | 190: 62.49 s / 77.57 s / 88.34 s | 17.12 s / 34.98 s | 43.78 s |
 | The orchestrator restarted | 0.20 s / 0.28 s | 19: 13.16 s / 17.41 s / 17.41 s | 0.77 s / 7.01 s | 12.15 s |
 | Inventory hung | 0.21 s / 0.29 s | 91: 21.64 s / 31.94 s / 34.83 s | 0.28 s / 8.47 s | 19.61 s |
 
@@ -69,6 +79,11 @@ order placed during the outage was paid, counted from the port opening: the rest
 | 2026-10-06 03:56 | MassTransit's 3-30 s | 74.2 s | 28.43 s (8 services) | payment | 96.00 s |
 | 2026-10-06 04:02 | MassTransit's 3-30 s | 36.8 s | 30.70 s (8 services) | inventory | 110.04 s |
 | 2026-10-06 04:08 | MassTransit's 3-30 s | 30.0 s | 6.36 s (8 services) | orchestrator | 71.59 s |
+| 2026-10-06 12:07 | 1-5 s | 23.8 s | 4.20 s (8 services) | cart | 72.09 s |
+| 2026-10-06 12:11 | 1-5 s | 15.0 s | 4.39 s (8 services) | activity | 38.75 s |
+| 2026-10-06 12:14 | 1-5 s | 17.8 s | 1.76 s (8 services) | cart | 28.20 s |
+| 2026-10-06 12:22 | 1-5 s | 11.1 s | 3.06 s (8 services) | orchestrator | 34.00 s |
+| 2026-10-06 12:25 | 1-5 s | 12.0 s | 3.39 s (8 services) | activity | 31.78 s |
 
 ## What the runs showed
 
@@ -77,8 +92,8 @@ order placed during the outage was paid, counted from the port opening: the rest
   Catalog, Cart and Identity synchronously, and on nothing that was taken away here.
 - **The broker outage cost the most time, and for longest.** Checkout kept taking orders - each written with its
   event to Order's own database, the transactional outbox - but once RabbitMQ returned, the backlog took
-  101.60 s to clear, and orders placed *after* recovery waited a median of
-  81.06 s behind it. Payment's outage, of the same length, cleared in
+  43.78 s to clear, and orders placed *after* recovery waited a median of
+  17.12 s behind it. Payment's outage, of the same length, cleared in
   25.05 s. Why is in the table above (specs/154, #304): RabbitMQ itself takes
   about half a minute to open its port after it starts, the services were then waiting up to 30 s between
   reconnect attempts (MassTransit's schedule, now 1-5 s), and the rest is draining the backlog.
@@ -92,6 +107,11 @@ order placed during the outage was paid, counted from the port opening: the rest
 ## What each fault exercised
 
 - **Payment stopped** (`docker stop ecommerce-payment, then start`): The saga holds each order in its "awaiting payment" state; its timeout (600 s) is longer than the outage.
+- **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
+- **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
+- **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
+- **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
+- **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
 - **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
 - **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
 - **RabbitMQ stopped** (`docker stop e-commerce-rabbitmq, then start`): Checkout writes each order and its OrderSubmittedEvent to Order's own database (the transactional outbox); every service reconnects and its outbox delivers when the broker returns.
@@ -122,6 +142,11 @@ scenarios' invariant (specs/144) - the checks are able to fail.
 | [`resilience-broker-2026-10-06T03-52-40.json`](../../server/loadtest/results/resilience-broker-2026-10-06T03-52-40.json) | [`resilience-broker-2026-10-06T03-52-40.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T03-52-40.timeline.json) |
 | [`resilience-broker-2026-10-06T03-59-25.json`](../../server/loadtest/results/resilience-broker-2026-10-06T03-59-25.json) | [`resilience-broker-2026-10-06T03-59-25.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T03-59-25.timeline.json) |
 | [`resilience-broker-2026-10-06T04-05-36.json`](../../server/loadtest/results/resilience-broker-2026-10-06T04-05-36.json) | [`resilience-broker-2026-10-06T04-05-36.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T04-05-36.timeline.json) |
+| [`resilience-broker-2026-10-06T12-04-01.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-04-01.json) | [`resilience-broker-2026-10-06T12-04-01.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-04-01.timeline.json) |
+| [`resilience-broker-2026-10-06T12-08-56.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-08-56.json) | [`resilience-broker-2026-10-06T12-08-56.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-08-56.timeline.json) |
+| [`resilience-broker-2026-10-06T12-12-29.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-12-29.json) | [`resilience-broker-2026-10-06T12-12-29.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-12-29.timeline.json) |
+| [`resilience-broker-2026-10-06T12-20-08.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-20-08.json) | [`resilience-broker-2026-10-06T12-20-08.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-20-08.timeline.json) |
+| [`resilience-broker-2026-10-06T12-23-33.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-23-33.json) | [`resilience-broker-2026-10-06T12-23-33.timeline.json`](../../server/loadtest/results/resilience-broker-2026-10-06T12-23-33.timeline.json) |
 | [`resilience-orchestrator-2026-10-03T14-10-07.json`](../../server/loadtest/results/resilience-orchestrator-2026-10-03T14-10-07.json) | [`resilience-orchestrator-2026-10-03T14-10-07.timeline.json`](../../server/loadtest/results/resilience-orchestrator-2026-10-03T14-10-07.timeline.json) |
 | [`resilience-inventory-2026-10-03T14-12-48.json`](../../server/loadtest/results/resilience-inventory-2026-10-03T14-12-48.json) | [`resilience-inventory-2026-10-03T14-12-48.timeline.json`](../../server/loadtest/results/resilience-inventory-2026-10-03T14-12-48.timeline.json) |
 
