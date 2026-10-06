@@ -150,7 +150,7 @@ jobs:
           --health-retries 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -221,7 +221,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # One service is enough here: every image comes from the same Dockerfile and
       # the same .dockerignore, so a leak in one is a leak in all seven. On a merge
@@ -242,7 +242,7 @@ jobs:
     name: Deploy dry run
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: The deploy script's decisions
         run: bash server/deploy/test-deploy.sh
@@ -262,7 +262,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The script diffs base...HEAD, so it needs both sides.
           fetch-depth: 0
@@ -315,7 +315,7 @@ jobs:
       run:
         working-directory: client
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -391,7 +391,7 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Short SHA
         id: sha
@@ -744,7 +744,7 @@ jobs:
       RABBITMQ_PASS: ci-password
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -1012,7 +1012,7 @@ jobs:
       SAGA_E2E_REQUIRE_ALL: '1'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -1223,7 +1223,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Keep the newest 30 versions of each image
         env:
@@ -1246,7 +1246,7 @@ jobs:
     needs: [saga-e2e, client]
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # CI-only values, thrown away with the runner - the same kind the other jobs set inline. Real secrets belong in
       # repository secrets, never here.
