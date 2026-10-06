@@ -10,7 +10,7 @@
 # also type-checks src/ with its tests, one of which imports a file from server/ (specs/048) that this
 # context does not contain. Type-checking and tests are CI's `client` job, which publishing waits for.
 
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 ARG APP=storefront
 WORKDIR /src
 
