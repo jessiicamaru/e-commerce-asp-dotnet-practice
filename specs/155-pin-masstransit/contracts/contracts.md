@@ -8,6 +8,5 @@ One repository rule:
 ```yaml
 # .github/dependabot.yml, nuget
 ignore:
-  - dependency-name: "MassTransit*"
-    update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - dependency-name: "MassTransit*"        # every update, patches included (amended after #357)
 ```

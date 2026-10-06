@@ -25,6 +25,10 @@ minor and patch updates and one for majors. Two majors are ignored:
   decision.
 - **PostgreSQL 17/18**: a new major cannot start on the old data directory, so it is a planned dump and restore.
 
+And since specs/155 (#353) **no MassTransit version at all**, patches included: 8.5.11 stopped consumers for good after
+a broker outage, which CI cannot see, so a green pull request says nothing about a new version. It stays on 8.3.6
+until a version passes `loadtest/fault.sh broker` several times. A vulnerable MassTransit still fails the build.
+
 The first run proposed both (#315, #329, #330), and they were closed with that reason.
 
 **Why ZAP is passive.** The baseline spiders the apps and judges the responses; it attacks nothing. An active scan

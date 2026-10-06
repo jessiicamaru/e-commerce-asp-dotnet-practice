@@ -35,11 +35,13 @@ retrying. The logs that would show which branch exited were lost with the contai
 
 ## D3. Keep it pinned
 
-- **Dependabot**: `ignore` MassTransit `semver-minor` as well as `semver-major`. Patches (8.3.x) are still proposed: a
-  security fix would come that way, and nothing broke within 8.3.
+- **Dependabot**: `ignore` every MassTransit update. First this was minors and majors only, leaving 8.3.x patches
+  proposed for security fixes; the 8.3.7 patch arrived within the hour (#357). A patch is no more testable by CI than a
+  minor, and the regression's version is unknown, so it is ignored too. A security fix is not missed: the build fails
+  on a vulnerable package (specs/150).
 - **A test**, because the ignore does not stop a person and CI cannot see the defect: `MassTransitVersionTests` reads
-  every `.csproj` under the solution and asserts each MassTransit reference is 8.3.x, and asserts the loaded
-  `MassTransit.Abstractions` is 8.3. The message names #353 and the way to move: `fault.sh broker` several times.
+  every `.csproj` under the solution and asserts each MassTransit reference is exactly 8.3.6, and asserts the loaded
+  `MassTransit.Abstractions` is 8.3.6. The message names #353 and the way to move: `fault.sh broker` several times.
 
 ## D4. How it is judged
 
