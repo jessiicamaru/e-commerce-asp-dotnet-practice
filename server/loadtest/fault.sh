@@ -66,7 +66,40 @@ for _ in $(seq 1 120); do
 done
 healthy_at="$(now)"
 
+# The broker's health check passing is not the broker accepting connections (specs/154): RabbitMQ's node answers ping
+# seconds before it opens 5672, so "recovered" and "healthy" both came early. When it really opened the port, from its
+# own log; and when each service came back, from the first connection it accepted from that service's address.
+ready_at=""
+if [ "$fault" = broker ]; then
+  for _ in $(seq 1 180); do
+    ready_at="$(docker logs --timestamps --since "$recovered_at" e-commerce-rabbitmq 2>&1 | grep -m1 'started TCP listener on' | cut -d' ' -f1)"
+    [ -n "$ready_at" ] && break
+    sleep 1
+  done
+fi
+
 wait "$k6"; k6_exit=$?
+
+reconnect="{}"
+if [ -n "$ready_at" ]; then
+  addresses="$(docker ps --format '{{.Names}}' | grep '^ecommerce-' | xargs docker inspect --format '{{.Name}} {{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' | sed 's#^/##')"
+  accepted="$(docker logs --timestamps --since "$ready_at" e-commerce-rabbitmq 2>&1 | grep 'accepting AMQP connection' | sed -E 's/^([^ ]+) .*\(([0-9.]+):[0-9]+ ->.*/\1 \2/')"
+  reconnect="$(PY=python3; command -v python3 >/dev/null && python3 -c '' 2>/dev/null || PY=python; "$PY" - "$ready_at" "$addresses" "$accepted" <<'PYTHON'
+import json, sys
+from datetime import datetime
+ready, addresses, accepted = sys.argv[1:4]
+t = lambda s: datetime.fromisoformat(s.rstrip('Z')[:26]).timestamp()
+owner = {ip: line.split()[0] for line in addresses.splitlines() for ip in line.split()[1:]}
+first = {}
+for line in accepted.splitlines():
+    stamp, ip = line.split()
+    name = owner.get(ip)
+    if name and name not in first:
+        first[name] = round(t(stamp) - t(ready), 2)
+print(json.dumps(dict(sorted(first.items()))))
+PYTHON
+)"
+fi
 grep -E 'ok   |FAIL|readings|checkout refused' "$log" | grep -v 'timings: ' | sed 's/.*msg="//; s/" source=console//' | sort | uniq -c | sort -rn | head -12
 
 # Nothing faulted: a message in an error queue is work lost (#299 showed itself this way).
@@ -76,10 +109,10 @@ passed=false
 
 # What the fault did to the orders, from each order's placed and paid times (the teardown's "timings" line).
 PY=python3; command -v python3 >/dev/null && python3 -c '' 2>/dev/null || PY=python
-orders="$("$PY" - "$log" "$fault_at" "$recovered_at" <<'PYTHON'
+orders="$("$PY" - "$log" "$fault_at" "$recovered_at" "${ready_at:-}" <<'PYTHON'
 import json, re, sys
 from datetime import datetime
-log, fault_at, recovered_at = sys.argv[1:4]
+log, fault_at, recovered_at, ready_at = sys.argv[1:5]
 ms = lambda t: datetime.fromisoformat(t.replace('Z', '+00:00')).timestamp() * 1000
 line = next((l for l in open(log, encoding='utf-8', errors='replace') if 'timings: ' in l), None)
 if line is None:
@@ -98,10 +131,13 @@ paid_during = [p for c, p in during if p]
 print(json.dumps({
     'before': stats(before), 'during': stats(during), 'after': stats(after),
     'backlog_cleared_after_recovery_s': round((max(paid_during) - r) / 1000, 2) if paid_during else None,
+    # From when the broker really accepted connections, not from `docker start` (specs/154).
+    'backlog_cleared_after_ready_s': round((max(paid_during) - ms(ready_at)) / 1000, 2) if paid_during and ready_at else None,
 }))
 PYTHON
 )"
 echo "orders: $orders"
+[ -n "$ready_at" ] && echo "broker accepting connections at $ready_at; each service reconnected after (s): $reconnect"
 
 cat > "$here/results/resilience-$fault-$run_id.timeline.json" <<JSON
 {
@@ -111,6 +147,8 @@ cat > "$here/results/resilience-$fault-$run_id.timeline.json" <<JSON
   "fault_at": "$fault_at",
   "recovered_at": "$recovered_at",
   "healthy_at": "$healthy_at",
+  "ready_at": "${ready_at}",
+  "reconnected_after_ready_s": ${reconnect},
   "k6_exit": $k6_exit,
   "error_queues": "$error_queues",
   "passed": $passed,

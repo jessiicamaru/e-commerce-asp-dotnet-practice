@@ -1,6 +1,7 @@
 using System.Reflection;
 using MassTransit;
 using MassTransit.RabbitMqTransport;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client.Exceptions;
@@ -27,6 +28,13 @@ public static class BrokerReconnect
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
     /// <summary>
+    /// <c>Messaging:ReconnectQuickly</c> (env <c>Messaging__ReconnectQuickly</c>), true unless set false: the way back to
+    /// MassTransit's own schedule without a release - for an A/B measurement (specs/154 research D4), or if the short
+    /// schedule ever misbehaves against a real broker.
+    /// </summary>
+    public const string Setting = "Messaging:ReconnectQuickly";
+
+    /// <summary>
     /// What RabbitMqHostConfiguration's own policy retries and ignores - only the schedule differs: from 1 s, doubling,
     /// at most 5 s apart, with 1 s of jitter so endpoints and instances do not retry in step.
     /// </summary>
@@ -43,17 +51,24 @@ public static class BrokerReconnect
     });
 
     /// <summary>
-    /// Call first thing in <c>UsingRabbitMq</c>. Returns whether the policy is now <see cref="Policy"/>; when it could
-    /// not be applied, MassTransit's default stays and a warning is logged through <paramref name="services"/>.
+    /// Call first thing in <c>UsingRabbitMq</c>. Returns whether the policy is now <see cref="Policy"/>. When it could
+    /// not be applied, MassTransit's default stays and a warning is logged through <paramref name="services"/>; when
+    /// <see cref="Setting"/> is false, the default stays on purpose and that is logged too.
     /// </summary>
     public static bool ReconnectQuickly(this IRabbitMqBusFactoryConfigurator configurator, IServiceProvider? services = null)
     {
+        var logger = services?.GetService<ILoggerFactory>()?.CreateLogger(typeof(BrokerReconnect));
+        if (services?.GetService<IConfiguration>()?.GetValue(Setting, true) == false)
+        {
+            logger?.LogInformation("{Setting} is false: reconnecting to RabbitMQ on MassTransit's default schedule, up to 30 s apart.", Setting);
+            return false;
+        }
+
         var host = configurator.GetType().GetField("_hostConfiguration", Private)?.GetValue(configurator);
         var policy = host?.GetType().GetField("<ReceiveTransportRetryPolicy>k__BackingField", Private);
         if (host is null || policy is null || policy.FieldType != typeof(IRetryPolicy))
         {
-            services?.GetService<ILoggerFactory>()?.CreateLogger(typeof(BrokerReconnect))
-                .LogWarning("Could not shorten the RabbitMQ reconnect interval (specs/154): MassTransit's host configuration "
+            logger?.LogWarning("Could not shorten the RabbitMQ reconnect interval (specs/154): MassTransit's host configuration "
                     + "has changed. Reconnecting on its default schedule, up to 30 s apart.");
             return false;
         }

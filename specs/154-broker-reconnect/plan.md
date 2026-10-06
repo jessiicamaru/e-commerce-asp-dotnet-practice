@@ -43,7 +43,10 @@ specs/154-broker-reconnect/                                          the record
 server/src/BuildingBlocks/Ecommerce.Shared/Messaging/BrokerReconnect.cs  ReconnectQuickly()
 server/src/BuildingBlocks/Ecommerce.Shared/Ecommerce.Shared.csproj       MassTransit.RabbitMQ 8.3.6
 server/src/Services/*/...WebApi/Program.cs                               cfg.ReconnectQuickly(), eight services
-server/tests/Ecommerce.Inventory.Tests/BrokerReconnectTests.cs           applied, same filters
+server/tests/Ecommerce.Inventory.Tests/BrokerReconnectTests.cs           applied, same filters, the switch
+server/docker-compose.yml                                                the broker healthy once it accepts connections
+server/loadtest/fault.sh                                                 ready_at, reconnect lag per service
+server/loadtest/resilience_report.py                                     the broker's return, step by step
 ```
 
 ## Complexity Tracking

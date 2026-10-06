@@ -75,4 +75,34 @@ Against the four broker-fault runs already recorded with MassTransit's default:
 | 2026-10-05 15:08 (#306) | 60.0 s | 40.1 s |
 | 2026-10-05 15:12 (#306) | 50.8 s | 29.5 s |
 
-Three runs with the change, on the same machine. SC-001 asks for 25 s or less, half the best baseline.
+Three runs with the change, on the same machine.
+
+## D4. Corrected: most of the "recovery" was RabbitMQ booting
+
+The first runs with the fix still took 92 s to clear the backlog. The broker's own log, from the 02:53 run (broker
+started at 02:56:03):
+
+```text
+02:56:13       Docker: e-commerce-rabbitmq healthy          <- rabbitmq-diagnostics ping passes
+02:56:21.7     Starting RabbitMQ 3.13.7
+02:56:36.6     started TCP listener on [::]:5672            <- only now can anything connect (31 s after start)
+02:56:36.8     accepting AMQP connection from ecommerce-order
+02:56:41.6     ... activity, identity, catalog, payment, cart, inventory
+02:56:42.4     ... orchestrator                             <- every service back 5.8 s after the port opened
+```
+
+The services were also logging, every 5 s (the new schedule), `Connection refused` and `Name or service not known`
+until 02:56:36. They were retrying correctly against a broker that was not there yet.
+
+**Consequences**:
+1. **The metric was wrong.** Counting from `docker start` folds the broker's ~31 s boot into "recovery". Each
+   baseline figure (51-99 s) contains it. fault.sh now records `ready_at` (the listener line) and measures from it.
+2. **The health check was early.** `ping` checks that the Erlang node answers, not that AMQP listens. Compose's
+   `depends_on: condition: service_healthy`, the deploy's `--wait` and fault.sh all trusted it. The check is now
+   `check_port_connectivity`, which connects to every listener.
+3. **The claim is the reconnect lag**: from the port opening to each service's first connection, read from the
+   broker's log by the address it accepted. The comparison is an A/B on one stack, because the earlier baseline runs
+   did not record `ready_at`. `Messaging:ReconnectQuickly=false` gives MassTransit's schedule with nothing else
+   changed.
+4. **What is left is throughput.** After every service is back, the backlog drains at the laptop's pace, about 50 s
+   for 264 orders. Making that faster is not this feature.

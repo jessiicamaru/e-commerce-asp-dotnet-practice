@@ -2,6 +2,7 @@ using System.Reflection;
 using Ecommerce.Shared.Messaging;
 using MassTransit;
 using MassTransit.RabbitMqTransport;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RabbitMQ.Client.Exceptions;
 
@@ -17,12 +18,17 @@ namespace Ecommerce.Inventory.Tests;
 public class BrokerReconnectTests
 {
     /// <summary>Builds the bus's configuration as a service does - no broker is contacted - and hands back its configurator.</summary>
-    private static async Task<(IRabbitMqBusFactoryConfigurator Configurator, bool Applied)> ConfigureAsync(bool reconnectQuickly)
+    private static async Task<(IRabbitMqBusFactoryConfigurator Configurator, bool Applied)> ConfigureAsync(
+        bool reconnectQuickly, string? setting = null)
     {
         IRabbitMqBusFactoryConfigurator? configurator = null;
         var applied = false;
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(setting is null ? [] : [new KeyValuePair<string, string?>(BrokerReconnect.Setting, setting)])
+            .Build();
         await using var provider = new ServiceCollection()
             .AddLogging()
+            .AddSingleton<IConfiguration>(configuration)
             .AddMassTransit(x => x.UsingRabbitMq((context, cfg) =>
             {
                 if (reconnectQuickly)
@@ -57,6 +63,16 @@ public class BrokerReconnectTests
         var (configurator, _) = await ConfigureAsync(reconnectQuickly: false);
 
         Assert.NotSame(BrokerReconnect.Policy, BrokerReconnect.CurrentPolicy(configurator));
+        Assert.Equal(30_000, MaxIntervalMilliseconds(BrokerReconnect.CurrentPolicy(configurator)));
+    }
+
+    [Fact]
+    public async Task Switched_off_by_configuration_MassTransits_schedule_stays()
+    {
+        // Messaging:ReconnectQuickly=false - the A/B baseline of specs/154, and the way back without a release.
+        var (configurator, applied) = await ConfigureAsync(reconnectQuickly: true, setting: "false");
+
+        Assert.False(applied);
         Assert.Equal(30_000, MaxIntervalMilliseconds(BrokerReconnect.CurrentPolicy(configurator)));
     }
 

@@ -182,7 +182,7 @@ python loadtest/report.py     # docs/testing/load-test-results.md from the kept 
   restarts the orchestrator, or pauses Inventory during steady checkouts. It then checks every order terminal, stock
   consistent, and error queues empty. `python loadtest/resilience_report.py` writes `docs/testing/resilience-results.md`.
   - Nothing was lost under any fault.
-  - The broker outage drains slowest (#304).
+  - The broker outage drained slowest, until specs/154 (#304) made every service reconnect within 5 s (below).
   - ⚠️ The harness gives each customer `rate × (fault + 20 s)` of room between orders. Cart removes ordered lines only
     on completion (specs/010), so a re-order during a fault would lose its line to the earlier order's completion.
 
@@ -985,6 +985,12 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   check, and it was the one service nothing could wait for - while an order that never leaves `Submitted`
   usually means it. Compose now checks it and the gateway waits for it; CI's saga job and `verify-saga.sh`
   probe it with the rest. The disagreement with the constitution is resolved.
+- **Every service reconnects to RabbitMQ within 5 s of its return** (specs/154, #304): `cfg.ReconnectQuickly(context)`,
+  first in `UsingRabbitMq`. MassTransit 8.3 retries up to 30 s apart (hard-coded), and the bus outbox delivers nothing
+  until every endpoint is back. The backlog took 51-99 s to clear after a broker outage.
+  - ⚠️ It sets a private field, falling back to the default with a log line if MassTransit's internals change.
+    `BrokerReconnectTests` fails then.
+  - ⚠️ A new service adds the line.
 - **A consumer's transaction can lose a serialization race, and it is retried since specs/145 (#299).** The EF
   outbox consumes in `RepeatableRead`, so concurrent updates of one row abort the losers with `40001`. With no retry
   anywhere, the first such failure faulted the message to `<queue>_error`. The load test of #290 found a paid order's

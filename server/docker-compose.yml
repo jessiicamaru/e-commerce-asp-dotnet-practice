@@ -177,7 +177,9 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      # Accepting AMQP connections, not merely running (specs/154): `ping` passed ~23 s before RabbitMQ opened 5672, so
+      # "healthy" - what the services, the deploy's --wait and fault.sh wait for - came before anything could connect.
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
       interval: 10s
       timeout: 5s
       retries: 12

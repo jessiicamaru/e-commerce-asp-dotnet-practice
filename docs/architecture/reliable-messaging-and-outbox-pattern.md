@@ -288,6 +288,23 @@ done.
   faults with a receive observer, because the harness keeps one record per message id and a duplicate would hide
   behind its twin.
 
+**Reconnecting to the broker** (specs/154, #304). Nothing is lost while RabbitMQ is down, but MassTransit's own
+reconnect schedule made recovery slow:
+- **What MassTransit 8.3 does**:
+  - its RabbitMQ host retries a lost connection on a policy fixed in its constructor: exponential from 3 s to **30 s**,
+    with no setter;
+  - the bus outbox delivers nothing until **every** receive endpoint has reconnected
+    (`BusOutboxDeliveryService` waits for `BusHealthStatus.Healthy` before each batch).
+- **The consequence**: after a minute down, every endpoint retried every 30 s. One attempt landing a few seconds
+  before the broker was ready stalled the whole service for another 30 s. The backlog took 51-99 s to clear across
+  four recorded runs.
+- **The fix**: `cfg.ReconnectQuickly(context)`, first in every service's `UsingRabbitMq`, puts the transport's own
+  filters on a 1-5 s schedule. It still ignores `AuthenticationFailureException`.
+- **How it is applied**: it replaces the policy through the host configuration's backing field. That happens once,
+  before the bus starts. If MassTransit's internals differ, nothing changes and the service logs a warning.
+  `BrokerReconnectTests` reads the policy back from a real RabbitMQ bus configuration, so a MassTransit release that
+  moves the field fails in CI.
+
 ### 5.2 Circuit Breaker (Infrastructure Isolation) — *not configured*
 If a microservice is unresponsive for extended periods, the Circuit Breaker trips, pausing message delivery to prevent Queue congestion.
 
