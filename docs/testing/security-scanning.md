@@ -19,6 +19,14 @@ automated scans answer that (specs/150, #293). Design record: [specs/150-securit
 machines, fed our own inputs, and Dependabot keeps them current without a gate that would be red for advisories that
 cannot reach anyone (research D2).
 
+**What Dependabot never proposes** (specs/153, #331). Each ecosystem gets at most two pull requests a week, one for
+minor and patch updates and one for majors. Two majors are ignored:
+- **MassTransit 9**: 8.x is Apache-2.0, while 9.x is under a commercial licence, so moving is the owner's licensing
+  decision.
+- **PostgreSQL 17/18**: a new major cannot start on the old data directory, so it is a planned dump and restore.
+
+The first run proposed both (#315, #329, #330), and they were closed with that reason.
+
 **Why ZAP is passive.** The baseline spiders the apps and judges the responses; it attacks nothing. An active scan
 (injection, fuzzing) is for a person to run against a local stack, never in CI.
 

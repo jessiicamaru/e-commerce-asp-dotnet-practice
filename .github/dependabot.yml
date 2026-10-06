@@ -1,6 +1,13 @@
-# Dependency updates for every ecosystem the project uses (specs/150, #293). Weekly; minor and patch updates grouped into
-# one pull request per ecosystem, majors one at a time - those are the ones that break (research D5). Each pull request
-# is tested by CI like any other and merged by a person.
+# Dependency updates for every ecosystem the project uses (specs/150, #293). Weekly. Per ecosystem at most two pull
+# requests: one for minor and patch updates, one for majors (specs/153, #331 - the first run opened 19, 15 of them single
+# majors). Each pull request is tested by CI like any other and merged by a person.
+#
+# Two majors are never proposed (specs/153 research D1):
+#   - MassTransit 9: 8.x is Apache-2.0, 9.x is a commercial licence (massient.com/license). Moving is the owner's
+#     licensing decision, not a bump.
+#   - PostgreSQL 17/18: a new major cannot start on the previous major's data directory. Upgrading is a dump and
+#     restore of eight databases, planned with its own record - CI would pass it on empty test databases while
+#     production's volumes refused to start.
 version: 2
 updates:
   - package-ecosystem: nuget
@@ -8,9 +15,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "MassTransit*"
+        update-types: ["version-update:semver-major"]
     groups:
       nuget-minor-and-patch:
         update-types: [minor, patch]
+      nuget-major:
+        update-types: [major]
 
   - package-ecosystem: npm
     directory: /client
@@ -20,6 +32,8 @@ updates:
     groups:
       npm-minor-and-patch:
         update-types: [minor, patch]
+      npm-major:
+        update-types: [major]
 
   # Base images: server/Dockerfile (the nine services) and client/Dockerfile (storefront, back office).
   - package-ecosystem: docker
@@ -27,9 +41,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
     groups:
       docker-minor-and-patch:
         update-types: [minor, patch]
+      docker-major:
+        update-types: [major]
 
   # The infrastructure images pinned in compose: PostgreSQL, RabbitMQ, Seq, Prometheus, Grafana, SeaweedFS, Caddy ...
   - package-ecosystem: docker-compose
@@ -37,9 +56,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
     groups:
       compose-minor-and-patch:
         update-types: [minor, patch]
+      compose-major:
+        update-types: [major]
 
   - package-ecosystem: github-actions
     directory: /
@@ -49,3 +73,5 @@ updates:
     groups:
       actions-minor-and-patch:
         update-types: [minor, patch]
+      actions-major:
+        update-types: [major]
