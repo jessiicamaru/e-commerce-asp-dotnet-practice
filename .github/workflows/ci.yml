@@ -463,7 +463,7 @@ jobs:
         # No stored secret: GITHUB_TOKEN is minted per run, scoped by the permissions
         # block above, and expires with the job. The constitution requires that secrets
         # are never written into a workflow file; needing none is the strongest form.
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
