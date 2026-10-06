@@ -311,17 +311,17 @@ reconnect schedule made recovery slow:
   `BrokerReconnectTests` reads the policy back from a real RabbitMQ bus configuration, so a MassTransit release that
   moves the field fails in CI.
 
-**MassTransit is pinned to 8.3.x** (specs/155, #353). On 8.5.11, a broker outage under load left receive endpoints
+**MassTransit is pinned to exactly 8.3.6** (specs/155, #353). On 8.5.11, a broker outage under load left receive endpoints
 stopped for good:
 - **What happened**: Inventory's `ReserveInventory` (twice), then Order's `OrderSvcOrderCompleted`, `OrderSvcOrderFailed`
   and `OrderSvcEraseAccountFromOrders`. Their queues filled with **0 consumers**, and every new order stayed `Submitted`
   until the service was restarted. Nothing was lost: a restart drained it all.
 - **Not the reconnect policy**: the third run had `Messaging__ReconnectQuickly=false`. 3 of 3 runs on 8.5.11 failed,
-  0 of 7 on 8.3.6.
+  0 of 12 on 8.3.6.
 - **Lead, unconfirmed**: consumes cancelled mid-flight at the outage, and 8.5's `ReceiveTransportAgent.Run` no longer
   rethrowing an `OperationCanceledException`.
-- **Kept pinned** by Dependabot ignoring MassTransit minors and by `MassTransitVersionTests`, because no CI job can see
-  the defect. Moving needs the cause understood and several passing `fault.sh broker` runs.
+- **Kept pinned** by Dependabot ignoring every MassTransit version, patches included, and by `MassTransitVersionTests`
+  (exactly 8.3.6), because no CI job can see the defect: a green build says nothing about a new version. Moving needs the cause understood and several passing `fault.sh broker` runs.
 
 ### 5.2 Circuit Breaker (Infrastructure Isolation) — *not configured*
 If a microservice is unresponsive for extended periods, the Circuit Breaker trips, pausing message delivery to prevent Queue congestion.

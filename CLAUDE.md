@@ -220,7 +220,8 @@ until #28 stopped Identity throwing bare `Exception`s.
   build-time tool, is a devDependency.
 - `dependabot.yml` covers five ecosystems, weekly, with one minor-and-patch and one major group each (specs/153).
   ⚠️ It ignores MassTransit majors (9.x is a commercial licence) and PostgreSQL majors (a new major cannot read the
-  old data directory: a dump and restore, never a bump). Never merge either from a pull request.
+  old data directory: a dump and restore, never a bump). Never merge either from a pull request. Since specs/155 it
+  proposes no MassTransit version at all (below).
 - `zap.yml` runs OWASP ZAP's passive baseline on both images: on main, and on pull requests touching `client/nginx`,
   `client/Dockerfile` or `.zap/`.
 - ⚠️ Every ZAP rule is FAIL in `.zap/rules.tsv` except the decided ones: WARN names its reason, IGNORE says why not.
@@ -995,12 +996,14 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   - ⚠️ A new service adds the line.
   - ⚠️ RabbitMQ opens its port 27-80 s after `docker start`. Its health check is `check_port_connectivity`, because
     `ping` passes before that. `fault.sh broker` measures from the port opening (`ready_at`).
-- ⚠️ **MassTransit is pinned to 8.3.x** (specs/155, #353). On 8.5.11 a broker outage under load stopped receive
+- ⚠️ **MassTransit is pinned to exactly 8.3.6** (specs/155, #353). On 8.5.11 a broker outage under load stopped receive
   endpoints **for good** (Inventory's `ReserveInventory`, three of Order's queues): messages piling up with 0 consumers,
-  every new order `Submitted` until a restart. 3 of 3 runs on 8.5.11, 0 of 7 on 8.3.6, and not specs/154's policy.
-  - CI cannot see it; only `loadtest/fault.sh broker` can. Dependabot ignores MassTransit minors, and
-    `MassTransitVersionTests` fails on any other version in any csproj.
-  - Moving off 8.3 needs the cause understood (#353's leads) and several passing `fault.sh broker` runs.
+  every new order `Submitted` until a restart. 3 of 3 runs on 8.5.11, 0 of 12 on 8.3.6, and not specs/154's policy.
+  - CI cannot see it; only `loadtest/fault.sh broker` can - so a green Dependabot pull request proves nothing, not even
+    for a patch (8.3.7 was proposed, #357, and closed). Dependabot ignores every MassTransit version, and
+    `MassTransitVersionTests` fails on anything but 8.3.6, in any csproj or in what the build resolved.
+  - Moving needs the cause understood (#353's leads) and several passing `fault.sh broker` runs on that version.
+    A vulnerable MassTransit still fails the build (specs/150), so a security fix is not missed.
   - The symptom: `rabbitmqctl list_queues name messages consumers` showing a queue with messages and **0 consumers**.
 - **A consumer's transaction can lose a serialization race, and it is retried since specs/145 (#299).** The EF
   outbox consumes in `RepeatableRead`, so concurrent updates of one row abort the losers with `40001`. With no retry

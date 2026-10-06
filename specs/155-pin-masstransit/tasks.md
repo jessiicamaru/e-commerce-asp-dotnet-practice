@@ -14,7 +14,9 @@ description: "Task list for MassTransit back on 8.3.6 after a broker outage stop
 - [x] T004 Every suite passes on 8.3.6, `BrokerReconnectTests` included
 - [x] T005 `fault.sh broker` three or more times on the rebuilt stack; no queue left with messages and no consumer
 - [x] T006 Docs: reliable messaging, evaluation, resilience results, CLAUDE.md, timeline, backlog
-- [ ] T007 Merged, closes #353
+- [x] T007 Merged, closes #353 (#354)
+- [x] T008 Amended: the 8.3.7 patch (#357) closed; Dependabot ignores every MassTransit update; the test exact on 8.3.6,
+  a mutation to 8.3.7 caught by both tests
 
 ## Evidence
 

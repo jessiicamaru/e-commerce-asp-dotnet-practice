@@ -4,7 +4,7 @@
 
 ## Summary
 
-Every `MassTransit*` reference goes from 8.5.11 back to 8.3.6, Dependabot ignores MassTransit minors, and
+Every `MassTransit*` reference goes from 8.5.11 back to 8.3.6, Dependabot ignores every MassTransit update, and
 `MassTransitVersionTests` holds the pin. Evidence: the whole test suite on 8.3.6, a mutation of the guard, and
 `fault.sh broker` three or more times on the rebuilt stack.
 
@@ -39,7 +39,7 @@ The constitution's stack line already says MassTransit 8.3.6; this makes it true
 ```text
 specs/155-pin-masstransit/                                      the record
 server/**/*.csproj                                              MassTransit* 8.5.11 -> 8.3.6
-.github/dependabot.yml                                          MassTransit minors ignored, with the reason
+.github/dependabot.yml                                          every MassTransit update ignored, with the reason
 server/tests/Ecommerce.Inventory.Tests/MassTransitVersionTests.cs  the pin, in every csproj and in what the build resolved
 docs/                                                           reliable messaging, evaluation, resilience results, timeline, backlog
 CLAUDE.md                                                       the pin and why
