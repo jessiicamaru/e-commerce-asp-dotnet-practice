@@ -4,14 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "dependencies": {
+    "@ecommerce/ui": "*",
     "@tanstack/react-query": "^5.103.2",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "axios": "^1.20.0",
     "i18next": "^26.4.2",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-i18next": "^17.0.15",
-    "react-router-dom": "^7.18.4",
-    "@ecommerce/ui": "*"
+    "react-router-dom": "^7.18.4"
   }
 }

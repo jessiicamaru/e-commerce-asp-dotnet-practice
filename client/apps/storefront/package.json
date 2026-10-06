@@ -10,8 +10,6 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.103.2",
-    "@tiptap/react": "^3.31.3",
-    "@tiptap/starter-kit": "^3.31.3",
     "axios": "^1.20.0",
     "cn": "^0.3.2",
     "dompurify": "^3.4.16",
@@ -25,7 +23,6 @@
     "sonner": "^2.0.8",
     "tailwindcss": "^4.3.3",
     "@tailwindcss/vite": "^4.3.3",
-    "@tiptap/pm": "^3.31.3",
     "@ecommerce/core": "*",
     "@ecommerce/ui": "*"
   }
