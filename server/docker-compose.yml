@@ -207,7 +207,7 @@ services:
   # Metrics (specs/148): every service PUSHES OpenTelemetry metrics here over OTLP (the receiver below), and
   # RabbitMQ's own plugin is scraped. The UI and API are on http://localhost:9090.
   prometheus:
-    image: prom/prometheus:v3.5.0
+    image: prom/prometheus:v3.15.0
     container_name: e-commerce-prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -244,7 +244,7 @@ services:
   # Every email the stack sends lands here (specs/060) and nothing leaves the machine: SMTP on 1025, the
   # inbox at http://localhost:8025. Identity's dispatcher sends to it by default.
   mailpit:
-    image: axllent/mailpit:v1.21
+    image: axllent/mailpit:v1.30
     container_name: e-commerce-mailpit
     environment:
       # On a volume: its own default is memory, and a restart then loses every email it caught.
@@ -260,7 +260,7 @@ services:
   # bucket. SeaweedFS because MinIO no longer publishes community images. `weed mini` runs master, volume, filer
   # and the S3 gateway in one process - development only; production points Catalog at real S3.
   seaweedfs:
-    image: chrislusf/seaweedfs:4.47
+    image: chrislusf/seaweedfs:4.48
     container_name: e-commerce-seaweedfs
     command: ["mini", "-dir=/data", "-bucket=product-images", "-master.telemetry=false", "-admin.ui=false"]
     environment:
