@@ -30,7 +30,7 @@ RUN test -d "apps/$APP" || { echo "no such app: $APP" >&2; exit 1; } \
 # ---------------------------------------------------------------------------------------------------
 # Runs as uid 101 and listens on 8080, like the service images. Its entrypoint renders
 # /etc/nginx/templates/*.template into /etc/nginx/conf.d/ with envsubst before nginx starts.
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.29-alpine
 # Declared again: an ARG belongs to the stage that declares it.
 ARG APP=storefront
 
