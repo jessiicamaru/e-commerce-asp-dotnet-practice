@@ -128,8 +128,13 @@ public class InboxRedeliveryTests(PaymentTestFixture fixture)
 
         var deliveries = await DeliverTwiceAtOnceAsync(provider, harness);
 
+        // The loser fails one of two ways, by timing (#350): 23505 on the inbox key when its insert waited on the
+        // winner's uncommitted row - the production fault of #306 - or 40001 when its snapshot predates the winner's
+        // commit. Either is a race the policy retries, and without it either faults.
         var fault = Assert.Single(deliveries.Faults);
-        Assert.Contains("AK_InboxState_MessageId_ConsumerId", (fault.InnerException ?? fault).Message);
+        var message = (fault.InnerException ?? fault).Message;
+        Assert.True(message.Contains("AK_InboxState_MessageId_ConsumerId") || message.StartsWith("40001"), message);
+        Assert.True(TransientRetry.IsTransient(fault), message);
         Assert.Equal(1, SlowCharge.Runs);
     }
 }

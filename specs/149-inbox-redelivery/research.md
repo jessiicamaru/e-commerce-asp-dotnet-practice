@@ -22,6 +22,11 @@ receivefault DbUpdateException 23505: duplicate key value violates unique constr
 postconsume 47.764    the first consumes once
 ```
 
+**A second form of the same race** (found in CI on 2026-10-06, #350): when the losing transaction's snapshot predates
+the winner's commit, it fails with `40001` (serialization failure, the outbox consumes in REPEATABLE READ) before it
+reaches the insert. The policy already retried `40001` (specs/145), so the fix covers both forms, and the test without
+the policy accepts either.
+
 **Decision**: try the losing delivery again. On its next attempt, a new transaction finds the row committed and
 consumed, and the inbox acknowledges the message without running the consumer.
 
