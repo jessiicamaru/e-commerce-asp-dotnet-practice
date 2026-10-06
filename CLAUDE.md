@@ -995,6 +995,13 @@ Catalog used to carry dead duplicates of both; they were deleted in `763b77a`. T
   - ⚠️ A new service adds the line.
   - ⚠️ RabbitMQ opens its port 27-80 s after `docker start`. Its health check is `check_port_connectivity`, because
     `ping` passes before that. `fault.sh broker` measures from the port opening (`ready_at`).
+- ⚠️ **MassTransit is pinned to 8.3.x** (specs/155, #353). On 8.5.11 a broker outage under load stopped receive
+  endpoints **for good** (Inventory's `ReserveInventory`, three of Order's queues): messages piling up with 0 consumers,
+  every new order `Submitted` until a restart. 3 of 3 runs on 8.5.11, 0 of 7 on 8.3.6, and not specs/154's policy.
+  - CI cannot see it; only `loadtest/fault.sh broker` can. Dependabot ignores MassTransit minors, and
+    `MassTransitVersionTests` fails on any other version in any csproj.
+  - Moving off 8.3 needs the cause understood (#353's leads) and several passing `fault.sh broker` runs.
+  - The symptom: `rabbitmqctl list_queues name messages consumers` showing a queue with messages and **0 consumers**.
 - **A consumer's transaction can lose a serialization race, and it is retried since specs/145 (#299).** The EF
   outbox consumes in `RepeatableRead`, so concurrent updates of one row abort the losers with `40001`. With no retry
   anywhere, the first such failure faulted the message to `<queue>_error`. The load test of #290 found a paid order's

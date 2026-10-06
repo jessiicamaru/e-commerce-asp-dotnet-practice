@@ -5,7 +5,7 @@ evidence it was found with (a search of the code, a request against the running 
 acceptance criteria. This page is the summary; the issue is the source of truth - close the issue and
 update this page in the same change.
 
-Last reviewed: 2026-10-03 (ready to defend, #287-#295).
+Last reviewed: 2026-10-06 (#353).
 
 ## Deliberately deferred
 
@@ -26,11 +26,8 @@ Found on 2026-09-27 while the design records were rebuilt from the code:
 
 Found on 2026-09-27 in an audit of the management features and delivery: #193, done - see Fixed below.
 
-Found on 2026-10-03 by the load test of #290 and the resilience runs of #291 - measurement finding what the tests could not:
-
-| Issue | Title |
-| :-- | :-- |
-| [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | After a broker outage, new orders wait a minute behind the outbox backlog |
+Found on 2026-10-03 and 2026-10-06 by the load test of #290 and the resilience runs of #291 - measurement finding what the
+tests could not: #304 and #353, done - see Fixed below.
 
 ## Priority 1 - accounts and security
 
@@ -144,6 +141,8 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#306](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/306) | A message redelivered mid-consume faults on the inbox's unique key (found 2026-10-05 by #292's broker-fault run) | [#308](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/308) (specs/149) |
 | [#293](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/293) | Automated security scanning in CI | [#309](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/309) (specs/150) |
 | [#294](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/294) | Security headers on both apps | [#325](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/325) (specs/151) |
+| [#304](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/304) | After a broker outage, new orders wait a minute behind the outbox backlog | [#352](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/352) (specs/154) |
+| [#353](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/353) | After a broker outage on MassTransit 8.5.11, ReserveInventory stops consuming for good | (specs/155) |
 | [#295](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/295) | The report's architecture overview, deployment guide and evaluation | [#327](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/327) (specs/152) |
 | [#331](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/331) | Dependabot proposes upgrades that must not be merged, one pull request per major | [#332](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/332) (specs/153) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
