@@ -80,6 +80,7 @@ Nothing open.
 
 | Issue | Title |
 | :-- | :-- |
+| [#364](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/364) | Two Bruno tests fail on a fresh stack - payment export sections, sellers counted |
 
 ## Fixed
 
