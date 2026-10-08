@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (317 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (318 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -504,7 +504,9 @@ apart by query and the negotiated language and currency, 30 s (`Caching:Catalogu
 EF Core interceptor, not a call in handlers**: `CatalogueWrites` empties it after the commit of any statement writing
 `products`, `product_variants`, `variant_prices`, `product_translations`, `variant_options`(`_translations`),
 `categories`(`_translations`) or `sellers`. A new table a cached read shows goes into its pattern, and a new public read
-gets the attribute only if every table it shows is in that list. Per instance: another instance is stale up to 30 s.
+gets the attribute only if every table it shows is in that list. ⚠️ A read that overlapped an eviction is not stored
+(a generation advanced before each eviction, checked by the policy - specs/159 found the race). Per instance: another
+instance is stale up to 30 s.
 
 ⚠️ **Off the shelf, what hangs on a product is a 404 too** (specs/081, #166): reviews and questions answer
 `ProductReview.MaySee` like the product, and an image is served only to an address with its own `ImageAccessKey`

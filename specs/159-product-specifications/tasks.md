@@ -37,7 +37,7 @@ description: "Task list for Product specifications per category"
 
 Verified on 2026-10-08 against the compose stack rebuilt from this branch:
 
-- **Server tests**: `Ecommerce.Catalog.Tests` 317 passed, 0 failed, on PostgreSQL and S3 (8 in `ProductSpecificationTests`,
+- **Server tests**: `Ecommerce.Catalog.Tests` 318 passed, 0 failed, on PostgreSQL and S3 (8 in `ProductSpecificationTests`,
   2 new cases in `CatalogueWritesTests` for the new tables).
 - **Mutation**: with `ProductReview.AfterSellerEditAsync` taken out of `SetProductSpecificationsCommandHandler`, the
   test that a seller's change sends an approved product back to review fails; with it, it passes.
@@ -52,4 +52,9 @@ Verified on 2026-10-08 against the compose stack rebuilt from this branch:
 - **Bruno**: the whole collection, 692 of 693 tests; the one failure is `my-data/payment`, already on `main` and
   filed as #364. The new `specifications` folder (14 requests) passes - its translate request first failed because it
   read the answer in the default language; it now asks with `?lang=en`.
+- **The browser flows found a race in specs/157's cache** (first CI run of #367, twice): a read that loaded a product
+  before Inventory's availability committed stored its answer just after the eviction, so the setup's "in stock" poll
+  saw `OutOfStock` for the whole 30 s - the product lookup now makes more queries, which widened the window. Fixed in
+  `CatalogueCache`: every eviction advances a generation first and an answer is stored only if none passed since its
+  request began. `CatalogueCacheTests.A_read_that_overlapped_an_eviction_is_not_kept` fails with the check removed.
 - **Docs**: `docs/reference` regenerated (217 endpoints, 64 tables).
