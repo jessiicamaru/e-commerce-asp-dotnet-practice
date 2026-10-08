@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { Button } from '@ecommerce/ui/button'
 import { Input } from '@ecommerce/ui/input'
 import { Label } from '@ecommerce/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ecommerce/ui/select'
+import { cn } from 'cn'
 import { ApiError } from '@ecommerce/core/config/axios'
 import type { useCategoryChanges } from '@ecommerce/core/hooks/category'
 import type { Category } from '@ecommerce/core/services/category/types'
@@ -14,8 +16,28 @@ type Changes = ReturnType<typeof useCategoryChanges>
  * One category: its Vietnamese and English names at a glance, and - opened - both edited together. English counts as
  * translated only when the server said the English list's name is in English (`language === 'en'`); otherwise the field
  * starts empty, and saving it empty removes the translation.
+ *
+ * Its place in the tree (specs/158): indented under its department, and moved with the "Department" select - to another
+ * department, or out to be one. A department with categories under it stays one; the select says why instead of offering
+ * a move the server would refuse.
  */
-export function CategoryRow({ vi, en, changes }: { vi: Category; en: Category | undefined; changes: Changes }) {
+export function CategoryRow({
+  vi,
+  en,
+  changes,
+  depth = 0,
+  department,
+  departments = [],
+  childCount = 0,
+}: {
+  vi: Category
+  en: Category | undefined
+  changes: Changes
+  depth?: 0 | 1
+  department?: Category
+  departments?: Category[]
+  childCount?: number
+}) {
   const { t } = useTranslation('admin')
   const translated = en?.language === 'en'
   const [open, setOpen] = useState(false)
@@ -27,6 +49,16 @@ export function CategoryRow({ vi, en, changes }: { vi: Category; en: Category | 
   const [refusal, setRefusal] = useState<string | null>(null)
 
   const refused = (error: unknown) => setRefusal(ApiError.from(error).message)
+
+  const move = (value: unknown) => {
+    const parentCategoryId = String(value ?? '') || null
+    if (parentCategoryId === (vi.parentCategoryId ?? null)) return
+    setRefusal(null)
+    changes.move
+      .mutateAsync({ id: vi.id, parentCategoryId })
+      .then(() => toast.success(t('categories.moved', { name: vi.name })), refused)
+  }
+  const elsewhere = departments.filter((d) => d.id !== vi.id)
 
   const save = (event: FormEvent) => {
     event.preventDefault()
@@ -50,15 +82,37 @@ export function CategoryRow({ vi, en, changes }: { vi: Category; en: Category | 
   }
 
   return (
-    <li className="bg-card ring-border/60 grid gap-3 rounded-3xl p-4 ring-1">
+    <li className={cn('bg-card ring-border/60 grid gap-3 rounded-3xl p-4 ring-1', depth === 1 && 'ml-6 sm:ml-10')}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="font-medium">{vi.name}</p>
           <p className="text-muted-foreground text-sm">
             {translated ? en.name : t('categories.noEnglish')} · <span className="font-mono text-xs">/{vi.slug}</span>
+            {department && <> · {t('categories.departmentOf', { department: department.name })}</>}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {childCount > 0 ? (
+            <span className="text-muted-foreground text-xs">{t('categories.underIt', { count: childCount })}</span>
+          ) : (
+            <Select
+              items={[{ value: '', label: t('categories.noDepartment') }, ...elsewhere.map((d) => ({ value: d.id, label: d.name }))]}
+              value={vi.parentCategoryId ?? ''}
+              onValueChange={move}
+            >
+              <SelectTrigger className="h-8! w-48 rounded-full" aria-label={t('categories.moveTo', { name: vi.name })}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t('categories.noDepartment')}</SelectItem>
+                {elsewhere.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button variant="outline" size="sm" className="rounded-full" onClick={() => setOpen((o) => !o)}>
             {t('categories.edit')}
           </Button>

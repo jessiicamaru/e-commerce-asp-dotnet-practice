@@ -11,13 +11,23 @@
   ],
   "categories": [
     {
+      "slug": "dien-tu",
+      "name": "Điện tử",
+      "description": "Điện thoại, máy tính và âm thanh",
+      "en": {
+        "name": "Electronics",
+        "description": "Phones, computers and audio"
+      }
+    },
+    {
       "slug": "dien-thoai",
       "name": "Điện thoại",
       "description": "Điện thoại thông minh",
       "en": {
         "name": "Phones",
         "description": "Smartphones"
-      }
+      },
+      "parent": "dien-tu"
     },
     {
       "slug": "laptop",
@@ -26,7 +36,8 @@
       "en": {
         "name": "Laptops",
         "description": "Notebook computers"
-      }
+      },
+      "parent": "dien-tu"
     },
     {
       "slug": "tai-nghe",
@@ -35,7 +46,8 @@
       "en": {
         "name": "Headphones",
         "description": "Wireless and noise-cancelling headphones"
-      }
+      },
+      "parent": "dien-tu"
     }
   ],
   "products": [

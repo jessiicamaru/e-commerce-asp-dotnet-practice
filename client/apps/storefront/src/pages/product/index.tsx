@@ -3,6 +3,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ApiError } from '@ecommerce/core/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
+import { CategoryBreadcrumb } from '@/components/product/category-breadcrumb'
 import { SaveButton } from '@/components/product/save-button'
 import { ReportButton } from '@/components/report/report-button'
 import { StockBadge } from '@/components/product/stock-badge'
@@ -71,6 +72,7 @@ export function ProductPage() {
 
         <div className="flex flex-col gap-4 lg:pt-4">
           <div>
+            <CategoryBreadcrumb categoryId={product.categoryId} />
             <div className="flex items-start justify-between gap-3">
               <h1 className="text-3xl font-bold tracking-tight text-balance">{product.name}</h1>
               <div className="flex shrink-0 items-center gap-1">

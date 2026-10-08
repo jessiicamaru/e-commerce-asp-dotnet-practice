@@ -21,13 +21,23 @@
   ],
   "categories": [
     {
+      "slug": "may-anh",
+      "name": "Máy ảnh",
+      "description": "Máy ảnh và ống kính",
+      "en": {
+        "name": "Cameras",
+        "description": "Cameras and lenses"
+      }
+    },
+    {
       "slug": "may-anh-mirrorless",
       "name": "Máy ảnh không gương lật",
       "description": "Máy ảnh mirrorless, ống kính rời",
       "en": {
         "name": "Mirrorless cameras",
         "description": "Mirrorless bodies with interchangeable lenses"
-      }
+      },
+      "parent": "may-anh"
     },
     {
       "slug": "may-anh-compact",
@@ -36,7 +46,8 @@
       "en": {
         "name": "Compact cameras",
         "description": "Small bodies with a fixed lens"
-      }
+      },
+      "parent": "may-anh"
     }
   ],
   "products": [

@@ -163,20 +163,34 @@ def every_product_sku():
 def seed_categories(data, token):
     listed = call("GET", "/api/categories") or []
     rows = listed.get("items") if isinstance(listed, dict) else listed
-    by_slug = {row["slug"]: row["id"] for row in rows}
+    by_slug = {row["slug"]: row for row in rows}
     categories = {}
 
-    for category in data["categories"]:
-        if category["slug"] in by_slug:
-            categories[category["slug"]] = by_slug[category["slug"]]
-            skip(f"category {category['slug']} is already there")
+    # Departments first, then the categories under them (specs/158): a category is created with its department's id, so
+    # the department has to exist already.
+    ordered = sorted(data["categories"], key=lambda c: c.get("parent") is not None)
+
+    for category in ordered:
+        parent = categories[category["parent"]] if category.get("parent") else None
+        existing = by_slug.get(category["slug"])
+
+        if existing:
+            categories[category["slug"]] = existing["id"]
+
+            # A stack seeded before the tree (#360) has every category at the top: put it where the file says. The move
+            # is its own endpoint, so nothing else about the category changes; already in place, nothing is sent.
+            if existing.get("parentCategoryId") != parent:
+                call("PUT", f"/api/categories/{existing['id']}/parent", {"parentCategoryId": parent}, token)
+                ok(f"category {category['slug']} moved under {category.get('parent') or 'the top'}")
+            else:
+                skip(f"category {category['slug']} is already there")
             continue
 
         created = call("POST", "/api/categories", {
             "name": category["name"],
             "description": category.get("description"),
             "slug": category["slug"],
-            "parentCategoryId": None,
+            "parentCategoryId": parent,
         }, token)
         categories[category["slug"]] = created["id"]
         ok(f"category {category['slug']}")

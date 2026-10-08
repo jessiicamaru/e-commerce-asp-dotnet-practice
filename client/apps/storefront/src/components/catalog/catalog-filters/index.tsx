@@ -9,6 +9,7 @@ import { currentCurrency } from '@ecommerce/core/config/money'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@ecommerce/ui/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ecommerce/ui/select'
 import type { Category } from '@ecommerce/core/services/category/types'
+import { categoryChoices } from '@ecommerce/core/utils/category'
 import type { SortBy } from '@ecommerce/core/services/product/types'
 
 const ALL_CATEGORIES = 'all'
@@ -78,7 +79,8 @@ export function CatalogFilters({
         className="bg-card"
         choices={[
           { value: ALL_CATEGORIES, label: t('allCategories') },
-          ...categories.map((category) => ({ value: category.id, label: category.name })),
+          // Departments, each followed by its categories (specs/158); choosing a department lists all of them.
+          ...categoryChoices(categories),
         ]}
         value={categoryId || ALL_CATEGORIES}
         onChange={(value) => onChange({ category: !value || value === ALL_CATEGORIES ? '' : value })}

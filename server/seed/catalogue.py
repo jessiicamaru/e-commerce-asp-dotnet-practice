@@ -162,6 +162,22 @@ def load(only=()):
             problems.append(f"{category['_file']}: category {slug!r} is also in {slugs[slug]}")
         slugs.setdefault(slug, category["_file"])
 
+    # Departments and their categories, two levels (specs/158): a parent is a category some loaded vertical declares, it
+    # is not the category itself, and it has no parent of its own - the same rules the server enforces.
+    by_slug = {c.get('slug'): c for c in merged["categories"]}
+    for category in merged["categories"]:
+        parent = category.get('parent')
+        if parent is None:
+            continue
+        where = f"{category['_file']}: category {category.get('slug')!r}"
+        if parent == category.get('slug'):
+            problems.append(f"{where} is its own parent")
+        elif parent not in by_slug:
+            problems.append(f"{where} is under {parent!r}, which no loaded vertical declares")
+        elif by_slug[parent].get('parent') is not None:
+            problems.append(f"{where} is under {parent!r}, which is itself under {by_slug[parent]['parent']!r} - "
+                            "categories go two levels deep")
+
     # A vertical may file a product under another vertical's category only when that one is loaded too.
     for product in merged["products"]:
         if product.get("category") not in slugs:

@@ -80,6 +80,7 @@ Nothing open.
 
 | Issue | Title |
 | :-- | :-- |
+| [#364](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/364) | Two Bruno tests fail on a fresh stack - payment export sections, sellers counted |
 
 ## Fixed
 
@@ -145,6 +146,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#353](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/353) | After a broker outage on MassTransit 8.5.11, ReserveInventory stops consuming for good | [#354](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/354) (specs/155) |
 | [#359](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/359) | A shop for anything, not only cameras - copy, placeholder and a multi-vertical seed | [#360](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/360) (specs/156) |
 | [#361](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/361) | Serve the catalogue's public reads from memory, evicted on every catalogue write | [#362](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/362) (specs/157) |
+| [#363](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/363) | Categories in a tree - departments and their categories | [#365](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/365) (specs/158) |
 | [#295](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/295) | The report's architecture overview, deployment guide and evaluation | [#327](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/327) (specs/152) |
 | [#331](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/331) | Dependabot proposes upgrades that must not be merged, one pull request per major | [#332](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/332) (specs/153) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |

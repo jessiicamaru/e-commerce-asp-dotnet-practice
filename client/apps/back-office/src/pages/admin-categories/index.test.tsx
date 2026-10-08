@@ -45,7 +45,7 @@ describe('AdminCategoriesPage (specs/097)', () => {
     expect(screen.getByLabelText('Address')).toHaveValue('den-flash')
     await user.click(screen.getByRole('button', { name: /Create/ }))
 
-    await waitFor(() => expect(create).toHaveBeenCalledWith('Đèn flash', 'den-flash', null))
+    await waitFor(() => expect(create).toHaveBeenCalledWith('Đèn flash', 'den-flash', null, null))
   })
 
   it('shows the refusal of an address already taken in its words', async () => {
@@ -132,5 +132,58 @@ describe('categories searched and paged (specs/133, #249)', () => {
 
     expect(await screen.findByText('Danh mục 11')).toBeInTheDocument()
     expect(screen.queryByText('Danh mục 12')).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminCategoriesPage - the tree (specs/158)', () => {
+  const electronics: CategoryModel = {
+    id: 'c-el', name: 'Điện tử', description: null, slug: 'dien-tu', parentCategoryId: null, isActive: true, language: 'vi',
+  }
+  const phones: CategoryModel = { ...electronics, id: 'c-ph', name: 'Điện thoại', slug: 'dien-thoai', parentCategoryId: 'c-el' }
+  const books: CategoryModel = { ...electronics, id: 'c-bk', name: 'Sách', slug: 'sach' }
+
+  beforeEach(() => {
+    vi.spyOn(Category, 'listIn').mockResolvedValue([phones, books, electronics])
+  })
+
+  it('lists each department followed by its categories, indented, and says what is under a department', async () => {
+    renderAsAdmin(<AdminCategoriesPage />, '/categories')
+
+    await screen.findByText('Điện thoại')
+    const rows = screen.getAllByRole('listitem')
+    const names = rows.map((li) => li.querySelector('p')!.textContent)
+    // Đ sorts with D, before S: the department, its category, then the next department.
+    expect(names).toEqual(['Điện tử', 'Điện thoại', 'Sách'])
+    const phoneRow = rows[1]
+    expect(phoneRow.className).toMatch(/ml-6/)
+    expect(within(phoneRow).getByText(/in Điện tử/)).toBeInTheDocument()
+    // A department with a category under it cannot move under another: said, not offered.
+    const departmentRow = rows[0]
+    expect(within(departmentRow).getByText('1 under it - it stays a department')).toBeInTheDocument()
+    expect(within(departmentRow).queryByRole('combobox')).toBeNull()
+  })
+
+  it('creates a category under the department chosen', async () => {
+    const create = vi.spyOn(Category, 'create').mockResolvedValue({ ...phones, id: 'c-new', name: 'Laptop', slug: 'laptop' })
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminCategoriesPage />, '/categories')
+
+    await user.type(await screen.findByLabelText('Name'), 'Laptop')
+    await user.click(screen.getByRole('combobox', { name: 'Department' }))
+    await user.click(await screen.findByRole('option', { name: 'Điện tử' }))
+    await user.click(screen.getByRole('button', { name: /Create/ }))
+
+    await waitFor(() => expect(create).toHaveBeenCalledWith('Laptop', 'laptop', null, 'c-el'))
+  })
+
+  it('moves a category out of its department through its own endpoint', async () => {
+    const move = vi.spyOn(Category, 'move').mockResolvedValue({ ...phones, parentCategoryId: null })
+    const user = userEvent.setup()
+    renderAsAdmin(<AdminCategoriesPage />, '/categories')
+
+    await user.click(await screen.findByRole('combobox', { name: 'Department of “Điện thoại”' }))
+    await user.click(await screen.findByRole('option', { name: 'None - a department of its own' }))
+
+    await waitFor(() => expect(move).toHaveBeenCalledWith('c-ph', null))
   })
 })

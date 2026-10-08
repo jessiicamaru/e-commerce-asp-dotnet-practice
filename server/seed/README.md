@@ -13,7 +13,9 @@ One JSON file per vertical in `catalogue/` (specs/156): cameras, electronics, fa
 sells anything, and cameras were only its first example. A new vertical is a new file in the same format; the checker
 (run by CI) refuses a duplicate SKU or slug across files, missing English text, an unknown category, variants of one
 product naming different options, a dong price with a fraction or a dollar price with three decimals.
-`clean-test-debris.py` keeps whatever any file names. ⚠️ The prices are approximate - each file says so.
+A category may name its department with `"parent": "<slug>"` (specs/158): the checker requires that department to be
+declared by some loaded vertical and to have no parent itself, and the seeder creates departments first and moves a
+category already there into its department. `clean-test-debris.py` keeps whatever any file names. ⚠️ The prices are approximate - each file says so.
 
 ## Signing in as the administrator
 

@@ -10,6 +10,7 @@ import { Input } from '@ecommerce/ui/input'
 import { Label } from '@ecommerce/ui/label'
 import { Textarea } from '@ecommerce/ui/textarea'
 import { useCategories } from '@ecommerce/core/hooks/category'
+import { categoryChoices } from '@ecommerce/core/utils/category'
 import { useUpdateProductDetails } from '@ecommerce/core/hooks/product'
 import type { Product } from '@ecommerce/core/services/product/types'
 
@@ -73,7 +74,7 @@ export function ProductDetailsCard({ product }: { product: Product }) {
               id="details-category"
               required
               placeholder={t('create.categoryPlaceholder')}
-              choices={(categories.data ?? []).map((category) => ({ value: category.id, label: category.name }))}
+              choices={categoryChoices(categories.data ?? [])}
               value={form.categoryId || null}
               onChange={(value) => setForm({ ...form, categoryId: value ?? '' })}
             />

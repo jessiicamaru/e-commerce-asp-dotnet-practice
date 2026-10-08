@@ -7,14 +7,18 @@ export function useCategoriesIn(language: string) {
   return useQuery({ queryKey: queryKeys.categoriesIn(language), queryFn: () => Category.listIn(language) })
 }
 
-/** Create, rename, translate and delete (specs/097); each refreshes every list of categories. */
+/** Create, move (specs/158), rename, translate and delete (specs/097); each refreshes every list of categories. */
 export function useCategoryChanges() {
   const queryClient = useQueryClient()
   const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.categories() })
   return {
     create: useMutation({
-      mutationFn: (input: { name: string; slug: string; description: string | null }) =>
-        Category.create(input.name, input.slug, input.description),
+      mutationFn: (input: { name: string; slug: string; description: string | null; parentCategoryId?: string | null }) =>
+        Category.create(input.name, input.slug, input.description, input.parentCategoryId ?? null),
+      onSuccess: refresh,
+    }),
+    move: useMutation({
+      mutationFn: (input: { id: string; parentCategoryId: string | null }) => Category.move(input.id, input.parentCategoryId),
       onSuccess: refresh,
     }),
     save: useMutation({

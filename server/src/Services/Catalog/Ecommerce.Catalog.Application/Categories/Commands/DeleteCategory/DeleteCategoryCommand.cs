@@ -47,6 +47,15 @@ public class DeleteCategoryCommandHandler(
                 $"'{category.Name}' still has {filed} product(s) filed under it. Move or delete them first.");
         }
 
+        // A department with categories under it: a sentence, not the foreign key's 500 (specs/158).
+        var children = await _categories.CountChildrenAsync(category.Id, cancellationToken);
+
+        if (children > 0)
+        {
+            throw new ConflictException(
+                $"'{category.Name}' still has {children} categor{(children == 1 ? "y" : "ies")} under it. Move or delete them first.");
+        }
+
         _categories.Remove(category);
         await _audit.RecordAsync(
             AuditCategory.Catalog, "CategoryDeleted", "Category", category.Id.ToString(), $"Category \"{category.Name}\" deleted",

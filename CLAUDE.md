@@ -420,7 +420,11 @@ reads the plan. 452 ms to 1.2 ms on 100,000 products. **A price range and "in st
 `IX_products_on_shelf_Price`, any other currency through a grouped join of ids (⚠️ never the sort's per-product `MIN`,
 a SubPlan) - and `inStock` on the availability read model; `CatalogueFilterTests` reads both plans. **Category names are translated too** since specs/026 - and administrators manage categories at `/admin/categories`
 (specs/097, #195: rename via `PUT /api/categories/{id}`, the slug fixed once created) - the same way and with
-the same per-field fallback; they were called out of scope twice before a redesigned storefront made
+the same per-field fallback. ⚠️ **Categories are a two-level tree** since specs/158 (#363): departments (no parent) and the
+categories under them - `CategoryTree` enforces it on create and on `PUT /api/categories/{id}/parent` (a move is its own
+endpoint, so the rename never lifts a category out), a department with categories under it is a 409 on delete, and
+`?categoryId=` of a department lists its categories' products. The client builds the tree once, in
+`core/utils/category`; the seed's categories carry `"parent"`. They were called out of scope twice before a redesigned storefront made
 an English page full of `Máy ảnh không gương lật` impossible to keep calling that. ⚠️ **An order freezes its words in the language it was placed in**
 (`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an
 order is a record of a purchase, not a view of the catalogue.

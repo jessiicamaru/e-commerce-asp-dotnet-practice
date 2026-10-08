@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ProductImage } from '@ecommerce/core/components/product/product-image'
 import { Price } from '@ecommerce/core/components/shared/price'
 import type { Category } from '@ecommerce/core/services/category/types'
+import { departments } from '@ecommerce/core/utils/category'
 import type { Product } from '@ecommerce/core/services/product/types'
 
 /** Enough to steer by. A wall of chips is a filter, and there is already a filter. */
@@ -80,7 +81,8 @@ export function CatalogHero({
       <div className="bg-card ring-border/60 min-w-0 rounded-[2rem] p-4 ring-1 sm:p-6">
         <h2 className="mb-3 text-sm font-semibold">{t('hero.categories')}</h2>
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
-          {categories.slice(0, CHIPS).map((category) => (
+          {/* The departments (specs/158): a chip per kind of goods, each listing everything under it. */}
+          {departments(categories).slice(0, CHIPS).map((category) => (
             <button
               key={category.id}
               type="button"
