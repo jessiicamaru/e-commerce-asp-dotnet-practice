@@ -9,6 +9,9 @@ public interface ICategoryRepository
     Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Category category, CancellationToken cancellationToken = default);
 
+    /// <summary>How many categories sit under this one (specs/158): a department with any cannot move or be deleted.</summary>
+    Task<int> CountChildrenAsync(Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Stages a category for deletion. The caller checks first that nothing is filed under it.</summary>
     void Remove(Category category);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);

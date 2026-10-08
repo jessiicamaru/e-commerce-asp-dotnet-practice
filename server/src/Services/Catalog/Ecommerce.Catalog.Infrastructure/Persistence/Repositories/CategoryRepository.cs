@@ -37,6 +37,9 @@ public class CategoryRepository(CatalogDbContext context) : ICategoryRepository
         await _context.Categories.AddAsync(category, cancellationToken);
     }
 
+    public Task<int> CountChildrenAsync(Guid id, CancellationToken cancellationToken = default) =>
+        _context.Categories.CountAsync(c => c.ParentCategoryId == id, cancellationToken);
+
     public void Remove(Category category) => _context.Categories.Remove(category);
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)

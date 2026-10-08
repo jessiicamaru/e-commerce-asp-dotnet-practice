@@ -25,6 +25,10 @@ public class CreateCategoryCommandHandler(ICategoryRepository categoryRepository
             throw new ConflictException($"A category with the address '{request.Slug}' already exists.");
         }
 
+        // Under a department, or a department itself - never deeper (specs/158).
+        await CategoryTree.EnsureMayGoUnderAsync(
+            _categoryRepository, categoryId: null, request.Name, request.ParentCategoryId, cancellationToken);
+
         var category = new Category
         {
             Name = request.Name,

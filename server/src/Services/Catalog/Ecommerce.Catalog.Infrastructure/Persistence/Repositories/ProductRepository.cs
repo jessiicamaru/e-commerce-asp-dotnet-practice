@@ -302,7 +302,11 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
 
         if (categoryId.HasValue)
         {
-            query = query.Where(p => p.CategoryId == categoryId.Value);
+            // A department lists what is under its categories too (specs/158): one subquery on the parent's index, and
+            // two levels is all there is, so it needs no recursion.
+            var id = categoryId.Value;
+            query = query.Where(p => p.CategoryId == id
+                || _context.Categories.Where(c => c.ParentCategoryId == id).Select(c => c.Id).Contains(p.CategoryId));
         }
 
         if (!string.IsNullOrWhiteSpace(searchTerm))

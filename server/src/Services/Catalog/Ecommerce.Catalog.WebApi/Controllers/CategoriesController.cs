@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.OutputCaching;
 using Ecommerce.Catalog.Application.Categories.Commands.CreateCategory;
 using Ecommerce.Catalog.Application.Categories.Commands.UpdateCategory;
 using Ecommerce.Catalog.Application.Categories.Commands.DeleteCategory;
+using Ecommerce.Catalog.Application.Categories.Commands.MoveCategory;
 using Ecommerce.Catalog.Application.Categories.Queries.GetCategories;
 using Ecommerce.Catalog.Application.Categories.Translations;
 using Microsoft.AspNetCore.Authorization;
@@ -37,6 +38,17 @@ public class CategoriesController : ApiControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] CategoryTextRequest request)
     {
         return Ok(await Mediator.Send(new UpdateCategoryCommand(id, request.Name, request.Description)));
+    }
+
+    /// <summary>
+    /// Puts a category under a department, moves it, or makes it a department (specs/158) - its own endpoint, so a
+    /// rename never moves anything.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPut("{id:guid}/parent")]
+    public async Task<IActionResult> Move(Guid id, [FromBody] CategoryParentRequest request)
+    {
+        return Ok(await Mediator.Send(new MoveCategoryCommand(id, request.ParentCategoryId)));
     }
 
     /// <summary>
@@ -76,4 +88,7 @@ public class CategoriesController : ApiControllerBase
     public record CategoryTranslationRequest(string Name, string? Description);
 
     public record CategoryTextRequest(string Name, string? Description);
+
+    /// <summary>Null: the top level, a department.</summary>
+    public record CategoryParentRequest(Guid? ParentCategoryId);
 }
