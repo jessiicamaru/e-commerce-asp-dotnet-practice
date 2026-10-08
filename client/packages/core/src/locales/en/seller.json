@@ -222,7 +222,7 @@
   },
   "apply": {
     "title": "Open a shop",
-    "subtitle": "Sell your own cameras and lenses here. A moderator looks at every new shop before it opens.",
+    "subtitle": "Sell your own goods here. A moderator looks at every new shop before it opens.",
     "shopName": "Shop name",
     "description": "What will you sell?",
     "descriptionHint": "A sentence or two helps the review go quickly.",
@@ -388,7 +388,7 @@
   },
   "addVariant": {
     "title": "Add a variant",
-    "hint": "Another kit, colour or size. It starts with no stock; set its stock and other prices once it is added.",
+    "hint": "Another size, colour or model. It starts with no stock; set its stock and other prices once it is added.",
     "options": "Options",
     "optionName": "Option {{number}} name",
     "optionValue": "Option {{number}} value",

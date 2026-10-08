@@ -49,7 +49,7 @@
     "delete": "Xoá",
     "search": "Tìm"
   },
-  "searchPlaceholder": "Tìm máy ảnh…",
+  "searchPlaceholder": "Tìm sản phẩm…",
   "pager": {
     "showing": "Hiển thị {{from}}–{{to}} / {{total}}",
     "previous": "Trước",
