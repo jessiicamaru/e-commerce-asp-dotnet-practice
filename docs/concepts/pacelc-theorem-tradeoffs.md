@@ -74,5 +74,8 @@ Rather than enforcing a uniform PACELC configuration across all microservices, w
   consistency over availability. Browsing remains best-effort.
 - **Cart chooses availability for display, consistency for checkout.** When Catalog does not answer,
   the cart still renders its lines with prices marked unavailable, and checkout is disabled.
-- **No cache, no replicas.** Every read goes to the service's own PostgreSQL. The latency figures
-  above are targets from the original design, never measured.
+- **A cache in memory, no Redis, no replicas.** Since specs/157 Catalog answers anonymous catalogue reads from its own
+  memory and empties it after every committed catalogue write - latency for anonymous browsing, consistency within one
+  instance, and at most 30 s of staleness across instances (EL with a bound). Every other read goes to the service's own
+  PostgreSQL. The latency figures above are targets from the original design; what was measured is in
+  [load-test results](../testing/load-test-results.md).

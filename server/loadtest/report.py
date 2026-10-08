@@ -37,6 +37,25 @@ def load():
     return runs
 
 
+# Browse runs measured before Catalog cached its anonymous reads (specs/157, #361). A summary cannot say which code it
+# ran against, so the runs are named here; every later browse run is with the cache. The first run after rebuilding
+# Catalog is a warm-up (CLAUDE.md: never judge right after a rebuild) and is listed but not compared.
+BEFORE_CATALOGUE_CACHE = {
+    'browse-2026-10-03T12-13-27-976Z.json',
+    'browse-2026-10-08T08-19-35-898Z.json',
+    'browse-2026-10-08T08-21-29-494Z.json',
+    'browse-2026-10-08T08-23-23-629Z.json',
+    'browse-2026-10-08T08-25-17-627Z.json',
+}
+WARM_UP = {'browse-2026-10-08T08-29-23-683Z.json'}
+
+
+def browse_cache(run):
+    if run['_file'] in WARM_UP:
+        return 'on (warm-up after rebuild)'
+    return 'off' if run['_file'] in BEFORE_CATALOGUE_CACHE else 'on'
+
+
 def metric(run, name):
     return run['metrics'].get(name, {}).get('values', {})
 
@@ -158,23 +177,53 @@ def main():
         lines += latency_rows(checkout[-1])
         lines.append('')
 
-    for r in [r for r in runs if r['scenario'] == 'browse']:
-        reqs = metric(r, 'http_reqs')
-        seconds = r['state']['testRunDurationMs'] / 1000
+    browse = [r for r in runs if r['scenario'] == 'browse']
+    if browse:
+        last = browse[-1]
         lines += [
             '## Shoppers browse the catalogue',
             '',
-            f"Anonymous shoppers ramp to **{r['settings']['peak_vus']} at once** ({r['settings']['stages']}), each listing a "
+            f"Anonymous shoppers ramp to **{last['settings']['peak_vus']} at once** ({last['settings']['stages']}), each listing a "
             "page, searching and opening a product, then reading for a second "
-            f"([`browse.js`](../../server/loadtest/browse.js)). Run {r['_when']}.",
+            f"([`browse.js`](../../server/loadtest/browse.js)).",
             '',
-            f"- **{reqs.get('count'):,} requests** in {seconds:,.0f} s, {reqs.get('count') / seconds:,.1f} a second on average;"
-            f" unexpected responses {metric(r, 'http_req_failed').get('rate', 0):.2%}.",
+            'Since specs/157 (#361) Catalog answers these anonymous reads from memory, emptied after every committed catalogue',
+            'write. Every run, with whether the cache was on; milliseconds, median / p95:',
+            '',
+            '| Run | Catalogue cache | Requests | Unexpected | list products | search | one product |',
+            '| :-- | :-- | --: | --: | --: | --: | --: |',
+        ]
+        for r in browse:
+            cells = []
+            for step in STEPS['browse']:
+                v = metric(r, f'http_req_duration{{name:{step}}}')
+                cells.append(f"{ms(v.get('med'))} / {ms(v.get('p(95)'))}" if v else '-')
+            lines.append(
+                f"| {r['_when']} | {browse_cache(r)} | {metric(r, 'http_reqs').get('count', 0):,} | "
+                f"{metric(r, 'http_req_failed').get('rate', 0):.2%} | " + ' | '.join(cells) + ' |')
+
+        def spread(cache):
+            group = [r for r in browse if browse_cache(r) == cache and r['_when'] >= '2026-10-08']
+            out = []
+            for step in STEPS['browse']:
+                meds = [metric(r, f'http_req_duration{{name:{step}}}').get('med') for r in group]
+                p95s = [metric(r, f'http_req_duration{{name:{step}}}').get('p(95)') for r in group]
+                out.append(f"{step} median {ms(min(meds))}-{ms(max(meds))}, p95 {ms(min(p95s))}-{ms(max(p95s))}")
+            return len(group), '; '.join(out)
+
+        n_off, off = spread('off')
+        n_on, on = spread('on')
+        lines += [
+            '',
+            f'Warm runs of 2026-10-08 on the same stack and catalogue (41 products): without the cache ({n_off} runs) {off}.',
+            f"With it ({n_on} runs) {on}. The request rate is set by the scenario's reading pauses, so latency is the measure.",
+            '',
+            'Last run in detail:',
             '',
             '| Step | Median | p95 | p99 | Slowest |',
             '| :-- | --: | --: | --: | --: |',
         ]
-        lines += latency_rows(r)
+        lines += latency_rows(last)
         lines.append('')
 
     lines += [

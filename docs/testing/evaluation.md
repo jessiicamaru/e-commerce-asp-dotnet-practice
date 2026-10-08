@@ -59,13 +59,19 @@ Docker, 25 containers. They show the shape, not what a server would do ([load-te
 | :-- | :-- | :-- |
 | Steady checkout, one product | 5 checkouts a second for 60 s | 3 warm runs: 300-301 checkouts, **all paid, units deducted = units sold, 0 unexpected responses**. Settle p50 1.06-2.25 s, p95 1.58-9.00 s |
 | Request latency in that run | | place order p50 65 ms / p95 110 ms; quote 29 / 62 ms; add to cart 39 / 68 ms |
-| Browsing, anonymous | ramping to 50 shoppers | **11,104 requests in 102 s (109 a second), 0 unexpected**. List p50 28 ms / p95 101 ms; search 26 / 69 ms; one product 15 / 41 ms |
+| Browsing, anonymous, no cache | ramping to 50 shoppers | 2026-10-03: **11,104 requests in 102 s (109 a second), 0 unexpected**. List p50 28 ms / p95 101 ms; search 26 / 69 ms; one product 15 / 41 ms |
+| Browsing, catalogue cache ([specs/157](../../specs/157-catalogue-cache/)) | the same, 2026-10-08, 41 products | 4 warm runs each way, 0 unexpected in all 8. **Without the cache** list p50 10-20 ms / p95 38-78 ms, search 10-20 / 35-59, one product 8-13 / 22-37. **With it** list 2.4-3.0 / 4.7-6.0 ms, search 2.3-2.9 / 4.5-5.9, one product 2.2-2.8 / 4.6-6.0: medians about 4x lower, p95 about 8-13x |
 
 **How to read the spread.** Settle time on one product is queueing: every checkout of it takes the same stock row's
 lock in turn. The per-stage timestamps showed identical code with a 0.3 s median in one run and 10 s in the next, as
 the laptop's load changed. The time was always in Inventory's lock wait, never in charging or settling. So speed was
 judged over several warm runs, never one. No run fails on latency, only on a broken invariant or an unexpected
 response.
+
+**What the cache result is and is not.** The browse scenario asks a small set of questions (three pages, six searches,
+about a dozen products), so nearly every request after the first is answered from memory: this is the cache's best case,
+measured, not a typical hit rate. What it shows is the cost of a hit against the cost of a database read on the same
+machine. A write empties the cache, so a shop that is written to often gains less ([specs/157](../../specs/157-catalogue-cache/)).
 
 **Throughput limit, stated.** One product's checkout rate is capped by its stock row's lock hold time.
 [The SKIP LOCKED study](../concepts/shopify-inventory-skip-locked-pattern.md) is the known way past it, and it was

@@ -421,7 +421,8 @@ it in the code.
   **in-app** notifications in Activity (specs/042); nothing sends e-mail.
 - **MongoDB for Catalog**, and **brands / dynamic product attributes**. Variant options
   (`Kit: Body only · Colour: Black`) are the only product attributes.
-- **Redis** — as a Catalog cache, or for inventory locking.
+- **Redis** — as a Catalog cache, or for inventory locking. Catalog's anonymous reads are cached in its own memory
+  instead (specs/157), behind ASP.NET Core output caching, whose store Redis could replace without touching an endpoint.
 - **Order asking Inventory for stock over gRPC** — replaced by reservation inside the saga (§3.2).
 - **A real payment provider.** Payment is a stub that moves no money, and a seller payout is a ledger
   entry, not a transfer.
