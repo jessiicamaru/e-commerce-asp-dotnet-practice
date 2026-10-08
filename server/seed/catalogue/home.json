@@ -11,13 +11,23 @@
   ],
   "categories": [
     {
+      "slug": "nha-cua",
+      "name": "Nhà cửa & đời sống",
+      "description": "Đồ dùng cho gia đình",
+      "en": {
+        "name": "Home & living",
+        "description": "Things for the home"
+      }
+    },
+    {
       "slug": "gia-dung",
       "name": "Đồ gia dụng",
       "description": "Thiết bị điện trong nhà",
       "en": {
         "name": "Home appliances",
         "description": "Electrical appliances for the home"
-      }
+      },
+      "parent": "nha-cua"
     },
     {
       "slug": "nha-bep",
@@ -26,7 +36,8 @@
       "en": {
         "name": "Kitchen",
         "description": "Pots, pans and food storage"
-      }
+      },
+      "parent": "nha-cua"
     }
   ],
   "products": [

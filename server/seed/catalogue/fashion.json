@@ -11,13 +11,23 @@
   ],
   "categories": [
     {
+      "slug": "thoi-trang",
+      "name": "Thời trang",
+      "description": "Quần áo và giày dép",
+      "en": {
+        "name": "Fashion",
+        "description": "Clothing and shoes"
+      }
+    },
+    {
       "slug": "thoi-trang-ao",
       "name": "Áo",
       "description": "Áo thun, áo sơ mi, áo khoác",
       "en": {
         "name": "Tops",
         "description": "T-shirts, shirts and jackets"
-      }
+      },
+      "parent": "thoi-trang"
     },
     {
       "slug": "thoi-trang-giay",
@@ -26,7 +36,8 @@
       "en": {
         "name": "Shoes",
         "description": "Sneakers and everyday shoes"
-      }
+      },
+      "parent": "thoi-trang"
     }
   ],
   "products": [

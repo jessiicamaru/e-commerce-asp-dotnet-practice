@@ -11,13 +11,23 @@
   ],
   "categories": [
     {
+      "slug": "sach",
+      "name": "Sách",
+      "description": "Sách in tiếng Việt",
+      "en": {
+        "name": "Books",
+        "description": "Printed books in Vietnamese"
+      }
+    },
+    {
       "slug": "sach-van-hoc",
       "name": "Sách văn học",
       "description": "Tiểu thuyết và truyện",
       "en": {
         "name": "Fiction",
         "description": "Novels and stories"
-      }
+      },
+      "parent": "sach"
     },
     {
       "slug": "sach-phi-hu-cau",
@@ -26,7 +36,8 @@
       "en": {
         "name": "Non-fiction",
         "description": "Self-help, history and science"
-      }
+      },
+      "parent": "sach"
     }
   ],
   "products": [

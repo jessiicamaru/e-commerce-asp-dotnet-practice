@@ -1,0 +1,41 @@
+info:
+  name: a category is created under the department
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Folding phone {{runId}}",
+        "description": null,
+        "slug": "folding-phone-{{runId}}",
+        "parentCategoryId": "{{categoryId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.id) bru.setVar("subCategoryId", res.body.id);
+    - type: tests
+      code: |-
+        test("status 200, under the department", function() {
+          expect(res.status).to.equal(200);
+          expect(res.body.parentCategoryId).to.equal(bru.getVar("categoryId"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/158: departments and their categories. The category this run made is the department here.

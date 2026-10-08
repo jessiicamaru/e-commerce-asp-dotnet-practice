@@ -1,0 +1,38 @@
+info:
+  name: a category under a category is 400
+  type: http
+  seq: 9
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Third level {{runId}}",
+        "description": null,
+        "slug": "third-level-{{runId}}",
+        "parentCategoryId": "{{subCategoryId}}"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 400 on ParentCategoryId", function() {
+          expect(res.status).to.equal(400);
+          expect(JSON.stringify(res.body.errors)).to.contain("ParentCategoryId");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/158: two levels. A parent that is itself under a department is refused, not stored and half-shown.

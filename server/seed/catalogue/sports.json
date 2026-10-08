@@ -11,13 +11,23 @@
   ],
   "categories": [
     {
+      "slug": "the-thao-da-ngoai",
+      "name": "Thể thao & dã ngoại",
+      "description": "Tập luyện và đi chơi ngoài trời",
+      "en": {
+        "name": "Sports & outdoors",
+        "description": "Training and the outdoors"
+      }
+    },
+    {
       "slug": "the-thao",
       "name": "Dụng cụ thể thao",
       "description": "Vợt, bóng và đồ tập",
       "en": {
         "name": "Sports equipment",
         "description": "Rackets, balls and training gear"
-      }
+      },
+      "parent": "the-thao-da-ngoai"
     },
     {
       "slug": "da-ngoai",
@@ -26,7 +36,8 @@
       "en": {
         "name": "Outdoors",
         "description": "Tents and travel gear"
-      }
+      },
+      "parent": "the-thao-da-ngoai"
     }
   ],
   "products": [
