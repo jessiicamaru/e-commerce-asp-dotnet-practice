@@ -1,0 +1,266 @@
+{
+  "_about": [
+    "One vertical of the seed catalogue (specs/156): the shop sells anything, and cameras were only its first example.",
+    "Real brands and products, so the storefront shows things a person recognises. Descriptions are written here.",
+    "",
+    "⚠️ THE PRICES ARE APPROXIMATE AND NOBODY HAS CHECKED THEM AGAINST A SHOP - the same warning as cameras.json.",
+    "They are the right order of magnitude and the right relative order, from a model's knowledge up to May 2026.",
+    "The dong and dollar prices are each that market's, never a conversion (specs/022).",
+    "",
+    "No photographs: products read back with imageUrl null and show the storefront's parcel tile (specs/156)."
+  ],
+  "categories": [
+    {
+      "slug": "the-thao",
+      "name": "Dụng cụ thể thao",
+      "description": "Vợt, bóng và đồ tập",
+      "en": {
+        "name": "Sports equipment",
+        "description": "Rackets, balls and training gear"
+      }
+    },
+    {
+      "slug": "da-ngoai",
+      "name": "Dã ngoại",
+      "description": "Lều trại và đồ đi phượt",
+      "en": {
+        "name": "Outdoors",
+        "description": "Tents and travel gear"
+      }
+    }
+  ],
+  "products": [
+    {
+      "sku": "YONEX-ASTROX88D",
+      "category": "the-thao",
+      "vi": {
+        "name": "Vợt cầu lông Yonex Astrox 88D Pro",
+        "description": "Vợt thiên công, nặng đầu, cho người chơi đánh đôi ở vị trí cuối sân."
+      },
+      "en": {
+        "name": "Yonex Astrox 88D Pro badminton racket",
+        "description": "A head-heavy attacking racket for doubles players at the back of the court."
+      },
+      "variants": [
+        {
+          "sku": "YONEX-ASTROX88D-3U",
+          "options": [
+            {
+              "vi": [
+                "Trọng lượng",
+                "3U"
+              ],
+              "en": [
+                "Weight",
+                "3U"
+              ]
+            }
+          ],
+          "vnd": 3890000,
+          "usd": 219,
+          "stock": 6
+        },
+        {
+          "sku": "YONEX-ASTROX88D-4U",
+          "options": [
+            {
+              "vi": [
+                "Trọng lượng",
+                "4U"
+              ],
+              "en": [
+                "Weight",
+                "4U"
+              ]
+            }
+          ],
+          "vnd": 3890000,
+          "usd": 219,
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "sku": "MOLTEN-F5A3400",
+      "category": "the-thao",
+      "vi": {
+        "name": "Bóng đá Molten F5A3400",
+        "description": "Bóng khâu máy, bề mặt PU, độ nảy ổn định cho sân cỏ tự nhiên và nhân tạo."
+      },
+      "en": {
+        "name": "Molten F5A3400 football",
+        "description": "A machine-stitched PU ball with a steady bounce on grass and artificial turf."
+      },
+      "variants": [
+        {
+          "sku": "MOLTEN-F5A3400-4",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "4"
+              ],
+              "en": [
+                "Size",
+                "4"
+              ]
+            }
+          ],
+          "vnd": 590000,
+          "usd": 30,
+          "stock": 20
+        },
+        {
+          "sku": "MOLTEN-F5A3400-5",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "5"
+              ],
+              "en": [
+                "Size",
+                "5"
+              ]
+            }
+          ],
+          "vnd": 690000,
+          "usd": 35,
+          "stock": 30
+        }
+      ]
+    },
+    {
+      "sku": "YOGA-MAT-TPE6",
+      "category": "the-thao",
+      "vi": {
+        "name": "Thảm tập yoga TPE 6mm",
+        "description": "Thảm hai mặt chống trượt, dày 6mm, nhẹ và cuộn gọn."
+      },
+      "en": {
+        "name": "TPE yoga mat, 6mm",
+        "description": "A double-sided non-slip mat, 6mm thick, light and easy to roll up."
+      },
+      "variants": [
+        {
+          "sku": "YOGA-MAT-TPE6-PUR",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Tím"
+              ],
+              "en": [
+                "Colour",
+                "Purple"
+              ]
+            }
+          ],
+          "vnd": 249000,
+          "usd": 24,
+          "stock": 25
+        },
+        {
+          "sku": "YOGA-MAT-TPE6-GRN",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Xanh lá"
+              ],
+              "en": [
+                "Colour",
+                "Green"
+              ]
+            }
+          ],
+          "vnd": 249000,
+          "usd": 24,
+          "stock": 20
+        }
+      ]
+    },
+    {
+      "sku": "NATUREHIKE-CLOUDUP2",
+      "category": "da-ngoai",
+      "vi": {
+        "name": "Lều Naturehike Cloud Up 2 người",
+        "description": "Lều siêu nhẹ dưới 1,5kg, dựng nhanh, chống mưa cho hai người."
+      },
+      "en": {
+        "name": "Naturehike Cloud Up 2-person tent",
+        "description": "An ultralight two-person tent under 1.5kg that pitches fast and keeps the rain out."
+      },
+      "variants": [
+        {
+          "sku": "NATUREHIKE-CLOUDUP2-GRY",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Xám"
+              ],
+              "en": [
+                "Colour",
+                "Grey"
+              ]
+            }
+          ],
+          "vnd": 2190000,
+          "usd": 129,
+          "stock": 7
+        }
+      ]
+    },
+    {
+      "sku": "HYDROFLASK-32",
+      "category": "da-ngoai",
+      "vi": {
+        "name": "Bình giữ nhiệt Hydro Flask 32oz",
+        "description": "Bình thép không gỉ hai lớp, giữ lạnh 24 giờ, giữ nóng 12 giờ."
+      },
+      "en": {
+        "name": "Hydro Flask 32oz bottle",
+        "description": "Double-walled stainless steel: cold for 24 hours, hot for 12."
+      },
+      "variants": [
+        {
+          "sku": "HYDROFLASK-32-BLK",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 1290000,
+          "usd": 44.95,
+          "stock": 15
+        },
+        {
+          "sku": "HYDROFLASK-32-WHT",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Trắng"
+              ],
+              "en": [
+                "Colour",
+                "White"
+              ]
+            }
+          ],
+          "vnd": 1290000,
+          "usd": 44.95,
+          "stock": 10
+        }
+      ]
+    }
+  ]
+}

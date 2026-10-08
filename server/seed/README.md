@@ -1,5 +1,20 @@
 # seed
 
+## The catalogue
+
+```bash
+cd server
+python seed/catalogue.py                                                          # checks every vertical
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py            # seeds them all
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py books      # or some
+```
+
+One JSON file per vertical in `catalogue/` (specs/156): cameras, electronics, fashion, home, books, sports. The shop
+sells anything, and cameras were only its first example. A new vertical is a new file in the same format; the checker
+(run by CI) refuses a duplicate SKU or slug across files, missing English text, an unknown category, variants of one
+product naming different options, a dong price with a fraction or a dollar price with three decimals.
+`clean-test-debris.py` keeps whatever any file names. ⚠️ The prices are approximate - each file says so.
+
 ## Signing in as the administrator
 
 With `ADMIN_TOTP_SECRET` set (development), Identity enrols the seeded administrator in two-factor sign-in at startup,

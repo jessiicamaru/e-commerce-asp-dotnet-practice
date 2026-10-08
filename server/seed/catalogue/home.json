@@ -1,0 +1,266 @@
+{
+  "_about": [
+    "One vertical of the seed catalogue (specs/156): the shop sells anything, and cameras were only its first example.",
+    "Real brands and products, so the storefront shows things a person recognises. Descriptions are written here.",
+    "",
+    "⚠️ THE PRICES ARE APPROXIMATE AND NOBODY HAS CHECKED THEM AGAINST A SHOP - the same warning as cameras.json.",
+    "They are the right order of magnitude and the right relative order, from a model's knowledge up to May 2026.",
+    "The dong and dollar prices are each that market's, never a conversion (specs/022).",
+    "",
+    "No photographs: products read back with imageUrl null and show the storefront's parcel tile (specs/156)."
+  ],
+  "categories": [
+    {
+      "slug": "gia-dung",
+      "name": "Đồ gia dụng",
+      "description": "Thiết bị điện trong nhà",
+      "en": {
+        "name": "Home appliances",
+        "description": "Electrical appliances for the home"
+      }
+    },
+    {
+      "slug": "nha-bep",
+      "name": "Nhà bếp",
+      "description": "Nồi, chảo và hộp đựng",
+      "en": {
+        "name": "Kitchen",
+        "description": "Pots, pans and food storage"
+      }
+    }
+  ],
+  "products": [
+    {
+      "sku": "TOSHIBA-RICE-COOKER",
+      "category": "gia-dung",
+      "vi": {
+        "name": "Nồi cơm điện tử Toshiba",
+        "description": "Nồi cơm điện tử lòng niêu, nhiều chế độ nấu, giữ ấm lâu."
+      },
+      "en": {
+        "name": "Toshiba digital rice cooker",
+        "description": "A digital rice cooker with a thick pot, several cooking modes and long keep-warm."
+      },
+      "variants": [
+        {
+          "sku": "TOSHIBA-RICE-COOKER-10",
+          "options": [
+            {
+              "vi": [
+                "Dung tích",
+                "1.0L"
+              ],
+              "en": [
+                "Capacity",
+                "1.0L"
+              ]
+            }
+          ],
+          "vnd": 1590000,
+          "usd": 69,
+          "stock": 12
+        },
+        {
+          "sku": "TOSHIBA-RICE-COOKER-18",
+          "options": [
+            {
+              "vi": [
+                "Dung tích",
+                "1.8L"
+              ],
+              "en": [
+                "Capacity",
+                "1.8L"
+              ]
+            }
+          ],
+          "vnd": 1990000,
+          "usd": 89,
+          "stock": 15
+        }
+      ]
+    },
+    {
+      "sku": "PHILIPS-AIRFRYER-3000",
+      "category": "gia-dung",
+      "vi": {
+        "name": "Nồi chiên không dầu Philips 3000 series",
+        "description": "Chiên, nướng, hâm nóng với ít dầu; lòng nồi chống dính, rửa được bằng máy."
+      },
+      "en": {
+        "name": "Philips 3000 series air fryer",
+        "description": "Fry, roast and reheat with little oil; a non-stick basket that goes in the dishwasher."
+      },
+      "variants": [
+        {
+          "sku": "PHILIPS-AIRFRYER-3000-41",
+          "options": [
+            {
+              "vi": [
+                "Dung tích",
+                "4.1L"
+              ],
+              "en": [
+                "Capacity",
+                "4.1L"
+              ]
+            }
+          ],
+          "vnd": 2290000,
+          "usd": 99,
+          "stock": 10
+        },
+        {
+          "sku": "PHILIPS-AIRFRYER-3000-62",
+          "options": [
+            {
+              "vi": [
+                "Dung tích",
+                "6.2L"
+              ],
+              "en": [
+                "Capacity",
+                "6.2L"
+              ]
+            }
+          ],
+          "vnd": 2890000,
+          "usd": 129,
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "sku": "XIAOMI-VACUUM-E10",
+      "category": "gia-dung",
+      "vi": {
+        "name": "Robot hút bụi Xiaomi E10",
+        "description": "Robot hút và lau sàn, lực hút 4.000Pa, điều khiển qua ứng dụng."
+      },
+      "en": {
+        "name": "Xiaomi Robot Vacuum E10",
+        "description": "Vacuums and mops with 4,000Pa of suction, controlled from an app."
+      },
+      "variants": [
+        {
+          "sku": "XIAOMI-VACUUM-E10-WHT",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Trắng"
+              ],
+              "en": [
+                "Colour",
+                "White"
+              ]
+            }
+          ],
+          "vnd": 3990000,
+          "usd": 169,
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "sku": "LOCKLOCK-CONTAINERS",
+      "category": "nha-bep",
+      "vi": {
+        "name": "Bộ hộp đựng thực phẩm Lock&Lock",
+        "description": "Hộp nhựa kín hơi bốn khoá, dùng được trong lò vi sóng và tủ đông."
+      },
+      "en": {
+        "name": "Lock&Lock food container set",
+        "description": "Airtight four-clip containers, safe in the microwave and the freezer."
+      },
+      "variants": [
+        {
+          "sku": "LOCKLOCK-CONTAINERS-3",
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "3 hộp"
+              ],
+              "en": [
+                "Set",
+                "3 containers"
+              ]
+            }
+          ],
+          "vnd": 299000,
+          "usd": 19,
+          "stock": 40
+        },
+        {
+          "sku": "LOCKLOCK-CONTAINERS-6",
+          "options": [
+            {
+              "vi": [
+                "Bộ",
+                "6 hộp"
+              ],
+              "en": [
+                "Set",
+                "6 containers"
+              ]
+            }
+          ],
+          "vnd": 549000,
+          "usd": 34,
+          "stock": 25
+        }
+      ]
+    },
+    {
+      "sku": "SUNHOUSE-FRYPAN",
+      "category": "nha-bep",
+      "vi": {
+        "name": "Chảo chống dính Sunhouse",
+        "description": "Chảo nhôm phủ chống dính, đáy từ dùng được mọi loại bếp."
+      },
+      "en": {
+        "name": "Sunhouse non-stick frying pan",
+        "description": "A non-stick aluminium pan with an induction base for every kind of hob."
+      },
+      "variants": [
+        {
+          "sku": "SUNHOUSE-FRYPAN-24",
+          "options": [
+            {
+              "vi": [
+                "Đường kính",
+                "24cm"
+              ],
+              "en": [
+                "Diameter",
+                "24cm"
+              ]
+            }
+          ],
+          "vnd": 289000,
+          "usd": 15,
+          "stock": 30
+        },
+        {
+          "sku": "SUNHOUSE-FRYPAN-28",
+          "options": [
+            {
+              "vi": [
+                "Đường kính",
+                "28cm"
+              ],
+              "en": [
+                "Diameter",
+                "28cm"
+              ]
+            }
+          ],
+          "vnd": 349000,
+          "usd": 18,
+          "stock": 20
+        }
+      ]
+    }
+  ]
+}

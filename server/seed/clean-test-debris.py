@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Removes from the catalogue everything that is not a seeded camera.
+"""Removes from the catalogue everything the seed does not name.
 
     cd server
     ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py          # says what it would do
@@ -10,8 +10,11 @@ they run, and none of them clean up - so a catalogue somebody has been testing a
 `E2E Widget 17900854702164` and `iPhone 16 Pro Max 1790085352812`. There were ninety-four of them
 against fourteen real cameras, and a listing sorted cheapest-first was a wall of $0.01 widgets.
 
-**It keeps what cameras.json names and deletes the rest**, which is the safe way round: a list of
-things to keep cannot quietly miss a new kind of debris, and a list of patterns to delete can.
+**It keeps what the seed catalogue names and deletes the rest**, which is the safe way round: a list of
+things to keep cannot quietly miss a new kind of debris, and a list of patterns to delete can. The seed is every
+vertical in seed/catalogue/ (specs/156), read through the same loader as the seeder - always all of them, so cleaning
+never removes a vertical somebody seeded - and a catalogue that fails its checks stops this before it reads anything,
+because a keep list that came out short is a delete list.
 
 It goes through the API, so each deletion is the same Admin operation a person would perform, is
 announced to Inventory, and is refused if the caller is not an administrator. It prints what it is
@@ -26,6 +29,7 @@ import os
 import sys
 import urllib.error
 
+from catalogue import CatalogueError, load
 from two_factor import finish_sign_in
 import urllib.request
 
@@ -35,7 +39,6 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 BASE = os.environ.get("GATEWAY_URL", "http://localhost:5000").rstrip("/")
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 GREEN, YELLOW, RED, DIM, RESET = "\033[32m", "\033[33m", "\033[31m", "\033[2m", "\033[0m"
 
@@ -74,10 +77,15 @@ def call(method, path, body=None, token=None):
 def main():
     confirmed = "--yes" in sys.argv
 
-    with open(os.path.join(HERE, "cameras.json"), encoding="utf-8") as handle:
-        cameras = json.load(handle)
+    # Every vertical, never a subset, and nothing at all if the files fail their checks (see the docstring).
+    try:
+        seed = load()
+    except CatalogueError as error:
+        for problem in error.problems:
+            print(f"  {RED}!!{RESET}  {problem}")
+        sys.exit("The seed catalogue is not valid, so nothing can be told apart from debris. Nothing was deleted.")
 
-    keep = {product["sku"] for product in cameras["products"]}
+    keep = {product["sku"] for product in seed["products"]}
 
     email = os.environ.get("ADMIN_EMAIL")
     password = os.environ.get("ADMIN_PASSWORD")
@@ -108,7 +116,7 @@ def main():
 
         page += 1
 
-    print(f"\n{len(keep)} camera(s) to keep, {len(doomed)} product(s) to delete.\n")
+    print(f"\n{len(keep)} seeded product(s) to keep, {len(doomed)} product(s) to delete.\n")
 
     for item in doomed[:10]:
         print(f"  {DIM}-{RESET}  {item['sku']:<28} {item['name'][:50]}")
@@ -139,7 +147,7 @@ def main():
     # were: a category shows up in the FILTER a shopper actually uses, and there were 95 of them
     # against two real ones. Deleting one that still has products is refused by the API, which is
     # why this needs no cleverness about ordering - it just asks, and a refusal means "keep it".
-    keep_slugs = {category["slug"] for category in cameras["categories"]}
+    keep_slugs = {category["slug"] for category in seed["categories"]}
     listed = call("GET", "/api/categories") or []
     rows = listed.get("items") if isinstance(listed, dict) else listed
     stale = [row for row in rows if row["slug"] not in keep_slugs]

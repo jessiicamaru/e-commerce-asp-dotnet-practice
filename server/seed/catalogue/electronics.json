@@ -1,0 +1,405 @@
+{
+  "_about": [
+    "One vertical of the seed catalogue (specs/156): the shop sells anything, and cameras were only its first example.",
+    "Real brands and products, so the storefront shows things a person recognises. Descriptions are written here.",
+    "",
+    "⚠️ THE PRICES ARE APPROXIMATE AND NOBODY HAS CHECKED THEM AGAINST A SHOP - the same warning as cameras.json.",
+    "They are the right order of magnitude and the right relative order, from a model's knowledge up to May 2026.",
+    "The dong and dollar prices are each that market's, never a conversion (specs/022).",
+    "",
+    "No photographs: products read back with imageUrl null and show the storefront's parcel tile (specs/156)."
+  ],
+  "categories": [
+    {
+      "slug": "dien-thoai",
+      "name": "Điện thoại",
+      "description": "Điện thoại thông minh",
+      "en": {
+        "name": "Phones",
+        "description": "Smartphones"
+      }
+    },
+    {
+      "slug": "laptop",
+      "name": "Laptop",
+      "description": "Máy tính xách tay",
+      "en": {
+        "name": "Laptops",
+        "description": "Notebook computers"
+      }
+    },
+    {
+      "slug": "tai-nghe",
+      "name": "Tai nghe",
+      "description": "Tai nghe không dây và chống ồn",
+      "en": {
+        "name": "Headphones",
+        "description": "Wireless and noise-cancelling headphones"
+      }
+    }
+  ],
+  "products": [
+    {
+      "sku": "APPLE-IP16",
+      "category": "dien-thoai",
+      "vi": {
+        "name": "Apple iPhone 16",
+        "description": "Màn hình 6,1 inch, chip A18, camera kép 48MP và nút Camera Control. Pin dùng trọn một ngày."
+      },
+      "en": {
+        "name": "Apple iPhone 16",
+        "description": "6.1-inch display, A18 chip, 48MP dual camera and the Camera Control button. A battery that lasts the day."
+      },
+      "variants": [
+        {
+          "sku": "APPLE-IP16-128-BLK",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "128GB"
+              ],
+              "en": [
+                "Storage",
+                "128GB"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 22990000,
+          "usd": 799,
+          "stock": 20
+        },
+        {
+          "sku": "APPLE-IP16-256-BLK",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "256GB"
+              ],
+              "en": [
+                "Storage",
+                "256GB"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 25990000,
+          "usd": 899,
+          "stock": 12
+        },
+        {
+          "sku": "APPLE-IP16-128-PNK",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "128GB"
+              ],
+              "en": [
+                "Storage",
+                "128GB"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Hồng"
+              ],
+              "en": [
+                "Colour",
+                "Pink"
+              ]
+            }
+          ],
+          "vnd": 22990000,
+          "usd": 799,
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "sku": "SAMSUNG-S25",
+      "category": "dien-thoai",
+      "vi": {
+        "name": "Samsung Galaxy S25",
+        "description": "Máy nhỏ gọn 6,2 inch, Snapdragon 8 Elite, bảy năm cập nhật phần mềm."
+      },
+      "en": {
+        "name": "Samsung Galaxy S25",
+        "description": "A compact 6.2-inch phone with Snapdragon 8 Elite and seven years of software updates."
+      },
+      "variants": [
+        {
+          "sku": "SAMSUNG-S25-256",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "256GB"
+              ],
+              "en": [
+                "Storage",
+                "256GB"
+              ]
+            }
+          ],
+          "vnd": 22990000,
+          "usd": 859,
+          "stock": 15
+        },
+        {
+          "sku": "SAMSUNG-S25-512",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "512GB"
+              ],
+              "en": [
+                "Storage",
+                "512GB"
+              ]
+            }
+          ],
+          "vnd": 26490000,
+          "usd": 919,
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "sku": "XIAOMI-RN14",
+      "category": "dien-thoai",
+      "vi": {
+        "name": "Xiaomi Redmi Note 14",
+        "description": "Màn AMOLED 120Hz, pin 5.500mAh, giá dễ chịu cho nhu cầu hằng ngày."
+      },
+      "en": {
+        "name": "Xiaomi Redmi Note 14",
+        "description": "A 120Hz AMOLED screen and a 5,500mAh battery at an easy price for everyday use."
+      },
+      "variants": [
+        {
+          "sku": "XIAOMI-RN14-128",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "8GB/128GB"
+              ],
+              "en": [
+                "Storage",
+                "8GB/128GB"
+              ]
+            }
+          ],
+          "vnd": 4990000,
+          "usd": 199,
+          "stock": 30
+        },
+        {
+          "sku": "XIAOMI-RN14-256",
+          "options": [
+            {
+              "vi": [
+                "Dung lượng",
+                "8GB/256GB"
+              ],
+              "en": [
+                "Storage",
+                "8GB/256GB"
+              ]
+            }
+          ],
+          "vnd": 5690000,
+          "usd": 229,
+          "stock": 25
+        }
+      ]
+    },
+    {
+      "sku": "APPLE-MBA13-M4",
+      "category": "laptop",
+      "vi": {
+        "name": "Apple MacBook Air 13 inch (M4)",
+        "description": "Mỏng nhẹ, không quạt, chip M4 và 16GB RAM. Pin tới 18 giờ."
+      },
+      "en": {
+        "name": "Apple MacBook Air 13-inch (M4)",
+        "description": "Thin, light and fanless, with the M4 chip and 16GB of memory. Up to 18 hours of battery."
+      },
+      "variants": [
+        {
+          "sku": "APPLE-MBA13-M4-256",
+          "options": [
+            {
+              "vi": [
+                "Cấu hình",
+                "16GB / 256GB"
+              ],
+              "en": [
+                "Configuration",
+                "16GB / 256GB"
+              ]
+            }
+          ],
+          "vnd": 26990000,
+          "usd": 999,
+          "stock": 10
+        },
+        {
+          "sku": "APPLE-MBA13-M4-512",
+          "options": [
+            {
+              "vi": [
+                "Cấu hình",
+                "16GB / 512GB"
+              ],
+              "en": [
+                "Configuration",
+                "16GB / 512GB"
+              ]
+            }
+          ],
+          "vnd": 32990000,
+          "usd": 1199,
+          "stock": 5
+        }
+      ]
+    },
+    {
+      "sku": "ASUS-ZENBOOK14",
+      "category": "laptop",
+      "vi": {
+        "name": "ASUS Zenbook 14 OLED",
+        "description": "Màn OLED 14 inch, Intel Core Ultra, vỏ nhôm chưa tới 1,3kg."
+      },
+      "en": {
+        "name": "ASUS Zenbook 14 OLED",
+        "description": "A 14-inch OLED screen and Intel Core Ultra in an aluminium body under 1.3kg."
+      },
+      "variants": [
+        {
+          "sku": "ASUS-ZENBOOK14-16-512",
+          "options": [
+            {
+              "vi": [
+                "Cấu hình",
+                "16GB / 512GB"
+              ],
+              "en": [
+                "Configuration",
+                "16GB / 512GB"
+              ]
+            }
+          ],
+          "vnd": 24990000,
+          "usd": 999,
+          "stock": 7
+        }
+      ]
+    },
+    {
+      "sku": "SONY-WH1000XM5",
+      "category": "tai-nghe",
+      "vi": {
+        "name": "Sony WH-1000XM5",
+        "description": "Tai nghe chụp tai chống ồn chủ động hàng đầu, pin 30 giờ, đàm thoại rõ."
+      },
+      "en": {
+        "name": "Sony WH-1000XM5",
+        "description": "Over-ear headphones with class-leading noise cancelling, 30 hours of battery and clear calls."
+      },
+      "variants": [
+        {
+          "sku": "SONY-WH1000XM5-BLK",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 7990000,
+          "usd": 399,
+          "stock": 14
+        },
+        {
+          "sku": "SONY-WH1000XM5-SLV",
+          "options": [
+            {
+              "vi": [
+                "Màu",
+                "Bạc"
+              ],
+              "en": [
+                "Colour",
+                "Silver"
+              ]
+            }
+          ],
+          "vnd": 7990000,
+          "usd": 399,
+          "stock": 9
+        }
+      ]
+    },
+    {
+      "sku": "APPLE-AIRPODS-PRO2",
+      "category": "tai-nghe",
+      "vi": {
+        "name": "Apple AirPods Pro 2",
+        "description": "Tai nghe nhét tai chống ồn, âm thanh không gian, hộp sạc USB-C."
+      },
+      "en": {
+        "name": "Apple AirPods Pro 2",
+        "description": "In-ear noise cancelling with spatial audio and a USB-C charging case."
+      },
+      "variants": [
+        {
+          "sku": "APPLE-AIRPODS-PRO2-USBC",
+          "options": [
+            {
+              "vi": [
+                "Phiên bản",
+                "USB-C"
+              ],
+              "en": [
+                "Edition",
+                "USB-C"
+              ]
+            }
+          ],
+          "vnd": 5990000,
+          "usd": 249,
+          "stock": 25
+        }
+      ]
+    }
+  ]
+}

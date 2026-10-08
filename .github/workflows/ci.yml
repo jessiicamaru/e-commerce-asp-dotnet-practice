@@ -164,6 +164,11 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('server/**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      # The seeder needs the whole stack and does not run here, so the data it would send is checked instead
+      # (specs/156): a duplicate SKU or a dong price with a fraction fails the pull request, not a demo.
+      - name: The seed catalogue is valid
+        run: python3 seed/catalogue.py
+
       - name: Restore
         run: dotnet restore Ecommerce.slnx
 

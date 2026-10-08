@@ -231,8 +231,9 @@ credentials; neither writes SQL.
 ```bash
 cd server
 
-# Categories and real cameras: variants, VND and USD prices, Vietnamese and English text, stock.
-# Idempotent by SKU; it never deletes.
+# Categories and real products across six verticals - cameras, phones and laptops, clothing and shoes, home and
+# kitchen, books, sports: variants, VND and USD prices, Vietnamese and English text, stock.
+# Idempotent by SKU; it never deletes. Name verticals to seed only those (seed-catalogue.py books fashion).
 ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py
 
 # Photographs, from seed/images/ - one file per product, named after its SKU (SONY-A7M4.jpg).
@@ -242,8 +243,10 @@ ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-images
 
 `seed/images/` is **gitignored on purpose**: this repository is public and a photograph belongs to
 whoever took it, so you stage the files yourself; where each one came from is recorded in
-[`IMAGE-CREDITS.md`](../../server/seed/IMAGE-CREDITS.md). ⚠️ The prices in `seed/cameras.json` are
-approximate - right order of magnitude and right relative order, not quotes from a shop.
+[`IMAGE-CREDITS.md`](../../server/seed/IMAGE-CREDITS.md). ⚠️ The prices in `seed/catalogue/*.json` are
+approximate - right order of magnitude and right relative order, not quotes from a shop. Each vertical is one file in
+that directory; `python seed/catalogue.py` checks them all (CI runs it), and a new vertical is a new file there. Only
+the cameras have credited photographs; everything else shows the storefront's parcel tile.
 
 A fuller demo dataset - sellers and their shops, customers, orders taken through to delivery, reviews,
 moderation decisions, payouts and product views - is loaded by a script kept **outside the
@@ -254,15 +257,15 @@ repository**, for local use only. It also goes through the API.
 ### Cleaning up after the test scripts
 
 `verify-saga.sh`, `verify-auth.sh` and the Bruno collection each create real products on every run and
-remove none. `seed/clean-test-debris.py` deletes every product whose SKU is **not** in `cameras.json`
-(dry run without `--yes`):
+remove none. `seed/clean-test-debris.py` deletes every product whose SKU is **not** named by any file in
+`seed/catalogue/` (dry run without `--yes`):
 
 ```bash
 ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py --yes
 ```
 
 ⚠️ Keep-list, not delete-list: it also deletes products that a seller or a demo dataset added. Use it
-only on a catalogue that should hold the seeded cameras and nothing else.
+only on a catalogue that should hold the seeded products and nothing else.
 
 ### Starting again from empty
 

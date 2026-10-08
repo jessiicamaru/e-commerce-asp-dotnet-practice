@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Fills the catalogue with real cameras, through the API, as an administrator would.
+"""Fills the catalogue with real products, through the API, as an administrator would.
 
     cd server
-    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py          # every vertical
+    ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py books    # only these
 
 Why through the gateway rather than SQL: every row this writes goes down the same path a person
 uses, so seeding exercises validation, the outbox, the availability announcements and the price
@@ -17,7 +18,8 @@ cheap and it makes a half-finished run recoverable.
 **It never deletes.** What is already in the catalogue is not this script's to remove, and there is
 no endpoint that would let it.
 
-The data, and a warning about the prices, is in cameras.json beside this file.
+The data is one file per vertical in seed/catalogue/ - cameras, phones and laptops, clothing, home, books, sports -
+read and checked by seed/catalogue.py (specs/156). Each file carries a warning about its prices.
 """
 
 import json
@@ -27,6 +29,7 @@ import time
 import urllib.error
 import urllib.request
 
+from catalogue import CatalogueError, load
 from two_factor import finish_sign_in
 
 # The catalogue is in Vietnamese and a Windows console defaults to a codepage that cannot encode it,
@@ -35,7 +38,6 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 BASE = os.environ.get("GATEWAY_URL", "http://localhost:5000").rstrip("/")
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 GREEN, YELLOW, RED, DIM, RESET = "\033[32m", "\033[33m", "\033[31m", "\033[2m", "\033[0m"
 
@@ -242,11 +244,20 @@ def translate_options(product_id, variant_id, wanted, detail, token):
 
 
 def main():
-    with open(os.path.join(HERE, "cameras.json"), encoding="utf-8") as handle:
-        data = json.load(handle)
+    # Checked before anything is sent: a bad file found halfway through leaves half a vertical behind.
+    try:
+        data = load(sys.argv[1:])
+    except CatalogueError as error:
+        for problem in error.problems:
+            say("!!", RED, problem)
+        die("The seed catalogue is not valid - nothing was sent. `python seed/catalogue.py` lists the same.")
 
     print(f"\nSeeding the catalogue through {BASE}\n")
-    warn("The prices in cameras.json are APPROXIMATE - see the note at the top of that file.")
+
+    for name, categories, products, variants in data["verticals"]:
+        say("..", DIM, f"{name}: {categories} categor(ies), {products} product(s), {variants} variant(s)")
+
+    warn("The prices are APPROXIMATE - see the note at the top of each file in seed/catalogue/.")
     print()
 
     token = sign_in()
@@ -314,7 +325,8 @@ def main():
     ok(f"{added} product(s) added, {skipped} already there")
     print()
     warn("No images: there is no honest way to obtain product photographs here, and a placeholder")
-    warn("that looks like a photograph is worse than a blank. Products read back with imageUrl null.")
+    warn("that looks like a photograph is worse than a blank. Products read back with imageUrl null;")
+    warn("the cameras' credited photographs are uploaded separately (seed/README.md).")
     print()
 
 

@@ -71,7 +71,10 @@ dotnet build                                          # whole solution
 dotnet run --project src/Services/Catalog/Ecommerce.Catalog.WebApi/   # single service
 ```
 
-**A catalogue with real cameras in it** — [server/seed/](server/seed/), run against a started stack:
+**A catalogue of real products** — [server/seed/](server/seed/), run against a started stack. Since specs/156 (#359)
+the shop is not a camera shop: one JSON file per vertical in `server/seed/catalogue/` (cameras, electronics, fashion,
+home, books, sports), read and checked by `seed/catalogue.py`, which CI runs; `seed-catalogue.py books` seeds only
+the named verticals:
 
 ```bash
 cd server
@@ -89,7 +92,7 @@ ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-
 (#118) each removes what it made**: the scripts in a `trap ... EXIT` (a failed run cleans up too, and keeps
 its exit status), Bruno in a last `teardown` folder (`seq: 18`, after `seller` at 17 and `my-data` at 16 - a folder without an
 `info:` seq runs last, which is how `seller` used to). Before that there were 97 of them against 14 cameras.
-For what older runs left, the cleaner **keeps what `cameras.json` names and
+For what older runs left, the cleaner **keeps what `seed/catalogue/` names (every file, always) and
 deletes the rest**, which is the safe way round - a keep list cannot miss a new kind of debris, a
 delete-pattern list can. It goes through `DELETE /api/products/{id}` (Admin, specs/024), which
 announces `ProductDeletedEvent` so Inventory drops the stock rows too - and releases their held reservations
@@ -98,7 +101,7 @@ in the same transaction (specs/090, #181; nothing cascades, there is no foreign 
 It posts through the gateway as an administrator rather than writing SQL, so every row goes down the
 path a person uses — which is how it found that `VariantOptionResponse` carried no id and the
 translation endpoint from specs/021 was therefore unreachable. Idempotent by SKU, and it never
-deletes. ⚠️ **The prices in `seed/cameras.json` are APPROXIMATE**: right order of magnitude and right
+deletes. ⚠️ **The prices in `seed/catalogue/*.json` are APPROXIMATE**: right order of magnitude and right
 relative order, from a model's knowledge up to May 2026, not from any shop. The two lists are
 deliberately not conversions of each other.
 
