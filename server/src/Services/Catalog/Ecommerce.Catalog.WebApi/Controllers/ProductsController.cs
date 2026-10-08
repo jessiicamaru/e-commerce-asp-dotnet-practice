@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.WebApi.Caching;
+using Microsoft.AspNetCore.OutputCaching;
 using Ecommerce.Catalog.Application.Products.Commands.CreateProduct;
 using Ecommerce.Catalog.Application.Products.Commands.DeleteProduct;
 using Ecommerce.Catalog.Application.Products.Commands.UpdateProductDetails;
@@ -34,6 +36,7 @@ public class ProductsController : ApiControllerBase
     // test still passed, because they send commands straight to the handlers. The running stack is
     // what showed it - a seller got 403 on her own product.
     [AllowAnonymous]
+    [OutputCache(PolicyName = CatalogueCache.Policy)]
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] GetProductsQuery query)
     {
@@ -42,6 +45,7 @@ public class ProductsController : ApiControllerBase
     }
 
     [AllowAnonymous]
+    [OutputCache(PolicyName = CatalogueCache.Policy)]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {

@@ -7,6 +7,7 @@ using Ecommerce.Catalog.Application.Products.Images;
 using Ecommerce.Shared.Localization;
 using Ecommerce.Shared.Money;
 using Ecommerce.Shared.Observability;
+using Ecommerce.Catalog.WebApi.Caching;
 using Ecommerce.Catalog.WebApi.Grpc;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -192,6 +193,10 @@ builder.Services.AddRequestLanguage(builder.Configuration);
 // purpose: a Vietnamese person reading English still pays in dong.
 builder.Services.AddRequestCurrency(builder.Configuration);
 
+// The catalogue's public reads, answered from memory for anonymous callers and emptied after every committed
+// catalogue write (specs/157). Caching:CatalogueSeconds, 30 by default, 0 off; anything else stops the start here.
+builder.Services.AddCatalogueCache(builder.Configuration);
+
 builder.Services.AddMassTransit(x =>
 {
     // Access tokens revoked by Identity - a lock, a ban, a password or a role changed - refused here within
@@ -328,6 +333,9 @@ app.UseRequestCurrency();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// After the language and currency are negotiated - the cache is kept apart by both - and after authentication.
+app.UseOutputCache();
 
 app.MapControllers();
 

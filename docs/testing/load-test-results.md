@@ -64,15 +64,34 @@ Settle time is from placing the order to reading it Paid, polled every half seco
 
 ## Shoppers browse the catalogue
 
-Anonymous shoppers ramp to **50 at once** (30s up, 60s hold, 10s down), each listing a page, searching and opening a product, then reading for a second ([`browse.js`](../../server/loadtest/browse.js)). Run 2026-10-03 12:13 UTC.
+Anonymous shoppers ramp to **50 at once** (30s up, 60s hold, 10s down), each listing a page, searching and opening a product, then reading for a second ([`browse.js`](../../server/loadtest/browse.js)).
 
-- **11,104 requests** in 102 s, 109.0 a second on average; unexpected responses 0.00%.
+Since specs/157 (#361) Catalog answers these anonymous reads from memory, emptied after every committed catalogue
+write. Every run, with whether the cache was on; milliseconds, median / p95:
+
+| Run | Catalogue cache | Requests | Unexpected | list products | search | one product |
+| :-- | :-- | --: | --: | --: | --: | --: |
+| 2026-10-03 12:13 UTC | off | 11,104 | 0.00% | 27.7 / 101 | 26.0 / 69.3 | 15.2 / 40.5 |
+| 2026-10-08 08:19 UTC | off | 11,281 | 0.00% | 20.1 / 78.1 | 20.4 / 58.8 | 12.7 / 36.8 |
+| 2026-10-08 08:21 UTC | off | 11,623 | 0.00% | 10.6 / 38.2 | 10.4 / 35.4 | 7.8 / 22.1 |
+| 2026-10-08 08:23 UTC | off | 11,437 | 0.00% | 13.4 / 62.6 | 13.7 / 50.9 | 9.8 / 31.6 |
+| 2026-10-08 08:25 UTC | off | 11,611 | 0.00% | 10.1 / 40.5 | 10.1 / 37.9 | 7.6 / 30.4 |
+| 2026-10-08 08:29 UTC | on (warm-up after rebuild) | 11,971 | 0.00% | 2.5 / 5.2 | 2.3 / 5.0 | 2.3 / 4.9 |
+| 2026-10-08 08:31 UTC | on | 11,974 | 0.00% | 2.4 / 4.8 | 2.3 / 4.5 | 2.2 / 4.6 |
+| 2026-10-08 08:33 UTC | on | 11,941 | 0.00% | 3.0 / 6.0 | 2.9 / 5.9 | 2.8 / 6.0 |
+| 2026-10-08 08:34 UTC | on | 11,965 | 0.00% | 2.6 / 5.3 | 2.5 / 5.2 | 2.5 / 5.3 |
+| 2026-10-08 08:36 UTC | on | 11,977 | 0.00% | 2.5 / 4.7 | 2.4 / 4.7 | 2.3 / 4.7 |
+
+Warm runs of 2026-10-08 on the same stack and catalogue (41 products): without the cache (4 runs) list products median 10.1-20.1, p95 38.2-78.1; search median 10.1-20.4, p95 35.4-58.8; one product median 7.6-12.7, p95 22.1-36.8.
+With it (4 runs) list products median 2.4-3.0, p95 4.7-6.0; search median 2.3-2.9, p95 4.5-5.9; one product median 2.2-2.8, p95 4.6-6.0. The request rate is set by the scenario's reading pauses, so latency is the measure.
+
+Last run in detail:
 
 | Step | Median | p95 | p99 | Slowest |
 | :-- | --: | --: | --: | --: |
-| list products | 27.7 | 101 | 136 | 257 |
-| search | 26.0 | 69.3 | 100.0 | 188 |
-| one product | 15.2 | 40.5 | 61.0 | 244 |
+| list products | 2.5 | 4.7 | 7.5 | 17.9 |
+| search | 2.4 | 4.7 | 7.7 | 31.5 |
+| one product | 2.3 | 4.7 | 8.7 | 19.1 |
 
 ## What the load tests found
 
@@ -112,6 +131,15 @@ of the retry. It was a cold start - see below.
 | Summary | Scenario | Passed |
 | :-- | :-- | :-- |
 | [`browse-2026-10-03T12-13-27-976Z.json`](../../server/loadtest/results/browse-2026-10-03T12-13-27-976Z.json) | browse | yes |
+| [`browse-2026-10-08T08-19-35-898Z.json`](../../server/loadtest/results/browse-2026-10-08T08-19-35-898Z.json) | browse | yes |
+| [`browse-2026-10-08T08-21-29-494Z.json`](../../server/loadtest/results/browse-2026-10-08T08-21-29-494Z.json) | browse | yes |
+| [`browse-2026-10-08T08-23-23-629Z.json`](../../server/loadtest/results/browse-2026-10-08T08-23-23-629Z.json) | browse | yes |
+| [`browse-2026-10-08T08-25-17-627Z.json`](../../server/loadtest/results/browse-2026-10-08T08-25-17-627Z.json) | browse | yes |
+| [`browse-2026-10-08T08-29-23-683Z.json`](../../server/loadtest/results/browse-2026-10-08T08-29-23-683Z.json) | browse | yes |
+| [`browse-2026-10-08T08-31-09-917Z.json`](../../server/loadtest/results/browse-2026-10-08T08-31-09-917Z.json) | browse | yes |
+| [`browse-2026-10-08T08-33-03-651Z.json`](../../server/loadtest/results/browse-2026-10-08T08-33-03-651Z.json) | browse | yes |
+| [`browse-2026-10-08T08-34-58-291Z.json`](../../server/loadtest/results/browse-2026-10-08T08-34-58-291Z.json) | browse | yes |
+| [`browse-2026-10-08T08-36-52-914Z.json`](../../server/loadtest/results/browse-2026-10-08T08-36-52-914Z.json) | browse | yes |
 | [`checkout-2026-10-03T12-08-41-527Z.json`](../../server/loadtest/results/checkout-2026-10-03T12-08-41-527Z.json) | checkout | yes |
 | [`checkout-2026-10-03T12-10-13-439Z.json`](../../server/loadtest/results/checkout-2026-10-03T12-10-13-439Z.json) | checkout | yes |
 | [`checkout-2026-10-03T12-11-40-364Z.json`](../../server/loadtest/results/checkout-2026-10-03T12-11-40-364Z.json) | checkout | yes |

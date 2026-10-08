@@ -489,6 +489,14 @@ anonymously, a product off the shelf was a 404 on its own seller's page. The loo
 `translations` as stored, since the name and description fall back per field. A moderator's console opens on `/admin/moderation`:
 what is waiting in each queue and their own decisions (`GET /api/audit/mine`, Staff).
 
+**Anonymous catalogue reads are answered from memory** (specs/157, #361): the listing, a product, the categories and a
+shop page carry `[OutputCache(PolicyName = CatalogueCache.Policy)]` - 200s only, never a request with `Authorization`,
+apart by query and the negotiated language and currency, 30 s (`Caching:CatalogueSeconds`, 0 off). ⚠️ **Eviction is an
+EF Core interceptor, not a call in handlers**: `CatalogueWrites` empties it after the commit of any statement writing
+`products`, `product_variants`, `variant_prices`, `product_translations`, `variant_options`(`_translations`),
+`categories`(`_translations`) or `sellers`. A new table a cached read shows goes into its pattern, and a new public read
+gets the attribute only if every table it shows is in that list. Per instance: another instance is stale up to 30 s.
+
 ⚠️ **Off the shelf, what hangs on a product is a 404 too** (specs/081, #166): reviews and questions answer
 `ProductReview.MaySee` like the product, and an image is served only to an address with its own `ImageAccessKey`
 (`&k=`, new with every image) - because an `<img>` request carries no token. A new read of something that hangs on a

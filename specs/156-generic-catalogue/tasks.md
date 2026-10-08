@@ -27,7 +27,7 @@ description: "Task list for A shop for anything, not only cameras"
 
 - [x] T009 Docs: seed README, getting started, demo script, troubleshooting, project overview, catalog, CLAUDE.md,
   timeline, backlog
-- [ ] T010 Merged, closes #359
+- [x] T010 Merged, closes #359 (#360)
 
 ## Evidence
 
