@@ -49,7 +49,7 @@
     "delete": "Delete",
     "search": "Search"
   },
-  "searchPlaceholder": "Search cameras…",
+  "searchPlaceholder": "Search products…",
   "pager": {
     "showing": "Showing {{from}}–{{to}} of {{total}}",
     "previous": "Previous",

@@ -3,14 +3,15 @@ import { cn } from 'cn'
 import type { Product } from '@ecommerce/core/services/product/types'
 
 /**
- * The product's picture, or a lens tile when it has none (specs/019) - and when the picture fails to
+ * The product's picture, or a parcel tile when it has none (specs/019) - and when the picture fails to
  * load, so a broken image never reaches a shopper. Served by Catalog through the gateway.
  *
- * **The tile is meant to look deliberate, not broken.** The catalogue has no photographs yet, and
+ * **The tile is meant to look deliberate, not broken.** Most seeded products have no photograph, and
  * there is no honest way to obtain them here, so the fallback says "no photograph" in the shop's own
  * visual language rather than showing a grey box with a letter in it. The tint is derived from the
- * product's id, so a given camera keeps the same tile everywhere it appears and a grid of them reads
- * as variety rather than as repetition.
+ * product's id, so a given product keeps the same tile everywhere it appears and a grid of them reads
+ * as variety rather than as repetition. A parcel, not a camera's aperture (specs/156): the shop sells
+ * anything, and a shirt with no photograph showed a lens.
  */
 export function ProductImage({
   product,
@@ -61,7 +62,7 @@ export function ProductImage({
         }}
         aria-hidden="true"
       >
-        <Lens className={cn('opacity-25', thumb ? 'size-2/3' : large ? 'size-40' : 'size-20')} hue={hue} />
+        <Parcel className={cn('opacity-25', thumb ? 'size-2/3' : large ? 'size-40' : 'size-20')} hue={hue} />
       </div>
     )
   }
@@ -80,24 +81,18 @@ export function ProductImage({
   )
 }
 
-/** An aperture, drawn rather than imported: six blades, which is what a camera actually has. */
-function Lens({ className, hue }: { className?: string; hue: number }) {
+/** A parcel, drawn rather than imported: a box in three-quarter view with its tape line - whatever the shop sells. */
+function Parcel({ className, hue }: { className?: string; hue: number }) {
   const stroke = `oklch(0.42 0.06 ${hue})`
 
   return (
-    <svg viewBox="0 0 48 48" fill="none" className={className} stroke={stroke} strokeWidth={1.5}>
-      <circle cx="24" cy="24" r="19" />
-      <circle cx="24" cy="24" r="8.5" />
-      {[0, 60, 120, 180, 240, 300].map((angle) => (
-        <line
-          key={angle}
-          x1="24"
-          y1="24"
-          x2={24 + 19 * Math.cos((angle * Math.PI) / 180)}
-          y2={24 + 19 * Math.sin((angle * Math.PI) / 180)}
-          strokeWidth={1}
-        />
-      ))}
+    <svg viewBox="0 0 48 48" fill="none" className={className} stroke={stroke} strokeWidth={1.5} strokeLinejoin="round">
+      {/* The lid, then the two faces below it. */}
+      <path d="M24 6 42 14 24 22 6 14Z" />
+      <path d="M6 14v20l18 8V22" />
+      <path d="M42 14v20l-18 8" />
+      {/* The tape across the lid and down the front face. */}
+      <path d="M15 10l18 8v7" strokeWidth={1} />
     </svg>
   )
 }

@@ -435,8 +435,8 @@ first page and the test cannot find its id.
 
 **Fix.** Delete the test products. Through the API, an administrator removes each one with
 `DELETE /api/products/{id}`, which also tells Inventory to drop its stock rows. On a catalogue that
-should hold only the seeded cameras, `server/seed/clean-test-debris.py` does it in bulk - but it
-deletes **everything** `cameras.json` does not name, sellers' products and any demo data included, so
+should hold only the seeded products, `server/seed/clean-test-debris.py` does it in bulk - but it
+deletes **everything** `server/seed/catalogue/` does not name, sellers' products and any demo data included, so
 do not point it at a catalogue that holds anything else. Run it without `--yes` first; it only says
 what it would delete.
 

@@ -1,0 +1,230 @@
+{
+  "_about": [
+    "One vertical of the seed catalogue (specs/156): the shop sells anything, and cameras were only its first example.",
+    "Real brands and products, so the storefront shows things a person recognises. Descriptions are written here.",
+    "",
+    "⚠️ THE PRICES ARE APPROXIMATE AND NOBODY HAS CHECKED THEM AGAINST A SHOP - the same warning as cameras.json.",
+    "They are the right order of magnitude and the right relative order, from a model's knowledge up to May 2026.",
+    "The dong and dollar prices are each that market's, never a conversion (specs/022).",
+    "",
+    "No photographs: products read back with imageUrl null and show the storefront's parcel tile (specs/156)."
+  ],
+  "categories": [
+    {
+      "slug": "sach-van-hoc",
+      "name": "Sách văn học",
+      "description": "Tiểu thuyết và truyện",
+      "en": {
+        "name": "Fiction",
+        "description": "Novels and stories"
+      }
+    },
+    {
+      "slug": "sach-phi-hu-cau",
+      "name": "Sách phi hư cấu",
+      "description": "Kỹ năng, lịch sử và khoa học",
+      "en": {
+        "name": "Non-fiction",
+        "description": "Self-help, history and science"
+      }
+    }
+  ],
+  "products": [
+    {
+      "sku": "BOOK-NHA-GIA-KIM",
+      "category": "sach-van-hoc",
+      "vi": {
+        "name": "Nhà giả kim - Paulo Coelho",
+        "description": "Hành trình của cậu bé chăn cừu Santiago đi tìm kho báu và tìm ra chính mình."
+      },
+      "en": {
+        "name": "The Alchemist - Paulo Coelho (Vietnamese edition)",
+        "description": "The shepherd boy Santiago travels in search of treasure and finds himself instead."
+      },
+      "variants": [
+        {
+          "sku": "BOOK-NHA-GIA-KIM-PB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa mềm"
+              ],
+              "en": [
+                "Cover",
+                "Paperback"
+              ]
+            }
+          ],
+          "vnd": 79000,
+          "usd": 4.99,
+          "stock": 50
+        },
+        {
+          "sku": "BOOK-NHA-GIA-KIM-HB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa cứng"
+              ],
+              "en": [
+                "Cover",
+                "Hardcover"
+              ]
+            }
+          ],
+          "vnd": 129000,
+          "usd": 7.99,
+          "stock": 15
+        }
+      ]
+    },
+    {
+      "sku": "BOOK-HOA-VANG",
+      "category": "sach-van-hoc",
+      "vi": {
+        "name": "Tôi thấy hoa vàng trên cỏ xanh - Nguyễn Nhật Ánh",
+        "description": "Tuổi thơ hai anh em ở một làng quê miền Trung, trong trẻo mà nhiều nỗi buồn."
+      },
+      "en": {
+        "name": "Yellow Flowers on the Green Grass - Nguyễn Nhật Ánh (Vietnamese)",
+        "description": "Two brothers' childhood in a village in central Vietnam, bright and quietly sad."
+      },
+      "variants": [
+        {
+          "sku": "BOOK-HOA-VANG-PB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa mềm"
+              ],
+              "en": [
+                "Cover",
+                "Paperback"
+              ]
+            }
+          ],
+          "vnd": 125000,
+          "usd": 7.49,
+          "stock": 35
+        }
+      ]
+    },
+    {
+      "sku": "BOOK-DAC-NHAN-TAM",
+      "category": "sach-phi-hu-cau",
+      "vi": {
+        "name": "Đắc nhân tâm - Dale Carnegie",
+        "description": "Cuốn sách kinh điển về cách giao tiếp, thuyết phục và gây thiện cảm."
+      },
+      "en": {
+        "name": "How to Win Friends and Influence People - Dale Carnegie (Vietnamese edition)",
+        "description": "The classic on getting along with people, persuading them and being liked."
+      },
+      "variants": [
+        {
+          "sku": "BOOK-DAC-NHAN-TAM-PB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa mềm"
+              ],
+              "en": [
+                "Cover",
+                "Paperback"
+              ]
+            }
+          ],
+          "vnd": 86000,
+          "usd": 5.49,
+          "stock": 60
+        }
+      ]
+    },
+    {
+      "sku": "BOOK-ATOMIC-HABITS",
+      "category": "sach-phi-hu-cau",
+      "vi": {
+        "name": "Thói quen nguyên tử - James Clear",
+        "description": "Những thay đổi rất nhỏ cộng dồn thành kết quả lớn: cách xây thói quen tốt và bỏ thói quen xấu."
+      },
+      "en": {
+        "name": "Atomic Habits - James Clear (Vietnamese edition)",
+        "description": "Tiny changes that compound: how to build good habits and break bad ones."
+      },
+      "variants": [
+        {
+          "sku": "BOOK-ATOMIC-HABITS-PB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa mềm"
+              ],
+              "en": [
+                "Cover",
+                "Paperback"
+              ]
+            }
+          ],
+          "vnd": 189000,
+          "usd": 11.99,
+          "stock": 40
+        }
+      ]
+    },
+    {
+      "sku": "BOOK-SAPIENS",
+      "category": "sach-phi-hu-cau",
+      "vi": {
+        "name": "Sapiens: Lược sử loài người - Yuval Noah Harari",
+        "description": "Từ thời săn bắt hái lượm tới thời đại công nghệ: loài người đã đi đến hôm nay như thế nào."
+      },
+      "en": {
+        "name": "Sapiens: A Brief History of Humankind - Yuval Noah Harari (Vietnamese edition)",
+        "description": "From hunter-gatherers to the age of technology: how humankind got here."
+      },
+      "variants": [
+        {
+          "sku": "BOOK-SAPIENS-PB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa mềm"
+              ],
+              "en": [
+                "Cover",
+                "Paperback"
+              ]
+            }
+          ],
+          "vnd": 299000,
+          "usd": 17.99,
+          "stock": 25
+        },
+        {
+          "sku": "BOOK-SAPIENS-HB",
+          "options": [
+            {
+              "vi": [
+                "Bìa",
+                "Bìa cứng"
+              ],
+              "en": [
+                "Cover",
+                "Hardcover"
+              ]
+            }
+          ],
+          "vnd": 399000,
+          "usd": 24.99,
+          "stock": 10
+        }
+      ]
+    }
+  ]
+}

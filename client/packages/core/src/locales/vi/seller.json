@@ -221,7 +221,7 @@
   },
   "apply": {
     "title": "Mở gian hàng",
-    "subtitle": "Bán máy ảnh và ống kính của bạn tại đây. Mọi gian hàng mới đều được kiểm duyệt viên xem xét trước khi mở.",
+    "subtitle": "Bán sản phẩm của bạn tại đây. Mọi gian hàng mới đều được kiểm duyệt viên xem xét trước khi mở.",
     "shopName": "Tên gian hàng",
     "description": "Bạn sẽ bán gì?",
     "descriptionHint": "Một vài câu giúp việc xét duyệt nhanh hơn.",
@@ -387,7 +387,7 @@
   },
   "addVariant": {
     "title": "Thêm phiên bản",
-    "hint": "Bộ, màu hoặc cỡ khác. Phiên bản mới chưa có tồn kho; thêm xong hãy nhập tồn kho và giá các loại tiền khác.",
+    "hint": "Cỡ, màu hoặc mẫu khác. Phiên bản mới chưa có tồn kho; thêm xong hãy nhập tồn kho và giá các loại tiền khác.",
     "options": "Tuỳ chọn",
     "optionName": "Tên tuỳ chọn {{number}}",
     "optionValue": "Giá trị tuỳ chọn {{number}}",

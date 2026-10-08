@@ -9,7 +9,7 @@ here is a route in the storefront (`http://localhost:8088`) or the back office (
 ```bash
 cd server
 docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build --wait
-# a catalogue of real cameras, prices in dong and dollars, Vietnamese and English text
+# a catalogue of real products in six verticals, prices in dong and dollars, Vietnamese and English text
 ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/seed-catalogue.py
 python seed/two_factor.py          # the administrator's current code, and a link to enrol an authenticator app
 ```
@@ -72,7 +72,7 @@ In the back office:
 ## 4. The customer buys (5 min)
 
 As a customer (the first profile, signed up the same way):
-1. Add the seller's product and one of the shop's own seeded cameras to the **cart** (`/cart`).
+1. Add the seller's product and one of the shop's own seeded products to the **cart** (`/cart`).
 2. **Checkout** (`/checkout`): an address (`/addresses`), a delivery option with its days, and a voucher if one is
    shown.
    - The quote is priced by the same code as the order, so what is shown is what is charged
@@ -129,7 +129,7 @@ As a customer (the first profile, signed up the same way):
 ## Afterwards
 
 ```bash
-ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py --yes   # keeps the seeded cameras
+ADMIN_EMAIL=... ADMIN_PASSWORD=... ADMIN_TOTP_SECRET=... python seed/clean-test-debris.py --yes   # keeps the seeded products
 ```
 
 Questions that tend to come up, and where the answer is:

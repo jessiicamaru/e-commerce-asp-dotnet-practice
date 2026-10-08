@@ -2,8 +2,9 @@
 
 ## What this is
 
-A camera marketplace built as a .NET 10 microservices system with a React storefront. Shoppers browse
-and buy cameras, lenses and accessories in Vietnamese or English and pay in dong or dollars; independent
+A general marketplace built as a .NET 10 microservices system with a React storefront. Shoppers browse
+and buy anything its sellers list - the demo catalogue has cameras, phones and laptops, clothing, home goods, books and
+sports gear - in Vietnamese or English and pay in dong or dollars (cameras were the first example, until specs/156); independent
 sellers open shops, list products, stock them, ship their own parcels and are paid out a share; staff
 moderate what sellers publish, look after accounts and follow how the shop is doing.
 

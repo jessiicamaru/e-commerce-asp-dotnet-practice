@@ -1,0 +1,462 @@
+{
+  "_about": [
+    "One vertical of the seed catalogue (specs/156): the shop sells anything, and cameras were only its first example.",
+    "Real brands and products, so the storefront shows things a person recognises. Descriptions are written here.",
+    "",
+    "⚠️ THE PRICES ARE APPROXIMATE AND NOBODY HAS CHECKED THEM AGAINST A SHOP - the same warning as cameras.json.",
+    "They are the right order of magnitude and the right relative order, from a model's knowledge up to May 2026.",
+    "The dong and dollar prices are each that market's, never a conversion (specs/022).",
+    "",
+    "No photographs: products read back with imageUrl null and show the storefront's parcel tile (specs/156)."
+  ],
+  "categories": [
+    {
+      "slug": "thoi-trang-ao",
+      "name": "Áo",
+      "description": "Áo thun, áo sơ mi, áo khoác",
+      "en": {
+        "name": "Tops",
+        "description": "T-shirts, shirts and jackets"
+      }
+    },
+    {
+      "slug": "thoi-trang-giay",
+      "name": "Giày",
+      "description": "Giày thể thao và giày đi hằng ngày",
+      "en": {
+        "name": "Shoes",
+        "description": "Sneakers and everyday shoes"
+      }
+    }
+  ],
+  "products": [
+    {
+      "sku": "UNIQLO-AIRISM-TEE",
+      "category": "thoi-trang-ao",
+      "vi": {
+        "name": "Áo thun Uniqlo AIRism Cotton",
+        "description": "Áo thun dáng rộng, mặt ngoài cotton, mặt trong AIRism thoáng mát."
+      },
+      "en": {
+        "name": "Uniqlo AIRism Cotton T-shirt",
+        "description": "An oversized tee with a cotton face and a cool AIRism lining."
+      },
+      "variants": [
+        {
+          "sku": "UNIQLO-AIRISM-TEE-S-WHT",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "S"
+              ],
+              "en": [
+                "Size",
+                "S"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Trắng"
+              ],
+              "en": [
+                "Colour",
+                "White"
+              ]
+            }
+          ],
+          "vnd": 391000,
+          "usd": 19.9,
+          "stock": 30
+        },
+        {
+          "sku": "UNIQLO-AIRISM-TEE-M-WHT",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "M"
+              ],
+              "en": [
+                "Size",
+                "M"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Trắng"
+              ],
+              "en": [
+                "Colour",
+                "White"
+              ]
+            }
+          ],
+          "vnd": 391000,
+          "usd": 19.9,
+          "stock": 40
+        },
+        {
+          "sku": "UNIQLO-AIRISM-TEE-L-WHT",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "L"
+              ],
+              "en": [
+                "Size",
+                "L"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Trắng"
+              ],
+              "en": [
+                "Colour",
+                "White"
+              ]
+            }
+          ],
+          "vnd": 391000,
+          "usd": 19.9,
+          "stock": 25
+        },
+        {
+          "sku": "UNIQLO-AIRISM-TEE-M-BLK",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "M"
+              ],
+              "en": [
+                "Size",
+                "M"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 391000,
+          "usd": 19.9,
+          "stock": 35
+        }
+      ]
+    },
+    {
+      "sku": "LEVIS-TRUCKER",
+      "category": "thoi-trang-ao",
+      "vi": {
+        "name": "Áo khoác jean Levi's Trucker",
+        "description": "Áo khoác denim dáng cổ điển, wash xanh vừa, cài nút kim loại."
+      },
+      "en": {
+        "name": "Levi's Trucker Jacket",
+        "description": "The classic denim jacket in a medium blue wash with metal buttons."
+      },
+      "variants": [
+        {
+          "sku": "LEVIS-TRUCKER-M",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "M"
+              ],
+              "en": [
+                "Size",
+                "M"
+              ]
+            }
+          ],
+          "vnd": 1899000,
+          "usd": 98,
+          "stock": 10
+        },
+        {
+          "sku": "LEVIS-TRUCKER-L",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "L"
+              ],
+              "en": [
+                "Size",
+                "L"
+              ]
+            }
+          ],
+          "vnd": 1899000,
+          "usd": 98,
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "sku": "NIKE-AF1-07",
+      "category": "thoi-trang-giay",
+      "vi": {
+        "name": "Giày Nike Air Force 1 '07",
+        "description": "Đôi sneaker da trắng kinh điển, đế Air êm, hợp mọi bộ đồ."
+      },
+      "en": {
+        "name": "Nike Air Force 1 '07",
+        "description": "The classic white leather sneaker with Air cushioning that goes with everything."
+      },
+      "variants": [
+        {
+          "sku": "NIKE-AF1-07-40",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "40"
+              ],
+              "en": [
+                "Size",
+                "40"
+              ]
+            }
+          ],
+          "vnd": 2929000,
+          "usd": 115,
+          "stock": 6
+        },
+        {
+          "sku": "NIKE-AF1-07-41",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "41"
+              ],
+              "en": [
+                "Size",
+                "41"
+              ]
+            }
+          ],
+          "vnd": 2929000,
+          "usd": 115,
+          "stock": 9
+        },
+        {
+          "sku": "NIKE-AF1-07-42",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "42"
+              ],
+              "en": [
+                "Size",
+                "42"
+              ]
+            }
+          ],
+          "vnd": 2929000,
+          "usd": 115,
+          "stock": 9
+        },
+        {
+          "sku": "NIKE-AF1-07-43",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "43"
+              ],
+              "en": [
+                "Size",
+                "43"
+              ]
+            }
+          ],
+          "vnd": 2929000,
+          "usd": 115,
+          "stock": 5
+        }
+      ]
+    },
+    {
+      "sku": "BITIS-HUNTER-X",
+      "category": "thoi-trang-giay",
+      "vi": {
+        "name": "Giày Biti's Hunter X",
+        "description": "Sneaker Việt Nam nhẹ, đế LiteFlex êm chân cho cả ngày dài."
+      },
+      "en": {
+        "name": "Biti's Hunter X",
+        "description": "A light Vietnamese sneaker with a LiteFlex sole that stays comfortable all day."
+      },
+      "variants": [
+        {
+          "sku": "BITIS-HUNTER-X-40",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "40"
+              ],
+              "en": [
+                "Size",
+                "40"
+              ]
+            }
+          ],
+          "vnd": 1099000,
+          "usd": 45,
+          "stock": 15
+        },
+        {
+          "sku": "BITIS-HUNTER-X-41",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "41"
+              ],
+              "en": [
+                "Size",
+                "41"
+              ]
+            }
+          ],
+          "vnd": 1099000,
+          "usd": 45,
+          "stock": 18
+        },
+        {
+          "sku": "BITIS-HUNTER-X-42",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "42"
+              ],
+              "en": [
+                "Size",
+                "42"
+              ]
+            }
+          ],
+          "vnd": 1099000,
+          "usd": 45,
+          "stock": 12
+        }
+      ]
+    },
+    {
+      "sku": "CONVERSE-CHUCK70-HI",
+      "category": "thoi-trang-giay",
+      "vi": {
+        "name": "Giày Converse Chuck 70 Hi",
+        "description": "Giày vải cổ cao, canvas dày, đế cao su ngả màu cổ điển."
+      },
+      "en": {
+        "name": "Converse Chuck 70 Hi",
+        "description": "A high-top in heavy canvas on a vintage-tinted rubber sole."
+      },
+      "variants": [
+        {
+          "sku": "CONVERSE-CHUCK70-HI-39-BLK",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "39"
+              ],
+              "en": [
+                "Size",
+                "39"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 1900000,
+          "usd": 90,
+          "stock": 7
+        },
+        {
+          "sku": "CONVERSE-CHUCK70-HI-41-BLK",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "41"
+              ],
+              "en": [
+                "Size",
+                "41"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Đen"
+              ],
+              "en": [
+                "Colour",
+                "Black"
+              ]
+            }
+          ],
+          "vnd": 1900000,
+          "usd": 90,
+          "stock": 7
+        },
+        {
+          "sku": "CONVERSE-CHUCK70-HI-41-WHT",
+          "options": [
+            {
+              "vi": [
+                "Cỡ",
+                "41"
+              ],
+              "en": [
+                "Size",
+                "41"
+              ]
+            },
+            {
+              "vi": [
+                "Màu",
+                "Trắng ngà"
+              ],
+              "en": [
+                "Colour",
+                "Parchment"
+              ]
+            }
+          ],
+          "vnd": 1900000,
+          "usd": 90,
+          "stock": 4
+        }
+      ]
+    }
+  ]
+}
