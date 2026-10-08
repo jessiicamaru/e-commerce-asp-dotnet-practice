@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { CatalogFilters } from '@/components/catalog/catalog-filters'
 import { CatalogHero } from '@/components/catalog/catalog-hero'
+import { SpecificationFilters } from '@/components/catalog/specification-filters'
 import { ProductCard } from '@/components/product/product-card'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { Pager } from '@ecommerce/core/components/shared/pager'
@@ -22,6 +23,8 @@ export function CatalogPage() {
   const minPrice = params.get('min') ?? ''
   const maxPrice = params.get('max') ?? ''
   const inStock = params.get('stock') === '1'
+  // Specification options (specs/159), comma-separated in the URL so a filtered page can be shared.
+  const optionIds = (params.get('options') ?? '').split(',').filter(Boolean)
 
   const categories = useCategories()
   const products = useProducts({
@@ -33,11 +36,12 @@ export function CatalogPage() {
     minPrice: bound(minPrice),
     maxPrice: bound(maxPrice),
     inStock: inStock || undefined,
+    optionIds: optionIds.length ? optionIds : undefined,
   })
 
   // The hero belongs to the landing view only. Once somebody has searched or filtered, the results
   // are what they came for and a hero is in the way of them.
-  const landing = !searchTerm && !categoryId && !minPrice && !maxPrice && !inStock && pageNumber === 1
+  const landing = !searchTerm && !categoryId && !minPrice && !maxPrice && !inStock && !optionIds.length && pageNumber === 1
 
   function update(changes: Record<string, string>) {
     const next = new URLSearchParams(params)
@@ -50,6 +54,9 @@ export function CatalogPage() {
     }
     if (!('page' in changes)) {
       next.delete('page') // a new filter starts on page 1
+    }
+    if ('category' in changes && !('options' in changes)) {
+      next.delete('options') // another category's specifications are other options
     }
     setParams(next)
   }
@@ -82,6 +89,12 @@ export function CatalogPage() {
           inStock={inStock}
           categories={categories.data ?? []}
           onChange={update}
+        />
+
+        <SpecificationFilters
+          categoryId={categoryId}
+          optionIds={optionIds}
+          onChange={(next) => update({ options: next.join(',') })}
         />
 
         {products.isError && <ErrorMessage>{t('loadFailed')}</ErrorMessage>}

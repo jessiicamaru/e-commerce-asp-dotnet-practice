@@ -386,6 +386,14 @@
     "remove": "Remove {{language}}",
     "removed": "{{language}} text removed - its readers see the original."
   },
+  "specifications": {
+    "title": "Specifications",
+    "hint": "What shoppers compare - set by the category. Changing them sends an approved product back to review.",
+    "none": "Not given",
+    "save": "Save specifications",
+    "saved": "Specifications saved.",
+    "failed": "The specifications could not be saved."
+  },
   "addVariant": {
     "title": "Add a variant",
     "hint": "Another size, colour or model. It starts with no stock; set its stock and other prices once it is added.",

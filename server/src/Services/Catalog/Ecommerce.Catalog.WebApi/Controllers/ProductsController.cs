@@ -13,6 +13,7 @@ using Ecommerce.Catalog.Application.Products.Images.UploadProductImage;
 using Ecommerce.Catalog.Application.Products.Review;
 using Ecommerce.Catalog.Application.Products.Views;
 using Ecommerce.Catalog.Application.Products.Translations;
+using Ecommerce.Catalog.Application.Specifications;
 using Ecommerce.Shared.Authentication;
 using FluentValidation;
 using FluentValidation.Results;
@@ -112,6 +113,20 @@ public class ProductsController : ApiControllerBase
     {
         return Ok(await Mediator.Send(new UpdateProductDetailsCommand(id, request.Name, request.Description, request.CategoryId)));
     }
+
+    /// <summary>
+    /// The product's specifications, the whole set replaced (#366, specs/159): each an option of a choice specification or
+    /// a text, for specifications of its category and department. A seller's change to an approved product sends it back
+    /// to review. Somebody else's product is 404.
+    /// </summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPut("{id:guid}/specifications")]
+    public async Task<IActionResult> SetSpecifications(Guid id, [FromBody] ProductSpecificationsRequest request)
+    {
+        return Ok(await Mediator.Send(new SetProductSpecificationsCommand(id, request.Values ?? [])));
+    }
+
+    public record ProductSpecificationsRequest(List<ProductSpecificationInput>? Values);
 
     /// <summary>
     /// This product's name and description in one language (specs/021). An upsert: writing it twice

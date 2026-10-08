@@ -46,6 +46,9 @@ public static class CatalogPersonalData
         [
             "categories", "category_translations", "product_translations", "product_variants", "variant_options",
             "variant_option_translations", "variant_prices", "product_views",
+            // Product specifications (specs/159): what categories declare and what products hold - about goods, not people.
+            "category_specifications", "category_specification_translations", "specification_options",
+            "specification_option_translations", "product_specifications",
         ],
     };
 }

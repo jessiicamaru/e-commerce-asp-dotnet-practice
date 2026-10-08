@@ -14,6 +14,8 @@ export const queryKeys = {
   myProducts: (query: ProductQuery) => ['my-products', query] as const,
   categories: () => ['categories'] as const,
   categoriesIn: (language: string) => ['categories', 'in', language] as const,
+  // Under 'categories', so a change to a category refreshes them too (specs/159).
+  categorySpecifications: (categoryId: string) => ['categories', 'specifications', categoryId] as const,
   myShop: () => ['my-shop'] as const,
   shopFront: (sellerId: string) => ['shop-front', sellerId] as const,
   shopState: () => ['shop-state', 'mine'] as const,

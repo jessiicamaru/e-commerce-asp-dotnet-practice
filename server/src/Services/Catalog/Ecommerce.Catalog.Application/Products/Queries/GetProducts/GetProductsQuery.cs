@@ -18,7 +18,9 @@ public record GetProductsQuery(
     /// <summary>The "from" price is at most this, in the request's currency.</summary>
     decimal? MaxPrice = null,
     /// <summary>Only what can be bought now - the availability read model.</summary>
-    bool InStock = false
+    bool InStock = false,
+    /// <summary>Products holding every one of these specification options (#366, specs/159) - Brand: Apple.</summary>
+    List<Guid>? OptionIds = null
 ) : IRequest<PaginatedList<ProductResponse>>;
 
 public class GetProductsQueryValidator : AbstractValidator<GetProductsQuery>

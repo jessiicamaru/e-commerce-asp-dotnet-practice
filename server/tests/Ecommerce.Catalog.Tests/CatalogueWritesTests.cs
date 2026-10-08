@@ -137,6 +137,8 @@ public class CatalogueWritesTests(CatalogTestFixture fixture)
     [InlineData("""WITH flipped AS (UPDATE products SET "Availability" = true WHERE "Id" = @id RETURNING 1) SELECT 1""")]
     [InlineData("""INSERT INTO public.category_translations ("CategoryId") VALUES (@p0)""")]
     [InlineData("""update "variant_option_translations" set "Value" = @v""")]
+    [InlineData("""INSERT INTO "product_specifications" ("ProductId", "SpecificationId", "OptionId") VALUES (@p0, @p1, @p2)""")]
+    [InlineData("""DELETE FROM "specification_options" WHERE "Id" = @p0""")]
     public void A_write_to_a_table_the_cached_reads_show_is_one(string sql)
     {
         Assert.True(CatalogueWrites.Writes(sql));

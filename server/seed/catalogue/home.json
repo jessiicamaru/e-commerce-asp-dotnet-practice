@@ -17,7 +17,75 @@
       "en": {
         "name": "Home & living",
         "description": "Things for the home"
-      }
+      },
+      "specifications": [
+        {
+          "code": "brand",
+          "vi": "Thương hiệu",
+          "en": "Brand",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "toshiba",
+              "vi": "Toshiba",
+              "en": "Toshiba"
+            },
+            {
+              "code": "philips",
+              "vi": "Philips",
+              "en": "Philips"
+            },
+            {
+              "code": "xiaomi",
+              "vi": "Xiaomi",
+              "en": "Xiaomi"
+            },
+            {
+              "code": "locklock",
+              "vi": "Lock&Lock",
+              "en": "Lock&Lock"
+            },
+            {
+              "code": "sunhouse",
+              "vi": "Sunhouse",
+              "en": "Sunhouse"
+            }
+          ]
+        },
+        {
+          "code": "origin",
+          "vi": "Xuất xứ thương hiệu",
+          "en": "Brand origin",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "japan",
+              "vi": "Nhật Bản",
+              "en": "Japan"
+            },
+            {
+              "code": "netherlands",
+              "vi": "Hà Lan",
+              "en": "Netherlands"
+            },
+            {
+              "code": "china",
+              "vi": "Trung Quốc",
+              "en": "China"
+            },
+            {
+              "code": "korea",
+              "vi": "Hàn Quốc",
+              "en": "South Korea"
+            },
+            {
+              "code": "vietnam",
+              "vi": "Việt Nam",
+              "en": "Vietnam"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "gia-dung",
@@ -89,7 +157,11 @@
           "usd": 89,
           "stock": 15
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "toshiba",
+        "origin": "japan"
+      }
     },
     {
       "sku": "PHILIPS-AIRFRYER-3000",
@@ -139,7 +211,11 @@
           "usd": 129,
           "stock": 6
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "philips",
+        "origin": "netherlands"
+      }
     },
     {
       "sku": "XIAOMI-VACUUM-E10",
@@ -171,7 +247,11 @@
           "usd": 169,
           "stock": 8
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "xiaomi",
+        "origin": "china"
+      }
     },
     {
       "sku": "LOCKLOCK-CONTAINERS",
@@ -221,7 +301,11 @@
           "usd": 34,
           "stock": 25
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "locklock",
+        "origin": "korea"
+      }
     },
     {
       "sku": "SUNHOUSE-FRYPAN",
@@ -271,7 +355,11 @@
           "usd": 18,
           "stock": 20
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "sunhouse",
+        "origin": "vietnam"
+      }
     }
   ]
 }

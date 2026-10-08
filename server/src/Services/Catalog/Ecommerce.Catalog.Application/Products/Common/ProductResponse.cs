@@ -74,7 +74,10 @@ public record ProductResponse(
     // has some - what a seller edits. The name and description above fall back per field, so reading them cannot tell
     // "translated" from "falling back", and once every language has its own text the original is read by nobody.
     ProductText? Original = null,
-    List<ProductTranslationText>? Translations = null
+    List<ProductTranslationText>? Translations = null,
+    // specs/159, on the lookup only: the product's specifications that apply to its category, with their values, in the
+    // reader's language - the product page's table and the seller's form.
+    List<Specifications.ProductSpecificationResponse>? Specifications = null
 )
 {
     /// <summary>

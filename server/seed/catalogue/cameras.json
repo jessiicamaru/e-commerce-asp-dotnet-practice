@@ -27,7 +27,81 @@
       "en": {
         "name": "Cameras",
         "description": "Cameras and lenses"
-      }
+      },
+      "specifications": [
+        {
+          "code": "brand",
+          "vi": "Thương hiệu",
+          "en": "Brand",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "sony",
+              "vi": "Sony",
+              "en": "Sony"
+            },
+            {
+              "code": "canon",
+              "vi": "Canon",
+              "en": "Canon"
+            },
+            {
+              "code": "nikon",
+              "vi": "Nikon",
+              "en": "Nikon"
+            },
+            {
+              "code": "fujifilm",
+              "vi": "Fujifilm",
+              "en": "Fujifilm"
+            },
+            {
+              "code": "panasonic",
+              "vi": "Panasonic",
+              "en": "Panasonic"
+            },
+            {
+              "code": "om-system",
+              "vi": "OM System",
+              "en": "OM System"
+            },
+            {
+              "code": "ricoh",
+              "vi": "Ricoh",
+              "en": "Ricoh"
+            }
+          ]
+        },
+        {
+          "code": "sensor",
+          "vi": "Cảm biến",
+          "en": "Sensor",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "full-frame",
+              "vi": "Full-frame",
+              "en": "Full-frame"
+            },
+            {
+              "code": "aps-c",
+              "vi": "APS-C",
+              "en": "APS-C"
+            },
+            {
+              "code": "m43",
+              "vi": "Micro Four Thirds",
+              "en": "Micro Four Thirds"
+            }
+          ]
+        },
+        {
+          "code": "resolution",
+          "vi": "Độ phân giải",
+          "en": "Resolution",
+          "kind": "Text"
+        }
+      ]
     },
     {
       "slug": "may-anh-mirrorless",
@@ -99,7 +173,12 @@
           "usd": 2498,
           "stock": 7
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "sony",
+        "sensor": "full-frame",
+        "resolution": "33 MP"
+      }
     },
     {
       "sku": "SONY-A7CII",
@@ -169,7 +248,12 @@
           "usd": 2198,
           "stock": 4
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "sony",
+        "sensor": "full-frame",
+        "resolution": "33 MP"
+      }
     },
     {
       "sku": "SONY-ZVE10M2",
@@ -219,7 +303,12 @@
           "usd": 1098,
           "stock": 15
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "sony",
+        "sensor": "aps-c",
+        "resolution": "26 MP"
+      }
     },
     {
       "sku": "CANON-R6M2",
@@ -269,7 +358,12 @@
           "usd": 3599,
           "stock": 3
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "canon",
+        "sensor": "full-frame",
+        "resolution": "24 MP"
+      }
     },
     {
       "sku": "CANON-R8",
@@ -301,7 +395,12 @@
           "usd": 1499,
           "stock": 11
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "canon",
+        "sensor": "full-frame",
+        "resolution": "24 MP"
+      }
     },
     {
       "sku": "CANON-R50",
@@ -371,7 +470,12 @@
           "usd": 819,
           "stock": 6
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "canon",
+        "sensor": "aps-c",
+        "resolution": "24 MP"
+      }
     },
     {
       "sku": "NIKON-Z6III",
@@ -421,7 +525,12 @@
           "usd": 3099,
           "stock": 2
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "nikon",
+        "sensor": "full-frame",
+        "resolution": "24 MP"
+      }
     },
     {
       "sku": "NIKON-ZF",
@@ -453,7 +562,12 @@
           "usd": 1999,
           "stock": 6
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "nikon",
+        "sensor": "full-frame",
+        "resolution": "24 MP"
+      }
     },
     {
       "sku": "FUJI-XT5",
@@ -551,7 +665,12 @@
           "usd": 2099,
           "stock": 4
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "fujifilm",
+        "sensor": "aps-c",
+        "resolution": "40 MP"
+      }
     },
     {
       "sku": "FUJI-XS20",
@@ -583,7 +702,12 @@
           "usd": 1299,
           "stock": 14
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "fujifilm",
+        "sensor": "aps-c",
+        "resolution": "26 MP"
+      }
     },
     {
       "sku": "PANA-S5M2",
@@ -615,7 +739,12 @@
           "usd": 1997,
           "stock": 7
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "panasonic",
+        "sensor": "full-frame",
+        "resolution": "24 MP"
+      }
     },
     {
       "sku": "OM-OM5",
@@ -647,7 +776,12 @@
           "usd": 1199,
           "stock": 9
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "om-system",
+        "sensor": "m43",
+        "resolution": "20 MP"
+      }
     },
     {
       "sku": "FUJI-X100VI",
@@ -697,7 +831,12 @@
           "usd": 1599,
           "stock": 2
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "fujifilm",
+        "sensor": "aps-c",
+        "resolution": "40 MP"
+      }
     },
     {
       "sku": "RICOH-GR3X",
@@ -729,7 +868,12 @@
           "usd": 1049,
           "stock": 5
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "ricoh",
+        "sensor": "aps-c",
+        "resolution": "24 MP"
+      }
     }
   ]
 }

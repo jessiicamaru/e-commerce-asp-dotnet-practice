@@ -17,7 +17,15 @@
       "en": {
         "name": "Books",
         "description": "Printed books in Vietnamese"
-      }
+      },
+      "specifications": [
+        {
+          "code": "author",
+          "vi": "Tác giả",
+          "en": "Author",
+          "kind": "Text"
+        }
+      ]
     },
     {
       "slug": "sach-van-hoc",
@@ -89,7 +97,10 @@
           "usd": 7.99,
           "stock": 15
         }
-      ]
+      ],
+      "specifications": {
+        "author": "Paulo Coelho"
+      }
     },
     {
       "sku": "BOOK-HOA-VANG",
@@ -121,7 +132,10 @@
           "usd": 7.49,
           "stock": 35
         }
-      ]
+      ],
+      "specifications": {
+        "author": "Nguyễn Nhật Ánh"
+      }
     },
     {
       "sku": "BOOK-DAC-NHAN-TAM",
@@ -153,7 +167,10 @@
           "usd": 5.49,
           "stock": 60
         }
-      ]
+      ],
+      "specifications": {
+        "author": "Dale Carnegie"
+      }
     },
     {
       "sku": "BOOK-ATOMIC-HABITS",
@@ -185,7 +202,10 @@
           "usd": 11.99,
           "stock": 40
         }
-      ]
+      ],
+      "specifications": {
+        "author": "James Clear"
+      }
     },
     {
       "sku": "BOOK-SAPIENS",
@@ -235,7 +255,10 @@
           "usd": 24.99,
           "stock": 10
         }
-      ]
+      ],
+      "specifications": {
+        "author": "Yuval Noah Harari"
+      }
     }
   ]
 }

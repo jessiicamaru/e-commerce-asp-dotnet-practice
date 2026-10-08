@@ -23,8 +23,15 @@ namespace Ecommerce.Catalog.WebApi.Caching;
 /// </para>
 /// <para>
 /// <b>Emptied after every committed catalogue write</b> by <c>CatalogueWrites</c>, through <see cref="Tag"/>. The expiry
-/// bounds what that cannot reach: another Catalog instance's memory, and a read that began before a commit and stored
-/// its answer just after the eviction.
+/// bounds what that cannot reach: another Catalog instance's memory.
+/// </para>
+/// <para>
+/// <b>A read that overlapped an eviction keeps nothing.</b> Every eviction advances a generation first; a request notes
+/// the generation it began under, and its answer is stored only if none has passed since. Without it, a read that
+/// loaded the rows before a commit and stored its answer just after the eviction served the old rows for the whole
+/// expiry - the browser flows found it (#366): a seller stocked a product and the shop said "out of stock" for 30 s,
+/// because the product read now made more queries and the window widened. What is left is the instant between the
+/// response's headers and its body being stored, with no database work in it.
 /// </para>
 /// </remarks>
 public static class CatalogueCache
@@ -72,19 +79,63 @@ public static class CatalogueCache
                     .VaryByValue(context => new KeyValuePair<string, string>(
                         "language", context.RequestServices.GetRequiredService<IRequestLanguage>().Current))
                     .VaryByValue(context => new KeyValuePair<string, string>(
-                        "currency", context.RequestServices.GetRequiredService<IRequestCurrency>().Current.Code));
+                        "currency", context.RequestServices.GetRequiredService<IRequestCurrency>().Current.Code))
+                    .AddPolicy<StoreOnlyIfNothingWasEvicted>();
             }));
 
         // Replaces the empty one Infrastructure registers, whichever was added first.
+        services.AddSingleton<Generation>();
         services.AddSingleton<ICatalogueReadCache, OutputCatalogueReadCache>();
         return services;
     }
 
-    private sealed class OutputCatalogueReadCache(IOutputCacheStore store) : ICatalogueReadCache
+    /// <summary>How many evictions have begun. Advanced before the store is emptied, never after.</summary>
+    private sealed class Generation
+    {
+        private long _value;
+
+        public long Current => Interlocked.Read(ref _value);
+
+        public void Advance() => Interlocked.Increment(ref _value);
+    }
+
+    private sealed class OutputCatalogueReadCache(IOutputCacheStore store, Generation generation) : ICatalogueReadCache
     {
         private readonly IOutputCacheStore _store = store;
+        private readonly Generation _generation = generation;
 
-        public ValueTask EvictAsync(CancellationToken cancellationToken = default) =>
-            _store.EvictByTagAsync(Tag, cancellationToken);
+        public ValueTask EvictAsync(CancellationToken cancellationToken = default)
+        {
+            _generation.Advance();
+            return _store.EvictByTagAsync(Tag, cancellationToken);
+        }
+    }
+
+    /// <summary>Stores an answer only when no eviction began while it was being made.</summary>
+    private sealed class StoreOnlyIfNothingWasEvicted : IOutputCachePolicy
+    {
+        private static readonly object Began = new();
+
+        public ValueTask CacheRequestAsync(OutputCacheContext context, CancellationToken cancellation)
+        {
+            context.HttpContext.Items[Began] = Of(context).Current;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask ServeFromCacheAsync(OutputCacheContext context, CancellationToken cancellation) =>
+            ValueTask.CompletedTask;
+
+        public ValueTask ServeResponseAsync(OutputCacheContext context, CancellationToken cancellation)
+        {
+            if (context.HttpContext.Items[Began] is not long began || began != Of(context).Current)
+            {
+                context.AllowCacheStorage = false;
+            }
+
+            return ValueTask.CompletedTask;
+        }
+
+        private static Generation Of(OutputCacheContext context) =>
+            context.HttpContext.RequestServices.GetRequiredService<Generation>();
     }
 }

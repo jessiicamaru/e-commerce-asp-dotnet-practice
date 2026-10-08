@@ -45,6 +45,7 @@ public static class DependencyInjection
         // separately, so both resolve to the SAME instance inside a scope.
         services.AddScoped<ILiveImageKeys>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<ISellerRepository, SellerRepository>();
+        services.AddScoped<ISpecificationRepository, SpecificationRepository>();
 
         // Product images: an S3-compatible bucket every instance shares (specs/079) - the containers' choice - or a
         // directory, which assumes one Catalog instance (specs/019) and needs no server: `dotnet run`'s default.

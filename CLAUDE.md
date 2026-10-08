@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (268 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (318 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -424,7 +424,12 @@ the same per-field fallback. ⚠️ **Categories are a two-level tree** since sp
 categories under them - `CategoryTree` enforces it on create and on `PUT /api/categories/{id}/parent` (a move is its own
 endpoint, so the rename never lifts a category out), a department with categories under it is a 409 on delete, and
 `?categoryId=` of a department lists its categories' products. The client builds the tree once, in
-`core/utils/category`; the seed's categories carry `"parent"`. They were called out of scope twice before a redesigned storefront made
+`core/utils/category`; the seed's categories carry `"parent"`. **Products have specifications** since specs/159 (#366):
+a category declares them (`/api/categories/{id}/specifications`, Admin) - a **text** shown as written, never translated,
+or a **choice** of translated options, the only kind that filters (`?optionIds=`, every one given) - and a product has its
+category's and its department's. `PUT /api/products/{id}/specifications` replaces the whole set; ⚠️ it calls
+`ProductReview.AfterSellerEditAsync` (the tenth edit of what a shopper reads). Deleting what a product uses is 409. The
+five tables are in `CatalogueWrites`' pattern and the personal-data inventory. They were called out of scope twice before a redesigned storefront made
 an English page full of `Máy ảnh không gương lật` impossible to keep calling that. ⚠️ **An order freezes its words in the language it was placed in**
 (`orders.Language`): a Vietnamese order still reads Vietnamese when opened in English, because an
 order is a record of a purchase, not a view of the catalogue.
@@ -499,7 +504,9 @@ apart by query and the negotiated language and currency, 30 s (`Caching:Catalogu
 EF Core interceptor, not a call in handlers**: `CatalogueWrites` empties it after the commit of any statement writing
 `products`, `product_variants`, `variant_prices`, `product_translations`, `variant_options`(`_translations`),
 `categories`(`_translations`) or `sellers`. A new table a cached read shows goes into its pattern, and a new public read
-gets the attribute only if every table it shows is in that list. Per instance: another instance is stale up to 30 s.
+gets the attribute only if every table it shows is in that list. ⚠️ A read that overlapped an eviction is not stored
+(a generation advanced before each eviction, checked by the policy - specs/159 found the race). Per instance: another
+instance is stale up to 30 s.
 
 ⚠️ **Off the shelf, what hangs on a product is a 404 too** (specs/081, #166): reviews and questions answer
 `ProductReview.MaySee` like the product, and an image is served only to an address with its own `ImageAccessKey`

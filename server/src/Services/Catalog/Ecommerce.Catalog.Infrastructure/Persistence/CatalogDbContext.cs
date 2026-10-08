@@ -28,6 +28,11 @@ public class CatalogDbContext : DbContext
     public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
     public DbSet<VariantOptionTranslation> VariantOptionTranslations => Set<VariantOptionTranslation>();
 
+    // Product specifications (specs/159).
+    public DbSet<CategorySpecification> CategorySpecifications => Set<CategorySpecification>();
+    public DbSet<SpecificationOption> SpecificationOptions => Set<SpecificationOption>();
+    public DbSet<ProductSpecification> ProductSpecifications => Set<ProductSpecification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

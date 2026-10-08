@@ -1,0 +1,28 @@
+info:
+  name: deleting a specification a product uses is 409
+  type: http
+  seq: 14
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/categories/{{categoryId}}/specifications/{{specificationId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 409", function() {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/159. The teardown deletes the product (taking its values) and then the category (taking its specifications).

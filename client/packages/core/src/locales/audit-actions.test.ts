@@ -29,6 +29,13 @@ const INDIRECT: Record<string, { actions: string[]; written?: string }> = {
   'Services/Catalog/Ecommerce.Catalog.Application/Products/Review/ProductReviewFeatures.cs': {
     actions: ['ProductApproved', 'ProductRejected', 'ProductTakenDown'],
   },
+  // Through its own RecordAsync(action, ...) (specs/159): each handler passes a literal.
+  'Services/Catalog/Ecommerce.Catalog.Application/Specifications/SpecificationCommands.cs': {
+    actions: [
+      'SpecificationCreated', 'SpecificationRenamed', 'SpecificationTranslated', 'SpecificationDeleted',
+      'SpecificationOptionAdded', 'SpecificationOptionRenamed', 'SpecificationOptionTranslated', 'SpecificationOptionDeleted',
+    ],
+  },
   'Services/Catalog/Ecommerce.Catalog.Application/Sellers/ShopClosure.cs': {
     actions: ['ShopPaused', 'ShopResumed', 'ShopClosed', 'ShopReopened'],
   },

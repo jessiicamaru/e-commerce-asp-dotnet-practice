@@ -57,6 +57,18 @@ public class CatalogueCacheTests
             .CacheOutput(CatalogueCache.Policy);
         app.MapGet("/api/products/missing", (Hits hits) => { hits.Next(); return Results.NotFound(); })
             .CacheOutput(CatalogueCache.Policy);
+        // A read that loaded its rows, then saw a write commit (and evict) before it answered.
+        app.MapGet("/api/products/overlapped", async (Hits hits, ICatalogueReadCache cache) =>
+            {
+                var hit = hits.Next();
+                if (hit == 1)
+                {
+                    await cache.EvictAsync();
+                }
+
+                return $"{hit}";
+            })
+            .CacheOutput(CatalogueCache.Policy);
 
         await app.StartAsync();
         return (app, app.GetTestClient(), app.Services.GetRequiredService<Hits>());
@@ -149,6 +161,21 @@ public class CatalogueCacheTests
 
         Assert.Equal("3:vi:VND", await GetAsync(client, "/api/products"));
         Assert.Equal("4:en:VND", await GetAsync(client, "/api/products?lang=en"));
+    }
+
+    [Fact]
+    public async Task A_read_that_overlapped_an_eviction_is_not_kept()
+    {
+        var (app, client, hits) = await StartAsync();
+        await using var _ = app;
+
+        // The first answer was made from rows a commit replaced while it was being made: kept, it would be served for
+        // the whole expiry (#366's browser flows: "in stock" not seen for 30 s).
+        Assert.Equal("1", await GetAsync(client, "/api/products/overlapped"));
+        Assert.Equal("2", await GetAsync(client, "/api/products/overlapped"));
+        // The second began after the eviction, so it is kept as usual.
+        Assert.Equal("2", await GetAsync(client, "/api/products/overlapped"));
+        Assert.Equal(2, hits.Count);
     }
 
     [Fact]

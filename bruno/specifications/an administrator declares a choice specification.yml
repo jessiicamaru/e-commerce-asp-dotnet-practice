@@ -1,0 +1,49 @@
+info:
+  name: an administrator declares a choice specification
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories/{{categoryId}}/specifications"
+  body:
+    type: json
+    data: |-
+      {
+        "code": "brand-{{runId}}",
+        "name": "Thương hiệu",
+        "kind": "Choice",
+        "options": [
+          { "code": "alpha", "value": "Alpha" },
+          { "code": "beta", "value": "Beta" }
+        ]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.id) {
+          bru.setVar("specificationId", res.body.id);
+          bru.setVar("optionId", res.body.options[0].id);
+          bru.setVar("otherOptionId", res.body.options[1].id);
+        }
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+          expect(res.body.kind).to.equal("Choice");
+          expect(res.body.options.length).to.equal(2);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/159: a category declares what its products are compared by. The run's category from the category folder.

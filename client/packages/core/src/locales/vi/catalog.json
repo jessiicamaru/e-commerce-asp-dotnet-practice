@@ -51,6 +51,11 @@
     "next": "Sau",
     "page": "Trang {{page}} / {{total}}"
   },
+  "specifications": {
+    "title": "Thông số",
+    "filters": "Lọc theo thông số",
+    "any": "{{name}}: tất cả"
+  },
   "hero": {
     "eyebrow": "Nhiều gian hàng, một giỏ hàng",
     "heading": "Tìm đúng thứ bạn cần.",

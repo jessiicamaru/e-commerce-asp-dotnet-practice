@@ -17,7 +17,42 @@
       "en": {
         "name": "Electronics",
         "description": "Phones, computers and audio"
-      }
+      },
+      "specifications": [
+        {
+          "code": "brand",
+          "vi": "Thương hiệu",
+          "en": "Brand",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "apple",
+              "vi": "Apple",
+              "en": "Apple"
+            },
+            {
+              "code": "samsung",
+              "vi": "Samsung",
+              "en": "Samsung"
+            },
+            {
+              "code": "xiaomi",
+              "vi": "Xiaomi",
+              "en": "Xiaomi"
+            },
+            {
+              "code": "asus",
+              "vi": "ASUS",
+              "en": "ASUS"
+            },
+            {
+              "code": "sony",
+              "vi": "Sony",
+              "en": "Sony"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "dien-thoai",
@@ -27,7 +62,15 @@
         "name": "Phones",
         "description": "Smartphones"
       },
-      "parent": "dien-tu"
+      "parent": "dien-tu",
+      "specifications": [
+        {
+          "code": "screen",
+          "vi": "Màn hình",
+          "en": "Screen",
+          "kind": "Text"
+        }
+      ]
     },
     {
       "slug": "laptop",
@@ -37,7 +80,21 @@
         "name": "Laptops",
         "description": "Notebook computers"
       },
-      "parent": "dien-tu"
+      "parent": "dien-tu",
+      "specifications": [
+        {
+          "code": "screen",
+          "vi": "Màn hình",
+          "en": "Screen",
+          "kind": "Text"
+        },
+        {
+          "code": "processor",
+          "vi": "Bộ xử lý",
+          "en": "Processor",
+          "kind": "Text"
+        }
+      ]
     },
     {
       "slug": "tai-nghe",
@@ -47,7 +104,27 @@
         "name": "Headphones",
         "description": "Wireless and noise-cancelling headphones"
       },
-      "parent": "dien-tu"
+      "parent": "dien-tu",
+      "specifications": [
+        {
+          "code": "fit",
+          "vi": "Kiểu đeo",
+          "en": "Fit",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "over-ear",
+              "vi": "Chụp tai",
+              "en": "Over-ear"
+            },
+            {
+              "code": "in-ear",
+              "vi": "Nhét tai",
+              "en": "In-ear"
+            }
+          ]
+        }
+      ]
     }
   ],
   "products": [
@@ -147,7 +224,11 @@
           "usd": 799,
           "stock": 8
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "apple",
+        "screen": "6.1\""
+      }
     },
     {
       "sku": "SAMSUNG-S25",
@@ -197,7 +278,11 @@
           "usd": 919,
           "stock": 6
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "samsung",
+        "screen": "6.2\""
+      }
     },
     {
       "sku": "XIAOMI-RN14",
@@ -247,7 +332,11 @@
           "usd": 229,
           "stock": 25
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "xiaomi",
+        "screen": "6.67\""
+      }
     },
     {
       "sku": "APPLE-MBA13-M4",
@@ -297,7 +386,12 @@
           "usd": 1199,
           "stock": 5
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "apple",
+        "screen": "13.6\"",
+        "processor": "Apple M4"
+      }
     },
     {
       "sku": "ASUS-ZENBOOK14",
@@ -329,7 +423,12 @@
           "usd": 999,
           "stock": 7
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "asus",
+        "screen": "14\"",
+        "processor": "Intel Core Ultra"
+      }
     },
     {
       "sku": "SONY-WH1000XM5",
@@ -379,7 +478,11 @@
           "usd": 399,
           "stock": 9
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "sony",
+        "fit": "over-ear"
+      }
     },
     {
       "sku": "APPLE-AIRPODS-PRO2",
@@ -411,7 +514,11 @@
           "usd": 249,
           "stock": 25
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "apple",
+        "fit": "in-ear"
+      }
     }
   ]
 }
