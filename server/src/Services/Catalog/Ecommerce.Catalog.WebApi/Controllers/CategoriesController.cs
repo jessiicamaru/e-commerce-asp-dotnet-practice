@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.WebApi.Caching;
+using Microsoft.AspNetCore.OutputCaching;
 using Ecommerce.Catalog.Application.Categories.Commands.CreateCategory;
 using Ecommerce.Catalog.Application.Categories.Commands.UpdateCategory;
 using Ecommerce.Catalog.Application.Categories.Commands.DeleteCategory;
@@ -11,6 +13,7 @@ namespace Ecommerce.Catalog.WebApi.Controllers;
 public class CategoriesController : ApiControllerBase
 {
     [AllowAnonymous]
+    [OutputCache(PolicyName = CatalogueCache.Policy)]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {

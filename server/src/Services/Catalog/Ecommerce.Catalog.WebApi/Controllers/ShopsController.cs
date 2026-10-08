@@ -1,3 +1,5 @@
+using Ecommerce.Catalog.WebApi.Caching;
+using Microsoft.AspNetCore.OutputCaching;
 using Ecommerce.Catalog.Application.Common;
 using Ecommerce.Catalog.Application.Sellers;
 using Ecommerce.Shared.Authentication;
@@ -13,6 +15,7 @@ namespace Ecommerce.Catalog.WebApi.Controllers;
 public class ShopsController : ApiControllerBase
 {
     [AllowAnonymous]
+    [OutputCache(PolicyName = CatalogueCache.Policy)]
     [HttpGet("{sellerId:guid}")]
     public async Task<IActionResult> Get(Guid sellerId) => Ok(await Mediator.Send(new GetShopQuery(sellerId)));
 

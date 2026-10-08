@@ -5,6 +5,7 @@ using Ecommerce.Catalog.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Ecommerce.Catalog.Infrastructure;
 
@@ -12,7 +13,12 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<CatalogDbContext>(options =>
+        // The read cache is emptied after every committed write to the catalogue (specs/157). The host registers the
+        // real cache; anything else that builds this context gets one that holds nothing.
+        services.TryAddSingleton<ICatalogueReadCache, NoCatalogueReadCache>();
+        services.AddSingleton<CatalogueWrites>();
+
+        services.AddDbContext<CatalogDbContext>((provider, options) =>
             options.UseNpgsql(
                 configuration.GetConnectionString("DefaultConnection"),
                 // depends_on waits for a container's health check, not for readiness under load.
@@ -21,7 +27,8 @@ public static class DependencyInjection
                 npgsql => npgsql.EnableRetryOnFailure(
                     maxRetryCount: 5,
                     maxRetryDelay: TimeSpan.FromSeconds(10),
-                    errorCodesToAdd: null)));
+                    errorCodesToAdd: null))
+                .AddInterceptors(provider.GetRequiredService<CatalogueWrites>()));
 
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
