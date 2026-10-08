@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `b7772b6c`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bbcf9468`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -237,7 +237,7 @@ Entity `User`.
 | `TwoFactorSecret` | character varying(200) | yes |
 | `UpdatedAt` | timestamp with time zone |  |
 
-## Catalog - `ecommerce_catalog_db` (16 tables)
+## Catalog - `ecommerce_catalog_db` (21 tables)
 
 ### `categories`
 
@@ -253,6 +253,31 @@ Entity `Category`.
 | `ParentCategoryId` | uuid | yes |
 | `Slug` | character varying(150) |  |
 | `UpdatedAt` | timestamp with time zone |  |
+
+### `category_specification_translations`
+
+Entity `CategorySpecificationTranslation`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `Language` | character varying(10) |  |
+| `Name` | character varying(100) |  |
+| `SpecificationId` | uuid |  |
+
+### `category_specifications`
+
+Entity `CategorySpecification`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `CategoryId` | uuid |  |
+| `Code` | character varying(60) |  |
+| `CreatedAt` | timestamp with time zone |  |
+| `Kind` | character varying(10) |  |
+| `Name` | character varying(100) |  |
+| `Position` | integer |  |
 
 ### `category_translations`
 
@@ -324,6 +349,17 @@ Entity `Review`.
 | `ProductId` | uuid |  |
 | `Rating` | integer |  |
 | `UpdatedAt` | timestamp with time zone |  |
+
+### `product_specifications`
+
+Entity `ProductSpecification`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `ProductId` | uuid |  |
+| `SpecificationId` | uuid |  |
+| `OptionId` | uuid | yes |
+| `Text` | character varying(200) | yes |
 
 ### `product_translations`
 
@@ -444,6 +480,29 @@ Entity `Seller`.
 | `ShopName` | character varying(100) |  |
 | `Suspended` | boolean |  |
 | `SuspensionChangedAt` | timestamp with time zone | yes |
+
+### `specification_option_translations`
+
+Entity `SpecificationOptionTranslation`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `Language` | character varying(10) |  |
+| `OptionId` | uuid |  |
+| `Value` | character varying(100) |  |
+
+### `specification_options`
+
+Entity `SpecificationOption`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `Code` | character varying(60) |  |
+| `Position` | integer |  |
+| `SpecificationId` | uuid |  |
+| `Value` | character varying(100) |  |
 
 ### `variant_option_translations`
 

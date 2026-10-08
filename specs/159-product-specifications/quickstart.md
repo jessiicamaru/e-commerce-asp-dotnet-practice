@@ -13,6 +13,6 @@ Expected:
 - after seeding, `GET /api/products/{id}?lang=en` of the Sony A7 IV carries Brand: Sony, Sensor: Full-frame,
   Resolution: 33 MP; the second run changes nothing;
 - `GET /api/categories/{Electronics}/specifications` lists Brand with its options; filtering Electronics by Apple lists
-  the 4 Apple products;
+  the 3 Apple products;
 - the storefront's product page shows the table; choosing Electronics offers Brand; the seller's product page fills
   specifications in; the back office lists them per category.

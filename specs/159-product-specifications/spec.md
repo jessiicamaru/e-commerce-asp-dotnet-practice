@@ -98,7 +98,7 @@ Every vertical declares its specifications and every seeded product fills them i
   languages; a mutation shown failing.
 - **SC-002**: Client tests for the table, the filter, the seller's editor and the back office's management.
 - **SC-003**: On the stack, every seeded product shows a specifications table; filtering Electronics by Brand: Apple
-  lists the 4 Apple products; Bruno covers each endpoint and its refusals; `docs/reference` regenerated.
+  lists the 3 Apple products (iPhone 16, MacBook Air, AirPods Pro 2); Bruno covers each endpoint and its refusals; `docs/reference` regenerated.
 
 ## Assumptions
 

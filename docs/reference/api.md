@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `b7772b6c`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bbcf9468`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**207 endpoints** across 7 services.
+**217 endpoints** across 7 services.
 
 ## Identity (58)
 
@@ -69,7 +69,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (66)
+## Catalog (76)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -78,6 +78,15 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `DELETE` | `/api/categories/{id}` | Admin | Removes a category nothing is filed under (specs/024). A category with products in it is refused with 409 rather than emptied: neither orphaning them nor deleting them is what somebody tidying a taxonomy asked for. |
 | `PUT` | `/api/categories/{id}` | Admin | A category's own name and description, in the default language (#195, specs/097). The slug never changes. |
 | `PUT` | `/api/categories/{id}/parent` | Admin | Puts a category under a department, moves it, or makes it a department (specs/158) - its own endpoint, so a rename never moves anything. |
+| `GET` | `/api/categories/{id}/specifications` | anyone | What applies to products filed under this category - its department's, then its own - for anyone. |
+| `POST` | `/api/categories/{id}/specifications` | Admin |  |
+| `DELETE` | `/api/categories/{id}/specifications/{specificationId}` | Admin | Refused with 409 while any product has a value for it. |
+| `PUT` | `/api/categories/{id}/specifications/{specificationId}` | Admin |  |
+| `POST` | `/api/categories/{id}/specifications/{specificationId}/options` | Admin |  |
+| `DELETE` | `/api/categories/{id}/specifications/{specificationId}/options/{optionId}` | Admin | Refused with 409 while any product holds it. |
+| `PUT` | `/api/categories/{id}/specifications/{specificationId}/options/{optionId}` | Admin |  |
+| `PUT` | `/api/categories/{id}/specifications/{specificationId}/options/{optionId}/translations/{language}` | Admin |  |
+| `PUT` | `/api/categories/{id}/specifications/{specificationId}/translations/{language}` | Admin |  |
 | `DELETE` | `/api/categories/{id}/translations/{language}` | Admin | Takes a language away; the category falls back to its default text. |
 | `PUT` | `/api/categories/{id}/translations/{language}` | Admin | This category's name and description in one language (specs/026). An upsert, like a product's. |
 | `GET` | `/api/products` | anyone |  |
@@ -103,6 +112,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/products/{id}/resubmit` | Seller, Admin | Sends a rejected product back to the queue. The caller's own - somebody else's is 404. |
 | `DELETE` | `/api/products/{id}/saved` | signed in | Unsave it. Something not saved is no error. |
 | `PUT` | `/api/products/{id}/saved` | signed in | Save it. Again is fine; a product not on sale is a 404, like its public page. |
+| `PUT` | `/api/products/{id}/specifications` | Seller, Admin | The product's specifications, the whole set replaced (#366, specs/159): each an option of a choice specification or a text, for specifications of its category and department. A seller's change to an approved product sends it back to review. Somebody else's product is 404. |
 | `POST` | `/api/products/{id}/take-down` | Admin, Moderator |  |
 | `DELETE` | `/api/products/{id}/translations/{language}` | Seller, Admin | Takes a language away; the product falls back to its default text. |
 | `PUT` | `/api/products/{id}/translations/{language}` | Seller, Admin | This product's name and description in one language (specs/021). An upsert: writing it twice leaves the second text, not a conflict. |
