@@ -40,6 +40,8 @@ export interface Product {
    */
   original?: ProductText | null
   translations?: ProductTranslationText[] | null
+  /** On the lookup only (specs/159): the specifications of its category and department that have a value. */
+  specifications?: ProductSpecification[] | null
 }
 
 /** A product's own name and description - what was typed when it was listed (specs/124). */
@@ -116,6 +118,26 @@ export interface ProductQuery {
   maxPrice?: number
   /** Only what can be bought now. Sent only when true. */
   inStock?: boolean
+  /** Products holding every one of these specification options (specs/159) - sent as one `optionIds` per id. */
+  optionIds?: string[]
+}
+
+/** One line of a product's specifications table, in the reader's language (specs/159). */
+export interface ProductSpecification {
+  specificationId: string
+  name: string
+  kind: 'Text' | 'Choice'
+  optionId: string | null
+  text: string | null
+  /** What to show: the option translated, or the text as written. */
+  value: string
+}
+
+/** What the seller's form sends: an option for a choice, a text for a text. */
+export interface ProductSpecificationValue {
+  specificationId: string
+  optionId?: string
+  text?: string
 }
 
 /**

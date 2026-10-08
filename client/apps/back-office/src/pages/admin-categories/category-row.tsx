@@ -6,6 +6,7 @@ import { Input } from '@ecommerce/ui/input'
 import { Label } from '@ecommerce/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ecommerce/ui/select'
 import { cn } from 'cn'
+import { SpecificationsPanel } from './specifications-panel'
 import { ApiError } from '@ecommerce/core/config/axios'
 import type { useCategoryChanges } from '@ecommerce/core/hooks/category'
 import type { Category } from '@ecommerce/core/services/category/types'
@@ -42,6 +43,7 @@ export function CategoryRow({
   const translated = en?.language === 'en'
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [specifying, setSpecifying] = useState(false)
   const [viName, setViName] = useState(vi.name)
   const [viDescription, setViDescription] = useState(vi.description ?? '')
   const [enName, setEnName] = useState(translated ? en.name : '')
@@ -116,6 +118,15 @@ export function CategoryRow({
           <Button variant="outline" size="sm" className="rounded-full" onClick={() => setOpen((o) => !o)}>
             {t('categories.edit')}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            aria-expanded={specifying}
+            onClick={() => setSpecifying((s) => !s)}
+          >
+            {t('categories.specifications.title')}
+          </Button>
           {confirming ? (
             <Button variant="destructive" size="sm" className="rounded-full" onClick={remove}>
               {t('categories.confirmDelete')}
@@ -149,6 +160,8 @@ export function CategoryRow({
           </Button>
         </form>
       )}
+
+      {specifying && <SpecificationsPanel category={vi} />}
 
       {refusal && <p className="text-destructive text-sm">{refusal}</p>}
     </li>

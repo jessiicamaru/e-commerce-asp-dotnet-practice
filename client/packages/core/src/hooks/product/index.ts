@@ -2,7 +2,14 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { queryKeys } from '@ecommerce/core/constants/query-keys'
 import { CURRENCIES } from '@ecommerce/core/config/money'
 import { Product } from '@ecommerce/core/services/product'
-import type { NewProduct, NewVariant, ProductDetails, ProductQuery, ProductText } from '@ecommerce/core/services/product/types'
+import type {
+  NewProduct,
+  NewVariant,
+  ProductDetails,
+  ProductQuery,
+  ProductSpecificationValue,
+  ProductText,
+} from '@ecommerce/core/services/product/types'
 
 export function useProducts(query: ProductQuery) {
   return useQuery({
@@ -148,3 +155,7 @@ export function useResubmitProduct(id: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['product', id] }),
   })
 }
+
+/** The product's specifications, the whole set (specs/159); every read of the product is refreshed after. */
+export const useSetProductSpecifications = (productId: string) =>
+  useListingMutation((values: ProductSpecificationValue[]) => Product.setSpecifications(productId, values), productId)

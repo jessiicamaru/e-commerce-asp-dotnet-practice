@@ -80,3 +80,25 @@ describe('Product.recordView (specs/086)', () => {
     expect((post.mock.calls[0][1] as { viewer?: string }).viewer).toBeUndefined()
   })
 })
+
+describe('Product.list - specification options (specs/159)', () => {
+  /** ASP.NET binds a list from the key repeated; "a,b" would be one value no Guid parses. */
+  it('sends one optionIds per option chosen', async () => {
+    const get = vi.spyOn(http, 'get').mockResolvedValue({ data: { items: [] } })
+
+    await Product.list({ categoryId: 'c1', optionIds: ['o1', 'o2'] })
+
+    const [url] = get.mock.calls[0]
+    expect(new URLSearchParams(String(url).split('?')[1]).getAll('optionIds')).toEqual(['o1', 'o2'])
+  })
+
+  it('sends a product its whole set of specifications', async () => {
+    const put = vi.spyOn(http, 'put').mockResolvedValue({ data: [] })
+
+    await Product.setSpecifications('p1', [{ specificationId: 's1', optionId: 'o1' }, { specificationId: 's2', text: '6.1 inch' }])
+
+    expect(put).toHaveBeenCalledWith('/products/p1/specifications', {
+      values: [{ specificationId: 's1', optionId: 'o1' }, { specificationId: 's2', text: '6.1 inch' }],
+    })
+  })
+})

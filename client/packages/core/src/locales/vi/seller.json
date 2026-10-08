@@ -385,6 +385,14 @@
     "remove": "Xoá {{language}}",
     "removed": "Đã xoá chữ {{language}} - người đọc sẽ thấy chữ gốc."
   },
+  "specifications": {
+    "title": "Thông số",
+    "hint": "Những gì người mua so sánh - do danh mục quy định. Thay đổi sẽ đưa sản phẩm đã duyệt về chờ duyệt lại.",
+    "none": "Không ghi",
+    "save": "Lưu thông số",
+    "saved": "Đã lưu thông số.",
+    "failed": "Không lưu được thông số."
+  },
   "addVariant": {
     "title": "Thêm phiên bản",
     "hint": "Cỡ, màu hoặc mẫu khác. Phiên bản mới chưa có tồn kho; thêm xong hãy nhập tồn kho và giá các loại tiền khác.",

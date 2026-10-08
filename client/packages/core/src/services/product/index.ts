@@ -3,14 +3,33 @@
 import { http } from '@ecommerce/core/config/axios'
 import { CURRENCY_HEADER } from '@ecommerce/core/config/money'
 import { visitorId } from '@ecommerce/core/utils/shared'
-import type { NewProduct, NewVariant, Page, Product as ProductModel, ProductDetails, ProductQuery, ProductText } from './types'
+import type {
+  NewProduct,
+  NewVariant,
+  Page,
+  Product as ProductModel,
+  ProductDetails,
+  ProductQuery,
+  ProductSpecification,
+  ProductSpecificationValue,
+  ProductText,
+} from './types'
 
 /** Catalog's products. Browsing needs no account, so every call here is anonymous. */
 export class Product {
+  /** The product's specifications, the whole set replaced (specs/159). A seller's approved product goes back to review. */
+  static async setSpecifications(id: string, values: ProductSpecificationValue[]): Promise<ProductSpecification[]> {
+    const { data } = await http.put<ProductSpecification[]>(`/products/${id}/specifications`, { values })
+    return data
+  }
+
   static async list(query: ProductQuery): Promise<Page<ProductModel>> {
     const params = new URLSearchParams()
     for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined && value !== '') {
+      // A list is one parameter per item - `optionIds=a&optionIds=b` - which is what ASP.NET binds to a list (specs/159).
+      if (Array.isArray(value)) {
+        for (const item of value) params.append(key, String(item))
+      } else if (value !== undefined && value !== '') {
         params.set(key, String(value))
       }
     }

@@ -134,6 +134,15 @@
       "CarrierSaved": "Carrier saved",
       "CategoryCreated": "Category created",
       "CategoryMoved": "Category moved",
+      "ProductSpecificationsSet": "Product specifications set",
+      "SpecificationCreated": "Specification added",
+      "SpecificationDeleted": "Specification removed",
+      "SpecificationOptionAdded": "Specification option added",
+      "SpecificationOptionDeleted": "Specification option removed",
+      "SpecificationOptionRenamed": "Specification option renamed",
+      "SpecificationOptionTranslated": "Specification option translated",
+      "SpecificationRenamed": "Specification renamed",
+      "SpecificationTranslated": "Specification translated",
       "CategoryDeleted": "Category deleted",
       "CategoryTranslated": "Category translated",
       "CategoryTranslationRemoved": "Category translation removed",
@@ -701,7 +710,26 @@
     "moveTo": "Department of “{{name}}”",
     "moved": "“{{name}}” moved.",
     "underIt": "{{count}} under it - it stays a department",
-    "departmentOf": "in {{department}}"
+    "departmentOf": "in {{department}}",
+    "specifications": {
+      "title": "Specifications",
+      "none": "No specifications of its own yet.",
+      "name": "Specification (Vietnamese)",
+      "english": "English",
+      "kind": "Kind",
+      "kinds": {
+        "Choice": "Choice",
+        "Text": "Text"
+      },
+      "add": "Add",
+      "options": "Options, one per line: Tiếng Việt | English",
+      "optionsPlaceholder": "Bông | Cotton\nDa | Leather",
+      "optionPlaceholder": "New option: Tiếng Việt | English",
+      "newOption": "New option of “{{name}}”",
+      "removeOption": "Remove “{{value}}”",
+      "created": "Specification “{{name}}” added.",
+      "removed": "“{{name}}” removed."
+    }
   },
   "deliverySettings": {
     "title": "Delivery",

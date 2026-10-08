@@ -7,6 +7,7 @@ import { Availability } from '@/components/product/availability'
 import { ProductImage } from '@ecommerce/core/components/product/product-image'
 import { AddVariantForm } from '@/components/seller/add-variant'
 import { ProductDetailsCard } from '@/components/seller/product-details'
+import { ProductSpecificationsCard } from '@/components/seller/product-specifications'
 import { ProductTranslationsCard } from '@/components/seller/product-translations'
 import { VariantEditor } from '@/components/seller/variant-editor'
 import { ImageDropzone } from '@/components/shared/image-dropzone'
@@ -153,6 +154,7 @@ export function SellerProductPage() {
         <div className="grid gap-6">
           <ProductDetailsCard key={`${item.original?.name}|${item.original?.description}|${item.categoryId}`} product={item} />
           <ProductTranslationsCard key={JSON.stringify(item.translations ?? [])} product={item} />
+          <ProductSpecificationsCard key={`${item.categoryId}|${JSON.stringify(item.specifications ?? [])}`} product={item} />
 
           <Card className="rounded-3xl">
             <CardHeader>

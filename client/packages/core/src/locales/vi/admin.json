@@ -134,6 +134,15 @@
       "CarrierSaved": "Lưu đơn vị vận chuyển",
       "CategoryCreated": "Tạo danh mục",
       "CategoryMoved": "Chuyển danh mục",
+      "ProductSpecificationsSet": "Đặt thông số sản phẩm",
+      "SpecificationCreated": "Thêm thông số",
+      "SpecificationDeleted": "Bỏ thông số",
+      "SpecificationOptionAdded": "Thêm lựa chọn thông số",
+      "SpecificationOptionDeleted": "Bỏ lựa chọn thông số",
+      "SpecificationOptionRenamed": "Đổi tên lựa chọn thông số",
+      "SpecificationOptionTranslated": "Dịch lựa chọn thông số",
+      "SpecificationRenamed": "Đổi tên thông số",
+      "SpecificationTranslated": "Dịch thông số",
       "CategoryDeleted": "Xoá danh mục",
       "CategoryTranslated": "Dịch danh mục",
       "CategoryTranslationRemoved": "Xoá bản dịch danh mục",
@@ -701,7 +710,26 @@
     "moveTo": "Nhóm của “{{name}}”",
     "moved": "Đã chuyển “{{name}}”.",
     "underIt": "{{count}} danh mục bên trong - giữ là một nhóm",
-    "departmentOf": "thuộc {{department}}"
+    "departmentOf": "thuộc {{department}}",
+    "specifications": {
+      "title": "Thông số",
+      "none": "Chưa có thông số riêng.",
+      "name": "Thông số (tiếng Việt)",
+      "english": "Tiếng Anh",
+      "kind": "Loại",
+      "kinds": {
+        "Choice": "Lựa chọn",
+        "Text": "Văn bản"
+      },
+      "add": "Thêm",
+      "options": "Các lựa chọn, mỗi dòng một: Tiếng Việt | English",
+      "optionsPlaceholder": "Bông | Cotton\nDa | Leather",
+      "optionPlaceholder": "Lựa chọn mới: Tiếng Việt | English",
+      "newOption": "Lựa chọn mới của “{{name}}”",
+      "removeOption": "Bỏ “{{value}}”",
+      "created": "Đã thêm thông số “{{name}}”.",
+      "removed": "Đã bỏ “{{name}}”."
+    }
   },
   "deliverySettings": {
     "title": "Giao hàng",

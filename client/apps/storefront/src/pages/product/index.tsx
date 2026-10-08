@@ -5,6 +5,7 @@ import { ApiError } from '@ecommerce/core/config/axios'
 import { AddToCart } from '@/components/product/add-to-cart'
 import { CategoryBreadcrumb } from '@/components/product/category-breadcrumb'
 import { SaveButton } from '@/components/product/save-button'
+import { SpecificationsTable } from '@/components/product/specifications-table'
 import { ReportButton } from '@/components/report/report-button'
 import { StockBadge } from '@/components/product/stock-badge'
 import { ProductImage } from '@ecommerce/core/components/product/product-image'
@@ -154,6 +155,12 @@ export function ProductPage() {
           {variant && <p className="text-muted-foreground border-t pt-4 text-xs">{t('product.sku', { sku: variant.sku })}</p>}
         </div>
       </div>
+
+      {!!product.specifications?.length && (
+        <div className="mt-8">
+          <SpecificationsTable specifications={product.specifications} />
+        </div>
+      )}
 
       <ProductReviews product={product} />
       <ProductQuestions product={product} />
