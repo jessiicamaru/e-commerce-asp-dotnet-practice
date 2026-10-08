@@ -15,9 +15,23 @@ export class Category {
     return data
   }
 
-  /** Administrators (specs/097): a new category; the slug is its address and never changes. */
-  static async create(name: string, slug: string, description: string | null): Promise<CategoryModel> {
-    const { data } = await http.post<CategoryModel>('/categories', { name, slug, description, parentCategoryId: null })
+  /**
+   * Administrators (specs/097): a new category; the slug is its address and never changes. Under a department, or a
+   * department itself when `parentCategoryId` is null (specs/158).
+   */
+  static async create(
+    name: string,
+    slug: string,
+    description: string | null,
+    parentCategoryId: string | null = null,
+  ): Promise<CategoryModel> {
+    const { data } = await http.post<CategoryModel>('/categories', { name, slug, description, parentCategoryId })
+    return data
+  }
+
+  /** Under another department, or - null - a department of its own (specs/158). Its own endpoint: a rename never moves. */
+  static async move(id: string, parentCategoryId: string | null): Promise<CategoryModel> {
+    const { data } = await http.put<CategoryModel>(`/categories/${id}/parent`, { parentCategoryId })
     return data
   }
 

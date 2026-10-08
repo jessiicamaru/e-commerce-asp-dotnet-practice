@@ -4,6 +4,8 @@ export interface Choice {
   label: string
   /** Shown under the label, and searched too - e.g. a country's code. */
   hint?: string
+  /** Drawn indented, under the choice before it: a category under its department (specs/158). */
+  indent?: boolean
 }
 
 /**

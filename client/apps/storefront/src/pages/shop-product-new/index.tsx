@@ -12,6 +12,7 @@ import { Label } from '@ecommerce/ui/label'
 import { Textarea } from '@ecommerce/ui/textarea'
 import { DEFAULT_CURRENCY } from '@ecommerce/core/config/money'
 import { useCategories } from '@ecommerce/core/hooks/category'
+import { categoryChoices } from '@ecommerce/core/utils/category'
 import { useCreateProduct } from '@ecommerce/core/hooks/product'
 
 /**
@@ -84,7 +85,7 @@ export function NewProductPage() {
                 id="categoryId"
                 required
                 placeholder={t('create.categoryPlaceholder')}
-                choices={(categories.data ?? []).map((category) => ({ value: category.id, label: category.name }))}
+                choices={categoryChoices(categories.data ?? [])}
                 value={form.categoryId || null}
                 onChange={(value) => setForm((previous) => ({ ...previous, categoryId: value ?? '' }))}
               />

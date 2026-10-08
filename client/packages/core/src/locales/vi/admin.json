@@ -133,6 +133,7 @@
       "BanLifted": "Gỡ lệnh cấm",
       "CarrierSaved": "Lưu đơn vị vận chuyển",
       "CategoryCreated": "Tạo danh mục",
+      "CategoryMoved": "Chuyển danh mục",
       "CategoryDeleted": "Xoá danh mục",
       "CategoryTranslated": "Dịch danh mục",
       "CategoryTranslationRemoved": "Xoá bản dịch danh mục",
@@ -694,7 +695,13 @@
     "none": "Chưa có danh mục nào.",
     "loadFailed": "Không tải được danh mục.",
     "search": "Tên hoặc địa chỉ",
-    "noneFound": "Không có danh mục nào khớp."
+    "noneFound": "Không có danh mục nào khớp.",
+    "department": "Thuộc nhóm",
+    "noDepartment": "Không - là một nhóm riêng",
+    "moveTo": "Nhóm của “{{name}}”",
+    "moved": "Đã chuyển “{{name}}”.",
+    "underIt": "{{count}} danh mục bên trong - giữ là một nhóm",
+    "departmentOf": "thuộc {{department}}"
   },
   "deliverySettings": {
     "title": "Giao hàng",

@@ -24,6 +24,7 @@
     "paused": "Cửa hàng đang tạm nghỉ - chưa có gì được bán cho đến khi người bán quay lại."
   },
   "product": {
+    "breadcrumb": "Thuộc danh mục",
     "back": "← Về cửa hàng",
     "notFound": "Sản phẩm này không tồn tại.",
     "loadFailed": "Không tải được sản phẩm.",

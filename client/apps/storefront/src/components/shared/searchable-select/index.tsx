@@ -71,7 +71,7 @@ export function SearchableSelect({
         <ComboboxList>
           {(choice: Choice) => (
             <ComboboxItem key={choice.value} value={choice}>
-              <span className="grid">
+              <span className={cn('grid', choice.indent && 'pl-4')}>
                 <span>{choice.label}</span>
                 {choice.hint && <span className="text-muted-foreground text-xs">{choice.hint}</span>}
               </span>

@@ -133,6 +133,7 @@
       "BanLifted": "Ban lifted",
       "CarrierSaved": "Carrier saved",
       "CategoryCreated": "Category created",
+      "CategoryMoved": "Category moved",
       "CategoryDeleted": "Category deleted",
       "CategoryTranslated": "Category translated",
       "CategoryTranslationRemoved": "Category translation removed",
@@ -694,7 +695,13 @@
     "none": "No categories yet.",
     "loadFailed": "The categories could not be loaded.",
     "search": "Name or address",
-    "noneFound": "No category matches."
+    "noneFound": "No category matches.",
+    "department": "Department",
+    "noDepartment": "None - a department of its own",
+    "moveTo": "Department of “{{name}}”",
+    "moved": "“{{name}}” moved.",
+    "underIt": "{{count}} under it - it stays a department",
+    "departmentOf": "in {{department}}"
   },
   "deliverySettings": {
     "title": "Delivery",
