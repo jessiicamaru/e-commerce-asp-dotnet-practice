@@ -31,7 +31,7 @@ description: "Task list for Product specifications per category"
 - [x] T013 Bruno for every endpoint and refusal; `docs/reference` regenerated
 - [x] T014 On the stack: seeded twice, the table, the filter
 - [x] T015 Docs: catalog page, microservices design, CLAUDE.md, timeline, backlog
-- [ ] T016 Merged, closes #366
+- [x] T016 Merged in #367, closes #366
 
 ## Evidence
 
