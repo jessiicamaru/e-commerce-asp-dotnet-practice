@@ -17,7 +17,37 @@
       "en": {
         "name": "Sports & outdoors",
         "description": "Training and the outdoors"
-      }
+      },
+      "specifications": [
+        {
+          "code": "brand",
+          "vi": "Thương hiệu",
+          "en": "Brand",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "yonex",
+              "vi": "Yonex",
+              "en": "Yonex"
+            },
+            {
+              "code": "molten",
+              "vi": "Molten",
+              "en": "Molten"
+            },
+            {
+              "code": "naturehike",
+              "vi": "Naturehike",
+              "en": "Naturehike"
+            },
+            {
+              "code": "hydro-flask",
+              "vi": "Hydro Flask",
+              "en": "Hydro Flask"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "the-thao",
@@ -89,7 +119,10 @@
           "usd": 219,
           "stock": 8
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "yonex"
+      }
     },
     {
       "sku": "MOLTEN-F5A3400",
@@ -139,7 +172,10 @@
           "usd": 35,
           "stock": 30
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "molten"
+      }
     },
     {
       "sku": "YOGA-MAT-TPE6",
@@ -221,7 +257,10 @@
           "usd": 129,
           "stock": 7
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "naturehike"
+      }
     },
     {
       "sku": "HYDROFLASK-32",
@@ -271,7 +310,10 @@
           "usd": 44.95,
           "stock": 10
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "hydro-flask"
+      }
     }
   ]
 }

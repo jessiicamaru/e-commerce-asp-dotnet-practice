@@ -17,7 +17,42 @@
       "en": {
         "name": "Fashion",
         "description": "Clothing and shoes"
-      }
+      },
+      "specifications": [
+        {
+          "code": "brand",
+          "vi": "Thương hiệu",
+          "en": "Brand",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "uniqlo",
+              "vi": "Uniqlo",
+              "en": "Uniqlo"
+            },
+            {
+              "code": "levis",
+              "vi": "Levi's",
+              "en": "Levi's"
+            },
+            {
+              "code": "nike",
+              "vi": "Nike",
+              "en": "Nike"
+            },
+            {
+              "code": "bitis",
+              "vi": "Biti's",
+              "en": "Biti's"
+            },
+            {
+              "code": "converse",
+              "vi": "Converse",
+              "en": "Converse"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "thoi-trang-ao",
@@ -27,7 +62,27 @@
         "name": "Tops",
         "description": "T-shirts, shirts and jackets"
       },
-      "parent": "thoi-trang"
+      "parent": "thoi-trang",
+      "specifications": [
+        {
+          "code": "material",
+          "vi": "Chất liệu",
+          "en": "Material",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "cotton",
+              "vi": "Bông",
+              "en": "Cotton"
+            },
+            {
+              "code": "denim",
+              "vi": "Vải bò",
+              "en": "Denim"
+            }
+          ]
+        }
+      ]
     },
     {
       "slug": "thoi-trang-giay",
@@ -37,7 +92,32 @@
         "name": "Shoes",
         "description": "Sneakers and everyday shoes"
       },
-      "parent": "thoi-trang"
+      "parent": "thoi-trang",
+      "specifications": [
+        {
+          "code": "upper",
+          "vi": "Chất liệu thân giày",
+          "en": "Upper",
+          "kind": "Choice",
+          "options": [
+            {
+              "code": "leather",
+              "vi": "Da",
+              "en": "Leather"
+            },
+            {
+              "code": "canvas",
+              "vi": "Vải canvas",
+              "en": "Canvas"
+            },
+            {
+              "code": "knit",
+              "vi": "Vải dệt",
+              "en": "Knit"
+            }
+          ]
+        }
+      ]
     }
   ],
   "products": [
@@ -165,7 +245,11 @@
           "usd": 19.9,
           "stock": 35
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "uniqlo",
+        "material": "cotton"
+      }
     },
     {
       "sku": "LEVIS-TRUCKER",
@@ -215,7 +299,11 @@
           "usd": 98,
           "stock": 8
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "levis",
+        "material": "denim"
+      }
     },
     {
       "sku": "NIKE-AF1-07",
@@ -301,7 +389,11 @@
           "usd": 115,
           "stock": 5
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "nike",
+        "upper": "leather"
+      }
     },
     {
       "sku": "BITIS-HUNTER-X",
@@ -369,7 +461,11 @@
           "usd": 45,
           "stock": 12
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "bitis",
+        "upper": "knit"
+      }
     },
     {
       "sku": "CONVERSE-CHUCK70-HI",
@@ -467,7 +563,11 @@
           "usd": 90,
           "stock": 4
         }
-      ]
+      ],
+      "specifications": {
+        "brand": "converse",
+        "upper": "canvas"
+      }
     }
   ]
 }

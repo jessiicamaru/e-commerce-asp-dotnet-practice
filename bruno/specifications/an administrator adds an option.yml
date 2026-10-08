@@ -1,0 +1,36 @@
+info:
+  name: an administrator adds an option
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/categories/{{categoryId}}/specifications/{{specificationId}}/options"
+  body:
+    type: json
+    data: |-
+      {
+        "code": "gamma",
+        "value": "Gamma"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+          expect(res.body.options.map(o => o.code)).to.include("gamma");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/159.

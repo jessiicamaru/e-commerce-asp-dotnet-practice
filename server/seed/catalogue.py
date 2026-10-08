@@ -178,6 +178,60 @@ def load(only=()):
             problems.append(f"{where} is under {parent!r}, which is itself under {by_slug[parent]['parent']!r} - "
                             "categories go two levels deep")
 
+    # Specifications (specs/159): what a category declares, and what each product fills in - the server's rules again,
+    # so a mistake fails here rather than halfway through seeding.
+    import re
+    code = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+    declared = {}
+    for category in merged["categories"]:
+        where = f"{category['_file']}: category {category.get('slug')!r}"
+        own = {}
+        for spec in category.get("specifications") or []:
+            at = f"{where} specification {spec.get('code')!r}"
+            if not code.match(str(spec.get("code") or "")):
+                problems.append(f"{at}: the code is lower-case words joined by hyphens")
+            if spec.get("code") in own:
+                problems.append(f"{at} is declared twice")
+            _texts(at, spec, ["vi", "en"], problems)
+            if spec.get("kind") not in ("Text", "Choice"):
+                problems.append(f"{at}: kind is Text or Choice, got {spec.get('kind')!r}")
+            options = spec.get("options") or []
+            if spec.get("kind") == "Choice" and not options:
+                problems.append(f"{at}: a choice needs options")
+            if spec.get("kind") == "Text" and options:
+                problems.append(f"{at}: a text has no options")
+            seen_options = set()
+            for option in options:
+                if not code.match(str(option.get("code") or "")) or option.get("code") in seen_options:
+                    problems.append(f"{at}: option {option.get('code')!r} needs a unique code")
+                seen_options.add(option.get("code"))
+                _texts(f"{at} option {option.get('code')!r}", option, ["vi", "en"], problems)
+            own[spec.get("code")] = spec
+        declared[category.get("slug")] = own
+
+    def applicable(slug):
+        parent = by_slug.get(slug, {}).get("parent")
+        return {**(declared.get(parent) or {}), **(declared.get(slug) or {})}
+
+    for category in merged["categories"]:
+        parent = category.get("parent")
+        clash = set(declared.get(category.get("slug")) or {}) & set(declared.get(parent) or {})
+        if clash:
+            problems.append(f"{category['_file']}: category {category.get('slug')!r} redeclares its department's "
+                            f"{sorted(clash)} - one code, one specification")
+
+    for product in merged["products"]:
+        specs = applicable(product.get("category"))
+        for key, value in (product.get("specifications") or {}).items():
+            at = f"{product['_file']}: {product.get('sku')!r} specification {key!r}"
+            spec = specs.get(key)
+            if spec is None:
+                problems.append(f"{at} is not declared by its category or department")
+            elif spec.get("kind") == "Choice" and value not in {o.get("code") for o in spec.get("options") or []}:
+                problems.append(f"{at}: {value!r} is not one of its options")
+            elif spec.get("kind") == "Text" and not (isinstance(value, str) and value.strip() and len(value) <= 200):
+                problems.append(f"{at}: a text value is 1 to 200 characters")
+
     # A vertical may file a product under another vertical's category only when that one is loaded too.
     for product in merged["products"]:
         if product.get("category") not in slugs:

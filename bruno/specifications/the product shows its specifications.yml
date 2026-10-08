@@ -1,0 +1,28 @@
+info:
+  name: the product shows its specifications
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products/{{productId}}?lang=en"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+          expect(res.body.specifications.find(s => s.specificationId === bru.getVar("specificationId")).name).to.equal("Brand");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/159: the lookup carries the table, in the reader's language.

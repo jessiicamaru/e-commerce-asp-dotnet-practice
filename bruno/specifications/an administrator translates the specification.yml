@@ -1,0 +1,35 @@
+info:
+  name: an administrator translates the specification
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/categories/{{categoryId}}/specifications/{{specificationId}}/translations/en?lang=en"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Brand"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+          expect(res.body.name).to.equal("Brand");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/159: an upsert, like every translation. The answer is in the language asked for, hence ?lang=en.

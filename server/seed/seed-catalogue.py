@@ -227,6 +227,63 @@ def seed_variant(product_id, variant, present, is_first, token):
     return made["id"]
 
 
+def seed_specifications(data, categories, token):
+    """What each category is compared by (specs/159), declared by code - idempotent: a specification or an option
+    already there is kept, a missing one added - with its English written every run, an upsert."""
+    for category in data["categories"]:
+        wanted = category.get("specifications") or []
+        if not wanted:
+            continue
+
+        category_id = categories[category["slug"]]
+        present = {s["code"]: s for s in call("GET", f"/api/categories/{category_id}/specifications?lang=vi") or []
+                   if s["categoryId"] == category_id}
+
+        for spec in wanted:
+            current = present.get(spec["code"])
+            if current is None:
+                current = call("POST", f"/api/categories/{category_id}/specifications", {
+                    "code": spec["code"],
+                    "name": spec["vi"],
+                    "kind": spec["kind"],
+                    "options": [{"code": o["code"], "value": o["vi"]} for o in spec.get("options") or []] or None,
+                }, token)
+                ok(f"specification {category['slug']}/{spec['code']}")
+            else:
+                have = {o["code"] for o in current["options"]}
+                for option in spec.get("options") or []:
+                    if option["code"] not in have:
+                        current = call("POST", f"/api/categories/{category_id}/specifications/{current['id']}/options",
+                                       {"code": option["code"], "value": option["vi"]}, token)
+                        ok(f"option {category['slug']}/{spec['code']}/{option['code']}")
+
+            call("PUT", f"/api/categories/{category_id}/specifications/{current['id']}/translations/en",
+                 {"name": spec["en"]}, token)
+            by_code = {o["code"]: o["id"] for o in current["options"]}
+            for option in spec.get("options") or []:
+                call("PUT", f"/api/categories/{category_id}/specifications/{current['id']}/options/{by_code[option['code']]}"
+                     "/translations/en", {"value": option["en"]}, token)
+
+
+def seed_product_specifications(product, product_id, category_id, token):
+    """The product's values by code (specs/159), the whole set - a replace, so a second run changes nothing."""
+    wanted = product.get("specifications") or {}
+    if not wanted:
+        return
+
+    applicable = {s["code"]: s for s in call("GET", f"/api/categories/{category_id}/specifications?lang=vi") or []}
+    values = []
+    for code, value in wanted.items():
+        spec = applicable[code]
+        if spec["kind"] == "Choice":
+            values.append({"specificationId": spec["id"],
+                           "optionId": next(o["id"] for o in spec["options"] if o["code"] == value)})
+        else:
+            values.append({"specificationId": spec["id"], "text": value})
+
+    call("PUT", f"/api/products/{product_id}/specifications", {"values": values}, token)
+
+
 def translate_options(product_id, variant_id, wanted, detail, token):
     """The options of this variant, in English.
 
@@ -278,6 +335,7 @@ def main():
     ok("administrator signed in")
 
     categories = seed_categories(data, token)
+    seed_specifications(data, categories, token)
     known = every_product_sku()
     added = skipped = 0
 
@@ -334,6 +392,9 @@ def main():
 
         for variant, variant_id in seeded:
             translate_options(product_id, variant_id, variant["options"], detail, token)
+
+        # What it is compared by (specs/159), after its category's specifications exist.
+        seed_product_specifications(product, product_id, categories[product["category"]], token)
 
     print()
     ok(f"{added} product(s) added, {skipped} already there")
