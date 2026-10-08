@@ -106,6 +106,7 @@ public class CatalogTestFixture : IAsyncLifetime
         services.AddScoped<ILiveImageKeys>(sp => sp.GetRequiredService<IProductRepository>());
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<ISellerRepository, SellerRepository>();
+        services.AddScoped<ISpecificationRepository, SpecificationRepository>();
 
         // Who is writing (specs/027). An ADMINISTRATOR by default, because that is who every one
         // of these tests was before sellers existed and it keeps them testing what they are about.

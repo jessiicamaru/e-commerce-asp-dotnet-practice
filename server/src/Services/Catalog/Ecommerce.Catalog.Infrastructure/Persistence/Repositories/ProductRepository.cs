@@ -344,6 +344,15 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             query = query.Where(p => p.Availability);
         }
 
+        // Every option chosen (#366, specs/159): one EXISTS per option, on product_specifications' OptionId index.
+        if (filter?.OptionIds is { Count: > 0 } optionIds)
+        {
+            foreach (var optionId in optionIds.Distinct())
+            {
+                query = query.Where(p => _context.ProductSpecifications.Any(v => v.ProductId == p.Id && v.OptionId == optionId));
+            }
+        }
+
         // A range of the "from" price the card shows, in the currency ASKED FOR - never converted (specs/022).
         if (filter is { } f && (f.MinPrice is not null || f.MaxPrice is not null))
         {

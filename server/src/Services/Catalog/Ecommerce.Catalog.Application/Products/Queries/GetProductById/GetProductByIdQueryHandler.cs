@@ -15,7 +15,9 @@ public class GetProductByIdQueryHandler(
     IRequestCurrency currency,
     IOptions<CurrencyOptions> money,
     ISellerRepository sellers,
-    Ecommerce.Shared.Authentication.ICurrentUser currentUser)
+    Ecommerce.Shared.Authentication.ICurrentUser currentUser,
+    ICategoryRepository categories,
+    ISpecificationRepository specifications)
     : IRequestHandler<GetProductByIdQuery, ProductResponse?>
 {
     private readonly IProductRepository _productRepository = productRepository;
@@ -34,6 +36,12 @@ public class GetProductByIdQueryHandler(
             ? []
             : await sellers.GetNamesAsync([product.SellerId.Value], cancellationToken);
 
+        // Its specifications (specs/159): those of its category and its department, with this product's values.
+        var applicable = await Specifications.Applicable.ToCategoryAsync(product.CategoryId, categories, specifications, cancellationToken);
+        var table = Specifications.Applicable.Table(
+            applicable, await specifications.ValuesOfAsync(product.Id, cancellationToken),
+            language.Current, localization.Value.DefaultLanguage);
+
         return ProductResponse.WithVariants(
             product,
             language.Current,
@@ -42,6 +50,6 @@ public class GetProductByIdQueryHandler(
             money.Value.DefaultCurrency,
             product.SellerId is not null && shopNames.TryGetValue(product.SellerId.Value, out var shop)
                 ? shop
-                : null);
+                : null) with { Specifications = table };
     }
 }
