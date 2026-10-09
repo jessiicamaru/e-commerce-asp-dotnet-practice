@@ -244,7 +244,11 @@
       "VoucherCreated": "Voucher created",
       "VoucherDisabled": "Voucher disabled",
       "VoucherEdited": "Voucher edited",
-      "BackOfficeHandoffIssued": "Crossed to the back office"
+      "BackOfficeHandoffIssued": "Crossed to the back office",
+      "ProductPhotoAdded": "Product photo added",
+      "ProductPhotoRemoved": "Product photo removed from gallery",
+      "ProductPhotosReordered": "Product photos reordered",
+      "ProductCoverChosen": "Product cover changed"
     }
   },
   "reports": {
@@ -425,7 +429,10 @@
     "confirmTakeDown": "Take down",
     "approved": "“{{name}}” is on sale.",
     "rejected": "“{{name}}” was not approved.",
-    "takenDown": "“{{name}}” is off the shelf."
+    "takenDown": "“{{name}}” is off the shelf.",
+    "photos_one": "+{{count}} more photograph",
+    "photos_other": "+{{count}} more photographs",
+    "photo": "Photograph {{n}} of {{name}}"
   },
   "moderation": {
     "title": "Moderation",

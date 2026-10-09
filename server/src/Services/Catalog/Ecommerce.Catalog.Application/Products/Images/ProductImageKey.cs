@@ -54,6 +54,20 @@ public static class ProductImageKey
             ? $"/api/products/{variant.ProductId}/variants/{variant.Id}/image?v={Version(at)}{Access(variant.ImageAccessKey)}"
             : null;
 
+    /// <summary>
+    /// A gallery photograph's key (specs/160): prefixed like a variant's, so it can never be a product's or a variant's.
+    /// Stored on its row rather than derived, because a former cover in the gallery keeps the cover's key (research D2).
+    /// </summary>
+    public static string ForPhoto(Guid photoId, DateTime createdAt, ImageFormat format) =>
+        $"photo-{photoId:N}-{Version(createdAt)}.{format.Extension}";
+
+    /// <summary>A photograph's bytes never change - a different one is a new row - so its id is its version.</summary>
+    public static string PhotoVersion(Domain.Entities.ProductPhoto photo) => photo.Id.ToString("N");
+
+    /// <summary>A gallery photograph's address, keyed like the cover's (specs/081).</summary>
+    public static string UrlForPhoto(Domain.Entities.ProductPhoto photo) =>
+        $"/api/products/{photo.ProductId}/photos/{photo.Id}?v={PhotoVersion(photo)}{Access(photo.AccessKey)}";
+
     /// <summary>The current image's key, or <c>null</c> when the product has none.</summary>
     public static string? For(Product product) =>
         product.ImageUpdatedAt is { } at && ImageFormat.FromContentType(product.ImageContentType) is { } format

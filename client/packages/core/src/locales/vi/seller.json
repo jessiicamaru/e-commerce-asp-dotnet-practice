@@ -409,5 +409,27 @@
     "firstOption": "Sản phẩm mới bán một kiểu: hãy cho phiên bản mới một tuỳ chọn để phân biệt, vd. Màu: Bạc."
   },
   "menuWaiting_one": "{{count}} đang chờ",
-  "menuWaiting_other": "{{count}} đang chờ"
+  "menuWaiting_other": "{{count}} đang chờ",
+  "photos": {
+    "title": "Ảnh sản phẩm",
+    "hint": "Tối đa {{max}} ảnh. Ảnh đầu tiên là ảnh bìa - ảnh hiện trong danh sách. Thay đổi ảnh sẽ đưa sản phẩm đã duyệt về chờ duyệt lại.",
+    "cover": "Ảnh bìa",
+    "count": "{{count}}/{{max}}",
+    "add": "Thêm ảnh",
+    "adding": "Đang thêm {{done}}/{{total}}…",
+    "added_one": "Đã thêm {{count}} ảnh.",
+    "added_other": "Đã thêm {{count}} ảnh.",
+    "full": "Sản phẩm đã có đủ {{max}} ảnh. Hãy xoá bớt một ảnh trước.",
+    "skipped_one": "{{count}} tệp không phải ảnh dưới 2 MB nên đã bị bỏ qua.",
+    "skipped_other": "{{count}} tệp không phải ảnh dưới 2 MB nên đã bị bỏ qua.",
+    "makeCover": "Đặt ảnh {{n}} làm ảnh bìa",
+    "moveEarlier": "Đưa ảnh {{n}} lên trước",
+    "moveLater": "Đưa ảnh {{n}} ra sau",
+    "remove": "Xoá ảnh {{n}}",
+    "removed": "Đã xoá ảnh.",
+    "coverChanged": "Đã đổi ảnh bìa.",
+    "reordered": "Đã lưu thứ tự.",
+    "photo": "Ảnh {{n}}",
+    "none": "Chưa có ảnh nào ngoài ảnh bìa."
+  }
 }

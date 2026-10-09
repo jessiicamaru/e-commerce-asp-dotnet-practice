@@ -80,6 +80,9 @@ public class DeleteProductCommandHandler(
             .OfType<string>()
             .ToList();
 
+        // And the gallery's (specs/160): the rows cascade with the product, the files are this handler's to delete.
+        var photoKeys = (await _products.GetPhotosAsync(product.Id, cancellationToken)).Select(p => p.StorageKey).ToList();
+
         _products.Remove(product);
 
         // Staged, then published, then saved - one transaction holding the deletion and the
@@ -108,7 +111,7 @@ public class DeleteProductCommandHandler(
         // should never have existed (specs/024); a product that cannot be removed from the catalogue
         // because of a leftover PNG is a worse defect than the leak, and a read-only volume cannot be
         // retried into success. Same bargain, and the same wording, as RemoveProductImage.
-        foreach (var key in variantImageKeys.Prepend(imageKey).OfType<string>())
+        foreach (var key in variantImageKeys.Concat(photoKeys).Prepend(imageKey).OfType<string>())
         {
             try
             {

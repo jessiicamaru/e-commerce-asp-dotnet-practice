@@ -323,6 +323,43 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AccessKey")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.HasIndex("ProductId", "Position");
+
+                    b.ToTable("product_photos", (string)null);
+                });
+
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductQuestion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1046,6 +1083,15 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductPhoto", b =>
+                {
+                    b.HasOne("Ecommerce.Catalog.Domain.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Ecommerce.Catalog.Domain.Entities.ProductQuestion", b =>

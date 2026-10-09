@@ -77,7 +77,10 @@ public record ProductResponse(
     List<ProductTranslationText>? Translations = null,
     // specs/159, on the lookup only: the product's specifications that apply to its category, with their values, in the
     // reader's language - the product page's table and the seller's form.
-    List<Specifications.ProductSpecificationResponse>? Specifications = null
+    List<Specifications.ProductSpecificationResponse>? Specifications = null,
+    // specs/160, on the lookup and the review queue only: the photographs after the cover (ImageUrl), in order. The
+    // listing shows the cover alone and does not carry them.
+    List<Images.ProductPhotoResponse>? Photos = null
 )
 {
     /// <summary>

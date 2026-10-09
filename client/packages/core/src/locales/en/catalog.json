@@ -164,5 +164,9 @@
     "max": "Max",
     "reversed": "The minimum is above the maximum."
   },
-  "inStockOnly": "In stock only"
+  "inStockOnly": "In stock only",
+  "gallery": {
+    "label": "Photographs of {{name}}",
+    "show": "Show photograph {{n}} of {{count}}"
+  }
 }

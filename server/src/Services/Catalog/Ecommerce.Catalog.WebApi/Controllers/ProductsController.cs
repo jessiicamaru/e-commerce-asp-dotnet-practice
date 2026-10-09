@@ -248,6 +248,69 @@ public class ProductsController : ApiControllerBase
         return NoContent();
     }
 
+    // ---- The gallery (specs/160, #368): the photographs after the cover. Same rules as the cover, one row each.
+
+    /// <summary>Add a photograph - the cover when there is none. JPEG, PNG or WebP by content, at most 2 MB.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPost("{id:guid}/photos")]
+    [RequestSizeLimit(ProductImageKey.MaxBytes + 64 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ProductImageKey.MaxBytes + 64 * 1024)]
+    public async Task<IActionResult> AddPhoto(Guid id, IFormFile? file)
+    {
+        if (file is null)
+        {
+            throw new ValidationException([new ValidationFailure("File", "Send the image as a multipart part named 'file'.")]);
+        }
+
+        await using var content = file.OpenReadStream();
+        return Ok(await Mediator.Send(new AddProductPhotoCommand(id, content, file.Length)));
+    }
+
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpDelete("{id:guid}/photos/{photoId:guid}")]
+    public async Task<IActionResult> RemovePhoto(Guid id, Guid photoId)
+    {
+        await Mediator.Send(new RemoveProductPhotoCommand(id, photoId));
+        return NoContent();
+    }
+
+    /// <summary>Make a photograph the cover; the previous cover takes its place.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPost("{id:guid}/photos/{photoId:guid}/cover")]
+    public async Task<IActionResult> MakePhotoCover(Guid id, Guid photoId)
+    {
+        return Ok(await Mediator.Send(new MakeProductPhotoCoverCommand(id, photoId)));
+    }
+
+    /// <summary>Every photograph after the cover, in the order wanted, each once.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPut("{id:guid}/photos/order")]
+    public async Task<IActionResult> ReorderPhotos(Guid id, [FromBody] PhotoOrderRequest request)
+    {
+        return Ok(await Mediator.Send(new ReorderProductPhotosCommand(id, request.PhotoIds ?? [])));
+    }
+
+    public record PhotoOrderRequest(List<Guid>? PhotoIds);
+
+    /// <summary>
+    /// One photograph, for anyone - while its product is on sale, or with its own <c>k</c> (specs/081). Its bytes never
+    /// change, so the address with its <c>v</c> is cacheable for good.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/photos/{photoId:guid}")]
+    public async Task<IActionResult> GetPhoto(Guid id, Guid photoId, [FromQuery] string? v, [FromQuery] Guid? k)
+    {
+        var image = await Mediator.Send(new GetProductPhotoQuery(id, photoId, k));
+        if (image is null)
+        {
+            return NotFound();
+        }
+
+        Response.Headers.CacheControl = CacheFor(image, v);
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(image.Content, image.ContentType);
+    }
+
     /// <summary>
     /// A product's image, for anyone. Cacheable for good only when <c>v</c> names the current version -
     /// the address changes with the image, so that is safe (specs/019 D6).

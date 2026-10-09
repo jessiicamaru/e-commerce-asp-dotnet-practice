@@ -42,6 +42,17 @@ export interface Product {
   translations?: ProductTranslationText[] | null
   /** On the lookup only (specs/159): the specifications of its category and department that have a value. */
   specifications?: ProductSpecification[] | null
+  /**
+   * On the lookup and the review queue (specs/160): the photographs after the cover (`imageUrl`), in order. Null on the
+   * listing, which shows the cover alone.
+   */
+  photos?: ProductPhoto[] | null
+}
+
+/** One of a product's photographs after its cover (specs/160). */
+export interface ProductPhoto {
+  id: string
+  url: string
 }
 
 /** A product's own name and description - what was typed when it was listed (specs/124). */

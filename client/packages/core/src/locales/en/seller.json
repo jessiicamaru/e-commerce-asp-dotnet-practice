@@ -410,5 +410,27 @@
     "firstOption": "Sold one way so far: give the new shape an option that tells it apart, such as Colour: Silver."
   },
   "menuWaiting_one": "{{count}} waiting",
-  "menuWaiting_other": "{{count}} waiting"
+  "menuWaiting_other": "{{count}} waiting",
+  "photos": {
+    "title": "Photographs",
+    "hint": "Up to {{max}} in all. The first is the cover - what the listing shows. A change sends an approved product back to review.",
+    "cover": "Cover",
+    "count": "{{count}} of {{max}}",
+    "add": "Add photographs",
+    "adding": "Adding {{done}} of {{total}}…",
+    "added_one": "{{count}} photograph added.",
+    "added_other": "{{count}} photographs added.",
+    "full": "This product already has {{max}} photographs. Remove one first.",
+    "skipped_one": "{{count}} file was not an image under 2 MB and was skipped.",
+    "skipped_other": "{{count}} files were not images under 2 MB and were skipped.",
+    "makeCover": "Make photograph {{n}} the cover",
+    "moveEarlier": "Move photograph {{n}} earlier",
+    "moveLater": "Move photograph {{n}} later",
+    "remove": "Remove photograph {{n}}",
+    "removed": "Photograph removed.",
+    "coverChanged": "Cover changed.",
+    "reordered": "Order saved.",
+    "photo": "Photograph {{n}}",
+    "none": "No photographs after the cover yet."
+  }
 }

@@ -101,6 +101,23 @@ export function AdminProductsPage() {
                         {t('review.soldBy', { shop: p.sellerName ?? t('review.theShop') })} ·{' '}
                         <Price value={p.price} currency={p.currency} />
                       </p>
+                      {/* Every photograph, not only the cover (specs/160): any of them may be what needs a decision. */}
+                      {(p.photos?.length ?? 0) > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={t('review.photos', { count: p.photos!.length })}>
+                          {p.photos!.map((photo, index) => (
+                            <li key={photo.id} className="w-12">
+                              <a
+                                href={photo.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={t('review.photo', { n: index + 2, name: p.name })}
+                              >
+                                <ProductImage product={p} imageUrl={photo.url} thumb />
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <ProductLink productId={p.id}

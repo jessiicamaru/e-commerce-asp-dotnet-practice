@@ -1,0 +1,44 @@
+info:
+  name: add a photograph
+  type: http
+  seq: 72
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/products/{{productId}}/photos"
+  body:
+    type: multipart-form
+    data:
+      - name: file
+        type: file
+        value:
+          - fixtures/pixel.png
+        contentType: image/png
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.photos) { bru.setVar("photoA", res.body.photos[0].id); bru.setVar("photoAUrl", res.body.photos[0].url); }
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("it follows the cover, with its own keyed address", function() {
+          expect(res.body.imageUrl).to.equal(bru.getVar("coverUrl"));
+          expect(res.body.photos).to.have.length(1);
+          expect(res.body.photos[0].url).to.match(/^\/api\/products\/[0-9a-f-]+\/photos\/[0-9a-f-]+\?v=[0-9a-f]{32}&k=[0-9a-f]{32}$/);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/160: Seller (own) or Admin. One multipart part `file`, like the cover; with no cover it would become the cover.

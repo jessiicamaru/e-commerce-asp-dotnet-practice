@@ -88,7 +88,59 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             }
         }
 
+        // The gallery's photographs (specs/160) store their keys: a former cover keeps the cover's key form.
+        keys.UnionWith(await _context.ProductPhotos.AsNoTracking().Select(p => p.StorageKey).ToListAsync(cancellationToken));
+
         return keys;
+    }
+
+    public Task<List<ProductPhoto>> GetPhotosAsync(Guid productId, CancellationToken cancellationToken = default) =>
+        _context.ProductPhotos
+            .Where(p => p.ProductId == productId)
+            .OrderBy(p => p.Position).ThenBy(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+    public async Task<Dictionary<Guid, List<ProductPhoto>>> GetPhotosAsync(
+        IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default)
+    {
+        if (productIds.Count == 0)
+        {
+            return [];
+        }
+
+        var photos = await _context.ProductPhotos.AsNoTracking()
+            .Where(p => productIds.Contains(p.ProductId))
+            .OrderBy(p => p.Position).ThenBy(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
+        return photos.GroupBy(p => p.ProductId).ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    public Task<ProductPhoto?> GetPhotoAsync(Guid photoId, CancellationToken cancellationToken = default) =>
+        _context.ProductPhotos.FirstOrDefaultAsync(p => p.Id == photoId, cancellationToken);
+
+    public void AddPhoto(ProductPhoto photo) => _context.ProductPhotos.Add(photo);
+
+    public void RemovePhoto(ProductPhoto photo) => _context.ProductPhotos.Remove(photo);
+
+    public async Task<bool> SwitchCoverAsync(
+        Guid productId, DateTime? expectedUpdatedAt, string contentType, DateTime updatedAt, Guid accessKey,
+        Func<Task> stage, CancellationToken cancellationToken = default)
+    {
+        // Production retries (EnableRetryOnFailure), and a transaction outside a strategy throws.
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            if (await TrySetImageAsync(productId, expectedUpdatedAt, contentType, updatedAt, accessKey, cancellationToken) == 0)
+            {
+                return false;
+            }
+
+            await stage();
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        });
     }
 
     public Task<int> TrySetVariantImageAsync(

@@ -244,7 +244,11 @@
       "VoucherCreated": "Tạo voucher",
       "VoucherDisabled": "Tắt voucher",
       "VoucherEdited": "Sửa voucher",
-      "BackOfficeHandoffIssued": "Chuyển sang trang quản trị"
+      "BackOfficeHandoffIssued": "Chuyển sang trang quản trị",
+      "ProductPhotoAdded": "Thêm ảnh sản phẩm",
+      "ProductPhotoRemoved": "Xoá ảnh khỏi bộ ảnh",
+      "ProductPhotosReordered": "Sắp xếp lại ảnh sản phẩm",
+      "ProductCoverChosen": "Đổi ảnh bìa sản phẩm"
     }
   },
   "reports": {
@@ -425,7 +429,10 @@
     "confirmTakeDown": "Gỡ xuống",
     "approved": "“{{name}}” đã được bán.",
     "rejected": "Đã từ chối “{{name}}”.",
-    "takenDown": "Đã gỡ “{{name}}” khỏi kệ."
+    "takenDown": "Đã gỡ “{{name}}” khỏi kệ.",
+    "photos_one": "+{{count}} ảnh nữa",
+    "photos_other": "+{{count}} ảnh nữa",
+    "photo": "Ảnh {{n}} của {{name}}"
   },
   "moderation": {
     "title": "Kiểm duyệt",

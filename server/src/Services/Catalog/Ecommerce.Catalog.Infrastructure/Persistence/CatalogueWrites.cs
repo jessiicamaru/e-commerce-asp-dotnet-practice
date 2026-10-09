@@ -44,7 +44,7 @@ public sealed partial class CatalogueWrites(ICatalogueReadCache cache) : DbComma
     /// A CTE's <c>UPDATE</c> and an upsert's <c>INSERT INTO ... ON CONFLICT</c> are matched by the same words.
     /// </summary>
     [GeneratedRegex(
-        """\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:"?public"?\.)?"?(?:products|product_variants|variant_prices|product_translations|variant_options|variant_option_translations|categories|category_translations|sellers|category_specifications|category_specification_translations|specification_options|specification_option_translations|product_specifications)"?(?![\w"])""",
+        """\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(?:"?public"?\.)?"?(?:products|product_variants|variant_prices|product_translations|variant_options|variant_option_translations|categories|category_translations|sellers|category_specifications|category_specification_translations|specification_options|specification_option_translations|product_specifications|product_photos)"?(?![\w"])""",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex WritesTheCatalogue();
 

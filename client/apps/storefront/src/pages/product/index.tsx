@@ -8,7 +8,7 @@ import { SaveButton } from '@/components/product/save-button'
 import { SpecificationsTable } from '@/components/product/specifications-table'
 import { ReportButton } from '@/components/report/report-button'
 import { StockBadge } from '@/components/product/stock-badge'
-import { ProductImage } from '@ecommerce/core/components/product/product-image'
+import { ProductGallery } from '@/components/product/product-gallery'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct } from '@ecommerce/core/hooks/product'
@@ -67,8 +67,8 @@ export function ProductPage() {
         <div className="bg-card ring-border/60 rounded-[2rem] p-4 ring-1">
           {/* The picture follows the choice (specs/032). `variant.imageUrl` is the variant's own
               or the product's, folded together by the server, so this needs no fallback of its
-              own - and cannot get one wrong. */}
-          <ProductImage product={product} imageUrl={variant?.imageUrl} large />
+              own - and cannot get one wrong. The gallery's thumbnails sit beneath it (specs/160). */}
+          <ProductGallery product={product} variantImageUrl={variant?.imageUrl} />
         </div>
 
         <div className="flex flex-col gap-4 lg:pt-4">

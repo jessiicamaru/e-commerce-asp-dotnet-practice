@@ -20,9 +20,11 @@ public class RemoveProductImageCommandHandler(
     IProductImageStore store,
     ICurrentUser currentUser,
     ILogger<RemoveProductImageCommandHandler> logger,
-    IAuditTrail audit)
+    IAuditTrail audit,
+    ISender sender)
     : IRequestHandler<RemoveProductImageCommand>
 {
+    private readonly ISender _sender = sender;
     private readonly IAuditTrail _audit = audit;
 
     private readonly IProductRepository _products = products;
@@ -42,6 +44,13 @@ public class RemoveProductImageCommandHandler(
         var key = ProductImageKey.For(product);
         if (key is null)
         {
+            return;
+        }
+
+        // A gallery is never left without a cover (specs/160): the first photograph after it takes its place.
+        if ((await _products.GetPhotosAsync(product.Id, cancellationToken)).Count > 0)
+        {
+            await _sender.Send(new PromoteFirstProductPhotoCommand(product.Id), cancellationToken);
             return;
         }
 

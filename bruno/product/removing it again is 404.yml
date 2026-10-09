@@ -1,0 +1,28 @@
+info:
+  name: removing it again is 404
+  type: http
+  seq: 81
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/{{productId}}/photos/{{photoB}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 404", function() {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  
