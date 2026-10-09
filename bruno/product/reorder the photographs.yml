@@ -1,0 +1,37 @@
+info:
+  name: reorder the photographs
+  type: http
+  seq: 76
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/photos/order"
+  body:
+    type: json
+    data: |-
+      {
+        "photoIds": ["{{photoB}}", "{{photoA}}"]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("in the order sent", function() {
+          expect(res.body.photos.map(p => p.id)).to.eql([bru.getVar("photoB"), bru.getVar("photoA")]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/160: every photograph after the cover, each once.

@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (318 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (330 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -1185,6 +1185,15 @@ product's id (12 of 12 products), so without it the two keys differ only by two 
 not to agree. `FileSystemProductImageStore` validates the key shape before it becomes a path, so a
 new key form means widening that pattern too. The listing card still shows the **product's**
 picture, deliberately - a card should not show one arbitrary shape of the thing.
+
+**A product has a gallery** (specs/160, #368): up to 10 photographs - the **cover** is still the product's own (above),
+the rest are `product_photos` rows in order. Add (the cover when there is none), remove (removing the cover promotes the
+first), reorder (the whole list, each once) and make cover, under `/api/products/{id}/photos`, each write-switch-delete,
+audited, and a seller's change sends an approved product back to review. ⚠️ A photograph's key is **stored**
+(`StorageKey`), not derived: making a photograph the cover copies its bytes to a new cover key and moves the old cover into
+the gallery **keeping its file**, so a gallery row may hold a cover-form key. ⚠️ A new reader of a product's files (the
+orphan report's live keys, product deletion) must read `product_photos` too. `photos` is on the lookup and the review
+queue only, never the listing.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)

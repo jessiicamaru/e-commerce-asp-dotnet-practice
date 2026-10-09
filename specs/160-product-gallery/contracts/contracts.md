@@ -15,7 +15,8 @@ All through the gateway's existing `/api/products/**` route. No message, no gRPC
 - In gallery order, **after** the cover (`imageUrl`, unchanged).
 - Filled by `GET /api/products/{id}` and by `GET /api/products/review` (staff); **`null`** on the listing and other
   reads.
-- `k` is present only for a product off the shelf; the address is given only to whoever may read the product.
+- The address carries `v` (the photograph's id - its bytes never change) and `k`, like the cover's (specs/081); `k`
+  matters only while the product is off the shelf, and the address is given only to whoever may read the product.
 
 ## Writes - Seller (own, else 404) or Admin; a seller's change to an approved product sends it back to review
 

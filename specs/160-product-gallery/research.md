@@ -52,6 +52,10 @@ photograph the cover (the existing cover path), so a gallery never has photograp
 
 **Rationale**: enough for a listing (marketplaces commonly allow 8-12), and it bounds a moderator's review and the page.
 
+**Accepted**: the count is checked before the insert, not under a lock, so two adds sent at the same instant to a product
+holding 9 could make 11. The limit bounds a page and a review, not money or stock; a lock on the product row for every
+add was judged not worth it. Sequential adds - the seller's card sends them one at a time - always stop at 10.
+
 ## D5 - Every gallery change sends a seller's approved product back to review
 
 **Decision**: add, remove, reorder and cover change all call `ProductReview.AfterSellerEditAsync`.

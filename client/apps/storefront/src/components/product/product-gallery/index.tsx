@@ -36,7 +36,7 @@ export function ProductGallery({
       {urls.length > 1 && (
         <ul
           aria-label={t('gallery.label', { name: product.name })}
-          className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1"
+          className="-mx-1 flex snap-x gap-2 overflow-x-auto p-1"
         >
           {urls.map((url, index) => (
             <li key={url} className="w-16 shrink-0 snap-start sm:w-20">

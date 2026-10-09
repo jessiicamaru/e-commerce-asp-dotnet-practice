@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bbcf9468`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `90cad08b`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**217 endpoints** across 7 services.
+**222 endpoints** across 7 services.
 
 ## Identity (58)
 
@@ -69,7 +69,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (76)
+## Catalog (81)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -108,6 +108,11 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/products/{id}/image` | anyone | A product's image, for anyone. Cacheable for good only when v names the current version - the address changes with the image, so that is safe (specs/019 D6). |
 | `PUT` | `/api/products/{id}/image` | Seller, Admin | Give a product its image, or replace it (specs/019). One multipart part named file; JPEG, PNG or WebP by content, at most 2 MB. |
 | `PUT` | `/api/products/{id}/options/{optionId}/translations/{language}` | Seller, Admin | One option in one language - Kit: Body only → Bộ: Chỉ thân máy. Option values are read by customers as much as names are. |
+| `POST` | `/api/products/{id}/photos` | Seller, Admin | Add a photograph - the cover when there is none. JPEG, PNG or WebP by content, at most 2 MB. |
+| `PUT` | `/api/products/{id}/photos/order` | Seller, Admin | Every photograph after the cover, in the order wanted, each once. |
+| `DELETE` | `/api/products/{id}/photos/{photoId}` | Seller, Admin |  |
+| `GET` | `/api/products/{id}/photos/{photoId}` | anyone | One photograph, for anyone - while its product is on sale, or with its own k (specs/081). Its bytes never change, so the address with its v is cacheable for good. |
+| `POST` | `/api/products/{id}/photos/{photoId}/cover` | Seller, Admin | Make a photograph the cover; the previous cover takes its place. |
 | `POST` | `/api/products/{id}/reject` | Admin, Moderator |  |
 | `POST` | `/api/products/{id}/resubmit` | Seller, Admin | Sends a rejected product back to the queue. The caller's own - somebody else's is 404. |
 | `DELETE` | `/api/products/{id}/saved` | signed in | Unsave it. Something not saved is no error. |

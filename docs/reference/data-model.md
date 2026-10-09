@@ -1,6 +1,6 @@
 # Data model
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `bbcf9468`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `90cad08b`. Do not edit by hand - change the code and run the script again.
 
 Every table in every service's database, read from the EF Core model snapshot - so it is the schema the migrations produce. Each service owns its database outright; nothing joins across them, and a value that crosses a service boundary (a product id in an order line, say) is a copy, not a foreign key. The MassTransit outbox and inbox tables (`InboxState`, `OutboxMessage`, `OutboxState`) are in every database that publishes or consumes and are listed once here rather than per service.
 
@@ -237,7 +237,7 @@ Entity `User`.
 | `TwoFactorSecret` | character varying(200) | yes |
 | `UpdatedAt` | timestamp with time zone |  |
 
-## Catalog - `ecommerce_catalog_db` (21 tables)
+## Catalog - `ecommerce_catalog_db` (22 tables)
 
 ### `categories`
 
@@ -308,6 +308,20 @@ Entity `ContentReport`.
 | `Status` | character varying(16) |  |
 | `TargetId` | uuid |  |
 | `TargetType` | character varying(16) |  |
+
+### `product_photos`
+
+Entity `ProductPhoto`.
+
+| Column | Type | Null |
+| :-- | :-- | :-- |
+| `Id` | uuid |  |
+| `AccessKey` | uuid |  |
+| `ContentType` | character varying(32) |  |
+| `CreatedAt` | timestamp with time zone |  |
+| `Position` | integer |  |
+| `ProductId` | uuid |  |
+| `StorageKey` | character varying(128) |  |
 
 ### `product_questions`
 
