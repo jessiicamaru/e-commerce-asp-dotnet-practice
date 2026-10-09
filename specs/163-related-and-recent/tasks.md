@@ -25,7 +25,7 @@ description: "Task list for Related products and recently viewed"
 - [x] T007 Bruno for both reads and the refusals; `docs/reference` regenerated
 - [x] T008 On the stack: the quickstart and a browser check
 - [x] T009 Docs: catalog page, CLAUDE.md, timeline, backlog
-- [ ] T010 Merged, closes #375
+- [x] T010 Merged in #377, closes #375
 
 ## Evidence
 
