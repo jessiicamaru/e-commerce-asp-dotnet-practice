@@ -103,5 +103,9 @@
   "compareAt": {
     "was": "Giá cũ {{price}}",
     "off": "-{{percent}}%"
+  },
+  "search": {
+    "suggestions": "Gợi ý",
+    "category": "Danh mục"
   }
 }
