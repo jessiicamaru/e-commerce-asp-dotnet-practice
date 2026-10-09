@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { StockBadge } from '@/components/product/stock-badge'
+import { CompareAt } from '@ecommerce/core/components/shared/compare-at'
 import { Price } from '@ecommerce/core/components/shared/price'
 import { Label } from '@ecommerce/ui/label'
 import { RadioGroup, RadioGroupItem } from '@ecommerce/ui/radio-group'
@@ -64,7 +65,10 @@ export function VariantChooser({
                   <span className="text-muted-foreground font-mono text-xs">{variant.sku}</span>
                 </span>
                 <span className="grid justify-items-end gap-1">
-                  <Price value={variant.price} currency={variant.currency} className="font-semibold" />
+                  <span className="inline-flex flex-wrap items-baseline justify-end gap-x-1.5">
+                    <CompareAt price={variant.price} compareAt={variant.compareAtPrice} currency={variant.currency} className="text-sm" />
+                    <Price value={variant.price} currency={variant.currency} className="font-semibold" />
+                  </span>
                   <StockBadge available={stock[variant.id]?.quantityAvailable} pending={stockPending} />
                 </span>
               </span>

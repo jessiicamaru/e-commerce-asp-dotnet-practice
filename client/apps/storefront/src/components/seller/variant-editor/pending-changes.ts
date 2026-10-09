@@ -4,9 +4,11 @@
  * else changed a minute ago.
  */
 export function pendingChanges(
-  typed: { prices: Record<string, string>; onHand: string | undefined; lowStock?: string },
+  typed: { prices: Record<string, string>; onHand: string | undefined; lowStock?: string; compareAts?: Record<string, string> },
   current: {
     prices: Record<string, number | null>
+    /** What each price is compared against, null for none (specs/161). */
+    compareAts?: Record<string, number | null>
     onHand: number | null
     /** The variant's own line, or null when it follows the shop's default (specs/102). */
     lowStock?: number | null
@@ -23,7 +25,16 @@ export function pendingChanges(
       ? onHandNumber
       : null
 
-  return { prices, onHand, lowStock: lowStockChange(typed.lowStock, current.lowStock ?? null) }
+  // An emptied box clears a compare-at the price has; a typed amount sets one (specs/161). The server decides whether it
+  // is above the price - after the prices above are saved, so a new price counts.
+  const compareAts = Object.entries(typed.compareAts ?? {}).flatMap(([currency, value]) => {
+    const had = current.compareAts?.[currency] ?? null
+    if (value.trim() === '') return had === null ? [] : [{ currency, amount: null as number | null }]
+    const amount = Number(value.replace(/[\s,]/g, ''))
+    return Number.isFinite(amount) && amount !== had ? [{ currency, amount: amount as number | null }] : []
+  })
+
+  return { prices, onHand, lowStock: lowStockChange(typed.lowStock, current.lowStock ?? null), compareAts }
 }
 
 /**

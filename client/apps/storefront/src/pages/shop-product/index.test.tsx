@@ -119,6 +119,45 @@ describe('SellerProductPage', () => {
     expect(setPrice).toHaveBeenCalledTimes(1)
   })
 
+  /**
+   * A compare-at (specs/161) is saved AFTER the prices: it must be above the price it will be shown beside, so a price
+   * lowered in the same save must already count.
+   */
+  it('saves a compare-at after the price', async () => {
+    const calls: string[] = []
+    vi.spyOn(Product, 'setPrice').mockImplementation(async () => void calls.push('price'))
+    const setCompareAt = vi.spyOn(Product, 'setCompareAt').mockImplementation(async () => void calls.push('compare-at'))
+    const user = userEvent.setup()
+    renderPage()
+
+    const price = await priceBox('VND')
+    await user.clear(price)
+    await user.type(price, '48000000')
+    await user.type(screen.getByLabelText('Compare-at price in VND'), '52000000')
+    await user.click(screen.getByRole('button', { name: /Save variant/i }))
+
+    await waitFor(() => expect(setCompareAt).toHaveBeenCalledWith('p1', 'p1', 'VND', 52_000_000))
+    expect(calls).toEqual(['price', 'compare-at'])
+  })
+
+  it('clears a compare-at whose box is emptied', async () => {
+    vi.spyOn(Product, 'getAsOwner').mockImplementation(async (_id, currency) =>
+      currency === 'USD'
+        ? inCurrency('USD', null)
+        : { ...inCurrency('VND', 48000000), variants: [{ ...inCurrency('VND', 48000000).variants![0], compareAtPrice: 52000000 }] },
+    )
+    const clear = vi.spyOn(Product, 'clearCompareAt').mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage()
+
+    const box = await screen.findByLabelText('Compare-at price in VND')
+    await waitFor(() => expect(box).toHaveValue('52 000 000'))
+    await user.clear(box)
+    await user.click(screen.getByRole('button', { name: /Save variant/i }))
+
+    await waitFor(() => expect(clear).toHaveBeenCalledWith('p1', 'p1', 'VND'))
+  })
+
   /** Nothing to save, nothing to press: a save button that sends an unchanged form is a no-op at best. */
   it('does not offer to save until something has changed', async () => {
     renderPage()

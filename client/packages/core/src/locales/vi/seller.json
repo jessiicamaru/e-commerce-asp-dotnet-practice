@@ -158,7 +158,10 @@
     "photoOf": "Ảnh của {{name}}",
     "priceIn": "Giá {{currency}}",
     "save": "Lưu phiên bản",
-    "saved": "Đã lưu phiên bản."
+    "saved": "Đã lưu phiên bản.",
+    "compareAt": "Giá gốc",
+    "compareAtIn": "Giá gốc bằng {{currency}}",
+    "compareAtNone": "không giảm"
   },
   "fulfil": {
     "title": "Kiện hàng của bạn",
