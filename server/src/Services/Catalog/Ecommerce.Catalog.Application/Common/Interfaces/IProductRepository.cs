@@ -245,4 +245,4 @@ public interface ILiveImageKeys
 /// never converted, and a product with no price in it is excluded - and only what is in stock.
 /// </summary>
 /// <param name="OptionIds">Products holding every one of these specification options (specs/159).</param>
-public record ProductFilter(decimal? MinPrice = null, decimal? MaxPrice = null, bool InStock = false, IReadOnlyList<Guid>? OptionIds = null, bool OnSale = false);
+public record ProductFilter(decimal? MinPrice = null, decimal? MaxPrice = null, bool InStock = false, IReadOnlyList<Guid>? OptionIds = null, bool OnSale = false, IReadOnlyList<Guid>? Ids = null);
