@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (344 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (351 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (29 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -1204,7 +1204,10 @@ queue only, never the listing.
 `.../prices/{currency}/compare-at`, shown struck through with the percentage off, and filtered by `onSale`. ⚠️ **Display
 only** - nothing that charges reads it, so `PriceVariants`, the quote and orders are unchanged. ⚠️ A new writer of a price
 calls `CompareAt.ClearIfNotBelow` before the save, or the CHECK refuses a price raised to its compare-at. Like any price,
-never a reason for review.
+never a reason for review. **A product page leads on** (specs/163, #375): `GET /api/products/{id}/related` is the listing
+asked twice (category, then department, `rating_desc`), never itself, `[]` when unknown or off the shelf; *recently
+viewed* is the browser's own list of ids, read back through the listing's `ids` filter - nothing about what somebody
+looked at is stored on the server.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)

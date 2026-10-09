@@ -9,9 +9,11 @@ import { SpecificationsTable } from '@/components/product/specifications-table'
 import { ReportButton } from '@/components/report/report-button'
 import { StockBadge } from '@/components/product/stock-badge'
 import { ProductGallery } from '@/components/product/product-gallery'
+import { ProductRow } from '@/components/product/product-row'
+import { rememberViewed } from '@ecommerce/core/utils/product/recently-viewed'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { VariantChooser } from '@/components/product/variant-chooser'
-import { useProduct } from '@ecommerce/core/hooks/product'
+import { useProduct, useRecentlyViewed, useRelatedProducts } from '@ecommerce/core/hooks/product'
 import { Product } from '@ecommerce/core/services/product'
 import { useVariantStock } from '@ecommerce/core/hooks/stock'
 import { CompareAt } from '@ecommerce/core/components/shared/compare-at'
@@ -27,6 +29,8 @@ export function ProductPage() {
   // The choice survives a trip through sign-in (specs/126): Add to cart, signed out, returns here with ?variant=.
   const [params] = useSearchParams()
   const { data: product, isPending, error } = useProduct(id)
+  const related = useRelatedProducts(id)
+  const recent = useRecentlyViewed(id)
   const [chosenVariantId, setChosenVariantId] = useState<string | null>(() => params.get('variant'))
   // One view per product opened (specs/047) - not per render, not per refetch when the tab regains focus.
   // Fire and forget: a view that fails to count is not worth an error on the page.
@@ -35,6 +39,8 @@ export function ProductPage() {
     if (!id || counted.current === id) return
     counted.current = id
     Product.recordView(id).catch(() => {})
+    // This browser's own list (specs/163) - remembered with the count, once per product opened.
+    rememberViewed(id)
   }, [id])
   // Inventory's real count for every shape, not Catalog's in-stock flag: "2 left" is the thing a
   // shopper deciding between two kits wants to know, and the plus button stops there.
@@ -171,6 +177,10 @@ export function ProductPage() {
 
       <ProductReviews product={product} />
       <ProductQuestions product={product} />
+
+      {/* What comes next (specs/163): others like it, then what this browser opened before. */}
+      <ProductRow title={t('related.title')} products={related.data ?? []} />
+      <ProductRow title={t('recentlyViewed.title')} products={recent} />
     </section>
   )
 }
