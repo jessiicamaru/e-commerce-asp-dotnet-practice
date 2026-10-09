@@ -80,6 +80,8 @@ public class UpdateProductVariantCommandHandler(IProductRepository products, ICu
 
         var before = CatalogAudit.Of(variant);
         variant.Price = request.Price;
+        // A price raised to its compare-at is no longer reduced (specs/161 research D2).
+        Prices.CompareAt.ClearIfNotBelow(variant);
         variant.IsActive = request.IsActive;
         variant.UpdatedAt = DateTime.UtcNow;
 

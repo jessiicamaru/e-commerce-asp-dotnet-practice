@@ -405,6 +405,22 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             }
         }
 
+        // On sale (#369, specs/161): an active variant with a compare-at in the currency asked for. The CHECK keeps a set
+        // compare-at above its price, so "set" is "reduced" and nothing is compared here (research D6).
+        if (filter is { OnSale: true })
+        {
+            if (inDefaultCurrency)
+            {
+                query = query.Where(p => p.Variants.Any(v => v.IsActive && v.CompareAtPrice != null));
+            }
+            else
+            {
+                var code = currency.ToUpperInvariant();
+                query = query.Where(p => p.Variants.Any(v => v.IsActive
+                    && v.Prices.Any(x => x.Currency == code && x.CompareAtAmount != null)));
+            }
+        }
+
         // A range of the "from" price the card shows, in the currency ASKED FOR - never converted (specs/022).
         if (filter is { } f && (f.MinPrice is not null || f.MaxPrice is not null))
         {

@@ -11,13 +11,18 @@ CompareAt > Price`) lets the database refuse a "reduction" that is not one; and 
 already loads it, with no new `Include` in nine loaders. It mirrors where the price itself lives (specs/022 research
 D2: the default currency on the variant, the rest in `variant_prices`).
 
+**Accepted risk - a rollback**: an image from before this does not know to clear a compare-at (D2), so while one is
+running, raising a price to or above an existing compare-at is refused by the CHECK (a 500 from that image). Prices
+can still be lowered, nothing is charged differently, and clearing the compare-at (the column set to null) unblocks it.
+The CHECK is worth more than that window: without it a stale compare-at below its price would be shown as a reduction.
+
 **Rejected**: a table `variant_compare_at_prices (VariantId, Currency, Amount)`. One shape for every currency, but a row
 could outlive its price, the "above the price" rule could only be checked in code, and nine loaders would need another
 `Include`.
 
 ## D2 - A price raised to or above its compare-at clears it
 
-**Decision**: the three writers of a price (`SetVariantPrice`, `UpdateProductVariant`, and the price of a variant row)
+**Decision**: the writers of a price - `SetVariantPrice` (the variant's column and a `variant_prices` row) and `UpdateProductVariant` -
 clear the compare-at in the same change when the new price is not below it.
 
 **Rationale**: the alternative - refusing the price change - makes a seller clear one field before they may change

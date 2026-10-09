@@ -133,6 +133,8 @@ public class SetVariantPriceCommandHandler(
             // Writing a row here as well would give the shop two answers to the same question, which
             // is the defect this table exists to avoid rather than to spread (research D2).
             variant.Price = request.Amount;
+            // A price raised to its compare-at is no longer reduced (specs/161 research D2).
+            CompareAt.ClearIfNotBelow(variant);
         }
         else
         {
@@ -151,6 +153,7 @@ public class SetVariantPriceCommandHandler(
             else
             {
                 price.Amount = request.Amount;
+                CompareAt.ClearIfNotBelow(price);
             }
         }
 

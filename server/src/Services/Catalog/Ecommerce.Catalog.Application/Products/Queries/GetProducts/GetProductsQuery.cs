@@ -19,6 +19,8 @@ public record GetProductsQuery(
     decimal? MaxPrice = null,
     /// <summary>Only what can be bought now - the availability read model.</summary>
     bool InStock = false,
+    // specs/161: only products with a variant reduced in the currency asked for.
+    bool OnSale = false,
     /// <summary>Products holding every one of these specification options (#366, specs/159) - Brand: Apple.</summary>
     List<Guid>? OptionIds = null
 ) : IRequest<PaginatedList<ProductResponse>>;

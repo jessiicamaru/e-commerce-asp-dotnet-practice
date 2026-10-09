@@ -38,6 +38,27 @@ public static class Priced
     }
 
     /// <summary>
+    /// What this variant's price in this currency is compared against (specs/161), or <c>null</c> - from the same place
+    /// as the price, so a compare-at is never read for a currency the variant is not priced in, nor converted. An empty
+    /// currency reads the default currency's, as the price does.
+    /// </summary>
+    public static decimal? CompareAtOf(ProductVariant variant, string currency, string defaultCurrency)
+    {
+        if (string.IsNullOrEmpty(currency))
+        {
+            return variant.CompareAtPrice;
+        }
+
+        var row = variant.Prices.FirstOrDefault(p => Same(p.Currency, currency));
+        if (row is not null)
+        {
+            return row.CompareAtAmount;
+        }
+
+        return Same(currency, defaultCurrency) ? variant.CompareAtPrice : null;
+    }
+
+    /// <summary>
     /// The product's "from" price: the cheapest variant that can be sold <b>and</b> has a price in
     /// this currency. <c>null</c> when none has - a product priced only in dong shows no dollar price
     /// rather than a converted one.

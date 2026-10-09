@@ -80,7 +80,9 @@ public record ProductResponse(
     List<Specifications.ProductSpecificationResponse>? Specifications = null,
     // specs/160, on the lookup and the review queue only: the photographs after the cover (ImageUrl), in order. The
     // listing shows the cover alone and does not carry them.
-    List<Images.ProductPhotoResponse>? Photos = null
+    List<Images.ProductPhotoResponse>? Photos = null,
+    // specs/161: the compare-at of the variant whose price is the "from" price above - what the card strikes through.
+    decimal? CompareAtPrice = null
 )
 {
     /// <summary>
@@ -127,6 +129,16 @@ public record ProductResponse(
             ? active.Select(v => Priced.Of(v, currency, defaultCurrency)).Where(a => a is not null).ToList()
             : active.Select(v => (decimal?)v.Price).ToList();
 
+        // The card's struck-through price must be about the price beside it (specs/161 research D4): the compare-at of
+        // the variant giving the "from" price - of the highest, when several share that price.
+        var from = prices.Count > 0 ? prices.Min() : null;
+        var compareAt = from is null
+            ? null
+            : active
+                .Where(v => (price ? Priced.Of(v, currency, defaultCurrency) : v.Price) == from)
+                .Select(v => Priced.CompareAtOf(v, currency, defaultCurrency))
+                .Max();
+
         return new(
             p.Id,
             localise ? Localized.NameOf(p, language) : p.Name,
@@ -160,7 +172,10 @@ public record ProductResponse(
             withVariants ? new ProductText(p.Name, p.Description) : null,
             withVariants
                 ? p.Translations.OrderBy(t => t.Language).Select(t => new ProductTranslationText(t.Language, t.Name, t.Description)).ToList()
-                : null);
+                : null)
+        {
+            CompareAtPrice = compareAt,
+        };
     }
 }
 
