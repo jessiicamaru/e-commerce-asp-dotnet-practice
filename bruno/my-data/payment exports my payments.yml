@@ -19,7 +19,8 @@ runtime:
         });
         test("answers for payment, with every section", function() {
           expect(res.body.service).to.equal("payment");
-          expect(res.body.sections).to.have.all.keys("payments", "refunds");
+          // Every section Payment declares (#364): the gateway checkouts joined them with VNPay (specs/143).
+          expect(res.body.sections).to.have.all.keys("payments", "refunds", "paymentCheckouts");
           expect(res.body.withheld).to.be.an("array");
         });
         test("my payments are in it, and still say no money moved", function() {
