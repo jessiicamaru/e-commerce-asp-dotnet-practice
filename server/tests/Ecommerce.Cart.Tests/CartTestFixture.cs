@@ -45,7 +45,7 @@ public class CartTestFixture : IAsyncLifetime
     }
 
     /// <summary>A provider whose ICurrentUser is <paramref name="userId"/> - a signed-in customer.</summary>
-    public ServiceProvider For(Guid userId)
+    public ServiceProvider For(Guid userId, ICatalogProducts? catalog = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -56,7 +56,15 @@ public class CartTestFixture : IAsyncLifetime
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICheckoutOutcomeRepository, CheckoutOutcomeRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<ICatalogProducts, NoCatalog>();
+        if (catalog is null)
+        {
+            services.AddScoped<ICatalogProducts, NoCatalog>();
+        }
+        else
+        {
+            // A catalogue a test describes itself - for the pricing of a cart (specs/162).
+            services.AddSingleton(catalog);
+        }
 
         // No HTTP request here, so the language and currency are the shop's defaults
         // (specs/021, specs/022).
