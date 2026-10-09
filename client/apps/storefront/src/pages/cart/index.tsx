@@ -14,11 +14,12 @@ import { cn } from 'cn'
 
 /**
  * The cart (#37). It lives in the Cart service, keyed by the signed-in customer, so it survives
- * signing out and back in and follows the customer between devices.
+ * signing out and back in and follows the customer between devices. Signed out it is this browser's
+ * (specs/162), priced the same way, and checkout asks for an account first.
  */
 export function CartPage() {
   const { t } = useTranslation('cart')
-  const { data: cart, isPending, isError } = useCart()
+  const { data: cart, isPending, isError, isGuest } = useCart()
   const images = useCartImages(cart?.lines ?? [])
   const setQuantity = useSetCartQuantity()
   const removeLine = useRemoveCartLine()
@@ -87,7 +88,19 @@ export function CartPage() {
             <p className="text-muted-foreground text-xs">{t('estimateNote')}</p>
           </CardContent>
           <CardFooter className="grid gap-2">
-            {cart.canCheckOut ? (
+            {cart.canCheckOut && isGuest ? (
+              // Checkout needs an account (specs/162): sign in, come back here, and the cart comes along.
+              <>
+                <Link
+                  to="/sign-in"
+                  state={{ from: '/cart', reason: 'checkout' }}
+                  className={cn(buttonVariants(), 'h-11 rounded-full text-base font-semibold')}
+                >
+                  {t('signInToCheckOut')}
+                </Link>
+                <p className="text-muted-foreground text-xs">{t('keptOnSignIn')}</p>
+              </>
+            ) : cart.canCheckOut ? (
               <Link to="/checkout" className={cn(buttonVariants(), 'h-11 rounded-full text-base font-semibold')}>
                 {t('checkout')}
               </Link>

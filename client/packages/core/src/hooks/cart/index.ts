@@ -1,10 +1,55 @@
+import { useSyncExternalStore } from 'react'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@ecommerce/core/constants/query-keys'
+import { useAuth } from '@ecommerce/core/context/auth/useAuth'
 import { Cart } from '@ecommerce/core/services/cart'
+import type { Cart as CartModel } from '@ecommerce/core/services/cart/types'
 import { Product } from '@ecommerce/core/services/product'
+import {
+  addToGuestCart,
+  readGuestCart,
+  removeFromGuestCart,
+  setGuestCartQuantity,
+  subscribeToGuestCart,
+  type GuestCartLine,
+} from '@ecommerce/core/utils/cart/guest-cart'
 
-export function useCart(enabled = true) {
-  return useQuery({ queryKey: queryKeys.cart(), queryFn: () => Cart.get(), enabled })
+/**
+ * The cart a page shows (specs/162): the account's when signed in, otherwise this browser's - read through the same
+ * server pricing, so both look alike. Nothing is asked while the session is still being restored.
+ */
+export function useCart(): { data: CartModel | undefined; isPending: boolean; isError: boolean; isGuest: boolean } {
+  const { user, restoring } = useAuth()
+  const guest = useGuestCartLines()
+
+  const account = useQuery({ queryKey: queryKeys.cart(), queryFn: () => Cart.get(), enabled: !restoring && !!user })
+  const browser = useQuery({
+    queryKey: [...queryKeys.cart(), 'guest', guest] as const,
+    queryFn: () => Cart.price(guest),
+    enabled: !restoring && !user && guest.length > 0,
+    placeholderData: (previous) => previous,
+  })
+
+  if (restoring) return { data: undefined, isPending: true, isError: false, isGuest: false }
+  if (user) return { data: account.data, isPending: account.isPending, isError: account.isError, isGuest: false }
+  // An empty browser cart needs no request: it is empty.
+  if (guest.length === 0) return { data: EMPTY, isPending: false, isError: false, isGuest: true }
+  return { data: browser.data, isPending: browser.isPending, isError: browser.isError, isGuest: true }
+}
+
+const EMPTY: CartModel = { lines: [], estimatedTotal: 0, canCheckOut: false, pricesAvailable: true, currency: '' }
+
+/** This browser's lines, kept in step with every change - in this tab and in others. */
+export function useGuestCartLines(): GuestCartLine[] {
+  return useSyncExternalStore(subscribeToGuestCart, readGuestCart, readGuestCart)
+}
+
+/** How many units the header shows: the account's cart, or this browser's when signed out. */
+export function useCartCount(): number {
+  const { user } = useAuth()
+  const guest = useGuestCartLines()
+  const account = useQuery({ queryKey: queryKeys.cart(), queryFn: () => Cart.get(), enabled: !!user })
+  return user ? (account.data?.lines.length ?? 0) : guest.length
 }
 
 /**
@@ -56,14 +101,41 @@ function useCartMutation<TArgs extends unknown[]>(action: (...args: TArgs) => Pr
   })
 }
 
-export const useAddToCart = () =>
-  useCartMutation((productId: string, quantity: number, variantId?: string) =>
-    Cart.addItem(productId, quantity, variantId),
+/** A change to this browser's cart; refused (and so an error) only when storage would not keep it. */
+async function inBrowser(kept: boolean): Promise<void> {
+  if (!kept) throw new GuestCartUnavailable()
+}
+
+/** This browser cannot keep a cart (storage blocked or full, or 50 lines): the shopper signs in instead. */
+export class GuestCartUnavailable extends Error {
+  constructor() {
+    super('This browser cannot keep a cart.')
+    this.name = 'GuestCartUnavailable'
+  }
+}
+
+/** Adds to the account's cart, or to this browser's when signed out (specs/162). */
+export const useAddToCart = () => {
+  const { user } = useAuth()
+  return useCartMutation((productId: string, quantity: number, variantId?: string) =>
+    user
+      ? Cart.addItem(productId, quantity, variantId)
+      : inBrowser(addToGuestCart(productId, variantId ?? productId, quantity)),
   )
+}
 
-export const useSetCartQuantity = () =>
-  useCartMutation((productId: string, quantity: number) => Cart.setQuantity(productId, quantity))
+export const useSetCartQuantity = () => {
+  const { user } = useAuth()
+  return useCartMutation((variantId: string, quantity: number) =>
+    user ? Cart.setQuantity(variantId, quantity) : inBrowser(setGuestCartQuantity(variantId, quantity)),
+  )
+}
 
-export const useRemoveCartLine = () => useCartMutation((productId: string) => Cart.removeItem(productId))
+export const useRemoveCartLine = () => {
+  const { user } = useAuth()
+  return useCartMutation((variantId: string) =>
+    user ? Cart.removeItem(variantId) : inBrowser(removeFromGuestCart(variantId)),
+  )
+}
 
 export const useEmptyCart = () => useCartMutation(() => Cart.empty())

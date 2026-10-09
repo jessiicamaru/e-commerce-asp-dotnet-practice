@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `b5405f73`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `82f5ac94`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**224 endpoints** across 7 services.
+**226 endpoints** across 7 services.
 
 ## Identity (58)
 
@@ -157,7 +157,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/shops/{sellerId}/close` | Admin, Moderator |  |
 | `POST` | `/api/shops/{sellerId}/reopen` | Admin, Moderator |  |
 
-## Cart (6)
+## Cart (8)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -166,7 +166,9 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/cart/items` | signed in |  |
 | `DELETE` | `/api/cart/items/{productId}` | signed in |  |
 | `PUT` | `/api/cart/items/{productId}` | signed in |  |
+| `POST` | `/api/cart/merge` | signed in | Merges the browser's lines into the caller's cart - the larger quantity per shape, so a repeat is harmless. |
 | `GET` | `/api/cart/my-data` | signed in |  |
+| `POST` | `/api/cart/price` | anyone | Prices the browser's lines exactly as a stored cart is priced, and stores nothing. |
 
 ## Order (51)
 

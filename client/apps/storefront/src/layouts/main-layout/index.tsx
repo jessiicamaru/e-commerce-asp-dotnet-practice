@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom'
+import { GuestCartMerge } from '@/components/cart/guest-cart-merge'
 import { ConfirmEmailBanner } from '@/components/layout/confirm-email-banner'
 import { TwoFactorBanner } from '@/components/layout/two-factor-banner'
 import { TopBar } from '@/components/layout/top-bar'
@@ -18,6 +19,8 @@ export function MainLayout() {
   return (
     <div className="from-primary/8 min-h-dvh bg-linear-to-b via-transparent to-transparent">
       <TopBar />
+      {/* This browser's cart into the account's, wherever a sign-in ends (specs/162). */}
+      <GuestCartMerge />
       <main className="mx-auto max-w-6xl px-4 py-8">
         <ConfirmEmailBanner />
         <TwoFactorBanner />

@@ -5,7 +5,8 @@ import { Cart } from '@ecommerce/core/services/cart'
 import type { Cart as CartModel } from '@ecommerce/core/services/cart/types'
 import { Product } from '@ecommerce/core/services/product'
 import type { Product as ProductModel } from '@ecommerce/core/services/product/types'
-import { renderAsSeller } from '@ecommerce/core/test/render'
+import { renderAsSeller, renderSignedOut } from '@ecommerce/core/test/render'
+import { addToGuestCart, readGuestCart } from '@ecommerce/core/utils/cart/guest-cart'
 import { CartPage } from '.'
 
 const cart: CartModel = {
@@ -68,5 +69,50 @@ describe('CartPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Remove/ }))
 
     await waitFor(() => expect(remove).toHaveBeenCalledWith('v2'))
+  })
+})
+
+/** Signed out, the cart is this browser's, priced by the server the same way (specs/162). */
+describe('CartPage, signed out', () => {
+  beforeEach(() => localStorage.removeItem('guestCart'))
+
+  it('asks the server to price this browser\'s lines, and never for an account\'s cart', async () => {
+    addToGuestCart('p1', 'v2', 1)
+    const price = vi.spyOn(Cart, 'price').mockResolvedValue(cart)
+    renderSignedOut(<CartPage />, '/cart')
+
+    expect(await screen.findByText('Sigma 18-50mm')).toBeInTheDocument()
+    expect(price).toHaveBeenCalledWith([{ productId: 'p1', variantId: 'v2', quantity: 1 }])
+    expect(Cart.get).not.toHaveBeenCalled()
+  })
+
+  it('offers to sign in to check out, coming back to the cart', async () => {
+    addToGuestCart('p1', 'v2', 1)
+    vi.spyOn(Cart, 'price').mockResolvedValue(cart)
+    renderSignedOut(<CartPage />, '/cart')
+
+    const link = await screen.findByRole('link', { name: 'Sign in to check out' })
+    expect(link).toHaveAttribute('href', '/sign-in')
+    expect(screen.queryByRole('link', { name: 'Checkout' })).toBeNull()
+  })
+
+  it('changes and removes lines in this browser, sending nothing', async () => {
+    addToGuestCart('p1', 'v2', 1)
+    vi.spyOn(Cart, 'price').mockResolvedValue(cart)
+    const remove = vi.spyOn(Cart, 'removeItem')
+    renderSignedOut(<CartPage />, '/cart')
+
+    fireEvent.click(await screen.findByRole('button', { name: /Remove/ }))
+
+    await waitFor(() => expect(readGuestCart()).toEqual([]))
+    expect(remove).not.toHaveBeenCalled()
+  })
+
+  it('is empty without asking anybody when this browser holds nothing', async () => {
+    const price = vi.spyOn(Cart, 'price')
+    renderSignedOut(<CartPage />, '/cart')
+
+    expect(await screen.findByText('Your cart is empty.')).toBeInTheDocument()
+    expect(price).not.toHaveBeenCalled()
   })
 })

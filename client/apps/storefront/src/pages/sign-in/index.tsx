@@ -15,7 +15,13 @@ export function SignInPage() {
   const arrival = location.state as { from?: string; reason?: string } | null
   // Why the shopper is here, when a page sent them (specs/126): pressing Add to cart, or opening the cart, signed out.
   const reason =
-    arrival?.reason === 'cart' ? t('signIn.reasonAddToCart') : arrival?.from?.startsWith('/cart') ? t('signIn.reasonCart') : null
+    arrival?.reason === 'cart'
+      ? t('signIn.reasonAddToCart')
+      : arrival?.reason === 'checkout'
+        ? t('signIn.reasonCheckout')
+        : arrival?.from?.startsWith('/cart')
+          ? t('signIn.reasonCart')
+          : null
 
   return (
     <SignInForm

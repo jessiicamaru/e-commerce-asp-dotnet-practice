@@ -1,17 +1,18 @@
 info:
-  name: add item again (for checkout)
+  name: the same merge again changes nothing
   type: http
-  seq: 14
+  seq: 9
 
 http:
   method: POST
-  url: "{{baseUrl}}/api/cart/items"
+  url: "{{baseUrl}}/api/cart/merge"
   body:
     type: json
     data: |-
       {
-        "productId": "{{productId}}",
-        "quantity": 2
+        "lines": [
+          { "productId": "{{productId}}", "variantId": "{{productId}}", "quantity": 2 }
+        ]
       }
   auth:
     type: bearer
@@ -32,4 +33,4 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Puts something back after "remove" / "empty", so the order folder has a cart to check out.
+  specs/162: the larger quantity, never the sum - a retry or a second tab is harmless.

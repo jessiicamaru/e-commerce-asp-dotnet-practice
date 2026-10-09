@@ -39,68 +39,10 @@ public class GetMyCartQueryHandler(
                 [], 0m, CanCheckOut: false, PricesAvailable: true, currency.Current.Code);
         }
 
-        var lines = cart.Lines.OrderBy(l => l.AddedAt).ToList();
-        // Described by the SELLABLE unit: a variant carries the price and the words for what it is.
-        // In the language AND the currency this request is in. Sending one and not the other is
-        // exactly the bug specs/021 shipped with: the product page read Vietnamese while the cart
-        // read English, because Cart never passed a language.
-        var described = await _catalog.DescribeAsync(
-            lines.Select(l => l.SellableId).Distinct().ToList(),
-            cancellationToken,
-            language.Current,
-            currency.Current.Code);
-
-        var byId = described.Products.ToDictionary(p => p.VariantId == default ? p.ProductId : p.VariantId);
-        var missing = described.Missing.ToHashSet();
-
-        var result = new List<CartLineResponse>();
-
-        foreach (var line in lines)
-        {
-            if (!described.Reachable)
-            {
-                result.Add(new CartLineResponse(
-                    line.ProductId, null, line.Quantity, null, null, CartLineStatus.PriceUnavailable,
-                    line.SellableId));
-            }
-            else if (missing.Contains(line.SellableId) || !byId.TryGetValue(line.SellableId, out var product))
-            {
-                // Kept, and marked. Silently dropping it is the worst option.
-                result.Add(new CartLineResponse(
-                    line.ProductId, null, line.Quantity, null, null, CartLineStatus.NoLongerAvailable,
-                    line.SellableId));
-            }
-            else if (product.Price is null)
-            {
-                // Not withdrawn - just not priced in the currency being browsed in. Switching
-                // currency brings it back, which "not for sale" would not lead anyone to try.
-                result.Add(new CartLineResponse(
-                    product.ProductId, product.Name, line.Quantity, null, null,
-                    CartLineStatus.NotSoldInCurrency, line.SellableId, product.OptionSummary));
-            }
-            else if (!product.Sellable)
-            {
-                result.Add(new CartLineResponse(
-                    product.ProductId, product.Name, line.Quantity, product.Price, null, CartLineStatus.NotForSale,
-                    line.SellableId, product.OptionSummary));
-            }
-            else
-            {
-                result.Add(new CartLineResponse(
-                    product.ProductId, product.Name, line.Quantity, product.Price,
-                    product.Price.Value * line.Quantity, CartLineStatus.Available,
-                    line.SellableId, product.OptionSummary));
-            }
-        }
-
-        var canCheckOut = described.Reachable
-            && result.All(l => l.Status == CartLineStatus.Available);
-
-        var estimate = described.Reachable
-            ? result.Where(l => l.LineTotal.HasValue).Sum(l => l.LineTotal!.Value)
-            : (decimal?)null;
-
-        return new CartResponse(
-            result, estimate, canCheckOut, described.Reachable, currency.Current.Code);
+        // Priced by the code that prices the browser's cart too (specs/162), so the two cannot read differently.
+        var lines = cart.Lines.OrderBy(l => l.AddedAt)
+            .Select(l => new CartLineInput(l.ProductId, l.VariantId, l.Quantity))
+            .ToList();
+        return await CartPricing.PriceAsync(lines, _catalog, language.Current, currency.Current.Code, cancellationToken);
     }
 }

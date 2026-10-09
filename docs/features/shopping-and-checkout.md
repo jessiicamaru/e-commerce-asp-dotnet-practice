@@ -24,6 +24,14 @@ The Cart service holds one cart per customer (`carts.UserId` is unique), keyed b
 
 A line is addressed by its sellable id (`CartLine.SellableId` = `VariantId ?? ProductId`), so two shapes of one product are two lines. `PUT /api/cart/items/{productId}` and `DELETE /api/cart/items/{productId}` take that sellable id, which since specs/020 is a variant id.
 
+**Before signing in** (specs/162, #370) the cart is the browser's: `localStorage["guestCart"]` holds
+`{ productId, variantId, quantity }` lines - never a price, at most 50, every access wrapped so blocked storage only means
+"sign in to add", as before. `POST /api/cart/price` (anonymous) prices those lines with `CartPricing`, the code the stored
+cart is read with, and stores nothing; `/cart` opens signed out and its checkout asks for an account and comes back.
+`POST /api/cart/merge` (signed in) moves them into the account's cart in one transaction under its lock - added when
+absent, raised to the browser's quantity when it holds fewer, never lowered - and the storefront's `GuestCartMerge`
+calls it wherever a sign-in ends, emptying the browser's cart once the server has it.
+
 ### The quote and the order
 
 `GET /api/orders/quote?addressId=&shippingOption=` and `POST /api/orders` with body `{ "addressId": guid | null, "shippingOption": "standard" }` both call `CheckoutPricing.PriceAsync`, which:
@@ -155,6 +163,7 @@ Cart consumes three events and keeps one `checkout_outcomes` row per order. `Ord
 23. **Removal is a decrement, of the variant bought.** *Why:* anything the customer added while the order was in flight must survive, and so must a sibling variant of what was bought.
 24. **A consumer's class name is its queue name.** Order uses the endpoint prefix `OrderSvc` and Cart `CartSvc`. *Why:* Inventory and Order once both had `OrderCompletedConsumer`, bound to one queue, and competed for the event: the order settled while the stock stayed held.
 25. **With VNPay the customer pays at the gateway, and only the gateway's signed IPN decides** (specs/143, [ADR-004](../architecture/adr-004-redirect-payment-gateway.md)). `PAYMENT_PROVIDER=VnPay` makes Payment open a checkout (`payment_checkouts`, one per order) instead of deciding. The owner reads it (`GET /api/payments/orders/{id}/checkout`) with a freshly signed link (HMAC-SHA512, VNPay 2.1.0) that expires before the saga's payment timeout - Payment refuses to start otherwise. The IPN (`GET /api/payments/vnpay/ipn`, anonymous) checks the signature first and in fixed time, then the merchant code and the amount. It claims the checkout with a guarded `UPDATE`, writes the one payment (`VnPaySandbox`, the gateway's transaction number) and publishes the saga's reply in one transaction. It answers in VNPay's codes: `00` recorded, `01` unknown, `02` already confirmed, `04` wrong amount, `97` bad signature. Only dong orders: anything else is refused like a declined card. *Why:* the IPN address is public, so its signature is its only authority; and the return page's query string is typed by anyone, so it is never read for the outcome.
+26. **A cart before signing in is the browser's, and the server never stores it** (specs/162, #370). It is priced by the stored cart's own code, `CartPricing`, through an anonymous request that writes nothing, and merged into the account's cart at sign-in taking **the larger quantity per shape, never the sum**. *Why:* one pricing so the two carts cannot read differently, no ownerless row to expire or guess, and a merge a retry or a second tab cannot double - the sum would need a table of merges already applied ([research D2](../../specs/162-guest-cart/research.md)). Checkout still needs an account.
 
 ## Data
 
@@ -184,6 +193,8 @@ All through the gateway at `:5000`. Full list: [../reference/api.md](../referenc
 | `PUT` | `/api/cart/items/{productId}` | signed in |
 | `DELETE` | `/api/cart/items/{productId}` | signed in |
 | `DELETE` | `/api/cart` | signed in |
+| `POST` | `/api/cart/price` (`lines`) | anyone - prices a browser's cart, stores nothing; 400 over 50 lines or a quantity outside 1-999 (specs/162) |
+| `POST` | `/api/cart/merge` (`lines`) | signed in - the larger quantity per shape, one transaction (specs/162) |
 | `GET` | `/api/addresses` (and the rest of the address book) | signed in |
 | `GET` | `/api/orders/shipping-options` | anyone |
 | `GET` | `/api/orders/quote` | signed in |
@@ -232,6 +243,7 @@ Notifications on settlement: the buyer gets `OrderPaid` or `OrderFailed`; each s
 | [client/apps/storefront/src/components/product/add-to-cart/index.tsx](../../client/apps/storefront/src/components/product/add-to-cart/index.tsx) | Adds the chosen variant; needs an account because the cart is kept by the Cart service. |
 | [client/apps/storefront/src/pages/cart/index.tsx](../../client/apps/storefront/src/pages/cart/index.tsx) | The cart page (`/cart`). |
 | [client/apps/storefront/src/components/cart/cart-lines/index.tsx](../../client/apps/storefront/src/components/cart/cart-lines/index.tsx) | Lines with pictures; every change is sent at once and the cart is re-read, so numbers are always the server's. |
+| [client/packages/core/src/utils/cart/guest-cart.ts](../../client/packages/core/src/utils/cart/guest-cart.ts), [client/apps/storefront/src/components/cart/guest-cart-merge/index.tsx](../../client/apps/storefront/src/components/cart/guest-cart-merge/index.tsx) | The browser's cart before signing in, and its merge into the account's wherever a sign-in ends (specs/162). |
 | [client/packages/core/src/utils/cart/index.ts](../../client/packages/core/src/utils/cart/index.ts) | Why a line cannot be bought, as a translation key. |
 | [client/apps/storefront/src/pages/checkout/index.tsx](../../client/apps/storefront/src/pages/checkout/index.tsx) | Checkout (`/checkout`): shows Order's own quote, then places the order. |
 | [client/apps/storefront/src/components/checkout/address-choice/index.tsx](../../client/apps/storefront/src/components/checkout/address-choice/index.tsx) | Chooses an address, or adds one in a dialog and chooses it on save. |
@@ -266,6 +278,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 | [`ChargeOrderTests`](../../server/tests/Ecommerce.Payment.Tests/ChargeOrderTests.cs), [`ConcurrentInsertRecoveryTests`](../../server/tests/Ecommerce.Payment.Tests/ConcurrentInsertRecoveryTests.cs) | Every payment records its provider; fifty simultaneous requests record one payment; a replay still replies; an unknown `PAYMENT_OUTCOME` fails at startup. |
 | [`CheckoutOutcomeTests`](../../server/tests/Ecommerce.Cart.Tests/CheckoutOutcomeTests.cs) | Completion before or after submission removes the ordered lines once; what was added since survives; a failed order leaves the cart alone; a stray failure cannot undo a completion. |
 | [`VariantLineTests`](../../server/tests/Ecommerce.Cart.Tests/VariantLineTests.cs) | Two shapes of one product are two lines; a pre-variant line is still addressed by its product id; a completed order takes out the variant it bought and not its sibling, and an item or line naming no variant falls back to the product (specs/052). |
+| [`GuestCartTests`](../../server/tests/Ecommerce.Cart.Tests/GuestCartTests.cs) | The browser's lines read exactly as the same lines in a stored cart (lines, statuses, estimate, checkout answer) and pricing writes nothing; the same shape twice is one line; a merge keeps every line, raises to the larger quantity, never lowers, and a repeat changes nothing - summing fails the test; a merge creates a cart; too many lines or a quantity out of range is refused by both. |
 | [client `pages/cart/index.test.tsx`](../../client/apps/storefront/src/pages/cart/index.test.tsx) | Quantity changes and removal are sent for the variant the line belongs to. |
 | [`DeliveryEstimateTests`](../../server/tests/Ecommerce.Order.Tests/DeliveryEstimateTests.cs) | A time set with an option is what checkout lists and quotes, and clearing it says nothing; one end only, negative, over 60 or soonest after latest is refused naming the field; the table's CHECK refuses the same when the validator is skipped; configuration seeds a new option's time and leaves a stored one; a configured time that is not one stops the service (specs/134). |
 | [`VnPayTests`](../../server/tests/Ecommerce.Payment.Tests/VnPayTests.cs) | The signature against a vector computed in Python; the owner's link carries exactly the order's amount, reference, return address and expiry; the saga's request opens one checkout and decides nothing; a non-dong order is refused; a signed success is one approved payment and one reply; a cancellation fails the order; a repeat is `02`; ten copies at once are one payment; a forged, tampered, unsigned or other merchant's notification is `97`; a wrong amount `04`; an unknown reference `01`; someone else's checkout 404; settings refused at startup (specs/143). |
@@ -307,6 +320,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 | [013-observability](../../specs/013-observability/) | #33 | Traces and logs across the checkout in Seq; saga transitions and missing instances logged. |
 | [017-storefront-cart](../../specs/017-storefront-cart/) | #47 | Storefront cart and address book. |
 | [018-storefront-checkout](../../specs/018-storefront-checkout/) | #48 | Storefront checkout, order page and history; the checkout quote (#38). |
+| [162-guest-cart](../../specs/162-guest-cart/) | [#373](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/373) | A cart before signing in: the browser keeps the lines, Cart prices them anonymously with the stored cart's code and merges them at sign-in, the larger quantity per shape. |
 | [020-product-variants](../../specs/020-product-variants/) | #57 | Variants are what is bought, priced, reserved and frozen on the line. |
 | [021-internationalisation](../../specs/021-internationalisation/) | #58 | Orders freeze the language they were placed in. |
 | [022-multi-currency-prices](../../specs/022-multi-currency-prices/) | #59 | Two price lists, no conversion; currency frozen and carried to the payment. |

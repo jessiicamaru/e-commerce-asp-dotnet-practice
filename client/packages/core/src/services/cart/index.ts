@@ -1,6 +1,7 @@
 // The model types live in ./types, imported from there: this file's export is the class, and a
 // class and an interface cannot share a name.
 import { http } from '@ecommerce/core/config/axios'
+import type { GuestCartLine } from '@ecommerce/core/utils/cart/guest-cart'
 import type { Cart as CartModel } from './types'
 
 /**
@@ -28,5 +29,19 @@ export class Cart {
 
   static async empty(): Promise<void> {
     await http.delete('/cart')
+  }
+
+  /**
+   * Prices a signed-out shopper's lines exactly as a stored cart is priced, and stores nothing (specs/162). Anonymous: it
+   * is asked before there is anybody to ask as.
+   */
+  static async price(lines: GuestCartLine[]): Promise<CartModel> {
+    const { data } = await http.post<CartModel>('/cart/price', { lines }, { anonymous: true })
+    return data
+  }
+
+  /** Merges the browser's lines into the signed-in shopper's cart - the larger quantity per shape, so a repeat is harmless. */
+  static async merge(lines: GuestCartLine[]): Promise<void> {
+    await http.post('/cart/merge', { lines })
   }
 }

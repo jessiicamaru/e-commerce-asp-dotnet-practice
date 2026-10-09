@@ -117,7 +117,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
 PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (344 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
-(19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
+(29 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
 5436; specs/053, the first tests the saga has had), and `Ecommerce.ApiGateway.Tests` (22 tests, no database - the
@@ -739,7 +739,11 @@ cart and a dead order. `OrderCompletedEvent` carries only an order id, so Cart a
 `OrderSubmittedEvent` to learn the items, and because nothing orders delivery across message types
 (which is what #15 was) **whichever of the two arrives second applies the removal**, guarded by an
 `Applied` flag under `FOR UPDATE`. Removal is a *decrement*, so anything added during checkout
-survives. See [specs/010-customer-cart](specs/010-customer-cart/).
+survives. See [specs/010-customer-cart](specs/010-customer-cart/). **Before signing in the cart is the browser's**
+(specs/162, #370): `localStorage` lines, priced by the anonymous `POST /api/cart/price` with `CartPricing` - the stored
+cart's own code, so the two cannot disagree - and stored nowhere; `POST /api/cart/merge` moves them into the account's cart
+at sign-in (`GuestCartMerge`, wherever a sign-in ends). ⚠️ The merge takes the **larger** quantity per shape, never the
+sum: that is what makes a retry or two tabs harmless without a table of merges applied. Checkout still needs an account.
 
 **Order → Catalog was the first synchronous cross-service call in the system**, and it costs something real:
 Catalog being unreachable now refuses orders (**503**, via `DependencyUnavailableException`) where

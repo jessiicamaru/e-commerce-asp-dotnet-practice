@@ -1,0 +1,35 @@
+info:
+  name: merging without signing in is 401
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/merge"
+  body:
+    type: json
+    data: |-
+      {
+        "lines": [
+          { "productId": "{{productId}}", "variantId": "{{productId}}", "quantity": 2 }
+        ]
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 401", function() {
+          expect(res.status).to.equal(401);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  merging without signing in is 401
