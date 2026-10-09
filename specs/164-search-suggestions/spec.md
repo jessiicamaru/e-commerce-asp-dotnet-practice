@@ -60,8 +60,8 @@ searches exactly as today; up/down move, Escape closes, and a screen reader anno
 ### Functional Requirements
 
 - **FR-001**: `GET /api/products/suggest?q=` (anonymous, cached) MUST answer up to 6 products on the shelf matched by the
-  catalogue's own search, and up to 4 active categories whose name in the reader's language or original name contains
-  the term ignoring case and diacritics.
+  catalogue's own search, and up to 4 categories - every category the categories list shows - whose name in the
+  reader's language or original name contains the term ignoring case and diacritics.
 - **FR-002**: The term MUST be 2-100 characters after trimming; otherwise 400.
 - **FR-003**: A product suggestion MUST carry its id, name in the reader's language, picture, "from" price and currency;
   a category its id and name.
@@ -71,7 +71,7 @@ searches exactly as today; up/down move, Escape closes, and a screen reader anno
 ## Success Criteria
 
 - **SC-001**: A term without diacritics finds products and categories with them (tested on PostgreSQL).
-- **SC-002**: Nothing off the shelf, no inactive category, at most 6 and 4 (tested).
+- **SC-002**: Nothing off the shelf, at most 6 products and 4 categories (tested).
 - **SC-003**: In a browser, typing shows suggestions, the keyboard chooses one, and Enter still searches.
 - **SC-004**: Bruno covers the read and its refusal; `docs/reference` regenerated.
 

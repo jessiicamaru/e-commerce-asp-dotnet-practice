@@ -38,18 +38,17 @@ public class SearchSuggestionTests(CatalogTestFixture fixture)
     }
 
     [Fact]
-    public async Task Nothing_off_the_shelf_and_no_inactive_category()
+    public async Task Nothing_off_the_shelf_and_every_category_the_list_shows()
     {
         var token = Token();
-        var hidden = await CategoryAsync($"Hidden {token}", active: false);
-        var shown = await CategoryAsync($"Shown {token}");
+        // As every seeded category is: `IsActive` is never set, and the categories list shows them all (research D6).
+        var shown = await CategoryAsync($"Shown {token}", active: false);
         await ProductAsync($"Off {token}", shown, onShelf: false);
 
         var found = await SuggestAsync(token);
 
         Assert.Empty(found.Products);
         Assert.Equal([shown], found.Categories.Select(c => c.Id));
-        Assert.DoesNotContain(hidden, found.Categories.Select(c => c.Id));
     }
 
     [Fact]

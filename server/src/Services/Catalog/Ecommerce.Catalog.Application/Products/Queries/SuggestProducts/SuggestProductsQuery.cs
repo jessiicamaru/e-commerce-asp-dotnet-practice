@@ -65,10 +65,10 @@ public class SuggestProductsQueryHandler(
             .Select(p => new ProductSuggestion(p.Id, p.Name, p.ImageUrl, p.Price, p.Currency, p.PriceVaries))
             .ToList();
 
-        // A handful of categories, matched in memory (research D2): the reader's name and the original, folded alike.
+        // A handful of categories, matched in memory (research D2): the reader's name and the original, folded alike. Every
+        // category, as the categories list shows them - `Category.IsActive` is never set and read by nothing (research D6).
         var wanted = Fold(term);
         var matching = (await _categories.GetAllAsync(cancellationToken))
-            .Where(c => c.IsActive)
             .Select(c => (Category: c, Shown: CategoryResponse.From(c, _language.Current, _localization.DefaultLanguage)))
             .Where(x => Fold(x.Shown.Name).Contains(wanted, StringComparison.Ordinal)
                 || Fold(x.Category.Name).Contains(wanted, StringComparison.Ordinal))

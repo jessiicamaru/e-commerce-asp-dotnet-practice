@@ -10,7 +10,7 @@ second matcher would disagree with the results page the shopper lands on after E
 
 ## D2 - Categories are matched in memory
 
-**Decision**: the active categories are read (the same read the categories endpoint makes) and matched in C# against
+**Decision**: the categories are read (the same read the categories endpoint makes) and matched in C# against
 their name in the reader's language and their original name, both folded: lower-case, diacritics removed, `đ` to `d`.
 
 **Rationale**: a shop has tens of categories; an index for them would be ceremony. The fold mirrors `f_unaccent`'s
@@ -38,3 +38,12 @@ own key.
 
 **Rationale**: the kit's base-ui Combobox chooses from a fixed list and owns the input's value; here the input is a free
 search whose Enter must keep its meaning. The ARIA pattern is small enough to write once.
+
+## D6 - Every category, not "active" ones
+
+**Decision**: no filter on `Category.IsActive`.
+
+**Rationale**: the first version kept active categories only, and on the seeded stack suggested no category at all:
+`IsActive` is never set by creating a category (it is `false` on every seeded row) and nothing reads it - the categories
+list and the storefront show every category. Suggesting what the list shows is the honest rule; making the flag mean
+something is a separate change, not one to make by accident here. Found by the quickstart ("may anh" found nothing).
