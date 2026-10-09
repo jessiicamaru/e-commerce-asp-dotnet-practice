@@ -11,6 +11,19 @@ import type {
   ProductText,
 } from '@ecommerce/core/services/product/types'
 
+/**
+ * Suggestions for a term (specs/164): asked only for 2 characters or more, and keyed by the term, so an answer for an
+ * older term is never shown as the newer one's. The component debounces before it asks.
+ */
+export function useSearchSuggestions(term: string) {
+  return useQuery({
+    queryKey: ['products', 'suggest', term] as const,
+    queryFn: () => Product.suggest(term),
+    enabled: term.trim().length >= 2,
+    staleTime: 30_000,
+  })
+}
+
 export function useProducts(query: ProductQuery) {
   return useQuery({
     queryKey: queryKeys.products(query),

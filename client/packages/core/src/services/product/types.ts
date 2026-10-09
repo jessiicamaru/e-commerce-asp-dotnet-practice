@@ -173,3 +173,9 @@ export interface NewProduct {
   sku: string
   categoryId: string
 }
+
+/** What the search box offers while typing (specs/164): a dropdown's worth of each. */
+export interface SearchSuggestions {
+  products: { id: string; name: string; imageUrl: string | null; price: number | null; currency: string; priceVaries: boolean }[]
+  categories: { id: string; name: string }[]
+}

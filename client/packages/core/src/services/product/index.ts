@@ -3,23 +3,19 @@
 import { http } from '@ecommerce/core/config/axios'
 import { CURRENCY_HEADER } from '@ecommerce/core/config/money'
 import { visitorId } from '@ecommerce/core/utils/shared'
-import type {
-  NewProduct,
-  NewVariant,
-  Page,
-  Product as ProductModel,
-  ProductDetails,
-  ProductQuery,
-  ProductSpecification,
-  ProductSpecificationValue,
-  ProductText,
-} from './types'
+import type { NewProduct, NewVariant, Page, Product as ProductModel, ProductDetails, ProductQuery, ProductSpecification, ProductSpecificationValue, ProductText, SearchSuggestions } from './types'
 
 /** Catalog's products. Browsing needs no account, so every call here is anonymous. */
 export class Product {
   /** The product's specifications, the whole set replaced (specs/159). A seller's approved product goes back to review. */
   static async setSpecifications(id: string, values: ProductSpecificationValue[]): Promise<ProductSpecification[]> {
     const { data } = await http.put<ProductSpecification[]>(`/products/${id}/specifications`, { values })
+    return data
+  }
+
+  /** What the search box offers while typing (specs/164) - 2 to 100 characters. Anonymous and cached. */
+  static async suggest(q: string): Promise<SearchSuggestions> {
+    const { data } = await http.get<SearchSuggestions>('/products/suggest', { params: { q }, anonymous: true })
     return data
   }
 
