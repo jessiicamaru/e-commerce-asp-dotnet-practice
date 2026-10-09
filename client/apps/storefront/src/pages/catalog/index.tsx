@@ -1,3 +1,4 @@
+import { ProductRow } from '@/components/product/product-row'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { CatalogFilters } from '@/components/catalog/catalog-filters'
@@ -8,7 +9,7 @@ import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-stat
 import { Pager } from '@ecommerce/core/components/shared/pager'
 import { PAGE_SIZE } from '@ecommerce/core/constants/shared'
 import { useCategories } from '@ecommerce/core/hooks/category'
-import { useProducts } from '@ecommerce/core/hooks/product'
+import { useProducts, useRecentlyViewed } from '@ecommerce/core/hooks/product'
 import type { SortBy } from '@ecommerce/core/services/product/types'
 
 /** The listing (#36), driven by the URL so a search can be shared, bookmarked and survives a reload. */
@@ -80,6 +81,9 @@ export function CatalogPage() {
         />
       )}
 
+      {/* What this browser opened before (specs/163) - on the landing view only, like the hero. */}
+      {landing && <RecentlyViewedRow />}
+
       <section id="products" className="scroll-mt-24">
         {!landing && <h1 className="mb-4 text-2xl font-bold tracking-tight">{t('title')}</h1>}
 
@@ -141,4 +145,14 @@ export function CatalogPage() {
 function bound(value: string): number | undefined {
   const n = Number(value)
   return value.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : undefined
+}
+
+function RecentlyViewedRow() {
+  const { t } = useTranslation('catalog')
+  const recent = useRecentlyViewed()
+  return (
+    <div className="mb-10">
+      <ProductRow title={t('recentlyViewed.title')} products={recent} />
+    </div>
+  )
 }

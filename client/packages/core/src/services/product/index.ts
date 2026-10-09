@@ -23,6 +23,12 @@ export class Product {
     return data
   }
 
+  /** Others like this one (specs/163): its category, then its department, most reviewed first. Empty when off the shelf. */
+  static async related(productId: string): Promise<ProductModel[]> {
+    const { data } = await http.get<ProductModel[]>(`/products/${productId}/related`, { anonymous: true })
+    return data
+  }
+
   static async list(query: ProductQuery): Promise<Page<ProductModel>> {
     const params = new URLSearchParams()
     for (const [key, value] of Object.entries(query)) {

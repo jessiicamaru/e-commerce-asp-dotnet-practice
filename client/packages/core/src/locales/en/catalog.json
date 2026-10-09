@@ -169,5 +169,11 @@
     "label": "Photographs of {{name}}",
     "show": "Show photograph {{n}} of {{count}}"
   },
-  "onSaleOnly": "On sale"
+  "onSaleOnly": "On sale",
+  "related": {
+    "title": "Related products"
+  },
+  "recentlyViewed": {
+    "title": "Recently viewed"
+  }
 }

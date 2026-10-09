@@ -8,6 +8,7 @@ import { AuthContext } from '@ecommerce/core/context/auth/useAuth'
 import type { AuthState } from '@ecommerce/core/context/auth/types'
 import { Product } from '@ecommerce/core/services/product'
 import { readGuestCart } from '@ecommerce/core/utils/cart/guest-cart'
+import { readRecentlyViewed, rememberViewed } from '@ecommerce/core/utils/product/recently-viewed'
 import { Cart } from '@ecommerce/core/services/cart'
 import { Reviews } from '@ecommerce/core/services/review'
 import type { Product as ProductModel, Variant } from '@ecommerce/core/services/product/types'
@@ -218,5 +219,42 @@ describe('ProductPage seller', () => {
 
     expect(await screen.findByText(/Sold by/)).toBeInTheDocument()
     expect(screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/shops/'))).toEqual([])
+  })
+})
+
+/** What comes next (specs/163): others like it, and what this browser opened before - never the page itself. */
+describe('ProductPage, related and recently viewed', () => {
+  beforeEach(() => localStorage.removeItem('recentlyViewed'))
+
+  it('shows related products and remembers the view', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue(aProduct([aVariant({ id: 'p1' })]))
+    vi.spyOn(Product, 'related').mockResolvedValue([{ ...aProduct([]), id: 'p2', name: 'Fujifilm X-T5' }])
+    renderPage()
+
+    const row = await screen.findByRole('region', { name: 'Related products' })
+    expect(row).toHaveTextContent('Fujifilm X-T5')
+    expect(Product.related).toHaveBeenCalledWith('p1')
+    await waitFor(() => expect(readRecentlyViewed()[0]).toBe('p1'))
+  })
+
+  it('shows what was opened before, most recent first, and not this product', async () => {
+    rememberViewed('p3')
+    rememberViewed('p1')
+    rememberViewed('p2')
+    vi.spyOn(Product, 'get').mockResolvedValue(aProduct([aVariant({ id: 'p1' })]))
+    vi.spyOn(Product, 'related').mockResolvedValue([])
+    const list = vi.spyOn(Product, 'list').mockResolvedValue({
+      // The listing answers in its own order; the row keeps the browser's.
+      items: [{ ...aProduct([]), id: 'p3', name: 'Older' }, { ...aProduct([]), id: 'p2', name: 'Newer' }],
+      pageNumber: 1, totalPages: 1, totalCount: 2, hasPreviousPage: false, hasNextPage: false,
+    })
+    renderPage()
+
+    const row = await screen.findByRole('region', { name: 'Recently viewed' })
+    expect(list).toHaveBeenCalledWith(expect.objectContaining({ ids: ['p2', 'p3'] }))
+    const names = [...row.querySelectorAll('h3, [data-slot="card-title"], a')].map((n) => n.textContent ?? '')
+    expect(names.join(' ').indexOf('Newer')).toBeLessThan(names.join(' ').indexOf('Older'))
+    // No "Related products" heading when there are none.
+    expect(screen.queryByRole('region', { name: 'Related products' })).toBeNull()
   })
 })
