@@ -31,7 +31,7 @@ description: "Task list for A gallery of photographs per product"
 - [x] T012 Bruno for every endpoint and refusal; `docs/reference` regenerated
 - [x] T013 On the stack: the quickstart, the gallery in a browser
 - [x] T014 Docs: catalog page, CLAUDE.md, timeline, backlog
-- [ ] T015 Merged, closes #368
+- [x] T015 Merged in #371, closes #368
 
 ## Evidence
 
