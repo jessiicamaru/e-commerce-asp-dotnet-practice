@@ -23,7 +23,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@eco
 import { Tooltip, TooltipContent, TooltipTrigger } from '@ecommerce/ui/tooltip'
 import { accountDestinations, destinationClick } from '@ecommerce/core/constants/account'
 import { useAuth } from '@ecommerce/core/context/auth/useAuth'
-import { useCart } from '@ecommerce/core/hooks/cart'
+import { useCartCount } from '@ecommerce/core/hooks/cart'
 import { cn } from 'cn'
 
 /**
@@ -46,9 +46,8 @@ export function TopBar() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
 
-  // Only a signed-in shopper has a cart; asking for one while signed out is a guaranteed 401.
-  const cart = useCart(!!user)
-  const lines = cart.data?.lines.length ?? 0
+  // The account's cart, or this browser's when signed out (specs/162).
+  const lines = useCartCount()
 
   function search(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -113,6 +112,13 @@ export function TopBar() {
               </span>
             </>
           ) : (
+            <span className="flex items-center gap-1">
+              {/* This browser's cart (specs/162): shown once it holds something. */}
+              {lines > 0 && (
+                <IconLink to="/cart" label={t('nav.cart')} badge={lines}>
+                  <ShoppingBagIcon />
+                </IconLink>
+              )}
             <span className="hidden items-center gap-1 md:flex">
               <NavLink to="/sign-in" className={cn(buttonVariants({ variant: 'ghost' }), 'h-9 rounded-full px-4')}>
                 <LogInIcon /> {t('nav.signIn')}
@@ -122,6 +128,7 @@ export function TopBar() {
               <NavLink to="/sign-up" className={cn(buttonVariants(), 'h-9 rounded-full px-4 font-semibold')}>
                 {t('nav.signUp')}
               </NavLink>
+            </span>
             </span>
           )}
 

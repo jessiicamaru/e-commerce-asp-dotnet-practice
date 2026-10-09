@@ -28,5 +28,8 @@
   "count_other": "{{count}} sản phẩm",
   "summary": "Tóm tắt đơn hàng",
   "subtotal": "Tạm tính",
-  "keepShopping": "Tiếp tục mua sắm"
+  "keepShopping": "Tiếp tục mua sắm",
+  "signInToCheckOut": "Đăng nhập để thanh toán",
+  "keptOnSignIn": "Giỏ hàng đang được giữ trên trình duyệt này và sẽ chuyển vào tài khoản khi bạn đăng nhập.",
+  "merged": "Giỏ hàng đã chuyển vào tài khoản của bạn."
 }

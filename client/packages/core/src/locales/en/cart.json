@@ -29,5 +29,8 @@
   "count_other": "{{count}} items",
   "summary": "Order summary",
   "subtotal": "Subtotal",
-  "keepShopping": "Keep shopping"
+  "keepShopping": "Keep shopping",
+  "signInToCheckOut": "Sign in to check out",
+  "keptOnSignIn": "Your cart is kept in this browser and moves to your account when you sign in.",
+  "merged": "Your cart is with your account now."
 }

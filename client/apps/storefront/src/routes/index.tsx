@@ -71,11 +71,8 @@ export function AppRoutes() {
           />
           <Route
             path="/cart"
-            element={
-              <RequireAuth>
-                <CartPage />
-              </RequireAuth>
-            }
+            // Signed out it shows this browser's cart (specs/162); checkout still needs an account.
+            element={<CartPage />}
           />
           <Route
             path="/addresses"

@@ -7,6 +7,8 @@ import i18n from '@ecommerce/core/config/i18n'
 import { AuthContext } from '@ecommerce/core/context/auth/useAuth'
 import type { AuthState } from '@ecommerce/core/context/auth/types'
 import { Product } from '@ecommerce/core/services/product'
+import { readGuestCart } from '@ecommerce/core/utils/cart/guest-cart'
+import { Cart } from '@ecommerce/core/services/cart'
 import { Reviews } from '@ecommerce/core/services/review'
 import type { Product as ProductModel, Variant } from '@ecommerce/core/services/product/types'
 import { ProductPage } from '.'
@@ -69,7 +71,27 @@ describe('ProductPage, signed out (specs/126, #252)', () => {
       aVariant({ id: 'kit', sku: 'XT5-KIT', optionSummary: 'Kit: With lens', options: [{ id: 'o2', name: 'Kit', value: 'With lens' }] }),
     ])
 
-  it('offers Add to cart, and sends the shopper to sign in with their choice and why', async () => {
+  /** Signed out, the choice goes into this browser's cart (specs/162) - nothing is sent, nobody is asked to sign in. */
+  it('adds the chosen shape to this browser\'s cart', async () => {
+    localStorage.removeItem('guestCart')
+    vi.spyOn(Product, 'get').mockResolvedValue(kits())
+    const add = vi.spyOn(Cart, 'addItem')
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('radio', { name: /With lens/ }))
+    await user.click(screen.getByRole('button', { name: 'Add to cart' }))
+
+    await waitFor(() => expect(readGuestCart()).toEqual([{ productId: 'p1', variantId: 'kit', quantity: 1 }]))
+    expect(add).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('sign-in')).toBeNull()
+  })
+
+  /** A browser that cannot keep a cart (storage blocked or full) still has the old way: sign in, and come back (specs/126). */
+  it('sends the shopper to sign in with their choice when this browser cannot keep a cart', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
     vi.spyOn(Product, 'get').mockResolvedValue(kits())
     const user = userEvent.setup()
     renderPage()
@@ -77,7 +99,7 @@ describe('ProductPage, signed out (specs/126, #252)', () => {
     await user.click(await screen.findByRole('radio', { name: /With lens/ }))
     await user.click(screen.getByRole('button', { name: 'Add to cart' }))
 
-    expect(JSON.parse(screen.getByTestId('sign-in').textContent!)).toEqual({ from: '/products/p1?variant=kit', reason: 'cart' })
+    expect(JSON.parse((await screen.findByTestId('sign-in')).textContent!)).toEqual({ from: '/products/p1?variant=kit', reason: 'cart' })
   })
 
   it('comes back with the variant chosen before signing in', async () => {
