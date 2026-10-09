@@ -320,7 +320,7 @@ Server tests run against a real PostgreSQL (`DB_PASSWORD=... dotnet test` in `se
 | [013-observability](../../specs/013-observability/) | #33 | Traces and logs across the checkout in Seq; saga transitions and missing instances logged. |
 | [017-storefront-cart](../../specs/017-storefront-cart/) | #47 | Storefront cart and address book. |
 | [018-storefront-checkout](../../specs/018-storefront-checkout/) | #48 | Storefront checkout, order page and history; the checkout quote (#38). |
-| [162-guest-cart](../../specs/162-guest-cart/) | (this PR) | A cart before signing in: the browser keeps the lines, Cart prices them anonymously with the stored cart's code and merges them at sign-in, the larger quantity per shape. |
+| [162-guest-cart](../../specs/162-guest-cart/) | [#373](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/373) | A cart before signing in: the browser keeps the lines, Cart prices them anonymously with the stored cart's code and merges them at sign-in, the larger quantity per shape. |
 | [020-product-variants](../../specs/020-product-variants/) | #57 | Variants are what is bought, priced, reserved and frozen on the line. |
 | [021-internationalisation](../../specs/021-internationalisation/) | #58 | Orders freeze the language they were placed in. |
 | [022-multi-currency-prices](../../specs/022-multi-currency-prices/) | #59 | Two price lists, no conversion; currency frozen and carried to the payment. |

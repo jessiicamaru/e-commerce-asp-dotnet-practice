@@ -28,7 +28,7 @@ description: "Task list for A cart before signing in"
 - [x] T008 Bruno for both endpoints and their refusals; `docs/reference` regenerated
 - [x] T009 On the stack: the quickstart and the journey in a browser
 - [x] T010 Docs: the cart's page, CLAUDE.md, timeline, backlog
-- [ ] T011 Merged, closes #370
+- [x] T011 Merged in #373, closes #370
 
 ## Evidence
 
