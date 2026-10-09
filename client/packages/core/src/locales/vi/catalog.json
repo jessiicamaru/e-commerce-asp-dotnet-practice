@@ -21,7 +21,9 @@
     "onSale_one": "{{count}} sản phẩm đang bán",
     "onSale_other": "{{count}} sản phẩm đang bán",
     "productsFailed": "Không tải được sản phẩm của gian hàng này.",
-    "paused": "Cửa hàng đang tạm nghỉ - chưa có gì được bán cho đến khi người bán quay lại."
+    "paused": "Cửa hàng đang tạm nghỉ - chưa có gì được bán cho đến khi người bán quay lại.",
+    "rating": "Cửa hàng được đánh giá {{average}} trên 5",
+    "noReviews": "Cửa hàng chưa có đánh giá nào."
   },
   "product": {
     "breadcrumb": "Thuộc danh mục",
@@ -44,7 +46,8 @@
     "viewCart": "Xem giỏ hàng",
     "soldBy": "Bán bởi {{seller}}",
     "soldByShop": "Bán bởi <shop>{{seller}}</shop>",
-    "theShop": "Cửa hàng"
+    "theShop": "Cửa hàng",
+    "shopRating": "{{average}} ({{count}})"
   },
   "pager": {
     "previous": "Trước",

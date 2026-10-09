@@ -37,7 +37,8 @@ Neither service is told who the seller is: the token says (Constitution IV).
 6. **One period rule** (specs/055): whole days of the shop (specs/082), both ends included, at most 366.
 7. **The rating is weighted by each product's review count.** One review at 4 and three at 2 give 2.5, not
    3.0. It comes from each product's stored `RatingAverage` and `RatingCount`, which are recomputed from the
-   visible reviews on every write (specs/046). With no reviews at all it is null, never zero.
+   visible reviews on every write (specs/046). With no reviews at all it is null, never zero. Since specs/165 the
+   shop's public page shows the same number, from the same method (`SellerRatings`).
 8. **Views** are the per-day counters of specs/047, summed over the period for the seller's own products. The
    seller's own visits were never counted.
 

@@ -28,6 +28,8 @@ runtime:
           var ids = res.body.products.map(function(p) { return p.productId; });
           expect(ids).to.include(bru.getVar("sellerProductId"));
         });
+        // The shop page must show the same rating (specs/165) - checked there.
+        bru.setVar("insightsRating", JSON.stringify([res.body.ratingAverage, res.body.ratingCount]));
 
 settings:
   encodeUrl: true

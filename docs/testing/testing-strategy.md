@@ -100,7 +100,9 @@ sees a page and the API it calls drift apart.
   1. a moderator approves a product waiting for review;
   2. a customer adds a camera to the cart, checks out, and sees it *Paid*;
   3. its seller prepares the parcel and ships it;
-  4. the customer confirms it arrived and reviews the camera.
+  4. the customer confirms it arrived and reviews the camera;
+  5. signed out, the shop's page and the "Sold by" beside the camera both show the shop's rating from that review
+     (specs/165).
 - **The data** comes from `e2e/support/api.ts`, made through the API the pages use:
   - a seller confirmed through **Mailpit** and approved;
   - a product listed, approved and stocked;
