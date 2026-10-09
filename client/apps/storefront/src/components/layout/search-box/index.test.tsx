@@ -110,4 +110,18 @@ describe('SearchBox (specs/164)', () => {
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(1))
     expect(screen.getByTestId('where')).toHaveTextContent('/')
   })
+
+  /** Found in a browser: the search ran and its results sat under a dropdown still open. */
+  it('closes the suggestions when Enter searches', async () => {
+    vi.spyOn(Product, 'suggest').mockResolvedValue(answer)
+    const user = userEvent.setup()
+    const submit = renderBox()
+
+    await user.type(screen.getByRole('combobox'), 'sony')
+    await screen.findAllByRole('option')
+    await user.keyboard('{Enter}')
+
+    expect(submit).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
 })

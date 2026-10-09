@@ -70,6 +70,9 @@ export function SearchBox({ initial }: { initial: string }) {
       // A highlighted option is chosen; with none, Enter submits the form and searches as before.
       event.preventDefault()
       choose(options[active])
+    } else if (event.key === 'Enter') {
+      // The search runs, and the suggestions must not stay open over its results.
+      setOpen(false)
     }
   }
 
