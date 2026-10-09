@@ -25,7 +25,7 @@ description: "Task list for A shop's rating"
 - [x] T007 Bruno checks the fields; `docs/reference` regenerated
 - [x] T008 On the stack: the quickstart and a browser check
 - [x] T009 Docs: catalog page, CLAUDE.md, timeline, backlog
-- [x] T010 Merged in #PR_NUMBER, closes #379
+- [x] T010 Merged in #380, closes #379
 
 ## Evidence
 
