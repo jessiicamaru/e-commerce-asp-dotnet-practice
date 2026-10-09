@@ -11,6 +11,7 @@ import { readGuestCart } from '@ecommerce/core/utils/cart/guest-cart'
 import { readRecentlyViewed, rememberViewed } from '@ecommerce/core/utils/product/recently-viewed'
 import { Cart } from '@ecommerce/core/services/cart'
 import { Reviews } from '@ecommerce/core/services/review'
+import { Shops } from '@ecommerce/core/services/shops'
 import type { Product as ProductModel, Variant } from '@ecommerce/core/services/product/types'
 import { ProductPage } from '.'
 
@@ -207,18 +208,43 @@ describe('ProductPage seller', () => {
   /** A shop has a page (specs/099): the credit under the name goes to it. */
   it('links a seller’s name to their shop’s page', async () => {
     vi.spyOn(Product, 'get').mockResolvedValue({ ...aProduct([aVariant({})]), sellerId: 's1', sellerName: 'Mai Lens' })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 1, paused: false, ratingAverage: null, ratingCount: 0 })
     renderPage()
 
     expect(await screen.findByRole('link', { name: 'Mai Lens' })).toHaveAttribute('href', '/shops/s1')
   })
 
-  /** The shop's own goods have no seller, so no page to go to - the credit is text. */
+  /** The shop's own goods have no seller, so no page to go to - the credit is text, and no shop is asked about. */
   it('credits the shop itself without a link', async () => {
     vi.spyOn(Product, 'get').mockResolvedValue(aProduct([aVariant({})]))
+    const shop = vi.spyOn(Shops, 'get')
     renderPage()
 
     expect(await screen.findByText(/Sold by/)).toBeInTheDocument()
     expect(screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/shops/'))).toEqual([])
+    expect(shop).not.toHaveBeenCalled()
+  })
+
+  /** Specs/165: the shop's record where the shop is named - read from that shop's own page. */
+  it('shows the seller’s shop rating beside its name', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue({ ...aProduct([aVariant({})]), sellerId: 's1', sellerName: 'Mai Lens' })
+    const shop = vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 3, paused: false, ratingAverage: 2.5, ratingCount: 4 })
+    renderPage()
+
+    expect(await screen.findByRole('img', { name: 'Shop rated 2.5 out of 5' })).toBeInTheDocument()
+    expect(screen.getByText('2.5 (4)')).toBeInTheDocument()
+    expect(shop).toHaveBeenCalledWith('s1')
+  })
+
+  /** A shop with no review, or one that cannot be read (closed), leaves the name alone. */
+  it('shows no shop rating when there is none to show', async () => {
+    vi.spyOn(Product, 'get').mockResolvedValue({ ...aProduct([aVariant({})]), sellerId: 's1', sellerName: 'Mai Lens' })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 3, paused: false, ratingAverage: null, ratingCount: 0 })
+    renderPage()
+
+    expect(await screen.findByRole('link', { name: 'Mai Lens' })).toBeInTheDocument()
+    await waitFor(() => expect(Shops.get).toHaveBeenCalled())
+    expect(screen.queryByRole('img', { name: /Shop rated/ })).not.toBeInTheDocument()
   })
 })
 

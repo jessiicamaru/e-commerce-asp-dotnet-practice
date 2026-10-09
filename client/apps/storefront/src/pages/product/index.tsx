@@ -16,6 +16,7 @@ import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct, useRecentlyViewed, useRelatedProducts } from '@ecommerce/core/hooks/product'
 import { Product } from '@ecommerce/core/services/product'
 import { useVariantStock } from '@ecommerce/core/hooks/stock'
+import { useShopFront } from '@ecommerce/core/hooks/shop'
 import { CompareAt } from '@ecommerce/core/components/shared/compare-at'
 import { Price } from '@ecommerce/core/components/shared/price'
 import { StarRating } from '@ecommerce/core/components/product/star-rating'
@@ -31,6 +32,10 @@ export function ProductPage() {
   const { data: product, isPending, error } = useProduct(id)
   const related = useRelatedProducts(id)
   const recent = useRecentlyViewed(id)
+  // The shop's rating beside "Sold by" (specs/165) - the shop page's own read, so one cached answer serves both. A shop
+  // that cannot be read (closed, unknown) leaves the name alone.
+  const shop = useShopFront(product?.sellerId)
+  const shopRating = shop.data && shop.data.ratingCount > 0 ? shop.data.ratingAverage : null
   const [chosenVariantId, setChosenVariantId] = useState<string | null>(() => params.get('variant'))
   // One view per product opened (specs/047) - not per render, not per refetch when the tab regains focus.
   // Fire and forget: a view that fails to count is not worth an error on the page.
@@ -101,6 +106,15 @@ export function ProductPage() {
                   ),
                 }}
               />
+              {shopRating !== null && shop.data && (
+                <span className="ml-2 inline-flex items-center gap-1 align-middle">
+                  <StarRating
+                    value={shopRating}
+                    label={t('shop.rating', { average: shopRating.toFixed(1) })}
+                  />
+                  <span>{t('product.shopRating', { average: shopRating.toFixed(1), count: shop.data.ratingCount })}</span>
+                </span>
+              )}
             </p>
             {product.ratingCount > 0 && product.ratingAverage !== null && (
               <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm hover:underline">
