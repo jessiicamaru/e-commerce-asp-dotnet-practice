@@ -8,7 +8,7 @@ All through the gateway's existing `/api/products/**` route. No message, no gRPC
 
 ```json
 "photos": [
-  { "id": "0199...", "url": "/api/products/{id}/photos/{photoId}?k=..." }
+  { "id": "0199...", "url": "/api/products/{id}/photos/{photoId}?v=...&k=..." }
 ]
 ```
 
