@@ -293,6 +293,16 @@ administrator's token forwarded, Admin only) **before** the claim's transaction,
 23. **A shop's page is the catalogue's shelf, filtered.** Its products come from `GET /api/products?sellerId=`,
     never a second query, so a product taken down or a shop suspended leaves the shop page and the
     catalogue together; its count is `Product.OnShelf` counted (specs/099 D5).
+24. **A shop's rating is its products' reviews, and its seller reads the same number** (specs/165, #379). `GET
+    /api/shops/{id}` carries `ratingAverage` (null with no visible review, never zero) and `ratingCount`: each product's
+    stored average weighted by its count - one review at 4 and three at 2 is 2.5 - over **every** product the seller
+    has, on the shelf or not, so withdrawing a badly reviewed product does not lift the shop. One method
+    (`SellerRatings`) answers both this and the seller's insights (specs/068), so the two can never disagree. A hidden
+    review is out of both, because each product's average is recomputed from the visible rows (specs/046); and a
+    review write updates `products`, which empties the read cache (specs/157). The shop page shows the stars and the
+    count under the name, or "no reviews yet"; a seller's product page shows them beside "Sold by", from the same cached
+    read. Why not stored on `sellers`: one more write on every review path and a copy that can drift
+    ([research](../../specs/165-shop-rating/research.md)).
 
 ## Data
 
@@ -325,7 +335,7 @@ All through the gateway; the full list is in [api.md](../reference/api.md).
 | `GET` | `/api/sellers/me` | Seller |
 | `PUT` | `/api/sellers/me/shop-name` | Seller |
 | `PUT` | `/api/sellers/me/description` | Seller |
-| `GET` | `/api/shops/{sellerId}` | anyone |
+| `GET` | `/api/shops/{sellerId}` | anyone - name, description, products on sale, paused, and the shop's rating (`ratingAverage`, `ratingCount`, specs/165) |
 | `GET` | `/api/products?sellerId=` | anyone |
 | `GET` | `/api/products/mine` | Seller |
 | `POST`, `PUT`, `DELETE` | `/api/products/...` (create, variants, prices, translations, images, delete) | Seller, Admin - ownership checked in the handler |
@@ -375,7 +385,7 @@ broker returns.
 | `pages/shop-payouts` (`/shop/payouts`) | One card per currency: on the way, due, paid out; and the payouts list. |
 | `components/seller/rename-shop-dialog` | Renames the shop. |
 | `components/seller/describe-shop-dialog` | The shop's description, beside the rename; the seller layout also links to the shop's own page. |
-| `pages/shop-front` (`/shops/:sellerId`) | Anyone: a shop's name, description and products on the shelf, paged; the product page's shop name links here. |
+| `pages/shop-front` (`/shops/:sellerId`) | Anyone: a shop's name, its rating (or "no reviews yet"), description and products on the shelf, paged; the product page's shop name links here and shows the same rating beside it (specs/165). |
 | `pages/admin-shops` (`/admin/shops`) | Staff: the application queue, a tab per status. |
 | `pages/admin-payouts` (`/admin/payouts`) | Administrators: what is due per seller and currency, and a confirmed "record payout". |
 
@@ -395,6 +405,8 @@ token. The sign-up page creates customers only; `register-seller` is reached thr
 | `Ecommerce.Inventory.Tests/SellerStockTests` | A seller stocks their own; another's is 404 and never 403; the shop's own is refused; an administrator costs no call to Catalog; a missing stock row says something different; Catalog unreachable is not a refusal. |
 | `Ecommerce.Order.Tests/SellerSalesTests`, `ShopNameTests` | The seller and shop name are frozen per line; a sale holds only the seller's lines and nothing about the customer; unpaid orders are never sales; not-yours and not-there read alike. |
 | `Ecommerce.Catalog.Tests/ShopPageTests` | The seller filter lists only that seller's products on the shelf; the shop read carries name, description and count; unknown, unnamed and suspended are 404; an older description loses. |
+| `Ecommerce.Catalog.Tests/ShopRatingTests` | With real reviews: the shop page weights each product by its reviews (4 once and 2 three times is 2.5 over 4) and gives exactly the seller's insights' numbers; no review is null, never zero, and another shop's reviews are not its own; a hidden review leaves and a restored one returns; a product off the shelf still counts. Counting only active products fails the last. |
+| client `pages/shop-front`, `pages/product`, `hooks/review`; `e2e/flows.spec.ts` | The shop page shows the stars, the number and the count, or "no reviews yet" without stars; a seller's product shows the shop's rating beside "Sold by", from the shop's own read, and the shop's own product asks for no shop; writing a review re-reads the shops' pages (dropping that fails the hook test). In a browser, after the flows' review, the shop page and the product page read 5.0 from one review (specs/165). |
 | `Ecommerce.Identity.Tests/ShopDescriptionTests` | A description is stored trimmed and announced with its audit entry; empty clears it; too long is 400; a non-seller is 404. |
 | `Ecommerce.Order.Tests/EarningsTests` | Equal split that sums exactly, commission rounding, no commission on the shop's part, the rate's range. |
 | `Ecommerce.Order.Tests/PayoutTests` | Terms recorded at checkout; balance moves on the way → due → paid out; failed orders count nowhere; nothing due is 409 and leaves nothing; simultaneous payouts pay each part once; one currency at a time; older parts are never paid; no payout account is 409 and claims nothing; a payout freezes where it went. |
@@ -473,3 +485,4 @@ decided there, in the same transaction as the products.
 | [040-delivery-confirmation](../../specs/040-delivery-confirmation/) | [#85](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/85) | Due means delivered, not shipped. |
 | [044-shop-applications](../../specs/044-shop-applications/) | [#96](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/96) | Shop applications; `register-seller` grants `Customer` only; `/open-shop`, `/admin/shops`, `refreshSession`. |
 | [063-email-confirmation](../../specs/063-email-confirmation/) | [#146](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/146) | A shop is applied for and approved only with a confirmed address. |
+| [165-shop-rating](../../specs/165-shop-rating/) | [#PR_NUMBER](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/PR_NUMBER) | A shop's rating on its page and beside "Sold by" - every visible review of every product it has, the seller's insights' own computation. |

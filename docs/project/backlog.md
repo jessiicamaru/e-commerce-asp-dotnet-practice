@@ -50,7 +50,7 @@ things hidden, clipped, untranslated or wrong), then #246-#254 (usability).
 
 **From the feature review of 2026-10-09** (what a shop selling anything lacks, checked against the code): #368 (a gallery,
 done), #369 (a compare-at price, done) and #370 (a cart before signing in, done); then #375 (related and recently
-viewed, done) and #376 (search suggestions, done). Nothing from it is open.
+viewed, done) and #376 (search suggestions, done); then #379 (a shop's rating, done). Nothing from it is open.
 
 
 ## Priority 2a - the back office
@@ -153,6 +153,7 @@ Closed since the backlog was written, newest first. The timeline has the full hi
 | [#364](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/364) | Two Bruno tests fail on a fresh stack - payment export sections, sellers counted | [#374](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/374) - the tests asked for what Payment no longer declares and for a seller no fresh run has yet |
 | [#375](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/375) | Related products and recently viewed on the product page | [#377](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/377) (specs/163) |
 | [#376](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/376) | Search suggestions while typing - products and categories | [#378](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/378) (specs/164) |
+| [#379](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/379) | A shop's rating - its reviews summed up on its page and beside its name on a product | [#PR_NUMBER](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/PR_NUMBER) (specs/165) |
 | [#295](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/295) | The report's architecture overview, deployment guide and evaluation | [#327](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/327) (specs/152) |
 | [#331](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/331) | Dependabot proposes upgrades that must not be merged, one pull request per major | [#332](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/332) (specs/153) |
 | [#195](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/issues/195) | Administrators have no screen to manage categories | [#204](https://github.com/jessiicamaru/e-commerce-asp-dotnet-practice/pull/204) (specs/097) |
