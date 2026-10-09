@@ -24,7 +24,7 @@ description: "Task list for Search suggestions while typing"
 - [x] T006 Bruno for the read and its refusal; `docs/reference` regenerated
 - [x] T007 On the stack: the quickstart and a browser check
 - [x] T008 Docs: catalog page, CLAUDE.md, timeline, backlog
-- [x] T009 Merged in #PR_NUMBER, closes #376
+- [x] T009 Merged in #378, closes #376
 
 ## Evidence
 
