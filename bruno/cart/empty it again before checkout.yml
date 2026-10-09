@@ -1,18 +1,11 @@
 info:
-  name: add item again (for checkout)
+  name: empty it again before checkout
   type: http
-  seq: 14
+  seq: 13
 
 http:
-  method: POST
-  url: "{{baseUrl}}/api/cart/items"
-  body:
-    type: json
-    data: |-
-      {
-        "productId": "{{productId}}",
-        "quantity": 2
-      }
+  method: DELETE
+  url: "{{baseUrl}}/api/cart"
   auth:
     type: bearer
     token: "{{customerToken}}"
@@ -32,4 +25,4 @@ settings:
   maxRedirects: 5
 
 docs: |-
-  Puts something back after "remove" / "empty", so the order folder has a cart to check out.
+  The order folder checks out what the next request adds - and only that.

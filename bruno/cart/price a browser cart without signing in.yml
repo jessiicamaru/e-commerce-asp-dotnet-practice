@@ -1,0 +1,41 @@
+info:
+  name: price a browser cart without signing in
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/cart/price"
+  body:
+    type: json
+    data: |-
+      {
+        "lines": [
+          { "productId": "{{productId}}", "variantId": "{{productId}}", "quantity": 2 }
+        ]
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("priced like a stored cart: one line, two of it, an estimate", function() {
+          expect(res.body.lines).to.have.length(1);
+          expect(res.body.lines[0].quantity).to.equal(2);
+          expect(res.body.lines[0].name).to.be.a("string");
+          expect(res.body.estimatedTotal).to.equal(res.body.lines[0].lineTotal);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/162: anonymous. The browser keeps the lines; this prices them exactly as a stored cart and stores nothing.

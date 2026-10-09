@@ -1,6 +1,6 @@
 # Messages
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `90cad08b`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `abe08806`. Do not edit by hand - change the code and run the script again.
 
 Every integration message in `Ecommerce.Contracts` - the only coupling between services - with who publishes it and who consumes it. Every publish goes through the publisher's transactional outbox, and every consumer is idempotent (see [reliable messaging](../architecture/reliable-messaging-and-outbox-pattern.md)). A consumer's class name is its queue name, so two services never share one.
 
