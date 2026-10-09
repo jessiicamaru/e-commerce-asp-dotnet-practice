@@ -103,5 +103,9 @@
   "compareAt": {
     "was": "Was {{price}}",
     "off": "-{{percent}}%"
+  },
+  "search": {
+    "suggestions": "Suggestions",
+    "category": "Category"
   }
 }

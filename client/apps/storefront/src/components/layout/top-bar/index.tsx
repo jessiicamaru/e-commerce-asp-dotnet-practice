@@ -6,7 +6,6 @@ import {
   LogInIcon,
   MenuIcon,
   PackageIcon,
-  SearchIcon,
   ShoppingBagIcon,
   ShieldCheckIcon,
   StoreIcon,
@@ -17,7 +16,7 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { UserMenu } from '@/components/layout/user-menu'
 import { Button, buttonVariants } from '@ecommerce/ui/button'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@ecommerce/ui/input-group'
+import { SearchBox } from '@/components/layout/search-box'
 import { Separator } from '@ecommerce/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@ecommerce/ui/sheet'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@ecommerce/ui/tooltip'
@@ -66,18 +65,8 @@ export function TopBar() {
         </Link>
 
         <form onSubmit={search} className="order-last w-full md:order-0 md:flex-1">
-          <InputGroup className="bg-secondary/70 h-10 rounded-full border-0">
-            <InputGroupAddon>
-              <SearchIcon />
-            </InputGroupAddon>
-            <InputGroupInput
-              name="q"
-              type="search"
-              defaultValue={params.get('q') ?? ''}
-              placeholder={t('searchPlaceholder')}
-              aria-label={t('action.search')}
-            />
-          </InputGroup>
+          {/* Suggestions while typing (specs/164); Enter with none chosen still submits this form. */}
+          <SearchBox initial={params.get('q') ?? ''} />
         </form>
 
         <div className="ml-auto flex items-center gap-1">
