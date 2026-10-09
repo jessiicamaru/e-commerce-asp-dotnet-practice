@@ -121,6 +121,19 @@ def _check(name, data, problems):
                     and round(usd, 2) == usd):
                 problems.append(f"{here}: usd is a positive amount with at most two decimals, got {usd!r}")
 
+            # A compare-at (specs/161) is optional, in the same unit as its price, and above it - Catalog refuses anything
+            # else, and its CHECK would too.
+            was_vnd = variant.get("compareAtVnd")
+            if was_vnd is not None and not (isinstance(was_vnd, int) and not isinstance(was_vnd, bool)
+                                            and isinstance(vnd, int) and was_vnd > vnd):
+                problems.append(f"{here}: compareAtVnd is a whole number of dong above vnd, got {was_vnd!r}")
+
+            was_usd = variant.get("compareAtUsd")
+            if was_usd is not None and not (isinstance(was_usd, (int, float)) and not isinstance(was_usd, bool)
+                                            and round(was_usd, 2) == was_usd
+                                            and isinstance(usd, (int, float)) and was_usd > usd):
+                problems.append(f"{here}: compareAtUsd is an amount with at most two decimals above usd, got {was_usd!r}")
+
             stock = variant.get("stock")
             if not (isinstance(stock, int) and not isinstance(stock, bool) and stock >= 0):
                 problems.append(f"{here}: stock is a whole number, got {stock!r}")

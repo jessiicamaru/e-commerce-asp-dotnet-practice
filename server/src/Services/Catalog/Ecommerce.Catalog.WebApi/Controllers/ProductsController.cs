@@ -189,6 +189,27 @@ public class ProductsController : ApiControllerBase
     }
 
     /// <summary>
+    /// What this shape's price in this currency is compared against - shown struck through, never charged (specs/161).
+    /// Above the price, in a currency it is priced in, or 400. Prices never send a product back to review.
+    /// </summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpPut("{id:guid}/variants/{variantId:guid}/prices/{currency}/compare-at")]
+    public async Task<IActionResult> SetCompareAtPrice(
+        Guid id, Guid variantId, string currency, [FromBody] VariantPriceRequest request)
+    {
+        return Ok(await Mediator.Send(new SetCompareAtPriceCommand(id, variantId, currency, request.Amount)));
+    }
+
+    /// <summary>Stops showing a reduction in this currency (specs/161). Quiet when there is none.</summary>
+    [Authorize(Roles = "Seller,Admin")]
+    [HttpDelete("{id:guid}/variants/{variantId:guid}/prices/{currency}/compare-at")]
+    public async Task<IActionResult> ClearCompareAtPrice(Guid id, Guid variantId, string currency)
+    {
+        await Mediator.Send(new ClearCompareAtPriceCommand(id, variantId, currency));
+        return NoContent();
+    }
+
+    /// <summary>
     /// Removes a product and every shape of it from the catalogue, for good (specs/024).
     /// </summary>
     /// <remarks>

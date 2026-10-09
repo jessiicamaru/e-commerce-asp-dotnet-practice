@@ -79,6 +79,16 @@ export const useSetVariantPrice = (productId: string) =>
     productId,
   )
 
+/** Sets a compare-at price, or clears it when `amount` is null (specs/161). */
+export const useSetCompareAtPrice = (productId: string) =>
+  useListingMutation(
+    ({ variantId, currency, amount }: { variantId: string; currency: string; amount: number | null }) =>
+      amount === null
+        ? Product.clearCompareAt(productId, variantId, currency)
+        : Product.setCompareAt(productId, variantId, currency, amount),
+    productId,
+  )
+
 export const useUploadProductImage = (productId: string) =>
   useListingMutation((file: File) => Product.uploadImage(productId, file), productId)
 
@@ -139,6 +149,15 @@ export function useProductInEveryCurrency(id: string) {
           currency,
           Object.fromEntries(
             (results[index].data?.variants ?? []).map((variant) => [variant.id, variant.price]),
+          ),
+        ]),
+      ) as Record<string, Record<string, number | null>>,
+      /** The same per currency, for what each price is compared against (specs/161) - null meaning none. */
+      compareAtByCurrency: Object.fromEntries(
+        CURRENCIES.map((currency, index) => [
+          currency,
+          Object.fromEntries(
+            (results[index].data?.variants ?? []).map((variant) => [variant.id, variant.compareAtPrice ?? null]),
           ),
         ]),
       ) as Record<string, Record<string, number | null>>,

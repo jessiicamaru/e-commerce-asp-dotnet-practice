@@ -6,7 +6,8 @@ import { Category } from '@ecommerce/core/services/category'
 import type { Category as CategoryModel, Specification } from '@ecommerce/core/services/category/types'
 import { refusal } from '@ecommerce/core/test/refusal'
 import { renderAsAdmin } from '@ecommerce/core/test/render'
-import { parseOptionLines, SpecificationsPanel } from './specifications-panel'
+import { parseOptionLines } from './parse-option-lines'
+import { SpecificationsPanel } from './specifications-panel'
 
 const fashion: CategoryModel = {
   id: 'c-fa', name: 'Thời trang', description: null, slug: 'thoi-trang', parentCategoryId: null, isActive: true, language: 'vi',

@@ -248,7 +248,9 @@
       "ProductPhotoAdded": "Product photo added",
       "ProductPhotoRemoved": "Product photo removed from gallery",
       "ProductPhotosReordered": "Product photos reordered",
-      "ProductCoverChosen": "Product cover changed"
+      "ProductCoverChosen": "Product cover changed",
+      "CompareAtPriceSet": "Compare-at price set",
+      "CompareAtPriceRemoved": "Compare-at price removed"
     }
   },
   "reports": {

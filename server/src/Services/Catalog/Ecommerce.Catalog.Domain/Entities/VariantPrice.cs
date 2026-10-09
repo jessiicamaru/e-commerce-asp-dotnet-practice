@@ -32,4 +32,7 @@ public class VariantPrice
     public string Currency { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
+
+    /// <summary>What <see cref="Amount"/> is compared against, in the same currency - display only (specs/161).</summary>
+    public decimal? CompareAtAmount { get; set; }
 }

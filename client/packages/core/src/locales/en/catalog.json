@@ -168,5 +168,6 @@
   "gallery": {
     "label": "Photographs of {{name}}",
     "show": "Show photograph {{n}} of {{count}}"
-  }
+  },
+  "onSaleOnly": "On sale"
 }

@@ -14,6 +14,7 @@ import { VariantChooser } from '@/components/product/variant-chooser'
 import { useProduct } from '@ecommerce/core/hooks/product'
 import { Product } from '@ecommerce/core/services/product'
 import { useVariantStock } from '@ecommerce/core/hooks/stock'
+import { CompareAt } from '@ecommerce/core/components/shared/compare-at'
 import { Price } from '@ecommerce/core/components/shared/price'
 import { StarRating } from '@ecommerce/core/components/product/star-rating'
 import { ProductQuestions } from '@/components/product/product-questions'
@@ -111,6 +112,12 @@ export function ProductPage() {
               value={variant ? variant.price : product.price}
               currency={variant?.currency ?? product.currency}
               className="text-3xl font-bold"
+            />
+            <CompareAt
+              price={variant ? variant.price : product.price}
+              compareAt={variant ? variant.compareAtPrice : product.compareAtPrice}
+              currency={variant?.currency ?? product.currency}
+              className="text-lg"
             />
             <span className="text-muted-foreground text-xs">{t('product.taxNote')}</span>
           </div>

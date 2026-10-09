@@ -1,0 +1,28 @@
+info:
+  name: remove the compare-at price
+  type: http
+  seq: 88
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/products/{{productId}}/variants/{{saleVariantId}}/prices/VND/compare-at"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 204", function() {
+          expect(res.status).to.equal(204);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  remove the compare-at price

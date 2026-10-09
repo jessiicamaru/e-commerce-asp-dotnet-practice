@@ -248,7 +248,9 @@
       "ProductPhotoAdded": "Thêm ảnh sản phẩm",
       "ProductPhotoRemoved": "Xoá ảnh khỏi bộ ảnh",
       "ProductPhotosReordered": "Sắp xếp lại ảnh sản phẩm",
-      "ProductCoverChosen": "Đổi ảnh bìa sản phẩm"
+      "ProductCoverChosen": "Đổi ảnh bìa sản phẩm",
+      "CompareAtPriceSet": "Đặt giá gốc",
+      "CompareAtPriceRemoved": "Bỏ giá gốc"
     }
   },
   "reports": {

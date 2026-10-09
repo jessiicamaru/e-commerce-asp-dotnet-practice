@@ -66,6 +66,7 @@ describe('pendingChanges', () => {
     expect(pendingChanges({ prices: { VND: '5190000', USD: '219' }, onHand: '3' }, current)).toEqual({
       prices: [{ currency: 'USD', amount: 219 }],
       onHand: null,
+      compareAts: [],
     })
   })
 
@@ -76,9 +77,23 @@ describe('pendingChanges', () => {
   })
 
   it('ignores what does not parse, and a negative or fractional stock', () => {
-    expect(pendingChanges({ prices: { USD: 'abc' }, onHand: '-2' }, current)).toEqual({ prices: [], onHand: null, lowStock: undefined })
+    expect(pendingChanges({ prices: { USD: 'abc' }, onHand: '-2' }, current)).toEqual({ prices: [], onHand: null, lowStock: undefined, compareAts: [] })
     expect(pendingChanges({ prices: {}, onHand: '2.5' }, current).onHand).toBeNull()
     expect(pendingChanges({ prices: {}, onHand: '9' }, current).onHand).toBe(9)
+  })
+
+  /** A compare-at (specs/161): a typed amount sets one, an emptied box clears one that exists, untouched sends nothing. */
+  it('sends a compare-at only when it changes, and an emptied box as clearing it', () => {
+    const reduced = { ...current, compareAts: { VND: 6_000_000, USD: null } }
+
+    expect(pendingChanges({ prices: {}, onHand: undefined, compareAts: { VND: '6 500 000' } }, reduced).compareAts).toEqual([
+      { currency: 'VND', amount: 6_500_000 },
+    ])
+    expect(pendingChanges({ prices: {}, onHand: undefined, compareAts: { VND: '' } }, reduced).compareAts).toEqual([
+      { currency: 'VND', amount: null },
+    ])
+    // Emptying a box that had nothing, or retyping the same amount, is no change.
+    expect(pendingChanges({ prices: {}, onHand: undefined, compareAts: { USD: '', VND: '6000000' } }, reduced).compareAts).toEqual([])
   })
 
   /** The low-stock line (specs/102): a number, 0 for never, and an emptied box for the shop's default. */

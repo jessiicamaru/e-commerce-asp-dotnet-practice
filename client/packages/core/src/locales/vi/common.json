@@ -99,5 +99,9 @@
     "applyLink": "Áp dụng",
     "removeLink": "Bỏ liên kết"
   },
-  "formerCustomer": "Một khách hàng cũ"
+  "formerCustomer": "Một khách hàng cũ",
+  "compareAt": {
+    "was": "Giá cũ {{price}}",
+    "off": "-{{percent}}%"
+  }
 }

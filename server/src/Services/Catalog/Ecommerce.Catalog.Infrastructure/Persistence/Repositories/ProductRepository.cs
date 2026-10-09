@@ -405,6 +405,26 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             }
         }
 
+        // On sale (#369, specs/161): what the CARD shows as reduced - the variant giving the "from" price has a compare-at
+        // in the currency asked for (research D6). The CHECK keeps a set compare-at above its price, so "set" is "reduced";
+        // a reduced dearer shape alone would list a card with nothing struck through.
+        if (filter is { OnSale: true })
+        {
+            if (inDefaultCurrency)
+            {
+                // products.Price is the default currency's "from" price, kept by the rollup.
+                query = query.Where(p => p.Variants.Any(v => v.IsActive && v.CompareAtPrice != null && v.Price == p.Price));
+            }
+            else
+            {
+                var code = currency.ToUpperInvariant();
+                query = query.Where(p => p.Variants.Any(v => v.IsActive
+                    && v.Prices.Any(x => x.Currency == code && x.CompareAtAmount != null
+                        && x.Amount == p.Variants.Where(w => w.IsActive)
+                            .SelectMany(w => w.Prices).Where(y => y.Currency == code).Min(y => y.Amount))));
+            }
+        }
+
         // A range of the "from" price the card shows, in the currency ASKED FOR - never converted (specs/022).
         if (filter is { } f && (f.MinPrice is not null || f.MaxPrice is not null))
         {

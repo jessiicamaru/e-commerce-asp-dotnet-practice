@@ -11,7 +11,7 @@ import { Button } from '@ecommerce/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@ecommerce/ui/input-group'
 import { Label } from '@ecommerce/ui/label'
 import { CURRENCIES } from '@ecommerce/core/config/money'
-import { useRemoveVariantImage, useSetVariantPrice, useUploadVariantImage } from '@ecommerce/core/hooks/product'
+import { useRemoveVariantImage, useSetCompareAtPrice, useSetVariantPrice, useUploadVariantImage } from '@ecommerce/core/hooks/product'
 import { useSetLowStockThreshold, useSetStock } from '@ecommerce/core/hooks/stock'
 import type { Product, Variant } from '@ecommerce/core/services/product/types'
 import type { Stock } from '@ecommerce/core/services/stock/types'
@@ -34,6 +34,7 @@ export function VariantEditor({
   index,
   count,
   prices,
+  compareAts = {},
   stock,
   stockPending,
 }: {
@@ -43,17 +44,21 @@ export function VariantEditor({
   count: number
   /** This variant's price in every currency, read from each currency's own response - null means not sold in it. */
   prices: Record<string, number | null>
+  /** What each price is compared against, per currency - null for none (specs/161). */
+  compareAts?: Record<string, number | null>
   stock: Stock | null
   stockPending: boolean
 }) {
   const { t } = useTranslation('seller')
   const setPrice = useSetVariantPrice(product.id)
+  const setCompareAt = useSetCompareAtPrice(product.id)
   const setStock = useSetStock(product.id)
   const setLowStock = useSetLowStockThreshold()
   const upload = useUploadVariantImage(product.id)
   const removeImage = useRemoveVariantImage(product.id)
 
   const [typedPrices, setTypedPrices] = useState<Record<string, string>>({})
+  const [typedCompareAts, setTypedCompareAts] = useState<Record<string, string>>({})
   const [typedOnHand, setTypedOnHand] = useState<string | undefined>(undefined)
   const [typedLowStock, setTypedLowStock] = useState<string | undefined>(undefined)
   const [saving, setSaving] = useState(false)
@@ -61,10 +66,11 @@ export function VariantEditor({
   // The variant's own line; the shop's default shows as a placeholder instead (specs/102).
   const ownLowStock = stock && !stock.lowStockThresholdIsDefault ? stock.lowStockThreshold : null
   const changes = pendingChanges(
-    { prices: typedPrices, onHand: typedOnHand, lowStock: typedLowStock },
-    { prices, onHand: stock?.quantityOnHand ?? null, lowStock: ownLowStock },
+    { prices: typedPrices, onHand: typedOnHand, lowStock: typedLowStock, compareAts: typedCompareAts },
+    { prices, compareAts, onHand: stock?.quantityOnHand ?? null, lowStock: ownLowStock },
   )
-  const dirty = changes.prices.length > 0 || changes.onHand !== null || changes.lowStock !== undefined
+  const dirty =
+    changes.prices.length > 0 || changes.compareAts.length > 0 || changes.onHand !== null || changes.lowStock !== undefined
 
   // The server folds the product's picture into a variant that has none (specs/032), so "has its own"
   // is "differs from the product's".
@@ -76,6 +82,10 @@ export function VariantEditor({
       for (const { currency, amount } of changes.prices) {
         await setPrice.mutateAsync({ variantId: variant.id, currency, amount })
       }
+      // After the prices: a compare-at must be above the price it will be shown beside (specs/161).
+      for (const { currency, amount } of changes.compareAts) {
+        await setCompareAt.mutateAsync({ variantId: variant.id, currency, amount })
+      }
       if (changes.onHand !== null) {
         await setStock.mutateAsync({ variantId: variant.id, quantityOnHand: changes.onHand })
       }
@@ -83,6 +93,7 @@ export function VariantEditor({
         await setLowStock.mutateAsync({ variantId: variant.id, threshold: changes.lowStock.threshold })
       }
       setTypedPrices({})
+      setTypedCompareAts({})
       setTypedOnHand(undefined)
       setTypedLowStock(undefined)
       toast.success(t('variant.saved'))
@@ -161,6 +172,20 @@ export function VariantEditor({
                       onChange={(event) => setTypedPrices((p) => ({ ...p, [currency]: event.target.value }))}
                     />
                   </InputGroup>
+                  {/* Struck through beside the price on the shop's pages; empty for none (specs/161). */}
+                  <InputGroup className="h-8 rounded-lg">
+                    <InputGroupAddon>
+                      <InputGroupText className="text-xs">{t('variant.compareAt')}</InputGroupText>
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      aria-label={t('variant.compareAtIn', { currency })}
+                      inputMode="decimal"
+                      className="text-sm"
+                      placeholder={t('variant.compareAtNone')}
+                      value={typedCompareAts[currency] ?? (compareAts[currency] == null ? '' : groupDigits(compareAts[currency]!))}
+                      onChange={(event) => setTypedCompareAts((p) => ({ ...p, [currency]: event.target.value }))}
+                    />
+                  </InputGroup>
                 </div>
               )
             })}
@@ -201,7 +226,7 @@ export function VariantEditor({
 
           {!stock && !stockPending && <p className="text-muted-foreground text-xs">{t('stock.notRegisteredYet')}</p>}
           <ServerError
-            error={setPrice.error ?? setStock.error ?? setLowStock.error ?? upload.error ?? removeImage.error}
+            error={setPrice.error ?? setCompareAt.error ?? setStock.error ?? setLowStock.error ?? upload.error ?? removeImage.error}
             fallback={t('listing.loadFailed')}
           />
 
@@ -212,6 +237,7 @@ export function VariantEditor({
                 className="rounded-full"
                 onClick={() => {
                   setTypedPrices({})
+                  setTypedCompareAts({})
                   setTypedOnHand(undefined)
                   setTypedLowStock(undefined)
                 }}

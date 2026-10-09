@@ -497,6 +497,9 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Property<DateTime?>("AvailabilityObservedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal?>("CompareAtPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -543,6 +546,8 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
 
                     b.ToTable("product_variants", null, t =>
                         {
+                            t.HasCheckConstraint("CK_product_variants_CompareAtPrice", "\"CompareAtPrice\" IS NULL OR \"CompareAtPrice\" > \"Price\"");
+
                             t.HasCheckConstraint("CK_product_variants_image_complete", "(\"ImageContentType\" IS NULL) = (\"ImageUpdatedAt\" IS NULL)");
 
                             t.HasCheckConstraint("CK_product_variants_image_type", "\"ImageContentType\" IS NULL OR \"ImageContentType\" IN ('image/jpeg', 'image/png', 'image/webp')");
@@ -841,6 +846,9 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal?>("CompareAtAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -858,6 +866,8 @@ namespace Ecommerce.Catalog.Infrastructure.Migrations
 
                     b.ToTable("variant_prices", null, t =>
                         {
+                            t.HasCheckConstraint("CK_variant_prices_CompareAtAmount", "\"CompareAtAmount\" IS NULL OR \"CompareAtAmount\" > \"Amount\"");
+
                             t.HasCheckConstraint("CK_variant_prices_amount", "\"Amount\" >= 0");
                         });
                 });

@@ -33,6 +33,13 @@ public class ProductVariant
     public decimal Price { get; set; }
 
     /// <summary>
+    /// What <see cref="Price"/> is compared against - shown struck through, never charged (specs/161, #369). In the
+    /// default currency, like the price beside it; <c>null</c> when the variant is not reduced. The database refuses
+    /// one that is not above the price, so a set compare-at always means "on sale".
+    /// </summary>
+    public decimal? CompareAtPrice { get; set; }
+
+    /// <summary>
     /// The options flattened for display and for freezing: <c>Kit: Body only · Colour: Black</c>.
     /// Empty for a product sold in only one shape - there is nothing to choose between.
     /// </summary>

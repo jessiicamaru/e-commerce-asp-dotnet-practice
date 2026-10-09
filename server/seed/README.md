@@ -18,7 +18,9 @@ declared by some loaded vertical and to have no parent itself, and the seeder cr
 category already there into its department. A category may declare `"specifications"` (code, vi, en, kind `Text`/`Choice`, options with code/vi/en) and a product
 fills them in as `"specifications": {"<code>": "<option code or text>"}` (specs/159): the checker refuses an option or a
 specification the product's category and department do not declare, and a category redeclaring its department's code;
-the seeder declares them by code (idempotent) and sends each product's whole set. `clean-test-debris.py` keeps whatever
+the seeder declares them by code (idempotent) and sends each product's whole set. A variant may also carry
+`compareAtVnd` / `compareAtUsd` (specs/161): what its price is compared against, checked to be above it and sent after
+the price; four products carry one, about a fifth above the price, approximate like the prices. `clean-test-debris.py` keeps whatever
 any file names. ⚠️ The prices are approximate - each file says so.
 
 ## Signing in as the administrator

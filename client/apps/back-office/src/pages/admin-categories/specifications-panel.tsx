@@ -11,17 +11,9 @@ import { ApiError } from '@ecommerce/core/config/axios'
 import { useCategorySpecificationsIn, useSpecificationChanges } from '@ecommerce/core/hooks/category'
 import type { Category, Specification } from '@ecommerce/core/services/category/types'
 import { slugOf } from '@ecommerce/core/utils/shared'
+import { parseOptionLines } from './parse-option-lines'
 
 type Kind = 'Text' | 'Choice'
-
-/** "Tiếng Việt | English" per line, the English optional. */
-export function parseOptionLines(text: string): { code: string; value: string; english: string }[] {
-  return text
-    .split('\n')
-    .map((line) => line.split('|').map((part) => part.trim()))
-    .filter(([value]) => !!value)
-    .map(([value, english = '']) => ({ code: slugOf(value), value, english }))
-}
 
 /**
  * What a category's products are compared by (specs/159, #366), declared here: a text (shown as written) or a choice of
