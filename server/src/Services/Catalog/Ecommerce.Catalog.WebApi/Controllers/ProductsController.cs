@@ -19,6 +19,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Ecommerce.Catalog.Application.Products.Queries.GetMyProducts;
 using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
+using Ecommerce.Catalog.Application.Products.Queries.SuggestProducts;
 using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,18 @@ public class ProductsController : ApiControllerBase
     {
         var result = await Mediator.Send(query);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// What the search box offers while typing (specs/164): a few products through the catalogue's own search, and a few
+    /// categories. Anonymous and cached. 2 to 100 characters.
+    /// </summary>
+    [AllowAnonymous]
+    [OutputCache(PolicyName = CatalogueCache.Policy)]
+    [HttpGet("suggest")]
+    public async Task<IActionResult> Suggest([FromQuery] string? q)
+    {
+        return Ok(await Mediator.Send(new SuggestProductsQuery(q)));
     }
 
     [AllowAnonymous]
