@@ -405,19 +405,23 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             }
         }
 
-        // On sale (#369, specs/161): an active variant with a compare-at in the currency asked for. The CHECK keeps a set
-        // compare-at above its price, so "set" is "reduced" and nothing is compared here (research D6).
+        // On sale (#369, specs/161): what the CARD shows as reduced - the variant giving the "from" price has a compare-at
+        // in the currency asked for (research D6). The CHECK keeps a set compare-at above its price, so "set" is "reduced";
+        // a reduced dearer shape alone would list a card with nothing struck through.
         if (filter is { OnSale: true })
         {
             if (inDefaultCurrency)
             {
-                query = query.Where(p => p.Variants.Any(v => v.IsActive && v.CompareAtPrice != null));
+                // products.Price is the default currency's "from" price, kept by the rollup.
+                query = query.Where(p => p.Variants.Any(v => v.IsActive && v.CompareAtPrice != null && v.Price == p.Price));
             }
             else
             {
                 var code = currency.ToUpperInvariant();
                 query = query.Where(p => p.Variants.Any(v => v.IsActive
-                    && v.Prices.Any(x => x.Currency == code && x.CompareAtAmount != null)));
+                    && v.Prices.Any(x => x.Currency == code && x.CompareAtAmount != null
+                        && x.Amount == p.Variants.Where(w => w.IsActive)
+                            .SelectMany(w => w.Prices).Where(y => y.Currency == code).Min(y => y.Amount))));
             }
         }
 

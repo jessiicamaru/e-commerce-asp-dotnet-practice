@@ -54,8 +54,14 @@ product to review. A false reduction is a matter for reports (specs/101) and sta
 
 ## D6 - "On sale" in SQL
 
-**Decision**: `onSale=true` keeps products with an active variant whose compare-at in the asked currency is set: the
-variant's column for the default currency, its `variant_prices` row's column for another.
+**Decision**: `onSale=true` keeps products whose card shows a reduction: the active variant giving the "from" price in the
+asked currency has a compare-at set - the variant's column against `products.Price` (the default currency's rollup), or
+its `variant_prices` row against the cheapest active row in another.
 
-**Rationale**: the CHECK guarantees a set compare-at is above its price, so "set" is "on sale" - no comparison needed in
-the query.
+**Rationale**: the filter must mean what the card shows (D4). The first version kept any product with *some* reduced
+active variant, and Bruno's run found the result: a product whose dearer shape was reduced was listed under "On sale"
+with nothing struck through on its card. The CHECK guarantees a set compare-at is above its price, so "set" is
+"reduced" - only the "which variant" needs comparing.
+
+**Rejected**: keeping "any variant" and adding a "Sale" badge for a card whose cheapest shape is not reduced - a second
+signal to explain, for a case a seller can avoid by reducing the shape the card shows.

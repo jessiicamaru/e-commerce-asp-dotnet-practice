@@ -153,6 +153,20 @@ public class CompareAtPriceTests(CatalogTestFixture fixture) : IDisposable
     }
 
     [Fact]
+    public async Task On_sale_means_what_the_card_shows_so_a_reduced_dearer_shape_alone_is_not_listed()
+    {
+        var category = await CategoryAsync();
+        var (productId, cheap) = await CreateAsync(990_000m, category);
+        var dear = await AddVariantAsync(productId, 2_000_000m);
+        await SendAsync(new SetCompareAtPriceCommand(productId, dear, "VND", 2_500_000m));
+
+        Assert.Empty(await OnSaleAsync(category, Dong));
+
+        await SendAsync(new SetCompareAtPriceCommand(productId, cheap, "VND", 1_100_000m));
+        Assert.Equal([productId], await OnSaleAsync(category, Dong));
+    }
+
+    [Fact]
     public async Task Checkout_is_charged_the_price_and_never_reads_the_compare_at()
     {
         var (productId, variantId) = await CreateAsync(990_000m);

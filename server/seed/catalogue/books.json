@@ -200,7 +200,9 @@
           ],
           "vnd": 189000,
           "usd": 11.99,
-          "stock": 40
+          "stock": 40,
+          "compareAtVnd": 240000,
+          "compareAtUsd": 15.0
         }
       ],
       "specifications": {

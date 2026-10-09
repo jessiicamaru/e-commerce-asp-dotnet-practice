@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (330 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (344 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (19 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -1194,6 +1194,13 @@ audited, and a seller's change sends an approved product back to review. ⚠️ 
 the gallery **keeping its file**, so a gallery row may hold a cover-form key. ⚠️ A new reader of a product's files (the
 orphan report's live keys, product deletion) must read `product_photos` too. `photos` is on the lookup and the review
 queue only, never the listing.
+
+**A price can be compared against an earlier one** (specs/161, #369): `product_variants.CompareAtPrice` and
+`variant_prices.CompareAtAmount`, beside the price they are compared against, each kept above it by a **CHECK**; set at
+`.../prices/{currency}/compare-at`, shown struck through with the percentage off, and filtered by `onSale`. ⚠️ **Display
+only** - nothing that charges reads it, so `PriceVariants`, the quote and orders are unchanged. ⚠️ A new writer of a price
+calls `CompareAt.ClearIfNotBelow` before the save, or the CHECK refuses a price raised to its compare-at. Like any price,
+never a reason for review.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)

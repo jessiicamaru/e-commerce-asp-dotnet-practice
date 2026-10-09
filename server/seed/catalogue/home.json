@@ -191,7 +191,9 @@
           ],
           "vnd": 2290000,
           "usd": 99,
-          "stock": 10
+          "stock": 10,
+          "compareAtVnd": 2860000,
+          "compareAtUsd": 124.0
         },
         {
           "sku": "PHILIPS-AIRFRYER-3000-62",
