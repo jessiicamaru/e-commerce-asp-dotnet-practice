@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (351 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (359 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (29 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -1207,7 +1207,10 @@ calls `CompareAt.ClearIfNotBelow` before the save, or the CHECK refuses a price 
 never a reason for review. **A product page leads on** (specs/163, #375): `GET /api/products/{id}/related` is the listing
 asked twice (category, then department, `rating_desc`), never itself, `[]` when unknown or off the shelf; *recently
 viewed* is the browser's own list of ids, read back through the listing's `ids` filter - nothing about what somebody
-looked at is stored on the server.
+looked at is stored on the server. **The search box suggests** (specs/164, #376): `GET /api/products/suggest?q=` -
+up to 6 products through the listing's own search (so Enter never disagrees) and 4 categories matched in memory on
+either name, folded like `f_unaccent`; the top bar's `SearchBox` is an ARIA combobox, debounced 200 ms and keyed by
+the term. ⚠️ `Category.IsActive` is set and read by nothing - filtering on it hides every category.
 
 `server/.dockerignore` is what keeps `.env` out of an image — **Docker does not read `.gitignore`**.
 [.github/scripts/verify-image-has-no-secrets.sh](.github/scripts/verify-image-has-no-secrets.sh)

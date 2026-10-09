@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `c7467eb9`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `1dc00ae1`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**227 endpoints** across 7 services.
+**228 endpoints** across 7 services.
 
 ## Identity (58)
 
@@ -69,7 +69,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (84)
+## Catalog (85)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -100,6 +100,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/products/review` | Admin, Moderator | The moderators' queue (Pending, oldest first) or the history of one status. |
 | `GET` | `/api/products/saved` | signed in | The caller's saved products, newest first, as the listing reads them now. |
 | `GET` | `/api/products/saved/ids` | signed in | The ids alone - for drawing a filled heart on a page of cards. |
+| `GET` | `/api/products/suggest` | anyone | What the search box offers while typing (specs/164): a few products through the catalogue's own search, and a few categories. Anonymous and cached. 2 to 100 characters. |
 | `DELETE` | `/api/products/{id}` | Seller, Admin | Removes a product and every shape of it from the catalogue, for good (specs/024). |
 | `GET` | `/api/products/{id}` | anyone |  |
 | `PUT` | `/api/products/{id}` | Seller, Admin | The product's own name, description and category (specs/124) - its default-language text, which no translation writes. A seller's change to an approved product sends it back to review. |
