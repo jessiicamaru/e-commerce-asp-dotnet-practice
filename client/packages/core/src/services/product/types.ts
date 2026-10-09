@@ -140,6 +140,8 @@ export interface ProductQuery {
   onSale?: boolean
   /** Products holding every one of these specification options (specs/159) - sent as one `optionIds` per id. */
   optionIds?: string[]
+  /** Only these products (specs/163) - what this browser opened. At most 24. */
+  ids?: string[]
 }
 
 /** One line of a product's specifications table, in the reader's language (specs/159). */

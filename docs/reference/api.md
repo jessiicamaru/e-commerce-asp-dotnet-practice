@@ -1,10 +1,10 @@
 # HTTP API
 
-> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `82f5ac94`. Do not edit by hand - change the code and run the script again.
+> **Generated** by [`docs/tools/generate_reference.py`](../tools/generate_reference.py) from commit `c7467eb9`. Do not edit by hand - change the code and run the script again.
 
 Every endpoint a service exposes, grouped by service. Paths are the service's own; the gateway forwards `/api/...` to them unchanged (see [gateway.md](gateway.md)). **Who** is what the controller attributes allow - the handler may refuse further (somebody else's product is a 404, not a 403, for example); the feature documents say where.
 
-**226 endpoints** across 7 services.
+**227 endpoints** across 7 services.
 
 ## Identity (58)
 
@@ -69,7 +69,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `POST` | `/api/users/{id}/unban` | Admin |  |
 | `POST` | `/api/users/{id}/unlock` | Admin, Moderator |  |
 
-## Catalog (83)
+## Catalog (84)
 
 | Method | Path | Who | What |
 | :-- | :-- | :-- | :-- |
@@ -114,6 +114,7 @@ Every endpoint a service exposes, grouped by service. Paths are the service's ow
 | `GET` | `/api/products/{id}/photos/{photoId}` | anyone | One photograph, for anyone - while its product is on sale, or with its own k (specs/081). Its bytes never change, so the address with its v is cacheable for good. |
 | `POST` | `/api/products/{id}/photos/{photoId}/cover` | Seller, Admin | Make a photograph the cover; the previous cover takes its place. |
 | `POST` | `/api/products/{id}/reject` | Admin, Moderator |  |
+| `GET` | `/api/products/{id}/related` | anyone | Other products like this one (specs/163): its category, then its department, most reviewed first. Empty for an unknown or off-shelf product. Anonymous and cached, like the listing it is built on. |
 | `POST` | `/api/products/{id}/resubmit` | Seller, Admin | Sends a rejected product back to the queue. The caller's own - somebody else's is 404. |
 | `DELETE` | `/api/products/{id}/saved` | signed in | Unsave it. Something not saved is no error. |
 | `PUT` | `/api/products/{id}/saved` | signed in | Save it. Again is fine; a product not on sale is a 404, like its public page. |

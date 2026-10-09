@@ -22,7 +22,9 @@ public record GetProductsQuery(
     // specs/161: only products with a variant reduced in the currency asked for.
     bool OnSale = false,
     /// <summary>Products holding every one of these specification options (#366, specs/159) - Brand: Apple.</summary>
-    List<Guid>? OptionIds = null
+    List<Guid>? OptionIds = null,
+    // specs/163: only these products - what a browser remembers having opened.
+    List<Guid>? Ids = null
 ) : IRequest<PaginatedList<ProductResponse>>;
 
 public class GetProductsQueryValidator : AbstractValidator<GetProductsQuery>
@@ -32,6 +34,8 @@ public class GetProductsQueryValidator : AbstractValidator<GetProductsQuery>
         RuleFor(x => x.MinPrice).GreaterThanOrEqualTo(0).When(x => x.MinPrice is not null);
         RuleFor(x => x.MaxPrice).GreaterThanOrEqualTo(0).When(x => x.MaxPrice is not null);
         // A reversed range is a mistake better said than answered with an empty page.
+        RuleFor(x => x.Ids).Must(ids => ids!.Count <= 24).WithMessage("Ask for at most 24 products by id.")
+            .When(x => x.Ids is not null);
         RuleFor(x => x.MinPrice).LessThanOrEqualTo(x => x.MaxPrice!.Value)
             .When(x => x.MinPrice is not null && x.MaxPrice is not null)
             .WithMessage("The minimum price is above the maximum.");

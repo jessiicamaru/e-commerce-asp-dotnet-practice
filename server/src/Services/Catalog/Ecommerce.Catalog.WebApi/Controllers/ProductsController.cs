@@ -19,6 +19,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Ecommerce.Catalog.Application.Products.Queries.GetMyProducts;
 using Ecommerce.Catalog.Application.Products.Queries.GetProductById;
+using Ecommerce.Catalog.Application.Products.Queries.GetRelatedProducts;
 using Ecommerce.Catalog.Application.Products.Queries.GetProducts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,18 @@ public class ProductsController : ApiControllerBase
     {
         var result = await Mediator.Send(query);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Other products like this one (specs/163): its category, then its department, most reviewed first. Empty for an
+    /// unknown or off-shelf product. Anonymous and cached, like the listing it is built on.
+    /// </summary>
+    [AllowAnonymous]
+    [OutputCache(PolicyName = CatalogueCache.Policy)]
+    [HttpGet("{id:guid}/related")]
+    public async Task<IActionResult> GetRelated(Guid id, [FromQuery] int limit = 8)
+    {
+        return Ok(await Mediator.Send(new GetRelatedProductsQuery(id, limit)));
     }
 
     [AllowAnonymous]

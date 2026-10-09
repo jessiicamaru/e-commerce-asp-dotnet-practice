@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react'
+import { readRecentlyViewed, subscribeToRecentlyViewed } from '@ecommerce/core/utils/product/recently-viewed'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@ecommerce/core/constants/query-keys'
 import { CURRENCIES } from '@ecommerce/core/config/money'
@@ -10,6 +12,32 @@ import type {
   ProductSpecificationValue,
   ProductText,
 } from '@ecommerce/core/services/product/types'
+
+/** Others like this one (specs/163). */
+export function useRelatedProducts(productId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.product(productId), 'related'] as const,
+    queryFn: () => Product.related(productId),
+    enabled: productId !== '',
+  })
+}
+
+/**
+ * The products this browser opened, most recent first (specs/163) - read through the listing's `ids`, which keeps only
+ * what is still on the shelf, then put back in the order remembered. `exclude` leaves out the page being read.
+ */
+export function useRecentlyViewed(exclude?: string) {
+  const ids = useSyncExternalStore(subscribeToRecentlyViewed, readRecentlyViewed, readRecentlyViewed).filter(
+    (id) => id !== exclude,
+  )
+  const query = useQuery({
+    queryKey: queryKeys.products({ ids, pageSize: ids.length }),
+    queryFn: () => Product.list({ ids, pageSize: ids.length }),
+    enabled: ids.length > 0,
+  })
+  const byId = new Map((query.data?.items ?? []).map((product) => [product.id, product]))
+  return ids.map((id) => byId.get(id)).filter((product): product is NonNullable<typeof product> => !!product)
+}
 
 export function useProducts(query: ProductQuery) {
   return useQuery({

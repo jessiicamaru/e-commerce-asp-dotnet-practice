@@ -396,6 +396,13 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             query = query.Where(p => p.Availability);
         }
 
+        // Only these (#375, specs/163): what a browser remembers having opened. Still only what is on the shelf.
+        if (filter?.Ids is { Count: > 0 } ids)
+        {
+            var wanted = ids.Distinct().ToList();
+            query = query.Where(p => wanted.Contains(p.Id));
+        }
+
         // Every option chosen (#366, specs/159): one EXISTS per option, on product_specifications' OptionId index.
         if (filter?.OptionIds is { Count: > 0 } optionIds)
         {
@@ -472,6 +479,9 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
             "price_asc" => query.OrderBy(byPrice),
             "price_desc" => query.OrderByDescending(byPrice),
             "name_desc" => query.OrderByDescending(p => p.Name),
+            // Most reviewed first (specs/163 research D2): the count before the average, so one five-star review does not
+            // outrank a hundred good ones.
+            "rating_desc" => query.OrderByDescending(p => p.RatingCount).ThenByDescending(p => p.RatingAverage).ThenBy(p => p.Name),
             _ => query.OrderBy(p => p.Name)
         };
 
