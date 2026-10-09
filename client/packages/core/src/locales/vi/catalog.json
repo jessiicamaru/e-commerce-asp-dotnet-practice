@@ -161,5 +161,9 @@
     "max": "Đến",
     "reversed": "Giá tối thiểu đang lớn hơn giá tối đa."
   },
-  "inStockOnly": "Chỉ hàng còn"
+  "inStockOnly": "Chỉ hàng còn",
+  "gallery": {
+    "label": "Ảnh của {{name}}",
+    "show": "Xem ảnh {{n}} / {{count}}"
+  }
 }

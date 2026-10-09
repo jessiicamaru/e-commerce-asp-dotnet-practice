@@ -40,6 +40,21 @@ describe('AdminProductsPage (specs/045)', () => {
     expect(list).toHaveBeenCalledWith('Pending', 1, PAGE_SIZE)
   })
 
+  it('shows every photograph of a product waiting, each opening on its own (specs/160)', async () => {
+    vi.spyOn(Moderation, 'products').mockResolvedValue(
+      page(lens({ imageUrl: '/cover', photos: [{ id: 'a', url: '/api/products/p1/photos/a' }, { id: 'b', url: '/api/products/p1/photos/b' }] })),
+    )
+    renderPage()
+
+    const list = await screen.findByRole('list', { name: '+2 more photographs' })
+    const links = within(list).getAllByRole('link')
+    expect(links.map((l) => [l.getAttribute('aria-label'), l.getAttribute('href')])).toEqual([
+      ['Photograph 2 of Mai Lens 35mm', '/api/products/p1/photos/a'],
+      ['Photograph 3 of Mai Lens 35mm', '/api/products/p1/photos/b'],
+    ])
+    expect(links[0]).toHaveAttribute('target', '_blank')
+  })
+
   it('approves at a press', async () => {
     vi.spyOn(Moderation, 'products').mockResolvedValue(page(lens()))
     const approve = vi.spyOn(Moderation, 'approve').mockResolvedValue(lens({ reviewStatus: 'Approved' }))

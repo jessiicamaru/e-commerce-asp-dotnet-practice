@@ -82,6 +82,19 @@ export const useSetVariantPrice = (productId: string) =>
 export const useUploadProductImage = (productId: string) =>
   useListingMutation((file: File) => Product.uploadImage(productId, file), productId)
 
+/** The gallery (specs/160): add, remove, make cover, reorder - each a listing change, so the product is read again. */
+export const useAddProductPhoto = (productId: string) =>
+  useListingMutation((file: File) => Product.addPhoto(productId, file), productId)
+
+export const useRemoveProductPhoto = (productId: string) =>
+  useListingMutation((photoId: string) => Product.removePhoto(productId, photoId), productId)
+
+export const useMakeProductCover = (productId: string) =>
+  useListingMutation((photoId: string) => Product.makeCover(productId, photoId), productId)
+
+export const useReorderProductPhotos = (productId: string) =>
+  useListingMutation((photoIds: string[]) => Product.reorderPhotos(productId, photoIds), productId)
+
 export const useDeleteProduct = (productId: string) =>
   useListingMutation(() => Product.remove(productId), productId)
 

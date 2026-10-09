@@ -4,13 +4,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ChevronRightIcon, ExternalLinkIcon, Trash2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Availability } from '@/components/product/availability'
-import { ProductImage } from '@ecommerce/core/components/product/product-image'
 import { AddVariantForm } from '@/components/seller/add-variant'
 import { ProductDetailsCard } from '@/components/seller/product-details'
 import { ProductSpecificationsCard } from '@/components/seller/product-specifications'
 import { ProductTranslationsCard } from '@/components/seller/product-translations'
 import { VariantEditor } from '@/components/seller/variant-editor'
-import { ImageDropzone } from '@/components/shared/image-dropzone'
+import { ProductPhotosCard } from '@/components/seller/product-photos'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { ServerError } from '@ecommerce/core/components/shared/server-error'
 import {
@@ -27,7 +26,7 @@ import {
 import { Button, buttonVariants } from '@ecommerce/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ecommerce/ui/card'
 import { Separator } from '@ecommerce/ui/separator'
-import { useDeleteProduct, useProductInEveryCurrency, useUploadProductImage } from '@ecommerce/core/hooks/product'
+import { useDeleteProduct, useProductInEveryCurrency } from '@ecommerce/core/hooks/product'
 import { useVariantStock } from '@ecommerce/core/hooks/stock'
 import { cn } from 'cn'
 import { ReviewBadge } from '@/components/product/review-badge'
@@ -59,7 +58,6 @@ export function SellerProductPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const product = useProductInEveryCurrency(id)
-  const upload = useUploadProductImage(id)
   const remove = useDeleteProduct(id)
   const variants = product.product?.variants ?? []
   const stock = useVariantStock(variants.map((variant) => variant.id))
@@ -135,21 +133,9 @@ export function SellerProductPage() {
       <ServerError error={remove.error} fallback={t('listing.loadFailed')} />
 
       <div className="grid items-start gap-6 lg:grid-cols-[18rem_1fr]">
-        <Card className="rounded-3xl lg:sticky lg:top-28">
-          <CardHeader>
-            <CardTitle>{t('edit.image')}</CardTitle>
-            <CardDescription>{t('edit.imageHint')}</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2">
-            <ImageDropzone
-              label={t('edit.image')}
-              busy={upload.isPending}
-              onFile={(file) => upload.mutate(file, { onSuccess: () => toast.success(t('edit.imageSaved')) })}
-              preview={item.imageUrl ? <ProductImage product={item} large /> : undefined}
-            />
-            <ServerError error={upload.error} fallback={t('listing.loadFailed')} />
-          </CardContent>
-        </Card>
+        <div className="lg:sticky lg:top-28">
+          <ProductPhotosCard product={item} />
+        </div>
 
         <div className="grid gap-6">
           <ProductDetailsCard key={`${item.original?.name}|${item.original?.description}|${item.categoryId}`} product={item} />

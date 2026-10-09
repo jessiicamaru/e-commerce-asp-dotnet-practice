@@ -148,6 +148,33 @@ export class Product {
   }
 
   /**
+   * Adds a photograph to the gallery (specs/160) - the cover when the product has none. The server answers with the
+   * product and its photographs.
+   */
+  static async addPhoto(productId: string, file: File): Promise<ProductModel> {
+    const body = new FormData()
+    body.append('file', file)
+    const { data } = await http.post<ProductModel>(`/products/${productId}/photos`, body)
+    return data
+  }
+
+  static async removePhoto(productId: string, photoId: string): Promise<void> {
+    await http.delete(`/products/${productId}/photos/${photoId}`)
+  }
+
+  /** Makes a photograph the cover; the previous cover takes its place in the gallery. */
+  static async makeCover(productId: string, photoId: string): Promise<ProductModel> {
+    const { data } = await http.post<ProductModel>(`/products/${productId}/photos/${photoId}/cover`)
+    return data
+  }
+
+  /** Every photograph after the cover, in the order wanted - each once, or the server refuses it (specs/160). */
+  static async reorderPhotos(productId: string, photoIds: string[]): Promise<ProductModel> {
+    const { data } = await http.put<ProductModel>(`/products/${productId}/photos/order`, { photoIds })
+    return data
+  }
+
+  /**
    * Removes the listing for good (specs/024) - not the way to stop selling something.
    *
    * Orders are unaffected: each one froze what it bought, which is what freezing is for.
