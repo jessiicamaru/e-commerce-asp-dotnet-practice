@@ -30,7 +30,7 @@ description: "Task list for A compare-at price per variant"
 - [x] T012 Bruno for both endpoints, the refusals and the filter; `docs/reference` regenerated
 - [x] T013 On the stack: the quickstart and a browser check
 - [x] T014 Docs: catalog page, CLAUDE.md, timeline, backlog
-- [ ] T015 Merged, closes #369
+- [x] T015 Merged in #372, closes #369
 
 ## Evidence
 
