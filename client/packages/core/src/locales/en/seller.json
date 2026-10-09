@@ -159,7 +159,10 @@
     "photoOf": "Photograph of {{name}}",
     "priceIn": "Price in {{currency}}",
     "save": "Save variant",
-    "saved": "Variant saved."
+    "saved": "Variant saved.",
+    "compareAt": "Was",
+    "compareAtIn": "Compare-at price in {{currency}}",
+    "compareAtNone": "not reduced"
   },
   "fulfil": {
     "title": "Your parcel",

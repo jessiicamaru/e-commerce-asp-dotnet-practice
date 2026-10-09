@@ -19,6 +19,10 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
             // Only what ImageFormat recognises by its bytes - never anything a client merely claimed.
             t.HasCheckConstraint("CK_product_variants_image_type",
                 "\"ImageContentType\" IS NULL OR \"ImageContentType\" IN ('image/jpeg', 'image/png', 'image/webp')");
+
+            // A reduction that is not one is refused by the database, not only by a validator (specs/161 research D1).
+            t.HasCheckConstraint("CK_product_variants_CompareAtPrice",
+                "\"CompareAtPrice\" IS NULL OR \"CompareAtPrice\" > \"Price\"");
         }).HasKey(v => v.Id);
 
         builder.Property(v => v.ImageContentType).HasMaxLength(20);
@@ -32,6 +36,7 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
         builder.HasIndex(v => v.Sku).IsUnique();
 
         builder.Property(v => v.Price).HasColumnType("decimal(18,2)");
+        builder.Property(v => v.CompareAtPrice).HasColumnType("decimal(18,2)");
         builder.Property(v => v.OptionSummary).HasMaxLength(200).IsRequired();
         builder.Property(v => v.IsActive).IsRequired().HasDefaultValue(true);
 

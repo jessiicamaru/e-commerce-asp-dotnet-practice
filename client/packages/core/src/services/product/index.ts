@@ -148,6 +148,18 @@ export class Product {
   }
 
   /**
+   * What a shape's price in one currency is compared against (specs/161) - shown struck through, never charged. Above
+   * the price, or the server refuses it.
+   */
+  static async setCompareAt(productId: string, variantId: string, currency: string, amount: number): Promise<void> {
+    await http.put(`/products/${productId}/variants/${variantId}/prices/${currency}/compare-at`, { amount })
+  }
+
+  static async clearCompareAt(productId: string, variantId: string, currency: string): Promise<void> {
+    await http.delete(`/products/${productId}/variants/${variantId}/prices/${currency}/compare-at`)
+  }
+
+  /**
    * Adds a photograph to the gallery (specs/160) - the cover when the product has none. The server answers with the
    * product and its photographs.
    */

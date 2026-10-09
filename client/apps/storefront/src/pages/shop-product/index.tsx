@@ -159,6 +159,9 @@ export function SellerProductPage() {
                     prices={Object.fromEntries(
                       Object.entries(product.byCurrency).map(([currency, byVariant]) => [currency, byVariant[variant.id] ?? null]),
                     )}
+                    compareAts={Object.fromEntries(
+                      Object.entries(product.compareAtByCurrency).map(([currency, byVariant]) => [currency, byVariant[variant.id] ?? null]),
+                    )}
                     stock={stock.byVariant[variant.id] ?? null}
                     stockPending={stock.isPending}
                   />

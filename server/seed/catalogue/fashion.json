@@ -159,7 +159,9 @@
           ],
           "vnd": 391000,
           "usd": 19.9,
-          "stock": 30
+          "stock": 30,
+          "compareAtVnd": 490000,
+          "compareAtUsd": 25.0
         },
         {
           "sku": "UNIQLO-AIRISM-TEE-M-WHT",

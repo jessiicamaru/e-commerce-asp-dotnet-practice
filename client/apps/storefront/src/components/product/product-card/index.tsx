@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ProductImage } from '@ecommerce/core/components/product/product-image'
 import { SaveButton } from '@/components/product/save-button'
 import { StarRating } from '@ecommerce/core/components/product/star-rating'
+import { CompareAt } from '@ecommerce/core/components/shared/compare-at'
 import { Price } from '@ecommerce/core/components/shared/price'
 import type { Product } from '@ecommerce/core/services/product/types'
 
@@ -64,6 +65,7 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
             <span className="text-muted-foreground text-xs">{t('product.from')}</span>
           )}
           <Price value={product.price} currency={product.currency} className="text-base font-semibold sm:text-lg" />
+          <CompareAt price={product.price} compareAt={product.compareAtPrice} currency={product.currency} className="text-sm" />
         </div>
       </div>
     </Link>

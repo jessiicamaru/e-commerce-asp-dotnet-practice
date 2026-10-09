@@ -31,6 +31,7 @@ export function CatalogFilters({
   minPrice = '',
   maxPrice = '',
   inStock = false,
+  onSale = false,
   categories,
   onChange,
 }: {
@@ -40,6 +41,8 @@ export function CatalogFilters({
   minPrice?: string
   maxPrice?: string
   inStock?: boolean
+  /** Only what is reduced (specs/161). */
+  onSale?: boolean
   categories: Category[]
   onChange: (changes: Record<string, string>) => void
 }) {
@@ -132,6 +135,10 @@ export function CatalogFilters({
           </span>
         )}
         <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm">
+          <Checkbox checked={onSale} onCheckedChange={(checked) => onChange({ sale: checked ? '1' : '' })} />
+          {t('onSaleOnly')}
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-sm">
           <Checkbox checked={inStock} onCheckedChange={(checked) => onChange({ stock: checked ? '1' : '' })} />
           {t('inStockOnly')}
         </label>

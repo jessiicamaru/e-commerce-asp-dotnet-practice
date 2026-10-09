@@ -382,6 +382,11 @@ def main():
             # A price somebody DECIDED, never a conversion (specs/022).
             call("PUT", f"/api/products/{product_id}/variants/{variant_id}/prices/USD",
                  {"amount": variant["usd"]}, token)
+            # What the price is compared against, shown struck through (specs/161) - after the price it must be above.
+            for code, key in (("VND", "compareAtVnd"), ("USD", "compareAtUsd")):
+                if variant.get(key) is not None:
+                    call("PUT", f"/api/products/{product_id}/variants/{variant_id}/prices/{code}/compare-at",
+                         {"amount": variant[key]}, token)
 
             # Stock, or the storefront shows a catalogue nobody can buy from.
             set_stock(variant_id, variant["stock"], token)

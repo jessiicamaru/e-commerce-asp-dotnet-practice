@@ -34,7 +34,7 @@ describe('CatalogPage, price and stock (specs/109)', () => {
       expect(list).toHaveBeenCalledWith(expect.objectContaining({ minPrice: 1_000_000, maxPrice: 20_000_000, inStock: true })),
     )
     expect(screen.getByLabelText('Min')).toHaveValue(1_000_000)
-    expect(screen.getByRole('checkbox')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('checkbox', { name: 'In stock only' })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('applies a typed range with the search', async () => {
@@ -68,9 +68,21 @@ describe('CatalogPage, price and stock (specs/109)', () => {
     renderCatalog()
 
     await waitFor(() => expect(list).toHaveBeenCalledWith(expect.objectContaining({ inStock: undefined })))
-    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('checkbox', { name: 'In stock only' }))
 
     await waitFor(() => expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ inStock: true })))
+  })
+
+  /** Only what is reduced (specs/161): in the address like the other filters, sent only when ticked. */
+  it('asks for only what is on sale when ticked, from the address too', async () => {
+    const list = vi.spyOn(Product, 'list').mockResolvedValue(empty)
+    const user = userEvent.setup()
+    renderCatalog()
+
+    await waitFor(() => expect(list).toHaveBeenCalledWith(expect.objectContaining({ onSale: undefined })))
+    await user.click(screen.getByRole('checkbox', { name: 'On sale' }))
+
+    await waitFor(() => expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ onSale: true })))
   })
 
   /** A typo in a shared link is no bound, not a page that fails to load. */

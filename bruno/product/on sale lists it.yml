@@ -1,0 +1,31 @@
+info:
+  name: on sale lists it
+  type: http
+  seq: 87
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/products?onSale=true&pageSize=50&currency=VND"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("every one listed is reduced, and this one is among them", function() {
+          expect(res.body.items.map(p => p.id)).to.include(bru.getVar("productId"));
+          res.body.items.forEach(p => expect(p.compareAtPrice).to.be.above(p.price));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/161: only products with a variant reduced in the currency asked for.

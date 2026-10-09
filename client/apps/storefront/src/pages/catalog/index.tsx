@@ -23,6 +23,8 @@ export function CatalogPage() {
   const minPrice = params.get('min') ?? ''
   const maxPrice = params.get('max') ?? ''
   const inStock = params.get('stock') === '1'
+  // Only what is reduced (specs/161).
+  const onSale = params.get('sale') === '1'
   // Specification options (specs/159), comma-separated in the URL so a filtered page can be shared.
   const optionIds = (params.get('options') ?? '').split(',').filter(Boolean)
 
@@ -36,12 +38,13 @@ export function CatalogPage() {
     minPrice: bound(minPrice),
     maxPrice: bound(maxPrice),
     inStock: inStock || undefined,
+    onSale: onSale || undefined,
     optionIds: optionIds.length ? optionIds : undefined,
   })
 
   // The hero belongs to the landing view only. Once somebody has searched or filtered, the results
   // are what they came for and a hero is in the way of them.
-  const landing = !searchTerm && !categoryId && !minPrice && !maxPrice && !inStock && !optionIds.length && pageNumber === 1
+  const landing = !searchTerm && !categoryId && !minPrice && !maxPrice && !inStock && !onSale && !optionIds.length && pageNumber === 1
 
   function update(changes: Record<string, string>) {
     const next = new URLSearchParams(params)
@@ -87,6 +90,7 @@ export function CatalogPage() {
           minPrice={minPrice}
           maxPrice={maxPrice}
           inStock={inStock}
+          onSale={onSale}
           categories={categories.data ?? []}
           onChange={update}
         />

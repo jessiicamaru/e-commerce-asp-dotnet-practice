@@ -99,5 +99,9 @@
     "applyLink": "Apply",
     "removeLink": "Remove link"
   },
-  "formerCustomer": "A former customer"
+  "formerCustomer": "A former customer",
+  "compareAt": {
+    "was": "Was {{price}}",
+    "off": "-{{percent}}%"
+  }
 }

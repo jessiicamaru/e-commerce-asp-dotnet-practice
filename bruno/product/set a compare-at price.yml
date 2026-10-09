@@ -1,0 +1,38 @@
+info:
+  name: set a compare-at price
+  type: http
+  seq: 83
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/api/products/{{productId}}/variants/{{saleVariantId}}/prices/VND/compare-at"
+  body:
+    type: json
+    data: |-
+      {
+        "amount": {{wasPrice}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("status 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("the price unchanged, the compare-at beside it", function() {
+          expect(res.body.price).to.equal(bru.getVar("salePrice"));
+          expect(res.body.compareAtPrice).to.equal(bru.getVar("wasPrice"));
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+docs: |-
+  specs/161: Seller (own) or Admin. Shown struck through, never charged; never a reason for review.

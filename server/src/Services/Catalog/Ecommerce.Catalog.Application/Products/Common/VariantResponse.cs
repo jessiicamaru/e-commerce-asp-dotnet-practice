@@ -36,7 +36,9 @@ public record VariantResponse(
     /// would show the previous variant's picture - which looks like the feature working.
     /// Null only when neither the variant nor the product has one.
     /// </remarks>
-    string? ImageUrl = null
+    string? ImageUrl = null,
+    // specs/161: what the price is compared against, in the same currency - shown struck through, never charged.
+    decimal? CompareAtPrice = null
 )
 {
     public static VariantResponse From(
@@ -74,7 +76,8 @@ public record VariantResponse(
             // load it, and then there is nothing to fall back to - which is honest rather than a
             // guess.
             ProductImageKey.UrlForVariant(variant)
-                ?? (variant.Product is { } owner ? ProductImageKey.UrlFor(owner) : null));
+                ?? (variant.Product is { } owner ? ProductImageKey.UrlFor(owner) : null),
+            Priced.CompareAtOf(variant, currency, defaultCurrency));
     }
 }
 

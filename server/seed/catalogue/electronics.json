@@ -458,7 +458,9 @@
           ],
           "vnd": 7990000,
           "usd": 399,
-          "stock": 14
+          "stock": 14,
+          "compareAtVnd": 9990000,
+          "compareAtUsd": 499.0
         },
         {
           "sku": "SONY-WH1000XM5-SLV",

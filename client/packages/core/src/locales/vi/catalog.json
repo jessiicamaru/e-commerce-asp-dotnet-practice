@@ -165,5 +165,6 @@
   "gallery": {
     "label": "Ảnh của {{name}}",
     "show": "Xem ảnh {{n}} / {{count}}"
-  }
+  },
+  "onSaleOnly": "Đang giảm giá"
 }

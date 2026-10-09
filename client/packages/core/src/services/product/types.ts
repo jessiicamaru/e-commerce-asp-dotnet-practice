@@ -47,6 +47,11 @@ export interface Product {
    * listing, which shows the cover alone.
    */
   photos?: ProductPhoto[] | null
+  /**
+   * What `price` is compared against - the compare-at of the variant giving the "from" price, in `currency` (specs/161).
+   * Null when it is not reduced. Shown struck through, never charged.
+   */
+  compareAtPrice?: number | null
 }
 
 /** One of a product's photographs after its cover (specs/160). */
@@ -89,6 +94,8 @@ export interface Variant {
   /** Null when this shape is not sold in the currency being browsed in (specs/022). */
   price: number | null
   currency: string
+  /** What `price` is compared against, in the same currency, or null (specs/161). Display only. */
+  compareAtPrice?: number | null
   /** The options in words: "Kit: Body only · Colour: Black". Empty for a product sold one way. */
   optionSummary: string
   /** `id` is what addresses an option, e.g. to translate it (specs/021). */
@@ -129,6 +136,8 @@ export interface ProductQuery {
   maxPrice?: number
   /** Only what can be bought now. Sent only when true. */
   inStock?: boolean
+  /** Only what is reduced - a compare-at in the currency being browsed in (specs/161). Sent only when true. */
+  onSale?: boolean
   /** Products holding every one of these specification options (specs/159) - sent as one `optionIds` per id. */
   optionIds?: string[]
 }
