@@ -50,6 +50,12 @@ public class GetProductByIdQueryHandler(
             money.Value.DefaultCurrency,
             product.SellerId is not null && shopNames.TryGetValue(product.SellerId.Value, out var shop)
                 ? shop
-                : null) with { Specifications = table };
+                : null) with
+            {
+                Specifications = table,
+                // The gallery after the cover (specs/160). Only a reader allowed to see the product gets here, so the
+                // addresses' keys (specs/081) go only where the product's own does.
+                Photos = Images.ProductGallery.Respond(await _productRepository.GetPhotosAsync(product.Id, cancellationToken)),
+            };
     }
 }

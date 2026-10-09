@@ -20,6 +20,30 @@ public interface IProductRepository : ILiveImageKeys
     /// </remarks>
     Task<List<Product>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
 
+    // ---- The gallery (specs/160): the photographs after the cover, tracked so a handler can change them.
+
+    /// <summary>A product's photographs after its cover, in order.</summary>
+    Task<List<ProductPhoto>> GetPhotosAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    /// <summary>The photographs of several products, in order - for a response that shows them all.</summary>
+    Task<Dictionary<Guid, List<ProductPhoto>>> GetPhotosAsync(
+        IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken = default);
+
+    Task<ProductPhoto?> GetPhotoAsync(Guid photoId, CancellationToken cancellationToken = default);
+
+    void AddPhoto(ProductPhoto photo);
+
+    void RemovePhoto(ProductPhoto photo);
+
+    /// <summary>
+    /// Switches the product's cover with the guarded statement of <see cref="TrySetImageAsync"/> - only if the cover is
+    /// still <paramref name="expectedUpdatedAt"/> - and, in the same transaction, saves what <paramref name="stage"/>
+    /// tracks (the gallery's rows, the audit entry, the review). Only the winner's stage runs. Returns whether it won.
+    /// </summary>
+    Task<bool> SwitchCoverAsync(
+        Guid productId, DateTime? expectedUpdatedAt, string contentType, DateTime updatedAt, Guid accessKey,
+        Func<Task> stage, CancellationToken cancellationToken = default);
+
     Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
     Task<List<Product>> GetAllAsync(CancellationToken cancellationToken = default);
     /// <param name="language">

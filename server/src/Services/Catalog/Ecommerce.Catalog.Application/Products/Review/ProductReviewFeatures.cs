@@ -92,7 +92,13 @@ public class ProductReviewHandlers(
         var sellerIds = items.Where(p => p.SellerId is not null).Select(p => p.SellerId!.Value).Distinct().ToList();
         var names = sellerIds.Count == 0 ? [] : await _sellers.GetNamesAsync(sellerIds, cancellationToken);
 
-        var dtos = items.Select(p => Respond(p, p.SellerId is { } id && names.TryGetValue(id, out var n) ? n : null)).ToList();
+        // Every photograph, not only the cover (specs/160): any of them may be what needs a decision.
+        var photos = await _products.GetPhotosAsync(items.Select(p => p.Id).ToList(), cancellationToken);
+
+        var dtos = items.Select(p => Respond(p, p.SellerId is { } id && names.TryGetValue(id, out var n) ? n : null) with
+        {
+            Photos = Images.ProductGallery.Respond(photos.TryGetValue(p.Id, out var own) ? own : []),
+        }).ToList();
         return new PaginatedList<ProductResponse>(dtos, total, request.PageNumber, request.PageSize);
     }
 

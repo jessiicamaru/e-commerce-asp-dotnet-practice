@@ -33,6 +33,9 @@ public class CatalogDbContext : DbContext
     public DbSet<SpecificationOption> SpecificationOptions => Set<SpecificationOption>();
     public DbSet<ProductSpecification> ProductSpecifications => Set<ProductSpecification>();
 
+    // A product's photographs after its cover (specs/160).
+    public DbSet<ProductPhoto> ProductPhotos => Set<ProductPhoto>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

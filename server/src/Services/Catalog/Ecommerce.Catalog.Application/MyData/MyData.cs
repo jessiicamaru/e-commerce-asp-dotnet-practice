@@ -49,6 +49,8 @@ public static class CatalogPersonalData
             // Product specifications (specs/159): what categories declare and what products hold - about goods, not people.
             "category_specifications", "category_specification_translations", "specification_options",
             "specification_option_translations", "product_specifications",
+            // A product's photographs after its cover (specs/160): pictures of a thing for sale, not of a person.
+            "product_photos",
         ],
     };
 }
