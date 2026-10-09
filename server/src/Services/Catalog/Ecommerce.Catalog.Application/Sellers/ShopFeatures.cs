@@ -12,7 +12,11 @@ public record GetShopQuery(Guid SellerId) : IRequest<ShopResponse>;
 
 /// <param name="ProductCount">How many of its products are on the shelf now.</param>
 /// <param name="Paused">Its seller is away (specs/107): the page answers and says so, with nothing on the shelf.</param>
-public record ShopResponse(Guid SellerId, string ShopName, string? Description, int ProductCount, bool Paused = false);
+/// <param name="RatingAverage">Every visible review of its products, averaged (specs/165); null with none.</param>
+/// <param name="RatingCount">How many reviews the average rests on.</param>
+public record ShopResponse(
+    Guid SellerId, string ShopName, string? Description, int ProductCount, bool Paused = false,
+    decimal? RatingAverage = null, int RatingCount = 0);
 
 public class ShopHandlers(ISellerRepository sellers, IProductRepository products) :
     IRequestHandler<RecordShopDescriptionCommand, bool>,
@@ -35,6 +39,8 @@ public class ShopHandlers(ISellerRepository sellers, IProductRepository products
             throw new NotFoundException("Shop not found.");
 
         var onShelf = await _products.CountOnShelfBySellerAsync(seller.SellerId, cancellationToken);
-        return new ShopResponse(seller.SellerId, seller.ShopName, seller.Description, onShelf, seller.PausedAt is not null);
+        var rating = await _products.RatingOfSellerAsync(seller.SellerId, cancellationToken);
+        return new ShopResponse(
+            seller.SellerId, seller.ShopName, seller.Description, onShelf, seller.PausedAt is not null, rating.Average, rating.Count);
     }
 }
