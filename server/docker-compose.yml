@@ -194,7 +194,7 @@ services:
   # The admin password comes from .env and is REQUIRED - Seq refuses to start with an empty one, and
   # running it without authentication is not an option this file offers.
   seq:
-    image: datalust/seq:2026.1.17182
+    image: datalust/seq:2026.1.17473
     container_name: e-commerce-seq
     environment:
       ACCEPT_EULA: "Y"
@@ -209,7 +209,7 @@ services:
   # Metrics (specs/148): every service PUSHES OpenTelemetry metrics here over OTLP (the receiver below), and
   # RabbitMQ's own plugin is scraped. The UI and API are on http://localhost:9090.
   prometheus:
-    image: prom/prometheus:v3.15.0
+    image: prom/prometheus:v3.15.1
     container_name: e-commerce-prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -227,7 +227,7 @@ services:
   # provisioned from server/observability/grafana, read-only - a change is made in the repository, not clicked in.
   # The admin password is REQUIRED, as Seq's is.
   grafana:
-    image: grafana/grafana:13.2.3
+    image: grafana/grafana:13.2.4
     container_name: e-commerce-grafana
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in server/.env - see .env.example}
@@ -246,7 +246,7 @@ services:
   # Every email the stack sends lands here (specs/060) and nothing leaves the machine: SMTP on 1025, the
   # inbox at http://localhost:8025. Identity's dispatcher sends to it by default.
   mailpit:
-    image: axllent/mailpit:v1.31
+    image: axllent/mailpit:v1.32
     container_name: e-commerce-mailpit
     environment:
       # On a volume: its own default is memory, and a restart then loses every email it caught.
