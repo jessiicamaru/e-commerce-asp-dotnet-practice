@@ -153,7 +153,7 @@ services:
 
   # The only door (specs/141): HTTPS for both hosts, certificates obtained and renewed by Caddy itself.
   caddy:
-    image: caddy:2.10-alpine
+    image: caddy:2.11-alpine
     container_name: ecommerce-caddy
     restart: unless-stopped
     environment:
