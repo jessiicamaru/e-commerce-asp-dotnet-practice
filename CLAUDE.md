@@ -116,7 +116,7 @@ dotnet ef database update      --project src/Services/Orchestrator/Ecommerce.Orc
 
 Tests live in `server/tests/` — `Ecommerce.Inventory.Tests` (87 tests, PostgreSQL on 5437),
 `Ecommerce.Payment.Tests` (53 tests, PostgreSQL on 5438), `Ecommerce.Order.Tests` (371 tests,
-PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (359 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
+PostgreSQL on 5434), `Ecommerce.Catalog.Tests` (363 tests, PostgreSQL on 5433 and S3 on 8333 - `SEAWEEDFS_ACCESS_KEY`/`SEAWEEDFS_SECRET_KEY` set too), `Ecommerce.Cart.Tests`
 (29 tests, PostgreSQL on 5439), `Ecommerce.Identity.Tests` (289 tests, PostgreSQL on 5435) and
 `Ecommerce.Activity.Tests` (52 tests, PostgreSQL on 5440) and `Ecommerce.Orchestrator.Tests` (18 tests -
 the saga's transitions through MassTransit's harness, and the payment-timeout sweeper against PostgreSQL on
@@ -538,7 +538,9 @@ stock. ⚠️ A new caller of the recompute uses that method, or its flip is los
 /api/sellers/me/description`, not moderated, like the name) and the products on the shelf, which are the listing's
 `?sellerId=` rather than a second query. Catalog serves `GET /api/shops/{id}` from its `sellers` read model
 (`SellerDescribedEvent`, its own `DescriptionObservedAt` guard) - 404 for unknown, unnamed or suspended. The shop's own
-goods have no page.
+goods have no page. **It carries the shop's rating** (specs/165, #379): every visible review of every product the seller
+has, on the shelf or not, weighted by each product's count - ⚠️ computed by `SellerRatings` alone, which the seller's
+insights call too, so the two numbers cannot disagree; shown under the name and beside "Sold by" on a product page.
 
 **A shopper asks about a product and its seller answers** (specs/076, #110): `product_questions` in Catalog, one
 answer per question. ⚠️ **Only the product's seller answers** - staff for the shop's own - and anybody else, **an

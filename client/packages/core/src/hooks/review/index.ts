@@ -22,7 +22,8 @@ export function useMyReview(productId: string, signedIn: boolean) {
 
 /**
  * Writes the review, then re-reads the reviews AND the product - its average and count changed on the
- * server, in the same transaction, and the page shows the server's numbers rather than guessing.
+ * server, in the same transaction, and the page shows the server's numbers rather than guessing - and the
+ * shops' pages, whose rating (specs/165) is built from that average and shown beside "Sold by".
  */
 export function useWriteReview(productId: string) {
   const queryClient = useQueryClient()
@@ -31,6 +32,7 @@ export function useWriteReview(productId: string) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['reviews', productId] })
       await queryClient.invalidateQueries({ queryKey: ['product', productId] })
+      await queryClient.invalidateQueries({ queryKey: ['shop-front'] })
     },
   })
 }

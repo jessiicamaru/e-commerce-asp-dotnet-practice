@@ -202,6 +202,12 @@ public interface IProductRepository : ILiveImageKeys
     Task<int> CountOnShelfBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// A shop's rating (specs/165): every visible review of every product the seller has, on the shelf or not - the same
+    /// number the seller's insights show (specs/068).
+    /// </summary>
+    Task<ShopRating> RatingOfSellerAsync(Guid sellerId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Saves what the caller staged, recomputes the product's rollup, and - only when that flipped it back in
     /// stock - runs <paramref name="whenBackInStock"/> and saves what it staged, all in one transaction (#182,
     /// specs/091). Joins a transaction already open. Returns whether it flipped.
@@ -246,3 +252,6 @@ public interface ILiveImageKeys
 /// </summary>
 /// <param name="OptionIds">Products holding every one of these specification options (specs/159).</param>
 public record ProductFilter(decimal? MinPrice = null, decimal? MaxPrice = null, bool InStock = false, IReadOnlyList<Guid>? OptionIds = null, bool OnSale = false, IReadOnlyList<Guid>? Ids = null);
+
+/// <summary>A shop's average rating, two decimals, null with no review; and how many reviews it rests on.</summary>
+public record ShopRating(decimal? Average, int Count);

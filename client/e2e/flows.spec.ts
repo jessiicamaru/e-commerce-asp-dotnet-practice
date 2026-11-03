@@ -152,6 +152,20 @@ test.describe.serial('the storefront, end to end', () => {
   })
 
   /**
+   * The review counts for the shop too (specs/165, #379): its page and the "Sold by" beside the camera both read 5.0 from
+   * one review - the seller's only reviewed product. Signed out, so it is the anonymous, cached read a shopper gets.
+   */
+  test("the shop's rating follows the review", async ({ page }) => {
+    await page.goto(`/shops/${seller.id}`)
+    await expect(page.getByRole('img', { name: 'Shop rated 5.0 out of 5' })).toBeVisible()
+    await expect(page.getByText('1 review', { exact: true })).toBeVisible()
+
+    await page.goto(`/products/${camera.productId}`)
+    await expect(page.getByRole('img', { name: 'Shop rated 5.0 out of 5' })).toBeVisible()
+    await expect(page.getByText('5.0 (1)')).toBeVisible()
+  })
+
+  /**
    * The catalogue on a phone (specs/122, #245): two products to a row, the first within 1.3 screens, nothing scrolling
    * sideways. Last, so the flows' two approved products are on the shelf - in CI the catalogue is otherwise empty. It
    * was one column, 6,450px for twelve products, the first ~1,350px down (807px now; the old hero alone

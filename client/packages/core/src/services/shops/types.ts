@@ -6,6 +6,9 @@ export interface ShopFront {
   productCount: number
   /** Its seller is away (specs/107): the page still answers, with nothing on the shelf. */
   paused: boolean
+  /** Every visible review of its products, averaged (specs/165) - null with none; the seller's insights show the same. */
+  ratingAverage: number | null
+  ratingCount: number
 }
 
 /** Worded by precedence: a banned seller's shop is Suspended whatever else is true (specs/107). */

@@ -25,6 +25,12 @@ runtime:
           expect(res.body.shopName).to.equal("Bruno Cameras");
           expect(res.body.description).to.equal("Used Fujifilm bodies, tested by Bruno.");
         });
+        test("its rating is the one its seller's insights show (specs/165)", function() {
+          expect(res.body).to.include.keys("ratingAverage", "ratingCount");
+          expect(res.body.ratingCount).to.be.at.least(0);
+          if (res.body.ratingCount === 0) expect(res.body.ratingAverage).to.equal(null);
+          expect(JSON.stringify([res.body.ratingAverage, res.body.ratingCount])).to.equal(bru.getVar("insightsRating"));
+        });
         bru.setVar("shopProductCount", res.body.productCount);
 
 settings:
@@ -35,4 +41,5 @@ settings:
 
 docs: |-
   specs/099: anybody reads a shop's page, signed in or not. The name and words are Catalog's read
-  model, so this costs no call to Identity - and is eventually consistent.
+  model, so this costs no call to Identity - and is eventually consistent. Since specs/165 it carries the
+  shop's rating, computed by the same code as the seller's insights (`ShopRatingTests`).

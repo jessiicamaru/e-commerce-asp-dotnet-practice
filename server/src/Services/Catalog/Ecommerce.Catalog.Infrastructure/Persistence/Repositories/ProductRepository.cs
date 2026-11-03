@@ -294,6 +294,9 @@ public class ProductRepository(CatalogDbContext context) : IProductRepository
         _context.Products.CountAsync(p => p.SellerId == sellerId && p.ReviewStatus == ProductReviewStatus.Approved
             && p.IsActive && !p.SellerSuspended, cancellationToken);
 
+    public Task<ShopRating> RatingOfSellerAsync(Guid sellerId, CancellationToken cancellationToken = default) =>
+        SellerRatings.OfAsync(_context, sellerId, cancellationToken);
+
     private sealed class RollupFlip
     {
         public bool Was { get; init; }

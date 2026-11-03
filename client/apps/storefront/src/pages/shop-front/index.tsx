@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { PauseCircleIcon, StoreIcon } from 'lucide-react'
@@ -7,21 +6,22 @@ import { Pager } from '@ecommerce/core/components/shared/pager'
 import { PublicVouchers } from '@/components/voucher/public-vouchers'
 import { ErrorMessage, LoadingRows } from '@ecommerce/core/components/query-state'
 import { PAGE_SIZE } from '@ecommerce/core/constants/shared'
-import { queryKeys } from '@ecommerce/core/constants/query-keys'
 import { useProducts } from '@ecommerce/core/hooks/product'
-import { Shops } from '@ecommerce/core/services/shops'
+import { useShopFront } from '@ecommerce/core/hooks/shop'
+import { StarRating } from '@ecommerce/core/components/product/star-rating'
 
 /**
  * A shop's page (specs/099): its name and the seller's own words, then what it has on the shelf, paged like the catalogue.
  * A closed or unknown shop is the server's 404, shown as "not found". The description is shown as text, never as markup.
- * A paused shop (specs/107) answers and says its seller is away; staff close a shop from here.
+ * A paused shop (specs/107) answers and says its seller is away; staff close a shop from here. Under the name, how its
+ * products are rated (specs/165) - or that nobody has reviewed them yet, never zero stars.
  */
 export function ShopFrontPage() {
   const { t } = useTranslation('catalog')
   const { sellerId = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const page = Number(params.get('page') ?? '1') || 1
-  const shop = useQuery({ queryKey: queryKeys.shopFront(sellerId), queryFn: () => Shops.get(sellerId), retry: false })
+  const shop = useShopFront(sellerId)
   const products = useProducts({ pageNumber: page, pageSize: PAGE_SIZE, sellerId })
 
   if (shop.isError) {
@@ -37,6 +37,18 @@ export function ShopFrontPage() {
           <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight">
             <StoreIcon className="size-7" /> {shop.data.shopName}
           </h1>
+          {shop.data.ratingCount > 0 && shop.data.ratingAverage !== null ? (
+            <p className="flex items-center gap-2 text-sm">
+              <StarRating
+                value={shop.data.ratingAverage}
+                label={t('shop.rating', { average: shop.data.ratingAverage.toFixed(1) })}
+              />
+              <span className="font-medium">{shop.data.ratingAverage.toFixed(1)}</span>
+              <span className="text-muted-foreground">{t('reviews.count', { count: shop.data.ratingCount })}</span>
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm">{t('shop.noReviews')}</p>
+          )}
           {shop.data.description && <p className="text-muted-foreground whitespace-pre-line">{shop.data.description}</p>}
           {shop.data.paused ? (
             <p className="flex items-center gap-2 text-sm font-medium" role="status">

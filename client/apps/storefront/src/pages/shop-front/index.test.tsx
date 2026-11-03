@@ -33,7 +33,7 @@ beforeEach(async () => {
 describe('ShopFrontPage', () => {
   /** What the page is for (specs/099): the shop's words, and only that shop's products. */
   it('shows the shop and asks for its products only', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: 'Used Fujifilm bodies.', productCount: 1, paused: false })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: 'Used Fujifilm bodies.', productCount: 1, paused: false, ratingAverage: null, ratingCount: 0 })
     const list = vi.spyOn(Product, 'list').mockResolvedValue({
       items: [lens], pageNumber: 1, totalPages: 1, totalCount: 1, hasPreviousPage: false, hasNextPage: false,
     })
@@ -46,9 +46,30 @@ describe('ShopFrontPage', () => {
     expect(list).toHaveBeenCalledWith(expect.objectContaining({ sellerId: 's1', pageNumber: 1 }))
   })
 
+  /** How its products are rated (specs/165): the stars, the number and what it rests on. */
+  it('shows the shop’s rating and how many reviews it rests on', async () => {
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 1, paused: false, ratingAverage: 4.62, ratingCount: 318 })
+    vi.spyOn(Product, 'list').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
+    renderShop()
+
+    expect(await screen.findByRole('img', { name: 'Shop rated 4.6 out of 5' })).toBeInTheDocument()
+    expect(screen.getByText('4.6')).toBeInTheDocument()
+    expect(screen.getByText('318 reviews')).toBeInTheDocument()
+  })
+
+  /** A shop nobody has reviewed says so - zero stars would read as a terrible shop. */
+  it('says a shop has no reviews yet rather than drawing no stars', async () => {
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 1, paused: false, ratingAverage: null, ratingCount: 0 })
+    vi.spyOn(Product, 'list').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
+    renderShop()
+
+    expect(await screen.findByText('No reviews of this shop yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /Shop rated/ })).not.toBeInTheDocument()
+  })
+
   /** The description is the seller's text: shown as text, never as markup. */
   it('shows a description as text', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: '<b>bold</b>', productCount: 0, paused: false })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: '<b>bold</b>', productCount: 0, paused: false, ratingAverage: null, ratingCount: 0 })
     vi.spyOn(Product, 'list').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
     renderShop()
 
@@ -75,7 +96,7 @@ describe('ShopFrontPage, paused and closed (specs/107)', () => {
 
   /** A shopper following a link to a shop on holiday learns it is away, not that it vanished. */
   it('says a paused shop is taking a break', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: true })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: true, ratingAverage: null, ratingCount: 0 })
     vi.spyOn(Product, 'list').mockResolvedValue(empty)
     renderShop()
 
@@ -86,7 +107,7 @@ describe('ShopFrontPage, paused and closed (specs/107)', () => {
   /** Staff close a shop from its page, and only with the reason its seller will read. */
   /** Closing a shop moved to the back office (specs/137): a storefront session is never staff after #278. */
   it('offers staff no way to close it either', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false, ratingAverage: null, ratingCount: 0 })
     vi.spyOn(Product, 'list').mockResolvedValue(empty)
     renderAsModerator(route, '/shops/s1')
 
@@ -95,7 +116,7 @@ describe('ShopFrontPage, paused and closed (specs/107)', () => {
   })
 
   it('offers a customer no way to close it', async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false, ratingAverage: null, ratingCount: 0 })
     vi.spyOn(Product, 'list').mockResolvedValue(empty)
     renderAsCustomer(route, '/shops/s1')
 
@@ -106,7 +127,7 @@ describe('ShopFrontPage, paused and closed (specs/107)', () => {
 
 describe('ShopFrontPage vouchers (specs/114)', () => {
   it("lists the shop's public vouchers, asking for that shop only", async () => {
-    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false })
+    vi.spyOn(Shops, 'get').mockResolvedValue({ sellerId: 's1', shopName: 'Mai Lens', description: null, productCount: 0, paused: false, ratingAverage: null, ratingCount: 0 })
     vi.spyOn(Product, 'list').mockResolvedValue({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false })
     const asked = vi.spyOn(Voucher, 'public').mockResolvedValue([{
       code: 'MAI10', name: 'Mai ten', isPlatform: false, sellerId: 's1', benefit: 'FixedAmount', percent: null, currency: 'VND',

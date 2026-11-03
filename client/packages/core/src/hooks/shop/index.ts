@@ -7,6 +7,19 @@ export function useShopState(enabled: boolean) {
   return useQuery({ queryKey: queryKeys.shopState(), queryFn: () => Shops.mine(), enabled, retry: false })
 }
 
+/**
+ * Any shop's public page (specs/099) - read by the shop page and, for the shop's rating beside "Sold by" (specs/165), by
+ * a seller's product page, under one key. Nothing is asked without a seller: the shop's own goods have no shop page.
+ */
+export function useShopFront(sellerId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.shopFront(sellerId ?? ''),
+    queryFn: () => Shops.get(sellerId!),
+    enabled: !!sellerId,
+    retry: false,
+  })
+}
+
 /** Shops staff closed, newest first - the "Closed shops" tab. */
 export function useClosedShops(page: number, pageSize: number) {
   return useQuery({ queryKey: queryKeys.closedShops(page), queryFn: () => Shops.closed(page, pageSize) })
